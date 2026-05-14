@@ -35,6 +35,6 @@ When you give Claude a task:
 
 ## Customization
 
-To change model assignments, edit the routing table in `skills/auto-pilot/SKILL.md` under "Layer 2: Model Routing".
+To change model assignments, edit the routing table in `skills/hyperflow/SKILL.md` under "Layer 2: Model Routing".
 
 To pin specific model versions, update the text labels (e.g., "Opus 4.6") and ensure your `~/.claude/settings.json` has `"model": "claude-opus-4-6"` for the main session.

@@ -2,10 +2,10 @@
 set -euo pipefail
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-SKILL_FILE="$PLUGIN_ROOT/skills/auto-pilot/SKILL.md"
+SKILL_FILE="$PLUGIN_ROOT/skills/hyperflow/SKILL.md"
 
 if [ ! -f "$SKILL_FILE" ]; then
-  echo "hyperflow: auto-pilot skill not found at $SKILL_FILE" >&2
+  echo "hyperflow: skill not found at $SKILL_FILE" >&2
   exit 0
 fi
 

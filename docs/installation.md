@@ -16,9 +16,8 @@ Clone the repo and symlink to your Claude Code skills directory:
 ```bash
 git clone https://github.com/Mohammed-Abdelhady/hyperflow.git ~/.claude/plugins/hyperflow
 
-# Or copy skills directly
-cp -r hyperflow/skills/auto-pilot ~/.claude/skills/
-cp -r hyperflow/skills/brainstorming ~/.claude/skills/
+# Or copy the skill directly
+cp -r hyperflow/skills/hyperflow ~/.claude/skills/
 ```
 
 ## Recommended Settings
@@ -66,4 +65,4 @@ Add this to your global `~/.claude/CLAUDE.md` as a fallback:
 
 ## Verify Installation
 
-Start a new Claude Code session. You should see `auto-pilot` and `brainstorming` in the available skills list. The auto-pilot skill triggers automatically on every task.
+Start a new Claude Code session. You should see `hyperflow` in the available skills list. It triggers automatically on every task.

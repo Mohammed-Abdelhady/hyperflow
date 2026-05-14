@@ -8,11 +8,12 @@ Opus thinks. Sonnet executes. Everything runs in parallel.
 
 ## What is Hyperflow?
 
-Hyperflow is a Claude Code plugin that transforms how Claude works on your tasks. Instead of a single agent doing everything sequentially, Hyperflow splits every task into an **Opus orchestrator** coordinating **Sonnet workers** in parallel — with automatic review after every change.
+Hyperflow is a Claude Code plugin that transforms how Claude works on your tasks. Instead of a single agent doing everything sequentially, Hyperflow splits every task into an **Opus orchestrator** coordinating **Sonnet workers** in parallel — with automatic review after every change. When a task needs design decisions, Hyperflow switches to a collaborative brainstorming flow before dispatching workers.
 
 ```
 You: "Add user auth with login page and middleware"
 
+[Opus] Brainstorms -> proposes 2 approaches -> you pick one
 [Opus] Decomposes into 3 independent tasks
     |
     |-- [Sonnet] Creates auth middleware     --|
@@ -29,7 +30,7 @@ Done.
 
 ## Features
 
-### `/auto-pilot` — Autonomous Orchestration
+### Autonomous Orchestration (Layer 1-3)
 
 - **Zero friction execution** — no confirmation prompts, no permission pauses
 - **Model routing** — Opus for thinking (review, debug, decide), Sonnet for doing (implement, search, write)
@@ -37,13 +38,14 @@ Done.
 - **Learning injection** — each batch of workers benefits from discoveries of previous batches
 - **Silent error recovery** — failures get fixed automatically, not reported
 
-### `/brainstorming` — Collaborative Design
+### Collaborative Brainstorming (Layer 4)
 
 - **One question at a time** — focused dialogue, not overwhelming question dumps
 - **2-3 approaches with trade-offs** — always explores alternatives before committing
 - **Section-by-section approval** — incremental design validation
 - **Context-aware** — explores the codebase before asking questions
 - **YAGNI enforced** — ruthlessly cuts unnecessary features
+- **Seamless transition** — approved design flows directly into the orchestrator for implementation
 
 ## Quick Start
 
@@ -54,11 +56,10 @@ Done.
 claude plugin add Mohammed-Abdelhady/hyperflow
 ```
 
-### Or copy skills manually
+### Or copy the skill manually
 
 ```bash
-cp -r skills/auto-pilot ~/.claude/skills/
-cp -r skills/brainstorming ~/.claude/skills/
+cp -r skills/hyperflow ~/.claude/skills/
 ```
 
 ### Recommended Settings
@@ -84,16 +85,26 @@ Add to `~/.claude/settings.json`:
 
 ## How It Works
 
+### The 4 Layers
+
+| Layer | What | When |
+|-------|------|------|
+| **1. Autonomy** | Zero confirmations, minimal output, auto-accept | Always |
+| **2. Model Routing** | Opus = brain, Sonnet = hands | Always |
+| **3. Orchestrator** | Decompose, dispatch parallel, review, synthesize | Implementation tasks |
+| **4. Brainstorming** | Explore, question, propose, approve | Design/creative tasks |
+
 ### Model Routing
 
 | Role | Model | When |
 |------|-------|------|
-| Orchestrator | **Opus** | Decomposes tasks, coordinates workers |
-| Reviewer | **Opus** | Reviews every worker output |
-| Debugger | **Opus** | Root cause analysis |
-| Implementer | **Sonnet** | Writes code, edits files |
-| Searcher | **Sonnet** | Explores codebase, finds files |
-| Writer | **Sonnet** | Tests, docs, configs |
+| Orchestrator | **Opus 4.6** | Decomposes tasks, coordinates workers |
+| Reviewer | **Opus 4.6** | Reviews every worker output |
+| Debugger | **Opus 4.6** | Root cause analysis |
+| Brainstormer | **Opus 4.6** | Design exploration, proposals |
+| Implementer | **Sonnet 4.6** | Writes code, edits files |
+| Searcher | **Sonnet 4.6** | Explores codebase, finds files |
+| Writer | **Sonnet 4.6** | Tests, docs, configs |
 
 **Iron rule:** Every Sonnet output gets an Opus review.
 
@@ -101,13 +112,16 @@ Add to `~/.claude/settings.json`:
 
 ```
 User request
-  -> [Opus] Decompose into sub-tasks
-  -> [Opus] Dispatch Sonnet workers (parallel)
-  -> [Sonnet] Execute + return results & notes
-  -> [Opus] Review each output
-  -> [Opus] Synthesize learnings for next batch
-  -> Repeat until done
-  -> [Opus] Final integration review
+  -> [Opus] Design or implementation?
+  -> Design: Brainstorm (Layer 4) -> get approval -> then orchestrate
+  -> Implementation:
+      -> [Opus] Decompose into sub-tasks
+      -> [Opus] Dispatch Sonnet workers (parallel)
+      -> [Sonnet] Execute + return results & notes
+      -> [Opus] Review each output
+      -> [Opus] Synthesize learnings for next batch
+      -> Repeat until done
+      -> [Opus] Final integration review
 ```
 
 ### Learning Injection
@@ -128,15 +142,13 @@ hyperflow/
 ├── .claude-plugin/           # Claude Code plugin manifest
 │   └── plugin.json
 ├── skills/
-│   ├── auto-pilot/           # Core orchestrator skill
-│   │   ├── SKILL.md          # Main skill (3 layers)
-│   │   ├── worker-prompt.md  # Sonnet dispatch template
-│   │   └── reviewer-prompt.md # Opus review template
-│   └── brainstorming/        # Collaborative design skill
-│       └── SKILL.md
+│   └── hyperflow/            # The unified skill (4 layers)
+│       ├── SKILL.md          # Main skill
+│       ├── worker-prompt.md  # Sonnet dispatch template
+│       └── reviewer-prompt.md # Opus review template
 ├── hooks/
 │   ├── hooks.json            # Session startup config
-│   └── session-start         # Auto-pilot injection script
+│   └── session-start         # Hyperflow injection script
 ├── docs/
 │   ├── installation.md       # Setup guide
 │   ├── model-routing.md      # Model assignment philosophy
@@ -150,7 +162,7 @@ hyperflow/
 
 ### Change Model Versions
 
-Edit the routing table in `skills/auto-pilot/SKILL.md` under "Layer 2: Model Routing".
+Edit the routing table in `skills/hyperflow/SKILL.md` under "Layer 2: Model Routing".
 
 ### Add Your Own Skills
 
@@ -169,7 +181,7 @@ description: Use when [specific triggering conditions]
 
 ### Modify Autonomy Rules
 
-The 9 autonomy rules are in `skills/auto-pilot/SKILL.md` under "Layer 1: Autonomy". Add, remove, or modify rules to match your workflow.
+The 9 autonomy rules are in `skills/hyperflow/SKILL.md` under "Layer 1: Autonomy". Add, remove, or modify rules to match your workflow.
 
 ## Documentation
 
