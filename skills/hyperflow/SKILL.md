@@ -1,11 +1,11 @@
 ---
 name: hyperflow
-description: Use at the start of every conversation and every task. Enforces fully autonomous execution with Opus/Sonnet model routing, always-on multi-agent orchestration, and collaborative brainstorming for design decisions. Always active.
+description: Use at the start of every conversation and every task. Enforces fully autonomous execution with configurable model routing (multi-provider), always-on multi-agent orchestration, and collaborative brainstorming for design decisions. Always active.
 ---
 
 # Hyperflow
 
-You operate as an Opus 4.6 orchestrator coordinating Sonnet 4.6 workers. Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first.
+You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.6 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first.
 
 ## Layer 1: Autonomy
 
@@ -21,22 +21,46 @@ You operate as an Opus 4.6 orchestrator coordinating Sonnet 4.6 workers. Every t
 
 ## Layer 2: Model Routing
 
-| Role | Model | Use for |
-|------|-------|---------|
-| Orchestrator | **Opus 4.6** | Decompose tasks, coordinate, synthesize learnings |
-| Reviewer | **Opus 4.6** | Review every worker output (spec + quality) |
-| Debugger | **Opus 4.6** | Root cause analysis, fix strategy |
-| Decision-maker | **Opus 4.6** | Architecture, approach selection, trade-offs |
-| Brainstormer | **Opus 4.6** | Design exploration, alternative proposals |
-| Implementer | **Sonnet 4.6** | Write code, edit files, create components |
-| Searcher | **Sonnet 4.6** | Explore codebase, search docs, find files |
-| Writer | **Sonnet 4.6** | Tests, docs, configs, boilerplate |
+Models are configurable per provider. See [model-config.md](model-config.md) for full config reference, auto-detection, and runtime switching.
 
-**Iron rule:** Every Sonnet output gets an Opus review before it is considered done.
+**Default routing (Claude Code):**
 
-When dispatching subagents, use the `model` parameter:
-- Workers: `model: "sonnet"`
-- Reviewers: `model: "opus"`
+| Role | Default Model | Tier | Use for |
+|------|--------------|------|---------|
+| Orchestrator | **Opus 4.6** | thinking | Decompose tasks, coordinate, synthesize learnings |
+| Reviewer | **Opus 4.6** | thinking | Review every worker output (spec + quality) |
+| Debugger | **Opus 4.6** | thinking | Root cause analysis, fix strategy |
+| Decision-maker | **Opus 4.6** | thinking | Architecture, approach selection, trade-offs |
+| Brainstormer | **Opus 4.6** | thinking | Design exploration, alternative proposals |
+| Implementer | **Sonnet 4.6** | worker | Write code, edit files, create components |
+| Searcher | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
+| Writer | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
+
+**Iron rule:** Every worker output gets a thinking-tier review before it is considered done.
+
+### Config Loading (Session Start)
+
+1. Read `~/.hyperflow/config.json` (skip if missing — use defaults above)
+2. Auto-detect provider or use `activeProvider` override
+3. Resolve thinking/worker models via priority chain:
+   env var > session command > role override > provider tier > global default
+4. Map resolved models to Agent tool `model:` parameter (Claude Code: `"opus"`, `"sonnet"`, `"haiku"`)
+
+### Dispatching Subagents
+
+Use the resolved model for each role:
+- Workers (implementer/searcher/writer): `model: "<resolved-worker>"`
+- Reviewers (reviewer/debugger): `model: "<resolved-thinking>"`
+
+For Claude Code, this maps to: `model: "sonnet"` for workers, `model: "opus"` for reviewers (default).
+For other providers, the skill text references the model by its provider-specific ID.
+
+### Runtime Switching
+
+Users can change models mid-session without editing config:
+- `hyperflow: thinking <model>` / `hyperflow: worker <model>`
+- `hyperflow: models` to show current config
+- `hyperflow: reset models` to revert to config defaults
 
 ## Layer 3: Orchestrator Pattern
 
