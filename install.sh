@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure interactive reads work when piped from curl
-if [ ! -t 0 ]; then
-  exec < /dev/tty
-fi
+# Open /dev/tty on fd 3 for interactive reads (stdin stays as the pipe for bash)
+exec 3</dev/tty 2>/dev/null || exec 3<&0
 
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
@@ -79,7 +77,7 @@ pick_one() {
   echo ""
   while true; do
     printf "  Choice [1]: "
-    read -r choice
+    read -r choice <&3
     choice="${choice:-1}"
     if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
       PICK_INDEX=$((choice - 1))
@@ -95,7 +93,7 @@ pick_yes_no() {
   [ "$default" = "n" ] && hint="y/N"
 
   printf "${BOLD}%s${RESET} [%s]: " "$prompt" "$hint"
-  read -r answer
+  read -r answer <&3
   answer="${answer:-$default}"
   [[ "$answer" =~ ^[Yy]$ ]]
 }
