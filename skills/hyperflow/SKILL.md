@@ -97,6 +97,22 @@ User request
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md) for the dispatch template.
 6. **Reviewer prompt template.** See [reviewer-prompt.md](reviewer-prompt.md) for the review template.
+7. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
+   - `⚡ [Implementer] Creating auth middleware`
+   - `⚡ [Reviewer] Reviewing auth middleware output`
+   - `⚡ [Searcher] Finding related test files`
+   - `⚡ [Debugger] Investigating test failure in auth.test.ts`
+   - `⚡ [Writer] Generating API documentation`
+   Format: `⚡ [Role] Short description of what this agent will do`
+8. **Usage tracking.** Track every agent dispatch during the task. After the task completes, print a usage summary:
+   ```
+   ── Hyperflow Usage ──────────────────────
+   Thinking (Opus 4.6)    2 agents  (1 reviewer, 1 debugger)
+   Worker   (Sonnet 4.6)  3 agents  (2 implementers, 1 searcher)
+   Total                  5 agents
+   ─────────────────────────────────────────
+   ```
+   Include the model names from the current config. Break down by role in parentheses.
 
 ### Learning Injection Format
 
@@ -242,3 +258,5 @@ Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Rev
 - Ask more than one question per message (during brainstorming)
 - Skip the alternatives step and jump to a single solution (during brainstorming)
 - Add features the user didn't ask for
+- Dispatch an agent without printing `⚡ [Role] description` first
+- Finish a task without printing the usage summary
