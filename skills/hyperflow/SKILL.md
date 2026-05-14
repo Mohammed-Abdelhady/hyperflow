@@ -104,17 +104,27 @@ User request
     |-- Design/creative -> Layer 4: Brainstorming
     |-- Implementation -> Continue below
     |
-[Opus] Decompose -> identify independent sub-tasks
+[Opus] RESEARCH PHASE — dispatch searcher agents to explore relevant code,
+    |   understand existing patterns, find dependencies, read configs
     |
-[Opus] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md for each sub-task
+[Opus] PLAN — decompose into sub-tasks based on research findings
+    |
+[Opus] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md
+    |   (detailed, comprehensive — includes research findings, file paths,
+    |    dependencies discovered, acceptance criteria, sub-task checklist)
     |
 [Opus] Dispatch Sonnet workers (parallel where independent)
     |
 [Sonnet workers] Execute in parallel -> return results + notes
     |
-[Opus] UPDATE task files (check sub-tasks, add progress/learnings)
+[Opus] UPDATE task files dynamically:
+    |   - Check off completed sub-tasks
+    |   - Add new sub-tasks discovered during implementation
+    |   - Remove sub-tasks that turned out unnecessary
+    |   - Add progress notes and learnings
+    |   - Update status (in-progress / blocked / in-review)
     |
-[Opus] Review each worker's output
+[Opus] Review each worker's output (multi-level)
     |
 [Opus] Synthesize learnings -> craft context for next batch
     |
