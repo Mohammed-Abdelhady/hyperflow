@@ -3,38 +3,99 @@ set -euo pipefail
 
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
+CONFIG_FILE="$HOME/.hyperflow/config.json"
 SKILL_DIR="skills/hyperflow"
 
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
 DIM='\033[2m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-info()  { printf "${GREEN}%s${RESET} %s\n" ">" "$1"; }
-warn()  { printf "${YELLOW}%s${RESET} %s\n" "!" "$1"; }
-step()  { printf "${DIM}%s${RESET}\n" "$1"; }
+info()    { printf "${GREEN}%s${RESET} %s\n" ">" "$1"; }
+warn()    { printf "${YELLOW}%s${RESET} %s\n" "!" "$1"; }
+step()    { printf "${DIM}%s${RESET}\n" "$1"; }
+header()  { printf "\n${BOLD}%s${RESET}\n\n" "$1"; }
+option()  { printf "  ${CYAN}[%s]${RESET} %s" "$1" "$2"; [ -n "${3:-}" ] && printf " ${DIM}%s${RESET}" "$3"; echo; }
 
 PROVIDERS=()
 PROVIDER_PATHS=()
+PROVIDER_KEYS=()
+
+SELECTED_THINKING=""
+SELECTED_WORKER=""
+SECURITY_ENABLED="true"
+
+# ─── Provider Detection ───
 
 detect_providers() {
-  local name path
-  declare -A candidates=(
-    ["Cursor"]="$HOME/.cursor/skills"
-    ["OpenCode"]="$HOME/.opencode/skills"
-    ["Antigravity"]="$HOME/.antigravity/skills"
-  )
+  local name path key
+  local -a names=("Cursor" "OpenCode" "Antigravity")
+  local -a paths=("$HOME/.cursor/skills" "$HOME/.opencode/skills" "$HOME/.antigravity/skills")
+  local -a keys=("cursor" "opencode" "antigravity")
 
-  for name in Cursor OpenCode Antigravity; do
-    path="${candidates[$name]}"
+  for i in "${!names[@]}"; do
+    name="${names[$i]}"
+    path="${paths[$i]}"
+    key="${keys[$i]}"
     parent="$(dirname "$path")"
     if [ -d "$parent" ]; then
       PROVIDERS+=("$name")
       PROVIDER_PATHS+=("$path")
+      PROVIDER_KEYS+=("$key")
     fi
   done
 }
+
+# ─── Prompt Helpers ───
+
+pick_one() {
+  local prompt="$1"
+  shift
+  local options=("$@")
+  local count=${#options[@]}
+
+  printf "${BOLD}%s${RESET}\n" "$prompt"
+  echo ""
+
+  for i in "${!options[@]}"; do
+    local num=$((i + 1))
+    local entry="${options[$i]}"
+    local label="${entry%%|*}"
+    local desc="${entry#*|}"
+    if [ "$label" = "$desc" ]; then
+      option "$num" "$label"
+    else
+      option "$num" "$label" "$desc"
+    fi
+  done
+
+  echo ""
+  while true; do
+    printf "  Choice [1]: "
+    read -r choice
+    choice="${choice:-1}"
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
+      PICK_INDEX=$((choice - 1))
+      return
+    fi
+    printf "  ${YELLOW}Enter 1-%d${RESET}\n" "$count"
+  done
+}
+
+pick_yes_no() {
+  local prompt="$1" default="${2:-y}"
+  local hint="Y/n"
+  [ "$default" = "n" ] && hint="y/N"
+
+  printf "${BOLD}%s${RESET} [%s]: " "$prompt" "$hint"
+  read -r answer
+  answer="${answer:-$default}"
+  [[ "$answer" =~ ^[Yy]$ ]]
+}
+
+# ─── Clone / Update ───
 
 clone_or_update() {
   if [ -d "$INSTALL_DIR/.git" ]; then
@@ -46,6 +107,8 @@ clone_or_update() {
     git clone --quiet "$REPO_URL" "$INSTALL_DIR"
   fi
 }
+
+# ─── Link Provider ───
 
 link_provider() {
   local name="$1" skills_dir="$2"
@@ -72,12 +135,163 @@ link_provider() {
   info "$name — linked"
 }
 
+# ─── Model Selection ───
+
+configure_models_claude_code() {
+  header "Model Configuration — Claude Code"
+
+  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
+    "Opus 4.6|Pinned Opus — Hyperflow default" \
+    "Opus 4.7|Latest Opus" \
+    "Sonnet 4.6|Cost savings — less capable for review"
+  local thinking_options=("opus-4-6" "opus-4-7" "sonnet-4-6")
+  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
+
+  echo ""
+
+  pick_one "Worker model (implementer, searcher, writer):" \
+    "Sonnet 4.6|Latest Sonnet — Hyperflow default" \
+    "Haiku 4.5|Fast and cheap for simple tasks"
+  local worker_options=("sonnet-4-6" "haiku-4-5")
+  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
+}
+
+configure_models_cursor() {
+  header "Model Configuration — Cursor"
+
+  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
+    "Claude 4.6 Opus|Hyperflow default" \
+    "Claude 4.7 Opus|Requires Max Mode" \
+    "GPT-5.5|Latest GPT" \
+    "Gemini 3.1 Pro|Standard availability"
+  local thinking_options=("claude-4.6-opus" "claude-4.7-opus" "gpt-5.5" "gemini-3.1-pro")
+  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
+
+  echo ""
+
+  pick_one "Worker model (implementer, searcher, writer):" \
+    "Claude 4.6 Sonnet|Hyperflow default" \
+    "Claude 4.5 Haiku|Fast and cheap" \
+    "GPT-5.4 Mini|Cost-efficient" \
+    "Gemini 3 Flash|Fast and cheap"
+  local worker_options=("claude-4.6-sonnet" "claude-4.5-haiku" "gpt-5.4-mini" "gemini-3-flash")
+  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
+}
+
+configure_models_opencode() {
+  header "Model Configuration — OpenCode"
+
+  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
+    "Claude Opus 4.6|Hyperflow default" \
+    "Claude Opus 4.7|Latest Opus" \
+    "GPT-5.5|Latest GPT" \
+    "Gemini 3.1 Pro|2M context window"
+  local thinking_options=("anthropic/claude-opus-4-6" "anthropic/claude-opus-4-7" "openai/gpt-5.5" "google-vertex-ai/gemini-3.1-pro")
+  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
+
+  echo ""
+
+  pick_one "Worker model (implementer, searcher, writer):" \
+    "Claude Sonnet 4.6|Hyperflow default" \
+    "Claude Haiku 4.5|Fast and cheap" \
+    "GPT-5.4 Mini|Cost-efficient" \
+    "Gemini 3 Flash|Fast and cheap"
+  local worker_options=("anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" "openai/gpt-5.4-mini" "google-vertex-ai/gemini-3-flash")
+  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
+}
+
+configure_models_antigravity() {
+  header "Model Configuration — Antigravity"
+
+  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
+    "Gemini 3.1 Pro|2M context — Hyperflow default" \
+    "Gemini 3.1 Pro (Low)|Lighter variant" \
+    "Claude Opus 4.6|Free tier with limits"
+  local thinking_options=("gemini-3.1-pro" "gemini-3.1-pro-low" "claude-opus-4.6")
+  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
+
+  echo ""
+
+  pick_one "Worker model (implementer, searcher, writer):" \
+    "Gemini 3 Flash|Fast and cheap — Hyperflow default" \
+    "Claude Sonnet 4.6|Stronger for refactors" \
+    "GPT-OSS 120B|Open-weight"
+  local worker_options=("gemini-3-flash" "claude-sonnet-4.6" "gpt-oss-120b")
+  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
+}
+
+# ─── Security ───
+
+configure_security() {
+  header "Security"
+
+  step "Hyperflow's security layer prevents workers from:"
+  step "  - Accessing sensitive files (.env, *.pem, ~/.ssh/*, ...)"
+  step "  - Running dangerous commands (rm -rf, sudo, force push, ...)"
+  step "  - Hardcoding secrets in source code"
+  echo ""
+
+  if pick_yes_no "Enable security layer?" "y"; then
+    SECURITY_ENABLED="true"
+    info "Security enabled"
+  else
+    SECURITY_ENABLED="false"
+    warn "Security disabled — workers have no containment"
+  fi
+}
+
+# ─── Write Config ───
+
+write_config() {
+  local provider_key="${1:-}"
+
+  mkdir -p "$HOME/.hyperflow"
+
+  if [ -f "$CONFIG_FILE" ]; then
+    if ! pick_yes_no "Config already exists at $CONFIG_FILE. Overwrite?" "n"; then
+      step "Keeping existing config"
+      return
+    fi
+  fi
+
+  if [ -n "$provider_key" ]; then
+    cat > "$CONFIG_FILE" <<EOF
+{
+  "activeProvider": "$provider_key",
+  "defaults": {
+    "thinking": "$SELECTED_THINKING",
+    "worker": "$SELECTED_WORKER"
+  },
+  "security": {
+    "enabled": $SECURITY_ENABLED
+  }
+}
+EOF
+  else
+    cat > "$CONFIG_FILE" <<EOF
+{
+  "defaults": {
+    "thinking": "$SELECTED_THINKING",
+    "worker": "$SELECTED_WORKER"
+  },
+  "security": {
+    "enabled": $SECURITY_ENABLED
+  }
+}
+EOF
+  fi
+
+  info "Config saved to $CONFIG_FILE"
+}
+
+# ─── Summary ───
+
 print_summary() {
-  echo ""
-  printf "${BOLD}Hyperflow installed${RESET}\n"
-  echo ""
-  step "Location: $INSTALL_DIR"
-  step "Update:   git -C $INSTALL_DIR pull"
+  header "Hyperflow installed"
+
+  step "Location:  $INSTALL_DIR"
+  step "Config:    $CONFIG_FILE"
+  step "Update:    git -C $INSTALL_DIR pull"
   echo ""
 
   if [ ${#PROVIDERS[@]} -gt 0 ]; then
@@ -85,17 +299,23 @@ print_summary() {
     for i in "${!PROVIDERS[@]}"; do
       step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
     done
+    echo ""
   fi
 
+  step "Models:    thinking=$SELECTED_THINKING  worker=$SELECTED_WORKER"
+  step "Security:  $( [ "$SECURITY_ENABLED" = "true" ] && echo "enabled" || echo "disabled" )"
   echo ""
-  step "Claude Code users: use 'claude plugin add Mohammed-Abdelhady/hyperflow' instead."
+
+  step "Change models mid-session:  hyperflow: thinking <model>"
+  step "Toggle security:            hyperflow: security off/on"
+  step "Claude Code users:          claude plugin add Mohammed-Abdelhady/hyperflow"
   echo ""
 }
 
+# ─── Main ───
+
 main() {
-  echo ""
-  printf "${BOLD}Hyperflow Installer${RESET}\n"
-  echo ""
+  header "Hyperflow Installer"
 
   detect_providers
 
@@ -103,9 +323,7 @@ main() {
     warn "No supported providers detected (Cursor, OpenCode, Antigravity)."
     warn "Claude Code users should run: claude plugin add Mohammed-Abdelhady/hyperflow"
     echo ""
-    printf "Install anyway to ${DIM}$INSTALL_DIR${RESET}? [y/N] "
-    read -r answer
-    if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+    if ! pick_yes_no "Install anyway to $INSTALL_DIR?" "n"; then
       echo "Aborted."
       exit 0
     fi
@@ -113,12 +331,48 @@ main() {
     info "Detected: ${PROVIDERS[*]}"
   fi
 
+  # Clone / update
   clone_or_update
 
+  # Link providers
   for i in "${!PROVIDERS[@]}"; do
     link_provider "${PROVIDERS[$i]}" "${PROVIDER_PATHS[$i]}"
   done
 
+  # Configure — pick provider for model selection
+  local config_provider=""
+  local config_provider_key=""
+
+  if [ ${#PROVIDERS[@]} -eq 1 ]; then
+    config_provider="${PROVIDERS[0]}"
+    config_provider_key="${PROVIDER_KEYS[0]}"
+  elif [ ${#PROVIDERS[@]} -gt 1 ]; then
+    header "Setup"
+    local provider_labels=()
+    for i in "${!PROVIDERS[@]}"; do
+      provider_labels+=("${PROVIDERS[$i]}|Configure models for this provider")
+    done
+    pick_one "Which provider is your primary?" "${provider_labels[@]}"
+    config_provider="${PROVIDERS[$PICK_INDEX]}"
+    config_provider_key="${PROVIDER_KEYS[$PICK_INDEX]}"
+  fi
+
+  # Model selection per provider
+  case "$config_provider" in
+    Cursor)       configure_models_cursor ;;
+    OpenCode)     configure_models_opencode ;;
+    Antigravity)  configure_models_antigravity ;;
+    *)            configure_models_claude_code ;;
+  esac
+
+  # Security
+  configure_security
+
+  # Write config
+  echo ""
+  write_config "$config_provider_key"
+
+  # Summary
   print_summary
 }
 

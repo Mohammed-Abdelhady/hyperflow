@@ -71,10 +71,32 @@ claude plugin add Mohammed-Abdelhady/hyperflow
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
-
-Auto-detects installed providers, clones once, symlinks everywhere. Update with `git -C ~/.hyperflow/repo pull`.
 </td></tr>
 </table>
+
+The install script walks you through setup:
+
+```
+> Detected: Cursor
+
+Thinking model (orchestrator, reviewer, debugger):
+  [1] Claude 4.6 Opus — Hyperflow default
+  [2] Claude 4.7 Opus — Requires Max Mode
+  [3] GPT-5.5 — Latest GPT
+  [4] Gemini 3.1 Pro — Standard availability
+
+Worker model (implementer, searcher, writer):
+  [1] Claude 4.6 Sonnet — Hyperflow default
+  [2] Claude 4.5 Haiku — Fast and cheap
+  [3] GPT-5.4 Mini — Cost-efficient
+  [4] Gemini 3 Flash — Fast and cheap
+
+Enable security layer? [Y/n]:
+
+> Config saved to ~/.hyperflow/config.json
+```
+
+Update all providers at once: `git -C ~/.hyperflow/repo pull`
 
 **Activate:**
 
@@ -83,23 +105,10 @@ You: /hyperflow
 [Hyperflow loaded — autonomous orchestration active]
 ```
 
-That's it. Hyperflow runs for the entire conversation. It detects your platform and picks sensible model defaults automatically.
-
 <details>
-<summary>Optional: configure models manually</summary>
+<summary>Change models later</summary>
 
-Create `~/.hyperflow/config.json`:
-
-```json
-{
-  "defaults": {
-    "thinking": "opus-4-6",
-    "worker": "sonnet-4-6"
-  }
-}
-```
-
-Or switch mid-session:
+Edit `~/.hyperflow/config.json` directly, re-run the installer, or switch mid-session:
 
 ```
 hyperflow: thinking opus-4-7

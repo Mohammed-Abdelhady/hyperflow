@@ -14,10 +14,61 @@ claude plugin add Mohammed-Abdelhady/hyperflow
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-The install script:
-1. Clones the repo to `~/.hyperflow/repo/`
-2. Auto-detects which providers are installed
-3. Symlinks the skill into each provider's skills directory
+The install script walks you through the full setup:
+
+1. **Clones** the repo to `~/.hyperflow/repo/`
+2. **Detects** which providers are installed (Cursor, OpenCode, Antigravity)
+3. **Symlinks** the skill into each provider's skills directory
+4. **Asks** you to pick thinking and worker models from your provider's catalog
+5. **Asks** whether to enable the security layer
+6. **Writes** your choices to `~/.hyperflow/config.json`
+
+```
+Hyperflow Installer
+
+> Detected: Cursor
+
+  Cursor — linked
+
+Model Configuration — Cursor
+
+Thinking model (orchestrator, reviewer, debugger):
+  [1] Claude 4.6 Opus — Hyperflow default
+  [2] Claude 4.7 Opus — Requires Max Mode
+  [3] GPT-5.5 — Latest GPT
+  [4] Gemini 3.1 Pro — Standard availability
+
+  Choice [1]: 1
+
+Worker model (implementer, searcher, writer):
+  [1] Claude 4.6 Sonnet — Hyperflow default
+  [2] Claude 4.5 Haiku — Fast and cheap
+  [3] GPT-5.4 Mini — Cost-efficient
+  [4] Gemini 3 Flash — Fast and cheap
+
+  Choice [1]: 1
+
+Security
+
+  Hyperflow's security layer prevents workers from:
+    - Accessing sensitive files (.env, *.pem, ~/.ssh/*, ...)
+    - Running dangerous commands (rm -rf, sudo, force push, ...)
+    - Hardcoding secrets in source code
+
+Enable security layer? [Y/n]: y
+> Security enabled
+
+> Config saved to ~/.hyperflow/config.json
+
+Hyperflow installed
+
+  Location:  ~/.hyperflow/repo
+  Config:    ~/.hyperflow/config.json
+  Update:    git -C ~/.hyperflow/repo pull
+
+  Models:    thinking=claude-4.6-opus  worker=claude-4.6-sonnet
+  Security:  enabled
+```
 
 **Update all providers at once:**
 
@@ -26,6 +77,12 @@ git -C ~/.hyperflow/repo pull
 ```
 
 Because it's a symlink, every provider picks up changes immediately — no re-copying.
+
+**Re-run setup** to change models or security:
+
+```bash
+~/.hyperflow/repo/install.sh
+```
 
 <details>
 <summary>Manual installation (any provider)</summary>
@@ -75,26 +132,7 @@ This eliminates all permission prompts and pins the main session to Opus 4.6.
 
 ## Model Configuration
 
-After installing, Hyperflow creates a config file at `~/.hyperflow/config.json` to store your model preferences.
-
-### First-Time Setup
-
-On first run, Hyperflow auto-detects your platform and presents a model picker:
-
-```
-Detected: Claude Code
-
-Select thinking model (orchestrator, reviewer, debugger):
-  [1] opus-4-6 (default)
-  [2] opus-4-7
-  [3] sonnet-4-6
-
-Select worker model (implementer, searcher, writer):
-  [1] sonnet-4-6 (default)
-  [2] haiku-4-5
-```
-
-Your selections are saved to `~/.hyperflow/config.json`.
+The install script creates `~/.hyperflow/config.json` with your model choices. You can also edit it manually or re-run the installer at any time.
 
 ### Manual Configuration
 
