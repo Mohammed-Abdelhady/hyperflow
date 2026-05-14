@@ -2,23 +2,46 @@
 
 ## Quick Install
 
-### Option 1: Claude Code Plugin (Recommended)
+### Claude Code
 
 ```bash
-# Install from GitHub
 claude plugin add Mohammed-Abdelhady/hyperflow
 ```
 
-### Option 2: Manual Installation
-
-Clone the repo and symlink to your Claude Code skills directory:
+### Cursor / OpenCode / Antigravity
 
 ```bash
-git clone https://github.com/Mohammed-Abdelhady/hyperflow.git ~/.claude/plugins/hyperflow
-
-# Or copy the skill directly
-cp -r hyperflow/skills/hyperflow ~/.claude/skills/
+curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
+
+The install script:
+1. Clones the repo to `~/.hyperflow/repo/`
+2. Auto-detects which providers are installed
+3. Symlinks the skill into each provider's skills directory
+
+**Update all providers at once:**
+
+```bash
+git -C ~/.hyperflow/repo pull
+```
+
+Because it's a symlink, every provider picks up changes immediately — no re-copying.
+
+<details>
+<summary>Manual installation (any provider)</summary>
+
+Clone the repo and symlink to your provider's skills directory:
+
+```bash
+git clone https://github.com/Mohammed-Abdelhady/hyperflow.git ~/.hyperflow/repo
+
+# Then symlink for your provider(s):
+ln -s ~/.hyperflow/repo/skills/hyperflow ~/.claude/skills/hyperflow
+ln -s ~/.hyperflow/repo/skills/hyperflow ~/.cursor/skills/hyperflow
+ln -s ~/.hyperflow/repo/skills/hyperflow ~/.opencode/skills/hyperflow
+ln -s ~/.hyperflow/repo/skills/hyperflow ~/.antigravity/skills/hyperflow
+```
+</details>
 
 ## Recommended Settings
 

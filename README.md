@@ -66,26 +66,13 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 claude plugin add Mohammed-Abdelhady/hyperflow
 ```
 </td></tr>
-<tr><td><strong>Cursor</strong></td><td>
+<tr><td><strong>Cursor / OpenCode / Antigravity</strong></td><td>
 
-Copy the skill to your Cursor rules directory:
 ```bash
-cp -r skills/hyperflow ~/.cursor/skills/
+curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
-</td></tr>
-<tr><td><strong>OpenCode</strong></td><td>
 
-Copy the skill to your OpenCode skills directory:
-```bash
-cp -r skills/hyperflow ~/.opencode/skills/
-```
-</td></tr>
-<tr><td><strong>Antigravity</strong></td><td>
-
-Copy the skill to your Antigravity skills directory:
-```bash
-cp -r skills/hyperflow ~/.antigravity/skills/
-```
+Auto-detects installed providers, clones once, symlinks everywhere. Update with `git -C ~/.hyperflow/repo pull`.
 </td></tr>
 </table>
 
