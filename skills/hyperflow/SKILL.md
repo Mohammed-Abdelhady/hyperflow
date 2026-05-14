@@ -114,47 +114,54 @@ Every implementation task follows this flow. No exceptions.
 ```
 User request
     |
-[Opus] Is this a design question or implementation?
+[Thinking] Is this a design question or implementation?
     |
     |-- Design/creative -> Layer 4: Brainstorming
     |-- Implementation -> Continue below
     |
-[Opus] RESEARCH PHASE — dispatch searcher agents to explore relevant code,
+[Thinking] RESEARCH — dispatch searcher agents to explore relevant code,
     |   understand existing patterns, find dependencies, read configs
     |
-[Opus] PLAN — decompose into sub-tasks based on research findings
+[Thinking] PLAN — decompose into sub-tasks based on research findings
     |
-[Opus] VERIFY — present task breakdown to user via AskUserQuestion:
-    |   "Here's what I'll build: [summary]. Correct?"
-    |   (This is clarification, not confirmation — validating understanding)
+[Thinking] ASK QUESTIONS — clarify via AskUserQuestion if anything ambiguous
+    |   (This is the thinking model's job — workers never ask questions)
     |
-[Opus] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md
-    |   (detailed, comprehensive — includes research findings, file paths,
-    |    dependencies discovered, acceptance criteria, sub-task checklist)
+[Thinking] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md
+    |   (thinking model creates these — never delegated to workers)
     |
-[Opus] Dispatch Sonnet workers (parallel where independent)
+[Thinking] Dispatch worker-tier agents (parallel where independent)
     |
-[Sonnet workers] Execute in parallel -> return results + notes
+[Workers] Execute in parallel -> return results + notes
     |
-[Opus] UPDATE task files dynamically:
+[Thinking] REVIEW BATCH — dispatch thinking-tier reviewer (model: "<resolved-thinking>")
+    |   ⚠️ MANDATORY after EVERY batch. No batch completes without this.
+    |   Simple: L1-2, Medium: L1-3, Complex: L1-5
+    |   APPROVED → continue | NEEDS_FIX → re-dispatch worker to fix
+    |
+[Thinking] UPDATE task files:
     |   - Check off completed sub-tasks
     |   - Add new sub-tasks discovered during implementation
     |   - Remove sub-tasks that turned out unnecessary
     |   - Add progress notes and learnings
-    |   - Update status (in-progress / blocked / in-review)
     |
-[Thinking] REVIEW — dispatch thinking-tier reviewer (model: "<resolved-thinking>")
-    |   Every batch MUST have a thinking-tier review. No exceptions.
-    |   Simple: L1-2, Medium: L1-3, Complex: L1-5
+[Thinking] Synthesize learnings -> craft context for next batch
     |
-[Opus] Synthesize learnings -> craft context for next batch
+[Thinking] Dispatch next batch (if needed) with accumulated context
     |
-[Opus] Dispatch next batch (if needed) with accumulated context
+    |   ┌─────────────────────────────────────────────┐
+    |   │ LOOP: Workers execute → Thinking reviews    │
+    |   │ → update tasks → synthesize → next batch    │
+    |   │ Repeat until all sub-tasks complete         │
+    |   └─────────────────────────────────────────────┘
     |
-[Thinking] FINAL REVIEW — thinking-tier integration review (model: "<resolved-thinking>")
+[Thinking] FINAL REVIEW — integration review across ALL changes (model: "<resolved-thinking>")
     |
-[Opus] DELETE completed task files from .hyperflow/tasks/
+[Thinking] DELETE completed task files from .hyperflow/tasks/
 ```
+
+**The thinking model owns:** questions, task creation, reviews, task updates, learnings, coordination.
+**Workers only:** execute code changes. Nothing else.
 
 ### Rules
 
