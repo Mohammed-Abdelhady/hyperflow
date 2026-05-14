@@ -130,6 +130,10 @@ Override the model for specific roles within a provider:
 
 ```json
 {
+  "defaults": {
+    "thinking": "opus-4-6",
+    "worker": "sonnet-4-6"
+  },
   "providers": {
     "claude-code": {
       "thinking": "opus-4-6",
@@ -168,6 +172,56 @@ hyperflow: reset models          # Revert to config defaults
 ```
 
 See [providers.md](providers.md) for the full list of available models per platform.
+
+## Security Configuration
+
+Hyperflow's security layer is enabled by default. It prevents workers from accessing sensitive files, running dangerous commands, and hardcoding secrets.
+
+### Security: Customize Blocked Patterns
+
+Add project-specific patterns or remove defaults that don't apply:
+
+```json
+{
+  "defaults": {
+    "thinking": "opus-4-6",
+    "worker": "sonnet-4-6"
+  },
+  "security": {
+    "enabled": true,
+    "blockedFiles": {
+      "add": ["internal/secrets/**", "*.vault"],
+      "remove": []
+    },
+    "blockedCommands": {
+      "add": ["docker rm -f"],
+      "remove": []
+    },
+    "secretPatterns": {
+      "add": ["MYAPP_KEY_[A-Z0-9]{32}"],
+      "remove": []
+    }
+  }
+}
+```
+
+The `add`/`remove` pattern extends the built-in defaults — you can't accidentally remove critical rules by setting your own list.
+
+### Disable Security
+
+Per-session (conversation command):
+```
+hyperflow: security off
+```
+
+Permanently (config):
+```json
+{
+  "security": {
+    "enabled": false
+  }
+}
+```
 
 ## Optional: CLAUDE.md Reinforcement
 
