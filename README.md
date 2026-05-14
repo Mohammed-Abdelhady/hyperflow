@@ -16,6 +16,10 @@
   <a href="docs/orchestration.md">Orchestration</a>
 </p>
 
+<p align="center">
+  <code>v1.1.0</code> · <a href="CHANGELOG.md">Changelog</a>
+</p>
+
 ---
 
 ## How It Works
@@ -97,8 +101,6 @@ Enable security layer? [Y/n]:
 
 > Config saved to ~/.hyperflow/config.json
 ```
-
-Update all providers: `git -C ~/.hyperflow/repo pull`
 
 **Activate:**
 
@@ -346,6 +348,25 @@ description: Use when [specific triggering conditions]
 The 9 autonomy rules are in `skills/hyperflow/SKILL.md` under "Layer 1: Autonomy". Add, remove, or modify rules to match your workflow.
 </details>
 
+<details>
+<summary><strong>Release a new version</strong></summary>
+
+The release script reads conventional commits, generates CHANGELOG entries, bumps version across all manifests, and creates a git tag:
+
+```bash
+./scripts/release.sh          # auto-detect bump type from commits
+./scripts/release.sh minor    # force a minor bump
+./scripts/release.sh patch    # force a patch bump
+```
+
+Commit prefixes determine the bump type:
+- `feat:` → minor
+- `fix:`, `refactor:`, `docs:`, `chore:` → patch
+- `BREAKING CHANGE` → major
+
+After running, push with `git push && git push --tags`.
+</details>
+
 ---
 
 ## Project Structure
@@ -361,7 +382,11 @@ hyperflow/
 │   ├── session-memory.md       #   Layer 6: cross-session learnings
 │   ├── task-templates.md       #   Layer 7: decomposition patterns
 │   ├── git-workflow.md         #   Layer 8: branching + auto-commit
-│   └── security.md             #   Layer 9: worker containment
+│   ├── security.md             #   Layer 9: worker containment
+│   └── brainstorming-advanced.md #   Advanced brainstorming framework
+├── scripts/
+│   ├── release.sh             #   Auto-release with changelog generation
+│   └── bump-version.sh        #   Sync version across all manifests
 ├── config/
 │   ├── defaults.json           #   Default model catalogs
 │   └── schema.json             #   Config JSON Schema
@@ -372,9 +397,37 @@ hyperflow/
 ├── .claude-plugin/plugin.json  #   Claude Code plugin manifest
 ├── install.sh                  #   Installer + setup wizard
 ├── package.json
+├── CHANGELOG.md                #   Version history
 ├── LICENSE                     #   MIT
 └── README.md
 ```
+
+---
+
+## Update
+
+<table>
+<tr><td><strong>Claude Code</strong></td><td>
+
+```bash
+claude plugin update hyperflow@hyperflow-marketplace
+```
+</td></tr>
+<tr><td><strong>Other providers</strong></td><td>
+
+```bash
+git -C ~/.hyperflow/repo pull
+```
+
+Or re-run the installer to also reconfigure models and security:
+
+```bash
+~/.hyperflow/repo/install.sh
+```
+</td></tr>
+</table>
+
+Check the [CHANGELOG](CHANGELOG.md) for what's new in each release.
 
 ---
 
