@@ -381,6 +381,27 @@ hyperflow/
 
 ---
 
+## Uninstall
+
+<table>
+<tr><td><strong>Claude Code</strong></td><td>
+
+```bash
+claude plugin remove Mohammed-Abdelhady/hyperflow
+```
+</td></tr>
+<tr><td><strong>All providers</strong></td><td>
+
+```bash
+~/.hyperflow/repo/install.sh --uninstall
+```
+</td></tr>
+</table>
+
+This removes all symlinks, the cloned repo, and config. Session memory at `~/.claude/hyperflow-memory.md` is kept — delete it manually if you want a clean slate.
+
+---
+
 ## Documentation
 
 - [Installation Guide](docs/installation.md) — setup, recommended settings, security config

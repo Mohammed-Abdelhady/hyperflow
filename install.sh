@@ -357,9 +357,77 @@ print_summary() {
   echo ""
 }
 
+# ─── Uninstall ───
+
+uninstall() {
+  header "Hyperflow Uninstaller"
+
+  detect_providers
+
+  local removed=0
+
+  # Remove symlinks for non-Claude-Code providers
+  for i in "${!PROVIDERS[@]}"; do
+    local name="${PROVIDERS[$i]}"
+    local target="${PROVIDER_PATHS[$i]}/hyperflow"
+
+    if [ "$name" = "Claude Code" ]; then
+      step "  Claude Code — use 'claude plugin remove Mohammed-Abdelhady/hyperflow'"
+      continue
+    fi
+
+    if [ -L "$target" ]; then
+      rm "$target"
+      info "$name — symlink removed"
+      removed=$((removed + 1))
+    elif [ -d "$target" ]; then
+      rm -rf "$target"
+      info "$name — directory removed"
+      removed=$((removed + 1))
+    else
+      step "  $name — not installed, skipping"
+    fi
+  done
+
+  # Remove cloned repo
+  if [ -d "$INSTALL_DIR" ]; then
+    rm -rf "$INSTALL_DIR"
+    info "Removed $INSTALL_DIR"
+    removed=$((removed + 1))
+  fi
+
+  # Remove config
+  if [ -f "$CONFIG_FILE" ]; then
+    rm "$CONFIG_FILE"
+    info "Removed $CONFIG_FILE"
+    removed=$((removed + 1))
+  fi
+
+  # Clean up empty ~/.hyperflow dir
+  if [ -d "$HOME/.hyperflow" ] && [ -z "$(ls -A "$HOME/.hyperflow")" ]; then
+    rmdir "$HOME/.hyperflow"
+    step "  Removed empty ~/.hyperflow/"
+  fi
+
+  echo ""
+  if [ $removed -eq 0 ]; then
+    step "Nothing to remove."
+  else
+    info "Hyperflow uninstalled"
+    step "Session memory at ~/.claude/hyperflow-memory.md was kept."
+    step "Delete it manually if you want a clean slate."
+  fi
+  echo ""
+}
+
 # ─── Main ───
 
 main() {
+  if [ "${1:-}" = "--uninstall" ]; then
+    uninstall
+    exit 0
+  fi
+
   header "Hyperflow Installer"
 
   detect_providers

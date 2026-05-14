@@ -301,3 +301,24 @@ Add this to your global `~/.claude/CLAUDE.md` as a fallback:
 ## Verify Installation
 
 Start a new Claude Code session. You should see `hyperflow` in the available skills list. It triggers automatically on every task.
+
+## Uninstall
+
+### Claude Code
+
+```bash
+claude plugin remove Mohammed-Abdelhady/hyperflow
+```
+
+### All other providers
+
+```bash
+~/.hyperflow/repo/install.sh --uninstall
+```
+
+This removes:
+- Symlinks from all detected provider skills directories
+- The cloned repo at `~/.hyperflow/repo/`
+- The config file at `~/.hyperflow/config.json`
+
+Session memory at `~/.claude/hyperflow-memory.md` is preserved. Delete it manually for a clean slate.
