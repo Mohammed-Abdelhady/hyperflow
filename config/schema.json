@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hyperflow Configuration",
+  "description": "Multi-provider model configuration for Hyperflow. Lives at ~/.hyperflow/config.json.",
+  "type": "object",
+  "properties": {
+    "activeProvider": {
+      "description": "Force a specific provider. null = auto-detect at runtime.",
+      "type": ["string", "null"],
+      "enum": ["claude-code", "cursor", "opencode", "antigravity", null],
+      "default": null
+    },
+    "defaults": {
+      "description": "Global fallback models when a provider doesn't specify one.",
+      "type": "object",
+      "properties": {
+        "thinking": {
+          "type": "string",
+          "description": "Default thinking (orchestrator/reviewer/debugger) model.",
+          "default": "opus-4-6"
+        },
+        "worker": {
+          "type": "string",
+          "description": "Default worker (implementer/searcher/writer) model.",
+          "default": "sonnet-4-6"
+        }
+      },
+      "required": ["thinking", "worker"]
+    },
+    "providers": {
+      "description": "Per-provider model configuration.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/providerConfig"
+      }
+    }
+  },
+  "required": ["defaults"],
+  "$defs": {
+    "providerConfig": {
+      "type": "object",
+      "properties": {
+        "models": {
+          "description": "Available models for the install picker. Updated by hybrid fetch.",
+          "type": "object",
+          "properties": {
+            "thinking": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "worker": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "thinking": {
+          "type": "string",
+          "description": "Currently selected thinking model for this provider."
+        },
+        "worker": {
+          "type": "string",
+          "description": "Currently selected worker model for this provider."
+        },
+        "roles": {
+          "description": "Per-role model overrides. Key = role name, value = model ID.",
+          "type": "object",
+          "properties": {
+            "orchestrator": { "type": "string" },
+            "reviewer": { "type": "string" },
+            "debugger": { "type": "string" },
+            "decision-maker": { "type": "string" },
+            "brainstormer": { "type": "string" },
+            "implementer": { "type": "string" },
+            "searcher": { "type": "string" },
+            "writer": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["thinking", "worker"]
+    }
+  }
+}
