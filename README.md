@@ -63,7 +63,7 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 <tr><td><strong>Claude Code</strong></td><td>
 
 ```bash
-claude plugin add Mohammed-Abdelhady/hyperflow
+claude plugin install Mohammed-Abdelhady/hyperflow
 ```
 </td></tr>
 <tr><td><strong>Cursor / OpenCode / Codex / Antigravity</strong></td><td>
@@ -387,7 +387,7 @@ hyperflow/
 <tr><td><strong>Claude Code</strong></td><td>
 
 ```bash
-claude plugin remove Mohammed-Abdelhady/hyperflow
+claude plugin uninstall Mohammed-Abdelhady/hyperflow
 ```
 </td></tr>
 <tr><td><strong>All providers</strong></td><td>

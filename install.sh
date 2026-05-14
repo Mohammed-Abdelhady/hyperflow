@@ -117,7 +117,7 @@ link_provider() {
     if [ -d "$skills_dir/hyperflow" ] || [ -L "$skills_dir/hyperflow" ]; then
       step "  Claude Code — skill already installed"
     else
-      step "  Claude Code — run 'claude plugin add Mohammed-Abdelhady/hyperflow' to install"
+      step "  Claude Code — run 'claude plugin install Mohammed-Abdelhady/hyperflow' to install"
     fi
     return
   fi
@@ -339,7 +339,7 @@ print_summary() {
     step "Providers:"
     for i in "${!PROVIDERS[@]}"; do
       if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
-        step "  Claude Code — plugin (claude plugin add Mohammed-Abdelhady/hyperflow)"
+        step "  Claude Code — plugin (claude plugin install Mohammed-Abdelhady/hyperflow)"
       else
         step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
       fi
@@ -372,7 +372,7 @@ uninstall() {
     local target="${PROVIDER_PATHS[$i]}/hyperflow"
 
     if [ "$name" = "Claude Code" ]; then
-      step "  Claude Code — use 'claude plugin remove Mohammed-Abdelhady/hyperflow'"
+      step "  Claude Code — use 'claude plugin uninstall Mohammed-Abdelhady/hyperflow'"
       continue
     fi
 
