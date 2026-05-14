@@ -50,6 +50,125 @@ Add these to your `~/.claude/settings.json` for the full auto-pilot experience:
 
 This eliminates all permission prompts and pins the main session to Opus 4.6.
 
+## Model Configuration
+
+After installing, Hyperflow creates a config file at `~/.hyperflow/config.json` to store your model preferences.
+
+### First-Time Setup
+
+On first run, Hyperflow auto-detects your platform and presents a model picker:
+
+```
+Detected: Claude Code
+
+Select thinking model (orchestrator, reviewer, debugger):
+  [1] opus-4-6 (default)
+  [2] opus-4-7
+  [3] sonnet-4-6
+
+Select worker model (implementer, searcher, writer):
+  [1] sonnet-4-6 (default)
+  [2] haiku-4-5
+```
+
+Your selections are saved to `~/.hyperflow/config.json`.
+
+### Manual Configuration
+
+Create or edit `~/.hyperflow/config.json` directly:
+
+```json
+{
+  "defaults": {
+    "thinking": "opus-4-6",
+    "worker": "sonnet-4-6"
+  }
+}
+```
+
+### Multi-Provider Setup
+
+If you use multiple platforms, configure each one:
+
+```json
+{
+  "activeProvider": null,
+  "defaults": {
+    "thinking": "opus-4-6",
+    "worker": "sonnet-4-6"
+  },
+  "providers": {
+    "claude-code": {
+      "thinking": "opus-4-6",
+      "worker": "sonnet-4-6",
+      "roles": {}
+    },
+    "cursor": {
+      "thinking": "claude-4.6-opus",
+      "worker": "claude-4.6-sonnet",
+      "roles": {}
+    },
+    "opencode": {
+      "thinking": "anthropic/claude-opus-4-6",
+      "worker": "anthropic/claude-sonnet-4-6",
+      "roles": {}
+    },
+    "antigravity": {
+      "thinking": "gemini-3.1-pro",
+      "worker": "gemini-3-flash",
+      "roles": {}
+    }
+  }
+}
+```
+
+Set `activeProvider` to force a specific platform, or leave `null` for auto-detection.
+
+### Role Overrides
+
+Override the model for specific roles within a provider:
+
+```json
+{
+  "providers": {
+    "claude-code": {
+      "thinking": "opus-4-6",
+      "worker": "sonnet-4-6",
+      "roles": {
+        "reviewer": "opus-4-7",
+        "searcher": "haiku-4-5"
+      }
+    }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+Override models per-session without editing config:
+
+```bash
+# Force a specific provider
+HYPERFLOW_PROVIDER=claude-code claude
+
+# Override models for this session
+HYPERFLOW_THINKING_MODEL=opus-4-7 claude
+HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
+```
+
+### Runtime Switching
+
+Change models during a conversation:
+
+```
+hyperflow: thinking opus-4-7     # Switch thinking model
+hyperflow: worker haiku-4-5      # Switch worker model
+hyperflow: models                # Show current config
+hyperflow: reset models          # Revert to config defaults
+```
+
+See [providers.md](providers.md) for the full list of available models per platform.
+
 ## Optional: CLAUDE.md Reinforcement
 
 Add this to your global `~/.claude/CLAUDE.md` as a fallback:
