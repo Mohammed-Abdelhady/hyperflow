@@ -64,6 +64,12 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
+Works immediately with defaults (Opus 4.6 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
+```
+
 ### Cursor / OpenCode / Codex / Antigravity
 
 ```bash
