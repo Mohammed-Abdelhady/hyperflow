@@ -4,37 +4,124 @@
 
 Not every task needs the most powerful model. Hyperflow routes tasks to the right model based on what the task requires:
 
-- **Opus** handles thinking: orchestration, review, debugging, architecture decisions
-- **Sonnet** handles doing: implementation, search, writing, boilerplate
+- **Thinking models** handle reasoning: orchestration, review, debugging, architecture decisions
+- **Worker models** handle execution: implementation, search, writing, boilerplate
 
-This keeps costs lower and speed higher without sacrificing quality — because Opus reviews everything Sonnet produces.
+This keeps costs lower and speed higher without sacrificing quality — because every worker output gets a thinking-model review.
 
 ## Routing Table
 
-| Role | Model | Examples |
-|------|-------|----------|
-| Orchestrator | Opus | Decomposing "build a dashboard" into 5 parallel tasks |
-| Reviewer | Opus | Checking if a worker's component matches the spec |
-| Debugger | Opus | Root-causing why tests fail after a refactor |
-| Decision-maker | Opus | Choosing between REST vs tRPC for a new API |
-| Implementer | Sonnet | Writing a React component from a clear spec |
-| Searcher | Sonnet | Finding all files that import a specific module |
-| Writer | Sonnet | Creating test files, config files, documentation |
+| Role | Tier | Default (Claude Code) | Examples |
+|------|------|----------------------|----------|
+| Orchestrator | Thinking | Opus 4.6 | Decomposing "build a dashboard" into 5 parallel tasks |
+| Reviewer | Thinking | Opus 4.6 | Checking if a worker's component matches the spec |
+| Debugger | Thinking | Opus 4.6 | Root-causing why tests fail after a refactor |
+| Decision-maker | Thinking | Opus 4.6 | Choosing between REST vs tRPC for a new API |
+| Brainstormer | Thinking | Opus 4.6 | Exploring 2-3 approaches with trade-offs |
+| Implementer | Worker | Sonnet 4.6 | Writing a React component from a clear spec |
+| Searcher | Worker | Sonnet 4.6 | Finding all files that import a specific module |
+| Writer | Worker | Sonnet 4.6 | Creating test files, config files, documentation |
+
+## Multi-Provider Support
+
+Hyperflow works across four platforms. Each has its own default models:
+
+| Provider | Default Thinking | Default Worker |
+|----------|-----------------|----------------|
+| **Claude Code** | Opus 4.6 | Sonnet 4.6 |
+| **Cursor** | Claude 4.6 Opus | Claude 4.6 Sonnet |
+| **OpenCode** | anthropic/claude-opus-4-6 | anthropic/claude-sonnet-4-6 |
+| **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash |
+
+See [providers.md](providers.md) for the full model list per platform.
 
 ## How It Works in Practice
 
 When you give Claude a task:
 
-1. **Opus** (the orchestrator) receives your request
-2. **Opus** breaks it into sub-tasks and identifies which can run in parallel
-3. **Opus** dispatches **Sonnet** workers with self-contained prompts
-4. **Sonnet** workers execute and return results + notes
-5. **Opus** reviews each output — approves or sends back for fixes
-6. **Opus** synthesizes learnings and injects them into the next batch
-7. Repeat until done
+1. **Config loaded** — Hyperflow reads `~/.hyperflow/config.json` and auto-detects the provider
+2. **Models resolved** — thinking/worker models determined via the priority chain
+3. **Thinking model** (orchestrator) receives your request
+4. **Thinking model** breaks it into sub-tasks and identifies which can run in parallel
+5. **Thinking model** dispatches **worker model** agents with self-contained prompts
+6. **Worker model** agents execute and return results + notes
+7. **Thinking model** reviews each output — approves or sends back for fixes
+8. **Thinking model** synthesizes learnings and injects them into the next batch
+9. Repeat until done
+
+## Model Resolution Priority
+
+When Hyperflow needs to determine which model to use for a role:
+
+| Priority | Source | Scope | Example |
+|---|---|---|---|
+| 1 | Per-task inline request | Single task | "Fix this bug using opus-4-7" |
+| 2 | Session command | Current session | `hyperflow: thinking opus-4-7` |
+| 3 | Environment variable | Current session | `HYPERFLOW_THINKING_MODEL=opus-4-7` |
+| 4 | Role override | Persistent | `providers.claude-code.roles.reviewer: "opus-4-7"` |
+| 5 | Provider tier | Persistent | `providers.claude-code.thinking: "opus-4-6"` |
+| 6 | Global default | Persistent | `defaults.thinking: "opus-4-6"` |
 
 ## Customization
 
-To change model assignments, edit the routing table in `skills/hyperflow/SKILL.md` under "Layer 2: Model Routing".
+### Change default models
 
-To pin specific model versions, update the text labels (e.g., "Opus 4.6") and ensure your `~/.claude/settings.json` has `"model": "claude-opus-4-6"` for the main session.
+Edit `~/.hyperflow/config.json`:
+
+```json
+{
+  "defaults": {
+    "thinking": "opus-4-7",
+    "worker": "sonnet-4-6"
+  }
+}
+```
+
+### Override a specific role
+
+Give the reviewer a more powerful model while keeping other thinking roles on the default:
+
+```json
+{
+  "providers": {
+    "claude-code": {
+      "thinking": "opus-4-6",
+      "worker": "sonnet-4-6",
+      "roles": {
+        "reviewer": "opus-4-7"
+      }
+    }
+  }
+}
+```
+
+### Use a cheaper worker for search tasks
+
+```json
+{
+  "providers": {
+    "claude-code": {
+      "thinking": "opus-4-6",
+      "worker": "sonnet-4-6",
+      "roles": {
+        "searcher": "haiku-4-5"
+      }
+    }
+  }
+}
+```
+
+### Switch models mid-session
+
+```
+hyperflow: thinking opus-4-7
+hyperflow: worker haiku-4-5
+hyperflow: models          # verify current config
+hyperflow: reset models    # revert to config.json defaults
+```
+
+### Per-session via environment
+
+```bash
+HYPERFLOW_THINKING_MODEL=opus-4-7 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
+```
