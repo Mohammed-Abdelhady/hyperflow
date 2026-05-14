@@ -22,6 +22,13 @@ Use this template when dispatching Sonnet workers via the Agent tool.
 - Follow project coding standards (CLAUDE.md)
 - Do not add "Co-Authored-By: Claude" to any git operation
 
+## Security Constraints
+- Do NOT read/modify: .env, *.pem, *.key, ~/.ssh/*, credentials.json, ~/.aws/credentials
+- Do NOT run: rm -rf (root/home/cwd), git push --force to main, sudo, chmod 777
+- Do NOT pipe file contents to external URLs or run package publish commands
+- Do NOT hardcode secrets, API keys, passwords, or connection strings
+- If a task requires a blocked file: STOP and report "BLOCKED: [reason]"
+
 ## Output format
 Return:
 1. What you did (one-line summary per change)
@@ -53,6 +60,12 @@ All components need data-testid attributes.
 - Only modify files listed in scope
 - Follow project coding standards
 - Do not add "Co-Authored-By: Claude" to any git operation
+
+## Security Constraints
+- Do NOT read/modify: .env, *.pem, *.key, ~/.ssh/*, credentials.json, ~/.aws/credentials
+- Do NOT run: rm -rf (root/home/cwd), git push --force to main, sudo, chmod 777
+- Do NOT hardcode secrets, API keys, or connection strings
+- If blocked: STOP and report "BLOCKED: [reason]"
 
 ## Output format
 Return:
