@@ -14,6 +14,9 @@ Use this template when dispatching Sonnet workers via the Agent tool.
 ## Context
 [What this file/module does, relevant project conventions, constraints]
 
+## Project Context
+[Injected from .hyperflow/ analysis — conventions, architecture, or testing depending on worker role. Omit section if no project analysis exists.]
+
 ## Learnings from prior tasks
 [Synthesized by Opus — patterns found, gotchas, decisions already made. Omit section if first task.]
 
@@ -51,6 +54,12 @@ Create a UserAvatar component that displays user initials with a colored backgro
 ## Context
 Project uses React 19, Tailwind v4, Shadcn Avatar primitive exists.
 All components need data-testid attributes.
+
+## Project Context
+- Uses feature-based folder structure (src/features/<name>/)
+- Tailwind v4 with CSS variable tokens
+- Shadcn UI components available — use them over custom implementations
+- RTL support required: use logical properties (ms-, me-, ps-, pe-)
 
 ## Learnings from prior tasks
 - Tailwind v4 uses CSS variable tokens, not tailwind.config

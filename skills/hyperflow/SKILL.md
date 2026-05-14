@@ -7,6 +7,34 @@ description: Use at the start of every conversation and every task. Enforces ful
 
 You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.6 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first.
 
+## Layer 0: Project Analysis
+
+On session start, analyze the project and cache results in `.hyperflow/` at project root. See [project-analysis.md](project-analysis.md) for full spec.
+
+### Session Start Flow
+
+1. Check if `.hyperflow/` exists in project root
+2. If missing → dispatch parallel searcher agents to analyze tech stack, architecture, conventions, dependencies, testing setup, and git workflow
+3. If ambiguous (conflicting configs, unclear entry points) → ask 2-3 clarifying questions via `AskUserQuestion`
+4. Generate analysis files: `profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
+5. Create `.checksums` file for staleness detection
+6. Add `.hyperflow/` to `.gitignore` if not already there
+
+### On Subsequent Sessions
+
+1. Compute SHA256 of tracked config files (package.json, tsconfig, eslint config, CI configs, etc.)
+2. Compare against `.hyperflow/.checksums`
+3. If stale → refresh only affected analysis files
+4. If fresh → load cached analysis, skip re-analysis
+
+### Worker Injection
+
+Inject relevant analysis into worker prompts under `## Project Context`:
+- **Implementers** get conventions + architecture
+- **Test writers** get testing + conventions
+- **Searchers** get architecture
+- **Reviewers** get everything
+
 ## Layer 1: Autonomy
 
 1. **Zero confirmations.** No "should I?", "shall I proceed?". Execute.
@@ -104,15 +132,15 @@ User request
    - `⚡ [Debugger] Investigating test failure in auth.test.ts`
    - `⚡ [Writer] Generating API documentation`
    Format: `⚡ [Role] Short description of what this agent will do`
-8. **Usage tracking.** Track every agent dispatch during the task. After the task completes, print a usage summary:
+8. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
    ```
    ── Hyperflow Usage ──────────────────────
-   Thinking (Opus 4.6)    2 agents  (1 reviewer, 1 debugger)
-   Worker   (Sonnet 4.6)  3 agents  (2 implementers, 1 searcher)
-   Total                  5 agents
+   Thinking (Opus 4.6)    2 agents   27.3k tokens  (1 reviewer: 15.2k, 1 debugger: 12.1k)
+   Worker   (Sonnet 4.6)  3 agents   41.5k tokens  (2 implementers: 32.6k, 1 searcher: 8.9k)
+   Total                  5 agents   68.8k tokens
    ─────────────────────────────────────────
    ```
-   Include the model names from the current config. Break down by role in parentheses.
+   Include the model names from the current config. Combine same-role agents with count + summed tokens. Format token counts as `Xk` (divide by 1000, one decimal).
 
 ### Learning Injection Format
 
@@ -129,7 +157,7 @@ Only include learnings relevant to upcoming tasks — don't accumulate noise.
 
 ## Layer 4: Brainstorming
 
-Triggered when the task involves creating new functionality, choosing between approaches, or clarifying ambiguous scope. Opus handles this directly — no worker dispatch.
+Triggered when the task involves creating new functionality, choosing between approaches, or clarifying ambiguous scope. Opus handles this directly — no worker dispatch. See [brainstorming-advanced.md](brainstorming-advanced.md) for full question framework.
 
 ### When to Brainstorm
 
@@ -144,16 +172,22 @@ Triggered when the task involves creating new functionality, choosing between ap
 - Direct instructions ("rename X to Y", "delete this file")
 - Tasks where the user has already provided a complete spec
 
-### Brainstorming Flow
+### Enhanced Brainstorming Flow
 
 ```
 User shares idea
     |
 [Opus] Explore context — check files, docs, recent commits
     |
-[Opus] Ask ONE clarifying question (prefer multiple choice)
+[Opus] Multi-Dimensional Analysis (silent)
+    |   Score 6 dimensions: clear / uncertain / blind
+    |   Map blind spots → question techniques
     |
-... repeat until requirements are clear ...
+[Opus] Smart Question Sequence (via AskUserQuestion)
+    |   Intent → Constraints → Assumptions → Scope
+    |   Max 4-5 questions. Skip obvious ones.
+    |
+[Opus] Requirement Synthesis — structured summary, user confirms
     |
 [Opus] Propose 2-3 approaches with trade-offs + recommendation
     |
@@ -168,12 +202,15 @@ User shares idea
 
 ### Brainstorming Rules
 
-1. **One question at a time.** Never stack multiple questions in one message.
-2. **Multiple choice preferred.** Easier to answer than open-ended. Include 2-4 options with descriptions.
-3. **Always propose alternatives.** 2-3 approaches with trade-offs before settling on one.
-4. **Section-by-section approval.** Present design incrementally. Get approval after each section.
-5. **YAGNI ruthlessly.** Cut features that aren't essential to the core ask.
-6. **Context first.** Explore the codebase before asking questions — don't ask what you can find.
+1. **AskUserQuestion mandatory.** All questions use the `AskUserQuestion` tool — never plain text questions.
+2. **One question at a time.** Never stack more than 2 questions per `AskUserQuestion` call.
+3. **Dimension-driven questions.** Analyze request across 6 dimensions first, only ask about unknowns.
+4. **Structured techniques.** Use Intent Clarification, Constraint Discovery, Assumption Challenging, and Scope Boundaries in order.
+5. **Max 4-5 questions total.** Skip any technique where the answer is obvious from context.
+6. **Always propose alternatives.** 2-3 approaches with trade-offs before settling on one.
+7. **Section-by-section approval.** Present design incrementally. Get approval after each section.
+8. **YAGNI ruthlessly.** Cut features that aren't essential to the core ask.
+9. **Context first.** Explore the codebase before asking questions — don't ask what you can find.
 
 ### Design Sections
 
