@@ -57,39 +57,40 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 
 ## Quick Start
 
-**Install and configure** (one command for all providers):
+### Claude Code
+
+```bash
+claude plugin marketplace add Mohammed-Abdelhady/hyperflow
+claude plugin install hyperflow@hyperflow-marketplace
+```
+
+### Cursor / OpenCode / Codex / Antigravity
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-The installer auto-detects your providers (Claude Code, Cursor, OpenCode, Codex, Antigravity), installs for each, and walks you through model selection and security configuration:
+The installer auto-detects your providers, clones the repo, symlinks the skill, and walks you through model selection and security configuration:
 
 ```
-> Detected: Claude Code, Cursor
+> Detected: Cursor
 
-  Claude Code — run 'claude plugin install Mohammed-Abdelhady/hyperflow' to install
-  > Cursor — linked
-
-Which provider is your primary?
-  [1] Claude Code
-  [2] Cursor
+  Cursor — linked
 
 Thinking model (orchestrator, reviewer, debugger):
-  [1] Opus 4.6 — Pinned Opus — Hyperflow default
-  [2] Opus 4.7 — Latest Opus
-  [3] Sonnet 4.6 — Cost savings — less capable for review
+  [1] Claude 4.6 Opus — Hyperflow default
+  [2] Claude 4.7 Opus — Requires Max Mode
+  [3] GPT-5.5 — Latest GPT
+  [4] Gemini 3.1 Pro — Standard availability
 
 Worker model (implementer, searcher, writer):
-  [1] Sonnet 4.6 — Latest Sonnet — Hyperflow default
-  [2] Haiku 4.5 — Fast and cheap for simple tasks
+  [1] Claude 4.6 Sonnet — Hyperflow default
+  [2] Claude 4.5 Haiku — Fast and cheap
 
 Enable security layer? [Y/n]:
 
 > Config saved to ~/.hyperflow/config.json
 ```
-
-> **Claude Code users:** Also run `claude plugin install Mohammed-Abdelhady/hyperflow` for plugin auto-updates. The install script handles config only for Claude Code.
 
 Update all providers: `git -C ~/.hyperflow/repo pull`
 
@@ -377,7 +378,7 @@ hyperflow/
 <tr><td><strong>Claude Code</strong></td><td>
 
 ```bash
-claude plugin uninstall Mohammed-Abdelhady/hyperflow
+claude plugin uninstall hyperflow@hyperflow-marketplace
 ```
 </td></tr>
 <tr><td><strong>All providers</strong></td><td>

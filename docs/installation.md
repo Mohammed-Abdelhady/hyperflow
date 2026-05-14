@@ -5,7 +5,8 @@
 ### Claude Code
 
 ```bash
-claude plugin install Mohammed-Abdelhady/hyperflow
+claude plugin marketplace add Mohammed-Abdelhady/hyperflow
+claude plugin install hyperflow@hyperflow-marketplace
 ```
 
 ### Cursor / OpenCode / Codex / Antigravity
@@ -307,7 +308,7 @@ Start a new Claude Code session. You should see `hyperflow` in the available ski
 ### Claude Code
 
 ```bash
-claude plugin uninstall Mohammed-Abdelhady/hyperflow
+claude plugin uninstall hyperflow@hyperflow-marketplace
 ```
 
 ### All other providers
