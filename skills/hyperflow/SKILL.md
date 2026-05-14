@@ -14,13 +14,18 @@ On session start, analyze the project and cache results in `.hyperflow/` at proj
 ### Session Start Flow
 
 1. **Version check** — fetch latest tag from GitHub (`gh api repos/Mohammed-Abdelhady/hyperflow/tags --jq '.[0].name'`). Compare against installed version. If newer exists, print: `⚡ Hyperflow update available: vX.Y.Z → vX.Y.Z (run: claude plugin update hyperflow@hyperflow-marketplace)`
-2. Check if `.hyperflow/` exists in project root
-3. If missing → dispatch parallel searcher agents to analyze tech stack, architecture, conventions, dependencies, testing setup, and git workflow
-4. If ambiguous (conflicting configs, unclear entry points) → ask 2-3 clarifying questions via `AskUserQuestion`
-5. Generate analysis files: `profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
-6. Create `.checksums` file for staleness detection
-7. Add `.hyperflow/` to `.gitignore` if not already there
-8. Check `.hyperflow/tasks/` for incomplete tasks from previous sessions — present summary and ask to continue or start fresh
+2. **Print active models** — after config loading, print:
+   ```
+   ⚡ Hyperflow v1.X.X
+   Thinking: <resolved-thinking-model>  |  Worker: <resolved-worker-model>
+   ```
+3. Check if `.hyperflow/` exists in project root
+4. If missing → dispatch parallel searcher agents to analyze tech stack, architecture, conventions, dependencies, testing setup, and git workflow
+5. If ambiguous (conflicting configs, unclear entry points) → ask 2-3 clarifying questions via `AskUserQuestion`
+6. Generate analysis files: `profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
+7. Create `.checksums` file for staleness detection
+8. Add `.hyperflow/` to `.gitignore` if not already there
+9. Check `.hyperflow/tasks/` for incomplete tasks from previous sessions — present summary and ask to continue or start fresh
 
 ### On Subsequent Sessions
 
