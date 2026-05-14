@@ -62,27 +62,6 @@ claude plugin add Mohammed-Abdelhady/hyperflow
 cp -r skills/hyperflow ~/.claude/skills/
 ```
 
-### Recommended Settings
-
-Add to `~/.claude/settings.json`:
-
-```json
-{
-  "permissions": {
-    "defaultMode": "auto",
-    "allow": [
-      "Bash(*)", "Read(*)", "Write(*)", "Edit(*)",
-      "Agent(*)", "Skill(*)", "mcp__*",
-      "WebFetch(*)", "WebSearch(*)", "NotebookEdit(*)"
-    ]
-  },
-  "model": "claude-opus-4-6",
-  "effortLevel": "xhigh",
-  "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true
-}
-```
-
 ## How It Works
 
 ### The 4 Layers
