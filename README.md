@@ -1,51 +1,70 @@
 # Hyperflow
 
-**Autonomous multi-agent orchestration for Claude Code.**
+**Multi-agent orchestration for AI coding tools.**
 
-Opus thinks. Sonnet executes. Everything runs in parallel.
+The thinking model thinks. The worker model executes. Everything runs in parallel.
+Every output gets reviewed. You ship faster, cheaper, and better.
 
 ---
 
+## Why Hyperflow?
+
+### Higher Quality Output
+
+Every piece of code gets a two-pass review: the worker writes it, a stronger model reviews it.
+No single-agent shortcuts — decompose, implement, review, synthesize.
+Workers learn from each other. Batch 2 benefits from Batch 1's discoveries.
+
+### Lower Cost
+
+Expensive thinking models only do what they're good at — orchestration, review, debugging.
+Cheap worker models handle the volume — writing code, searching files, running tests.
+You stop paying Opus prices for tasks Sonnet handles perfectly.
+
+### Faster Execution
+
+Independent tasks run in parallel, not sequentially.
+3 files that don't share state? 3 workers, simultaneously.
+The orchestrator doesn't wait — it dispatches, reviews, and moves on.
+
+### Works Everywhere
+
+Not just Claude Code. Hyperflow runs on **Cursor**, **OpenCode**, and **Antigravity** too.
+Each platform gets its own model catalog with sensible defaults.
+One config file. Auto-detection. Switch platforms without reconfiguring.
+
 ## What is Hyperflow?
 
-Hyperflow is a Claude Code plugin that transforms how Claude works on your tasks. Instead of a single agent doing everything sequentially, Hyperflow splits every task into an **Opus orchestrator** coordinating **Sonnet workers** in parallel — with automatic review after every change. When a task needs design decisions, Hyperflow switches to a collaborative brainstorming flow before dispatching workers.
+Hyperflow is a plugin that transforms how AI coding tools work on your tasks. Instead of a single agent doing everything sequentially, Hyperflow splits every task into a **thinking-model orchestrator** coordinating **worker-model agents** in parallel — with automatic review after every change. When a task needs design decisions, Hyperflow switches to a collaborative brainstorming flow before dispatching workers.
 
 ```
 You: "Add user auth with login page and middleware"
 
-[Opus] Brainstorms -> proposes 2 approaches -> you pick one
-[Opus] Decomposes into 3 independent tasks
+[Thinking] Brainstorms -> proposes 2 approaches -> you pick one
+[Thinking] Decomposes into 3 independent tasks
     |
-    |-- [Sonnet] Creates auth middleware     --|
-    |-- [Sonnet] Builds login page           --|--> parallel
-    |-- [Sonnet] Sets up user model          --|
+    |-- [Worker] Creates auth middleware     --|
+    |-- [Worker] Builds login page           --|--> parallel
+    |-- [Worker] Sets up user model          --|
     |
-[Opus] Reviews all 3 outputs
-[Opus] Synthesizes learnings
-[Opus] Dispatches Sonnet to wire up routes (with context from prior tasks)
-[Opus] Final integration review
+[Thinking] Reviews all 3 outputs
+[Thinking] Synthesizes learnings
+[Thinking] Dispatches worker to wire up routes (with context from prior tasks)
+[Thinking] Final integration review
     |
 Done.
 ```
 
-## Features
+## Supported Platforms
 
-### Autonomous Orchestration (Layer 1-3)
+| Platform | Default Thinking | Default Worker | Detection |
+|----------|-----------------|----------------|-----------|
+| **Claude Code** | Opus 4.6 | Sonnet 4.6 | Auto |
+| **Cursor** | Claude 4.6 Opus | Claude 4.6 Sonnet | Auto |
+| **OpenCode** | Claude Opus 4.6 | Claude Sonnet 4.6 | Auto |
+| **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash | Auto |
 
-- **Zero friction execution** — no confirmation prompts, no permission pauses
-- **Model routing** — Opus for thinking (review, debug, decide), Sonnet for doing (implement, search, write)
-- **Always-on orchestrator** — every task gets decomposed, parallelized, and reviewed
-- **Learning injection** — each batch of workers benefits from discoveries of previous batches
-- **Silent error recovery** — failures get fixed automatically, not reported
-
-### Collaborative Brainstorming (Layer 4)
-
-- **One question at a time** — focused dialogue, not overwhelming question dumps
-- **2-3 approaches with trade-offs** — always explores alternatives before committing
-- **Section-by-section approval** — incremental design validation
-- **Context-aware** — explores the codebase before asking questions
-- **YAGNI enforced** — ruthlessly cuts unnecessary features
-- **Seamless transition** — approved design flows directly into the orchestrator for implementation
+All models are configurable. See [Provider Setup](docs/providers.md) for available models per platform.
 
 ## Quick Start
 
@@ -90,14 +109,14 @@ Supports **Claude Code**, **Cursor**, **OpenCode**, and **Antigravity** — each
 
 ### Activate
 
-Type `/hyperflow` in Claude Code to activate the skill. Once loaded, it runs for the entire conversation.
+Type `/hyperflow` to activate the skill. Once loaded, it runs for the entire conversation.
 
 ```
 You: /hyperflow
-Claude: [Hyperflow loaded — autonomous orchestration active]
+[Hyperflow loaded — autonomous orchestration active]
 ```
 
-You can also trigger it naturally — Claude will detect the skill and ask to use it when a task matches.
+You can also trigger it naturally — the AI will detect the skill and ask to use it when a task matches.
 
 ### Implementation tasks
 
@@ -163,7 +182,7 @@ What happens:
 
 ### What you'll notice
 
-- **No permission prompts** — Claude just executes
+- **No permission prompts** — just executes
 - **No "should I proceed?" questions** — it proceeds
 - **No walls of explanation** — just status updates and code
 - **Parallel execution** — independent work happens simultaneously
