@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
+# Outer braces force bash to read the entire script before executing (required for curl|bash)
+{
 set -euo pipefail
-
-# Open /dev/tty on fd 3 for interactive reads (stdin stays as the pipe for bash)
-exec 3</dev/tty 2>/dev/null || exec 3<&0
 
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
@@ -77,7 +76,7 @@ pick_one() {
   echo ""
   while true; do
     printf "  Choice [1]: "
-    read -r choice <&3
+    read -r choice </dev/tty
     choice="${choice:-1}"
     if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
       PICK_INDEX=$((choice - 1))
@@ -93,7 +92,7 @@ pick_yes_no() {
   [ "$default" = "n" ] && hint="y/N"
 
   printf "${BOLD}%s${RESET} [%s]: " "$prompt" "$hint"
-  read -r answer <&3
+  read -r answer </dev/tty
   answer="${answer:-$default}"
   [[ "$answer" =~ ^[Yy]$ ]]
 }
@@ -120,7 +119,7 @@ link_provider() {
     if [ -d "$skills_dir/hyperflow" ] || [ -L "$skills_dir/hyperflow" ]; then
       step "  Claude Code — skill already installed"
     else
-      step "  Claude Code — run 'claude plugin install Mohammed-Abdelhady/hyperflow' to install"
+      step "  Claude Code — run 'claude plugin install hyperflow' to install"
     fi
     return
   fi
@@ -342,7 +341,7 @@ print_summary() {
     step "Providers:"
     for i in "${!PROVIDERS[@]}"; do
       if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
-        step "  Claude Code — plugin (claude plugin install Mohammed-Abdelhady/hyperflow)"
+        step "  Claude Code — plugin (claude plugin install hyperflow)"
       else
         step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
       fi
@@ -369,13 +368,12 @@ uninstall() {
 
   local removed=0
 
-  # Remove symlinks for non-Claude-Code providers
   for i in "${!PROVIDERS[@]}"; do
     local name="${PROVIDERS[$i]}"
     local target="${PROVIDER_PATHS[$i]}/hyperflow"
 
     if [ "$name" = "Claude Code" ]; then
-      step "  Claude Code — use 'claude plugin uninstall Mohammed-Abdelhady/hyperflow'"
+      step "  Claude Code — use 'claude plugin uninstall hyperflow' to install"
       continue
     fi
 
@@ -396,21 +394,18 @@ uninstall() {
     fi
   done
 
-  # Remove cloned repo
   if [ -d "$INSTALL_DIR" ]; then
     rm -rf "$INSTALL_DIR"
     info "Removed $INSTALL_DIR"
     removed=$((removed + 1))
   fi
 
-  # Remove config
   if [ -f "$CONFIG_FILE" ]; then
     rm "$CONFIG_FILE"
     info "Removed $CONFIG_FILE"
     removed=$((removed + 1))
   fi
 
-  # Clean up empty ~/.hyperflow dir
   if [ -d "$HOME/.hyperflow" ] && [ -z "$(ls -A "$HOME/.hyperflow")" ]; then
     rmdir "$HOME/.hyperflow"
     step "  Removed empty ~/.hyperflow/"
@@ -462,7 +457,6 @@ main() {
     info "Detected: ${PROVIDERS[*]}"
   fi
 
-  # Check if any non-Claude-Code providers need clone + symlink
   local needs_clone=false
   for i in "${!PROVIDERS[@]}"; do
     if [ "${PROVIDERS[$i]}" != "Claude Code" ]; then
@@ -475,12 +469,10 @@ main() {
     clone_or_update
   fi
 
-  # Link providers
   for i in "${!PROVIDERS[@]}"; do
     link_provider "${PROVIDERS[$i]}" "${PROVIDER_PATHS[$i]}"
   done
 
-  # Configure — pick provider for model selection
   local config_provider=""
   local config_provider_key=""
 
@@ -498,7 +490,6 @@ main() {
     config_provider_key="${PROVIDER_KEYS[$PICK_INDEX]}"
   fi
 
-  # Model selection per provider
   case "$config_provider" in
     "Claude Code") configure_models_claude_code ;;
     Cursor)        configure_models_cursor ;;
@@ -508,15 +499,14 @@ main() {
     *)             configure_models_claude_code ;;
   esac
 
-  # Security
   configure_security
 
-  # Write config
   echo ""
   write_config "$config_provider_key"
 
-  # Summary
   print_summary
 }
 
 main "$@"
+exit 0
+}
