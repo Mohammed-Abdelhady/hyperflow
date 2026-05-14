@@ -147,7 +147,7 @@ What happens:
 
 ## How It Works
 
-### The 4 Layers
+### The 8 Layers
 
 | Layer | What | When |
 |-------|------|------|
@@ -155,6 +155,10 @@ What happens:
 | **2. Model Routing** | Opus = brain, Sonnet = hands | Always |
 | **3. Orchestrator** | Decompose, dispatch parallel, review, synthesize | Implementation tasks |
 | **4. Brainstorming** | Explore, question, propose, approve | Design/creative tasks |
+| **5. Quality Gates** | Lint, typecheck, tests must pass before approval | After every worker review |
+| **6. Session Memory** | Persist learnings across conversations | Session start + end |
+| **7. Task Templates** | Pre-built decomposition for CRUD, API, UI, migrations | Auto-selected by Opus |
+| **8. Git Workflow** | Auto-branch, auto-commit, squash option | Throughout session |
 
 ### Model Routing
 
@@ -197,26 +201,76 @@ Workers don't start from scratch. After each batch, Opus synthesizes patterns, g
 - CSS uses logical properties for RTL support
 ```
 
+### Quality Gates
+
+After Opus reviews a worker's output, automated checks must pass:
+
+- **Lint** — `pnpm lint` / `npm run lint`
+- **Typecheck** — `tsc --noEmit`
+- **Tests** — affected files only (full suite on final review)
+
+Fails? Worker fixes and re-runs. Max 3 retries before escalating.
+
+### Session Memory
+
+Learnings persist across conversations in `~/.claude/hyperflow-memory.md`:
+
+```markdown
+## [2026-05-14] /path/to/project
+- Tailwind v4 uses CSS variable tokens, not tailwind.config
+- All validation goes through zod schemas
+- Auth middleware is a singleton at src/domains/auth/server/auth.ts
+```
+
+Tomorrow's workers automatically benefit from today's discoveries.
+
+### Task Templates
+
+Opus auto-selects decomposition patterns:
+
+| Template | Trigger |
+|----------|---------|
+| CRUD Feature | "add X management" |
+| API Endpoint | "create API for X" |
+| UI Component | "build X component" |
+| DB Migration | "add X column" |
+| Refactor | "extract X into Y" |
+| Bug Fix | "fix X" |
+
+### Git Workflow
+
+- Auto-creates feature branches (never commits to main)
+- Auto-commits after each approved task
+- Follows project commit conventions
+- Asks to squash or keep at the end
+- Never pushes — waits for you
+
+Disable auto-commit: say "hyperflow: auto-commit off"
+
 ## Project Structure
 
 ```
 hyperflow/
-├── .claude-plugin/           # Claude Code plugin manifest
+├── .claude-plugin/             # Claude Code plugin manifest
 │   └── plugin.json
 ├── skills/
-│   └── hyperflow/            # The unified skill (4 layers)
-│       ├── SKILL.md          # Main skill
-│       ├── worker-prompt.md  # Sonnet dispatch template
-│       └── reviewer-prompt.md # Opus review template
+│   └── hyperflow/              # The unified skill (8 layers)
+│       ├── SKILL.md            # Core skill (layers 1-4 inline, 5-8 referenced)
+│       ├── worker-prompt.md    # Sonnet dispatch template
+│       ├── reviewer-prompt.md  # Opus review template
+│       ├── quality-gates.md    # Layer 5: automated checks
+│       ├── session-memory.md   # Layer 6: cross-session learnings
+│       ├── task-templates.md   # Layer 7: decomposition patterns
+│       └── git-workflow.md     # Layer 8: branching + auto-commit
 ├── hooks/
-│   ├── hooks.json            # Session startup config
-│   └── session-start         # Hyperflow injection script
+│   ├── hooks.json              # Session startup config
+│   └── session-start           # Hyperflow injection script
 ├── docs/
-│   ├── installation.md       # Setup guide
-│   ├── model-routing.md      # Model assignment philosophy
-│   └── orchestration.md      # Orchestrator pattern details
+│   ├── installation.md         # Setup guide
+│   ├── model-routing.md        # Model assignment philosophy
+│   └── orchestration.md        # Orchestrator pattern details
 ├── package.json
-├── LICENSE                   # MIT
+├── LICENSE                     # MIT
 └── README.md
 ```
 

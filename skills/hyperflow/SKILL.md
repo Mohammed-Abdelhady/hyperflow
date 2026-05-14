@@ -151,6 +151,41 @@ Transition to Layer 3 (orchestrator pattern) for implementation. The approved de
 
 For complex features (3+ files, multiple subsystems), write a brief spec to `docs/specs/` before dispatching workers.
 
+## Layer 5: Quality Gates
+
+Automated checks after every worker review. See [quality-gates.md](quality-gates.md) for full details.
+
+**Per-task:** lint + typecheck + tests (affected files only)
+**Final review:** full lint + typecheck + build + full test suite
+
+Gate fails -> worker fixes -> re-run. Max 3 retries before escalating to Opus worker.
+
+## Layer 6: Session Memory
+
+Persist reusable learnings across conversations. See [session-memory.md](session-memory.md) for full details.
+
+**Storage:** `~/.claude/hyperflow-memory.md` (auto-created, project-scoped entries)
+**Write:** After each batch, persist reusable patterns/gotchas (not ephemeral task details)
+**Read:** At session start, inject relevant entries into worker prompts
+**Prune:** Remove entries older than 30 days or contradicted by newer ones
+
+Disable: "hyperflow: memory off"
+
+## Layer 7: Task Templates
+
+Pre-built decomposition patterns. See [task-templates.md](task-templates.md) for all templates.
+
+Opus auto-selects: CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix. Templates are adapted to context — not rigid steps.
+
+## Layer 8: Git Workflow
+
+Automated branching and commits. See [git-workflow.md](git-workflow.md) for full details.
+
+**Auto-commit:** On by default. Commits after each approved task with descriptive message.
+**Branching:** Auto-creates feature branch if on main/master.
+**No push:** Never pushes automatically — waits for user.
+**Disable auto-commit:** "hyperflow: auto-commit off"
+
 ## What This Does NOT Override
 
 - Security (no secrets in commits, no vulnerabilities)
