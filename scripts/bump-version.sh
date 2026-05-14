@@ -9,6 +9,7 @@ PACKAGE_JSON="$ROOT/package.json"
 PLUGIN_JSON="$ROOT/.claude-plugin/plugin.json"
 MARKETPLACE_JSON="$ROOT/.claude-plugin/marketplace.json"
 README_MD="$ROOT/README.md"
+SKILL_VERSION="$ROOT/skills/hyperflow/VERSION"
 
 # Validate argument
 if [[ $# -lt 1 ]]; then
@@ -55,4 +56,8 @@ echo "Updated $MARKETPLACE_JSON (2 occurrences)"
 sed "${SED_INPLACE[@]}" 's/<code>v[^<]*<\/code>/<code>v'"$NEW_VERSION"'<\/code>/' "$README_MD"
 echo "Updated $README_MD"
 
-echo "Version bumped to $NEW_VERSION (4 files)"
+# Update skill VERSION file
+echo "$NEW_VERSION" > "$SKILL_VERSION"
+echo "Updated $SKILL_VERSION"
+
+echo "Version bumped to $NEW_VERSION (5 files)"

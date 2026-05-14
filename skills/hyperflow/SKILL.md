@@ -14,9 +14,9 @@ On session start, analyze the project and cache results in `.hyperflow/` at proj
 ### Session Start Flow
 
 1. **Version check** — fetch latest tag from GitHub (`gh api repos/Mohammed-Abdelhady/hyperflow/tags --jq '.[0].name'`). Compare against installed version. If newer exists, print: `⚡ Hyperflow update available: vX.Y.Z → vX.Y.Z (run: claude plugin update hyperflow@hyperflow-marketplace)`
-2. **Print active models** — after config loading, print:
+2. **Print active models** — read version from `VERSION` file (same directory as SKILL.md), then print:
    ```
-   ⚡ Hyperflow v1.X.X
+   ⚡ Hyperflow v<version>
    Thinking: <resolved-thinking-model>  |  Worker: <resolved-worker-model>
    ```
 3. Check if `.hyperflow/` exists in project root
