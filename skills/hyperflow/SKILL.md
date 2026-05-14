@@ -106,9 +106,13 @@ User request
     |
 [Opus] Decompose -> identify independent sub-tasks
     |
+[Opus] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md for each sub-task
+    |
 [Opus] Dispatch Sonnet workers (parallel where independent)
     |
 [Sonnet workers] Execute in parallel -> return results + notes
+    |
+[Opus] UPDATE task files (check sub-tasks, add progress/learnings)
     |
 [Opus] Review each worker's output
     |
@@ -117,6 +121,8 @@ User request
 [Opus] Dispatch next batch (if needed) with accumulated context
     |
 [Opus] Final integration review
+    |
+[Opus] DELETE completed task files from .hyperflow/tasks/
 ```
 
 ### Rules
@@ -300,3 +306,5 @@ Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Rev
 - Add features the user didn't ask for
 - Dispatch an agent without printing `⚡ [Role] description` first
 - Finish a task without printing the usage summary
+- Dispatch workers without creating task files in `.hyperflow/tasks/` first
+- Complete a task without deleting its task file
