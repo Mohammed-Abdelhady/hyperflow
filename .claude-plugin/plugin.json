@@ -7,10 +7,7 @@
     "url": "https://github.com/Mohammed-Abdelhady"
   },
   "homepage": "https://github.com/Mohammed-Abdelhady/hyperflow",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Mohammed-Abdelhady/hyperflow"
-  },
+  "repository": "https://github.com/Mohammed-Abdelhady/hyperflow",
   "license": "MIT",
   "keywords": [
     "claude-code-plugin",
