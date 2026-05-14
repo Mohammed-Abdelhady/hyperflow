@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] — 2026-05-15
+
+### Changed
+- Fix inconsistencies across skill reference files
+
+
 ## [1.4.1] — 2026-05-15
 
 ### Fixed
@@ -116,7 +122,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.3.0...v1.3.1

@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <code>v1.4.1</code> · <a href="CHANGELOG.md">Changelog</a>
+  <code>v1.4.2</code> · <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
