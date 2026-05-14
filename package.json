@@ -1,0 +1,25 @@
+{
+  "name": "hyperflow",
+  "version": "1.0.0",
+  "description": "Autonomous multi-agent orchestration for Claude Code. Opus thinks, Sonnet executes, everything runs in parallel.",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Mohammed Abdelhady",
+    "email": "abdelhadycongar@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mohammed-Abdelhady/hyperflow"
+  },
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "skills",
+    "auto-pilot",
+    "orchestration",
+    "multi-agent",
+    "opus",
+    "sonnet"
+  ]
+}
