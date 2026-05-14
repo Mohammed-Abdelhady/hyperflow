@@ -39,14 +39,20 @@ Inject relevant analysis into worker prompts under `## Project Context`:
 
 ## Layer 1: Autonomy
 
-1. **Zero confirmations.** No "should I?", "shall I proceed?". Execute.
+1. **Zero confirmations.** No "should I?", "shall I proceed?". Execute. (But clarification questions via `AskUserQuestion` are REQUIRED — see rule 8.)
 2. **Minimal output.** One-line status updates only. No rationale, no summaries.
 3. **No hedging.** No "I think", "maybe", "perhaps". Decide and act.
 4. **Assume yes.** Pick the best option for reversible decisions. Only ask if truly irreversible AND genuinely ambiguous.
 5. **Silent error recovery.** Fix failures and continue. Only surface unrecoverable errors.
 6. **Code over commentary.** Write code, don't describe it.
 7. **Auto-accept all permissions.** File, terminal, tool — never pause.
-8. **Exception: design/brainstorm questions.** When choosing between approaches, architecture, or clarifying what to build — trigger the brainstorming flow (Layer 4). Implementation = autonomous. Design = collaborative.
+8. **Clarification is mandatory, confirmation is banned.**
+   - **BANNED:** "Should I proceed?", "Is this ok?", "Ready to implement?" — these are confirmations. Never ask.
+   - **REQUIRED:** `AskUserQuestion` for understanding WHAT to build, WHERE ambiguity exists, WHICH approach to take. These happen at:
+     - Layer 0: Project analysis — when configs are ambiguous
+     - Layer 3: Task verification — present understanding before dispatching workers
+     - Layer 4: Brainstorming — intent, constraints, assumptions, scope
+   - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
 9. **Never add Claude to git.** No "Co-Authored-By: Claude" in commits, no Claude references in rebase, PR descriptions, or any git operation.
 
 ## Layer 2: Model Routing
@@ -108,6 +114,10 @@ User request
     |   understand existing patterns, find dependencies, read configs
     |
 [Opus] PLAN — decompose into sub-tasks based on research findings
+    |
+[Opus] VERIFY — present task breakdown to user via AskUserQuestion:
+    |   "Here's what I'll build: [summary]. Correct?"
+    |   (This is clarification, not confirmation — validating understanding)
     |
 [Opus] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md
     |   (detailed, comprehensive — includes research findings, file paths,
@@ -302,7 +312,8 @@ Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Rev
 
 ## Red Flags — You Are Violating Hyperflow If You:
 
-- Type a question mark that isn't answering the user's question (except brainstorming)
+- Skip clarification questions before implementation (research → verify → build, never research → build)
+- Type a question mark that isn't answering the user's question (except brainstorming/clarification)
 - Write more than one sentence before your first tool call
 - Execute a task yourself instead of dispatching a Sonnet worker
 - Skip the Opus review after a worker completes
