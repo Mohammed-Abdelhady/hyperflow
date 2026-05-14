@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+SKILL_FILE="$PLUGIN_ROOT/skills/auto-pilot/SKILL.md"
+
+if [ ! -f "$SKILL_FILE" ]; then
+  echo "hyperflow: auto-pilot skill not found at $SKILL_FILE" >&2
+  exit 0
+fi
+
+SKILL_CONTENT=$(cat "$SKILL_FILE")
+ESCAPED=$(echo "$SKILL_CONTENT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
+
+cat <<JSONEOF
+{
+  "type": "system-prompt-inject",
+  "content": $ESCAPED
+}
+JSONEOF
