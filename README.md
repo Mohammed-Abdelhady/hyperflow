@@ -190,7 +190,7 @@ What happens:
 
 ## How It Works
 
-### The 8 Layers
+### The 9 Layers
 
 | Layer | What | When |
 |-------|------|------|
@@ -202,6 +202,7 @@ What happens:
 | **6. Session Memory** | Persist learnings across conversations | Session start + end |
 | **7. Task Templates** | Pre-built decomposition for CRUD, API, UI, migrations | Auto-selected by Opus |
 | **8. Git Workflow** | Auto-branch, auto-commit, squash option | Throughout session |
+| **9. Security** | Blocked files, blocked commands, secret detection | Always |
 
 ### Model Routing
 
@@ -212,6 +213,7 @@ Models are configurable per provider. Defaults shown for Claude Code:
 | Orchestrator | **Opus 4.6** | Thinking | Decomposes tasks, coordinates workers |
 | Reviewer | **Opus 4.6** | Thinking | Reviews every worker output |
 | Debugger | **Opus 4.6** | Thinking | Root cause analysis |
+| Decision-maker | **Opus 4.6** | Thinking | Architecture, approach selection |
 | Brainstormer | **Opus 4.6** | Thinking | Design exploration, proposals |
 | Implementer | **Sonnet 4.6** | Worker | Writes code, edits files |
 | Searcher | **Sonnet 4.6** | Worker | Explores codebase, finds files |
@@ -294,6 +296,30 @@ Opus auto-selects decomposition patterns:
 
 Disable auto-commit: say "hyperflow: auto-commit off"
 
+### Security
+
+Workers are contained by prompt-injected blocklists:
+
+- **Blocked files** — `.env`, `*.pem`, `*.key`, `~/.ssh/*`, `~/.aws/credentials`, cloud configs
+- **Blocked commands** — `rm -rf` (destructive), `git push --force` to main, `sudo`, `chmod 777`, package publish
+- **Secret detection** — Reviewer checks for API key patterns (`sk-*`, `AKIA*`, `ghp_*`), private keys, connection strings
+
+Workers that need a blocked resource report `BLOCKED:` and stop. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the task and surfaces to the user.
+
+Customize via `~/.hyperflow/config.json`:
+
+```json
+{
+  "security": {
+    "enabled": true,
+    "blockedFiles": { "add": ["*.vault"], "remove": [] },
+    "blockedCommands": { "add": ["docker rm -f"], "remove": [] }
+  }
+}
+```
+
+Disable per-session: say "hyperflow: security off"
+
 ## Project Structure
 
 ```
@@ -301,15 +327,16 @@ hyperflow/
 ├── .claude-plugin/             # Claude Code plugin manifest
 │   └── plugin.json
 ├── skills/
-│   └── hyperflow/              # The unified skill (8 layers)
-│       ├── SKILL.md            # Core skill (layers 1-4 inline, 5-8 referenced)
+│   └── hyperflow/              # The unified skill (9 layers)
+│       ├── SKILL.md            # Core skill (layers 1-4 inline, 5-9 referenced)
 │       ├── model-config.md     # Model configuration reference
 │       ├── worker-prompt.md    # Sonnet dispatch template
 │       ├── reviewer-prompt.md  # Opus review template
 │       ├── quality-gates.md    # Layer 5: automated checks
 │       ├── session-memory.md   # Layer 6: cross-session learnings
 │       ├── task-templates.md   # Layer 7: decomposition patterns
-│       └── git-workflow.md     # Layer 8: branching + auto-commit
+│       ├── git-workflow.md     # Layer 8: branching + auto-commit
+│       └── security.md         # Layer 9: worker containment blocklists
 ├── config/
 │   ├── defaults.json           # Per-provider model catalogs (fallback)
 │   └── schema.json             # JSON Schema for config.json
