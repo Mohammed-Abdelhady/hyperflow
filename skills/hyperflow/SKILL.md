@@ -72,7 +72,11 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 | Searcher | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
 | Writer | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
 
-**Iron rule:** Every worker output gets a thinking-tier review before it is considered done.
+**Iron rule — Opus is ALWAYS the brain:**
+- Opus orchestrates, reviews, debugs, and decides. It is NEVER idle during a task.
+- Every worker output gets an Opus review (`model: "opus"`) before it is considered done.
+- Workers (Sonnet) only EXECUTE — they never review, coordinate, or make architectural decisions.
+- If the usage summary shows `Thinking: 0 agents`, the task was done wrong. Period.
 
 ### Config Loading (Session Start)
 
@@ -134,13 +138,15 @@ User request
     |   - Add progress notes and learnings
     |   - Update status (in-progress / blocked / in-review)
     |
-[Opus] Review each worker's output (multi-level)
+[Opus] REVIEW — dispatch Opus reviewer agent (model: "opus") for each batch
+    |   Every batch MUST have an Opus review. No exceptions.
+    |   Simple: L1-2, Medium: L1-3, Complex: L1-5
     |
 [Opus] Synthesize learnings -> craft context for next batch
     |
 [Opus] Dispatch next batch (if needed) with accumulated context
     |
-[Opus] Final integration review
+[Opus] FINAL REVIEW — Opus integration review across all changes (model: "opus")
     |
 [Opus] DELETE completed task files from .hyperflow/tasks/
 ```
@@ -152,7 +158,7 @@ User request
 3. **Learning injection.** After each batch, extract patterns/gotchas from worker outputs. Inject synthesized learnings into subsequent worker prompts.
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md) for the dispatch template.
-6. **Multi-level review.** After each worker, run a 5-level review scaled by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) for template and [review-levels.md](review-levels.md) for full checklist.
+6. **Multi-level review (MUST use `model: "opus"`).** After each batch, dispatch an Opus reviewer agent. Never use Sonnet for reviews. Scale by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) for template and [review-levels.md](review-levels.md) for full checklist.
 7. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
    - `⚡ [Implementer] Creating auth middleware`
    - `⚡ [Reviewer] Reviewing auth middleware output`
@@ -300,6 +306,8 @@ Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Rev
 - Write more than one sentence before your first tool call
 - Execute a task yourself instead of dispatching a Sonnet worker
 - Skip the Opus review after a worker completes
+- Dispatch a reviewer with `model: "sonnet"` instead of `model: "opus"`
+- Finish a task with `Thinking: 0 agents` in the usage summary
 - Dispatch workers sequentially when they could run in parallel
 - Include "Co-Authored-By: Claude" in any git operation
 - Summarize what you just did
