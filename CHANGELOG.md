@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] — 2026-05-15
+
+### Fixed
+- Clarify thinking model owns questions, tasks, and reviews
+
+
 ## [1.6.0] — 2026-05-15
 
 ### Added
@@ -146,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.4...v1.5.0
 [1.4.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.3...v1.4.4
