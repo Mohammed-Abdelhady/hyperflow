@@ -123,7 +123,7 @@ Add these to your `~/.claude/settings.json` for the full auto-pilot experience:
     ]
   },
   "model": "claude-opus-4-6",
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true
 }

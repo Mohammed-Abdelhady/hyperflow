@@ -7,7 +7,7 @@
     "activeProvider": {
       "description": "Force a specific provider. null = auto-detect at runtime.",
       "type": ["string", "null"],
-      "enum": ["claude-code", "cursor", "opencode", "antigravity", null],
+      "enum": ["claude-code", "cursor", "opencode", "codex", "antigravity", null],
       "default": null
     },
     "defaults": {
@@ -93,6 +93,11 @@
             }
           },
           "additionalProperties": false
+        },
+        "allowedFiles": {
+          "description": "File patterns that are explicitly allowed (not blocked), e.g. .env.example.",
+          "type": "array",
+          "items": { "type": "string" }
         }
       },
       "additionalProperties": false

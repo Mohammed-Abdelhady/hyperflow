@@ -1,0 +1,23 @@
+{
+  "name": "hyperflow-marketplace",
+  "owner": {
+    "name": "Mohammed Abdelhady",
+    "email": "abdelhadycongar@gmail.com"
+  },
+  "metadata": {
+    "description": "Multi-agent orchestration for AI coding tools",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "hyperflow",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
+      },
+      "description": "Multi-agent orchestration for AI coding tools. Thinking model orchestrates, workers execute in parallel, everything gets reviewed.",
+      "version": "1.0.0",
+      "strict": true
+    }
+  ]
+}

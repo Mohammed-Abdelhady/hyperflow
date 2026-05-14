@@ -57,33 +57,19 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 
 ## Quick Start
 
-**Install:**
-
-<table>
-<tr><td><strong>Claude Code</strong></td><td>
-
-```bash
-claude plugin install Mohammed-Abdelhady/hyperflow
-```
-</td></tr>
-<tr><td><strong>Cursor / OpenCode / Codex / Antigravity</strong></td><td>
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
-```
-</td></tr>
-</table>
-
-**Then run the setup wizard** (all providers, including Claude Code):
+**Install and configure** (one command for all providers):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-The wizard auto-detects your providers and walks you through configuration:
+The installer auto-detects your providers (Claude Code, Cursor, OpenCode, Codex, Antigravity), installs for each, and walks you through model selection and security configuration:
 
 ```
 > Detected: Claude Code, Cursor
+
+  Claude Code — run 'claude plugin install Mohammed-Abdelhady/hyperflow' to install
+  > Cursor — linked
 
 Which provider is your primary?
   [1] Claude Code
@@ -92,7 +78,7 @@ Which provider is your primary?
 Thinking model (orchestrator, reviewer, debugger):
   [1] Opus 4.6 — Pinned Opus — Hyperflow default
   [2] Opus 4.7 — Latest Opus
-  [3] Sonnet 4.6 — Cost savings
+  [3] Sonnet 4.6 — Cost savings — less capable for review
 
 Worker model (implementer, searcher, writer):
   [1] Sonnet 4.6 — Latest Sonnet — Hyperflow default
@@ -103,7 +89,9 @@ Enable security layer? [Y/n]:
 > Config saved to ~/.hyperflow/config.json
 ```
 
-For Cursor/OpenCode/Codex/Antigravity, update with: `git -C ~/.hyperflow/repo pull`
+> **Claude Code users:** Also run `claude plugin install Mohammed-Abdelhady/hyperflow` for plugin auto-updates. The install script handles config only for Claude Code.
+
+Update all providers: `git -C ~/.hyperflow/repo pull`
 
 **Activate:**
 
@@ -216,6 +204,7 @@ Defaults for Claude Code (all configurable):
 | Orchestrator | Opus 4.6 | Decompose, coordinate, synthesize |
 | Reviewer | Opus 4.6 | Review every worker output |
 | Debugger | Opus 4.6 | Root cause analysis |
+| Decision-maker | Opus 4.6 | Architecture, approach selection |
 | Brainstormer | Opus 4.6 | Design exploration, proposals |
 | Implementer | Sonnet 4.6 | Write code, edit files |
 | Searcher | Sonnet 4.6 | Explore codebase, find files |
@@ -374,6 +363,7 @@ hyperflow/
 │   └── session-start           #   Injection script
 ├── docs/                       #   Guides and references
 ├── .claude-plugin/plugin.json  #   Claude Code plugin manifest
+├── install.sh                  #   Installer + setup wizard
 ├── package.json
 ├── LICENSE                     #   MIT
 └── README.md

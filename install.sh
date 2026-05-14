@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure interactive reads work when piped from curl
+if [ ! -t 0 ]; then
+  exec < /dev/tty
+fi
+
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
 CONFIG_FILE="$HOME/.hyperflow/config.json"
@@ -377,13 +382,17 @@ uninstall() {
     fi
 
     if [ -L "$target" ]; then
-      rm "$target"
-      info "$name — symlink removed"
-      removed=$((removed + 1))
+      local link_dest
+      link_dest="$(readlink "$target")"
+      if [[ "$link_dest" == *"$SKILL_DIR"* ]] || [[ "$link_dest" == *".hyperflow"* ]]; then
+        rm "$target"
+        info "$name — symlink removed"
+        removed=$((removed + 1))
+      else
+        warn "$name — symlink points to $link_dest (not Hyperflow), skipping"
+      fi
     elif [ -d "$target" ]; then
-      rm -rf "$target"
-      info "$name — directory removed"
-      removed=$((removed + 1))
+      warn "$name — found directory at $target (not a Hyperflow symlink), skipping"
     else
       step "  $name — not installed, skipping"
     fi
@@ -423,9 +432,21 @@ uninstall() {
 # ─── Main ───
 
 main() {
-  if [ "${1:-}" = "--uninstall" ]; then
-    uninstall
-    exit 0
+  case "${1:-}" in
+    --uninstall) uninstall; exit 0 ;;
+    --help|-h)
+      echo "Usage: install.sh [--uninstall | --help]"
+      echo ""
+      echo "  (no args)     Install Hyperflow and run setup wizard"
+      echo "  --uninstall   Remove Hyperflow from all providers"
+      echo "  --help        Show this message"
+      exit 0
+      ;;
+  esac
+
+  if ! command -v git &>/dev/null; then
+    warn "git is required but not installed."
+    exit 1
   fi
 
   header "Hyperflow Installer"

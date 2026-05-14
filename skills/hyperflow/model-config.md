@@ -50,8 +50,9 @@ Detection runs at session start. First match wins:
 | 3 | `CLAUDE_CODE_*` env vars present | `claude-code` |
 | 4 | `CURSOR_*` env vars present | `cursor` |
 | 5 | `OPENCODE_*` env vars or `opencode` in PATH | `opencode` |
-| 6 | `ANTIGRAVITY_*` env vars present | `antigravity` |
-| 7 | None matched | Use `defaults` directly |
+| 6 | `CODEX_*` env vars present | `codex` |
+| 7 | `ANTIGRAVITY_*` env vars present | `antigravity` |
+| 8 | None matched | Use `defaults` directly |
 
 ## Model Resolution
 
