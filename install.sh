@@ -31,9 +31,9 @@ SECURITY_ENABLED="true"
 
 detect_providers() {
   local name path key
-  local -a names=("Cursor" "OpenCode" "Antigravity")
-  local -a paths=("$HOME/.cursor/skills" "$HOME/.opencode/skills" "$HOME/.antigravity/skills")
-  local -a keys=("cursor" "opencode" "antigravity")
+  local -a names=("Claude Code" "Cursor" "OpenCode" "Antigravity")
+  local -a paths=("$HOME/.claude/skills" "$HOME/.cursor/skills" "$HOME/.opencode/skills" "$HOME/.antigravity/skills")
+  local -a keys=("claude-code" "cursor" "opencode" "antigravity")
 
   for i in "${!names[@]}"; do
     name="${names[$i]}"
@@ -112,6 +112,16 @@ clone_or_update() {
 
 link_provider() {
   local name="$1" skills_dir="$2"
+
+  if [ "$name" = "Claude Code" ]; then
+    if [ -d "$skills_dir/hyperflow" ] || [ -L "$skills_dir/hyperflow" ]; then
+      step "  Claude Code — skill already installed"
+    else
+      step "  Claude Code — run 'claude plugin add Mohammed-Abdelhady/hyperflow' to install"
+    fi
+    return
+  fi
+
   local target="$skills_dir/hyperflow"
   local source="$INSTALL_DIR/$SKILL_DIR"
 
@@ -289,15 +299,30 @@ EOF
 print_summary() {
   header "Hyperflow installed"
 
-  step "Location:  $INSTALL_DIR"
   step "Config:    $CONFIG_FILE"
-  step "Update:    git -C $INSTALL_DIR pull"
+
+  local has_non_cc=false
+  for i in "${!PROVIDERS[@]}"; do
+    if [ "${PROVIDERS[$i]}" != "Claude Code" ]; then
+      has_non_cc=true
+      break
+    fi
+  done
+
+  if [ "$has_non_cc" = true ]; then
+    step "Location:  $INSTALL_DIR"
+    step "Update:    git -C $INSTALL_DIR pull"
+  fi
   echo ""
 
   if [ ${#PROVIDERS[@]} -gt 0 ]; then
-    step "Linked providers:"
+    step "Providers:"
     for i in "${!PROVIDERS[@]}"; do
-      step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
+      if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
+        step "  Claude Code — plugin (claude plugin add Mohammed-Abdelhady/hyperflow)"
+      else
+        step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
+      fi
     done
     echo ""
   fi
@@ -308,7 +333,7 @@ print_summary() {
 
   step "Change models mid-session:  hyperflow: thinking <model>"
   step "Toggle security:            hyperflow: security off/on"
-  step "Claude Code users:          claude plugin add Mohammed-Abdelhady/hyperflow"
+  step "Re-run setup:               ~/.hyperflow/repo/install.sh"
   echo ""
 }
 
@@ -320,10 +345,9 @@ main() {
   detect_providers
 
   if [ ${#PROVIDERS[@]} -eq 0 ]; then
-    warn "No supported providers detected (Cursor, OpenCode, Antigravity)."
-    warn "Claude Code users should run: claude plugin add Mohammed-Abdelhady/hyperflow"
+    warn "No supported providers detected."
     echo ""
-    if ! pick_yes_no "Install anyway to $INSTALL_DIR?" "n"; then
+    if ! pick_yes_no "Run setup wizard anyway (config only)?" "n"; then
       echo "Aborted."
       exit 0
     fi
@@ -331,8 +355,18 @@ main() {
     info "Detected: ${PROVIDERS[*]}"
   fi
 
-  # Clone / update
-  clone_or_update
+  # Check if any non-Claude-Code providers need clone + symlink
+  local needs_clone=false
+  for i in "${!PROVIDERS[@]}"; do
+    if [ "${PROVIDERS[$i]}" != "Claude Code" ]; then
+      needs_clone=true
+      break
+    fi
+  done
+
+  if [ "$needs_clone" = true ]; then
+    clone_or_update
+  fi
 
   # Link providers
   for i in "${!PROVIDERS[@]}"; do
@@ -359,10 +393,11 @@ main() {
 
   # Model selection per provider
   case "$config_provider" in
-    Cursor)       configure_models_cursor ;;
-    OpenCode)     configure_models_opencode ;;
-    Antigravity)  configure_models_antigravity ;;
-    *)            configure_models_claude_code ;;
+    "Claude Code") configure_models_claude_code ;;
+    Cursor)        configure_models_cursor ;;
+    OpenCode)      configure_models_opencode ;;
+    Antigravity)   configure_models_antigravity ;;
+    *)             configure_models_claude_code ;;
   esac
 
   # Security

@@ -74,29 +74,36 @@ curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/i
 </td></tr>
 </table>
 
-The install script walks you through setup:
+**Then run the setup wizard** (all providers, including Claude Code):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
+```
+
+The wizard auto-detects your providers and walks you through configuration:
 
 ```
-> Detected: Cursor
+> Detected: Claude Code, Cursor
+
+Which provider is your primary?
+  [1] Claude Code
+  [2] Cursor
 
 Thinking model (orchestrator, reviewer, debugger):
-  [1] Claude 4.6 Opus — Hyperflow default
-  [2] Claude 4.7 Opus — Requires Max Mode
-  [3] GPT-5.5 — Latest GPT
-  [4] Gemini 3.1 Pro — Standard availability
+  [1] Opus 4.6 — Pinned Opus — Hyperflow default
+  [2] Opus 4.7 — Latest Opus
+  [3] Sonnet 4.6 — Cost savings
 
 Worker model (implementer, searcher, writer):
-  [1] Claude 4.6 Sonnet — Hyperflow default
-  [2] Claude 4.5 Haiku — Fast and cheap
-  [3] GPT-5.4 Mini — Cost-efficient
-  [4] Gemini 3 Flash — Fast and cheap
+  [1] Sonnet 4.6 — Latest Sonnet — Hyperflow default
+  [2] Haiku 4.5 — Fast and cheap for simple tasks
 
 Enable security layer? [Y/n]:
 
 > Config saved to ~/.hyperflow/config.json
 ```
 
-Update all providers at once: `git -C ~/.hyperflow/repo pull`
+For Cursor/OpenCode/Antigravity, update with: `git -C ~/.hyperflow/repo pull`
 
 **Activate:**
 
