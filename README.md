@@ -62,6 +62,82 @@ claude plugin add Mohammed-Abdelhady/hyperflow
 cp -r skills/hyperflow ~/.claude/skills/
 ```
 
+## Usage
+
+### It just works
+
+Hyperflow activates automatically at the start of every conversation. No slash commands needed. Just talk to Claude normally and Hyperflow handles the rest.
+
+### Implementation tasks
+
+Ask Claude to build something where the approach is clear:
+
+```
+You: "Add a search bar to the dashboard with debounced input"
+
+What happens:
+  [Opus] Decomposes into: SearchBar component + useDebounce hook + wire into Dashboard
+  [Sonnet] Builds SearchBar component          --|
+  [Sonnet] Creates useDebounce hook             --|--> parallel
+  [Opus] Reviews both outputs
+  [Sonnet] Wires SearchBar into Dashboard (with learnings from prior tasks)
+  [Opus] Final review
+```
+
+### Design tasks
+
+Ask Claude to build something where the approach is unclear or there are multiple valid options:
+
+```
+You: "I need a notification system for the app"
+
+What happens:
+  [Opus] Explores your codebase for existing patterns
+  [Opus] Asks: "Real-time (WebSocket) or polling-based?"
+  You: "Real-time"
+  [Opus] Asks: "Toast notifications, notification center, or both?"
+  You: "Both"
+  [Opus] Proposes 2 approaches with trade-offs
+  You: Pick one
+  [Opus] Presents design section by section
+  You: Approve
+  [Opus] Transitions to orchestrator -> dispatches workers -> builds it
+```
+
+### Debugging
+
+```
+You: "Tests are failing after the auth refactor"
+
+What happens:
+  [Opus] Analyzes failures, identifies 3 independent broken test files
+  [Sonnet] Investigates auth-middleware.test.ts    --|
+  [Sonnet] Investigates login-flow.test.ts         --|--> parallel
+  [Sonnet] Investigates session-handler.test.ts    --|
+  [Opus] Reviews each fix
+  [Opus] Runs full test suite to verify
+```
+
+### Quick tasks
+
+Even small tasks go through the pattern:
+
+```
+You: "Rename the Button component to PrimaryButton"
+
+What happens:
+  [Sonnet] Renames component + updates all imports
+  [Opus] Reviews for missed references
+```
+
+### What you'll notice
+
+- **No permission prompts** — Claude just executes
+- **No "should I proceed?" questions** — it proceeds
+- **No walls of explanation** — just status updates and code
+- **Parallel execution** — independent work happens simultaneously
+- **Design questions only when needed** — brainstorming kicks in for ambiguous tasks
+
 ## How It Works
 
 ### The 4 Layers
