@@ -126,7 +126,7 @@ User request
 3. **Learning injection.** After each batch, extract patterns/gotchas from worker outputs. Inject synthesized learnings into subsequent worker prompts.
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md) for the dispatch template.
-6. **Reviewer prompt template.** See [reviewer-prompt.md](reviewer-prompt.md) for the review template.
+6. **Multi-level review.** After each worker, run a 5-level review scaled by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) for template and [review-levels.md](review-levels.md) for full checklist.
 7. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
    - `⚡ [Implementer] Creating auth middleware`
    - `⚡ [Reviewer] Reviewing auth middleware output`
