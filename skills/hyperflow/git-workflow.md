@@ -86,6 +86,28 @@ When all tasks are complete:
 3. If keep: leaves commits as-is
 4. Opus does NOT push — waits for user instruction
 
+## Push Flow (Auto-Release)
+
+When the user asks to push, **always run the release script first**:
+
+```
+User: "push" / "push changes"
+    |
+[Opus] Run ./scripts/release.sh (auto-detect bump type from commits)
+    |   → Generates CHANGELOG entries from conventional commits
+    |   → Bumps version in all manifests (package.json, plugin.json, marketplace.json, README)
+    |   → Commits "chore(release): vX.Y.Z"
+    |   → Creates annotated git tag vX.Y.Z
+    |
+[Opus] git push && git push --tags
+```
+
+**Rules:**
+1. Always release before push — never push without version bump + changelog
+2. If release.sh says "Nothing to release" (no new commits since last tag), skip and push directly
+3. The release commit is automatic — don't ask for confirmation
+4. Push both commits and tags in one go
+
 ## Conflict Handling
 
 If a commit fails due to conflicts:
