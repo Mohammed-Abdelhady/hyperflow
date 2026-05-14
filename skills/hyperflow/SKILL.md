@@ -19,6 +19,7 @@ On session start, analyze the project and cache results in `.hyperflow/` at proj
 4. Generate analysis files: `profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
 5. Create `.checksums` file for staleness detection
 6. Add `.hyperflow/` to `.gitignore` if not already there
+7. Check `.hyperflow/tasks/` for incomplete tasks from previous sessions — present summary and ask to continue or start fresh
 
 ### On Subsequent Sessions
 
@@ -141,6 +142,7 @@ User request
    ─────────────────────────────────────────
    ```
    Include the model names from the current config. Combine same-role agents with count + summed tokens. Format token counts as `Xk` (divide by 1000, one decimal).
+9. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
 
 ### Learning Injection Format
 
