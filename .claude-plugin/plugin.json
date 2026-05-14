@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Multi-agent orchestration for AI coding tools. Thinking models think. Worker models execute. Everything runs in parallel with automatic review.",
   "author": {
     "name": "Mohammed Abdelhady",
