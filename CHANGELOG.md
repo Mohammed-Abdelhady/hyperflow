@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.4] — 2026-05-15
+
+### Fixed
+- Use resolved thinking-tier model, not hardcoded Opus
+
+
 ## [1.4.3] — 2026-05-15
 
 ### Fixed
@@ -128,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.4...HEAD
+[1.4.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.4.0...v1.4.1
