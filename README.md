@@ -64,9 +64,16 @@ cp -r skills/hyperflow ~/.claude/skills/
 
 ## Usage
 
-### It just works
+### Activate
 
-Hyperflow activates automatically at the start of every conversation. No slash commands needed. Just talk to Claude normally and Hyperflow handles the rest.
+Type `/hyperflow` in Claude Code to activate the skill. Once loaded, it runs for the entire conversation.
+
+```
+You: /hyperflow
+Claude: [Hyperflow loaded — autonomous orchestration active]
+```
+
+You can also trigger it naturally — Claude will detect the skill and ask to use it when a task matches.
 
 ### Implementation tasks
 
