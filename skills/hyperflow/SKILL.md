@@ -260,7 +260,6 @@ Automated branching and commits. See [git-workflow.md](git-workflow.md) for full
 
 **Auto-commit:** On by default. Commits after each approved task with descriptive message.
 **Branching:** Auto-creates feature branch if on main/master.
-**Auto-release on push:** When user asks to push, run `./scripts/release.sh` first (bumps version, generates CHANGELOG, tags) then push.
 **No push:** Never pushes automatically — waits for user.
 **Disable auto-commit:** "hyperflow: auto-commit off"
 

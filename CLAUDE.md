@@ -18,3 +18,14 @@ A Claude Code plugin providing autonomous multi-agent orchestration. Skills live
 - Descriptions start with "Use when..." and describe triggering conditions only (not workflow)
 - SKILL.md body stays under 500 lines — split into reference files if needed
 - Reference files are one level deep from SKILL.md (no nested references)
+
+## Git Push Flow
+
+When pushing, always run `./scripts/release.sh` first:
+1. Auto-detects bump type from conventional commits (feat→minor, fix→patch, BREAKING→major)
+2. Generates CHANGELOG entries
+3. Bumps version in all manifests (package.json, plugin.json, marketplace.json, README)
+4. Commits `chore(release): vX.Y.Z` and creates annotated tag
+5. Then push with `git push && git push --tags`
+
+If release.sh says "Nothing to release", skip and push directly.
