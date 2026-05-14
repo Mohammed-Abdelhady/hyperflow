@@ -177,7 +177,7 @@ See [providers.md](providers.md) for the full list of available models per platf
 
 Hyperflow's security layer is enabled by default. It prevents workers from accessing sensitive files, running dangerous commands, and hardcoding secrets.
 
-### Security: Customize Blocked Patterns
+### Customize Blocked Patterns
 
 Add project-specific patterns or remove defaults that don't apply:
 
