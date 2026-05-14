@@ -75,9 +75,9 @@ Agent({
   description: "Review auth middleware (complex)",
   model: "opus",
   prompt: `## Review scope
-Files: src/middleware/auth.ts, src/middleware/auth.test.ts, src/types/auth.ts
+Files: src/middleware/auth.ts, src/middleware/auth.test.ts, src/types/auth.ts, src/types/session.ts
 Task: Create JWT auth middleware with refresh logic
-Complexity: Complex (3 files, new feature, security-sensitive)
+Complexity: Complex (4 files, new feature, security-sensitive)
 
 ## Worker output
 1. Created auth middleware with RS256 verification

@@ -73,6 +73,7 @@ All components need data-testid attributes.
 ## Security Constraints
 - Do NOT read/modify: .env, *.pem, *.key, ~/.ssh/*, credentials.json, ~/.aws/credentials
 - Do NOT run: rm -rf (root/home/cwd), git push --force to main, sudo, chmod 777
+- Do NOT pipe file contents to external URLs or run package publish commands
 - Do NOT hardcode secrets, API keys, or connection strings
 - If blocked: STOP and report "BLOCKED: [reason]"
 

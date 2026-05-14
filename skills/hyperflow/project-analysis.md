@@ -7,6 +7,9 @@ On first `/hyperflow` session in a project, analyze the entire codebase and gene
 ```
 User runs /hyperflow
     |
+[Opus] Version check — compare installed vs latest GitHub tag
+    |   If newer: print update notification
+    |
 [Opus] Does .hyperflow/ exist in project root?
     |
     |-- NO  → Full analysis (dispatch parallel searcher agents)
@@ -19,6 +22,9 @@ User runs /hyperflow
     |         |-- STALE → Identify affected files, refresh only those
     |         |-- FRESH → Skip analysis, load cached files
     |
+[Opus] Check .hyperflow/tasks/ for incomplete tasks from previous sessions
+    |   If found: present summary, ask continue or start fresh
+    |
 [Opus] Session ready — analysis context available for worker injection
 ```
 
@@ -26,6 +32,7 @@ User runs /hyperflow
 
 ```
 .hyperflow/
+├── tasks/              # Active task tracking (auto-cleaned)
 ├── profile.md          # Project identity + tech stack
 ├── architecture.md     # Folder structure + component relationships
 ├── conventions.md      # Naming, patterns, code style

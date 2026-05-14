@@ -32,7 +32,7 @@ On session start, analyze the project and cache results in `.hyperflow/` at proj
 ### Worker Injection
 
 Inject relevant analysis into worker prompts under `## Project Context`:
-- **Implementers** get conventions + architecture
+- **Implementers** get conventions + architecture + relevant dependencies
 - **Test writers** get testing + conventions
 - **Searchers** get architecture
 - **Reviewers** get everything
@@ -204,30 +204,13 @@ Triggered when the task involves creating new functionality, choosing between ap
 ### Enhanced Brainstorming Flow
 
 ```
-User shares idea
-    |
-[Opus] Explore context — check files, docs, recent commits
-    |
-[Opus] Multi-Dimensional Analysis (silent)
-    |   Score 6 dimensions: clear / uncertain / blind
-    |   Map blind spots → question techniques
-    |
-[Opus] Smart Question Sequence (via AskUserQuestion)
-    |   Intent → Constraints → Assumptions → Scope
-    |   Max 4-5 questions. Skip obvious ones.
-    |
-[Opus] Requirement Synthesis — structured summary, user confirms
-    |
-[Opus] Propose 2-3 approaches with trade-offs + recommendation
-    |
-[User] Picks approach
-    |
-[Opus] Present design in sections, get approval per section
-    |
-[User] Approves full design
-    |
-[Opus] Transition to Layer 3 (orchestrator) for implementation
+User shares idea → [Opus] Explore context → Multi-Dimensional Analysis (silent)
+→ Smart Questions (AskUserQuestion) → Requirement Synthesis (user confirms)
+→ Propose 2-3 approaches → User picks → Design sections (approval per section)
+→ Transition to Layer 3
 ```
+
+Full flow details in [brainstorming-advanced.md](brainstorming-advanced.md).
 
 ### Brainstorming Rules
 
