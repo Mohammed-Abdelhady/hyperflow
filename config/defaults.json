@@ -101,5 +101,69 @@
         ]
       }
     }
+  },
+  "security": {
+    "blockedFiles": [
+      ".env",
+      ".env.*",
+      "*.pem",
+      "*.key",
+      "*.p12",
+      "*.pfx",
+      "*.jks",
+      "credentials.json",
+      "service-account*.json",
+      "*-secret.json",
+      "*-secret.yaml",
+      "~/.ssh/*",
+      "~/.gnupg/*",
+      "id_rsa*",
+      "id_ed25519*",
+      "*.gpg",
+      ".npmrc",
+      ".pypirc",
+      ".docker/config.json",
+      "*.keychain",
+      "*-credentials",
+      "~/.aws/credentials",
+      "~/.azure/*",
+      "~/.config/gcloud/*",
+      "~/.kube/config"
+    ],
+    "allowedFiles": [
+      ".env.example",
+      ".env.template",
+      ".env.sample"
+    ],
+    "blockedCommands": [
+      "rm -rf /",
+      "rm -rf ~",
+      "rm -rf .",
+      "mkfs",
+      "dd if=",
+      "git push --force (to main/master)",
+      "git reset --hard",
+      "git clean -fdx",
+      "sudo",
+      "chmod 777",
+      "chmod -R 777",
+      "npm publish",
+      "pip upload",
+      "gem push",
+      "cargo publish"
+    ],
+    "secretPatterns": [
+      "sk-",
+      "AKIA",
+      "ghp_",
+      "gho_",
+      "glpat-",
+      "xoxb-",
+      "xoxp-",
+      "-----BEGIN (RSA|EC|DSA)? PRIVATE KEY-----",
+      "postgres://.*:.*@",
+      "mongodb+srv://.*:.*@",
+      "redis://.*:.*@"
+    ]
   }
 }

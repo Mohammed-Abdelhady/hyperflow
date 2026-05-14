@@ -33,6 +33,69 @@
       "additionalProperties": {
         "$ref": "#/$defs/providerConfig"
       }
+    },
+    "security": {
+      "description": "Security layer configuration. Controls blocked files, commands, and secret detection.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable or disable the security layer. Default: true.",
+          "default": true
+        },
+        "blockedFiles": {
+          "description": "Override default blocked file patterns.",
+          "type": "object",
+          "properties": {
+            "add": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Additional file patterns to block."
+            },
+            "remove": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Default patterns to unblock."
+            }
+          },
+          "additionalProperties": false
+        },
+        "blockedCommands": {
+          "description": "Override default blocked command patterns.",
+          "type": "object",
+          "properties": {
+            "add": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Additional command patterns to block."
+            },
+            "remove": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Default patterns to unblock."
+            }
+          },
+          "additionalProperties": false
+        },
+        "secretPatterns": {
+          "description": "Override default secret detection patterns.",
+          "type": "object",
+          "properties": {
+            "add": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Additional secret patterns to detect."
+            },
+            "remove": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Default patterns to stop detecting."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["defaults"],
