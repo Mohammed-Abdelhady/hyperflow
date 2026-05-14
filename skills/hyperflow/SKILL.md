@@ -43,7 +43,7 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 1. Read `~/.hyperflow/config.json` (skip if missing — use defaults above)
 2. Auto-detect provider or use `activeProvider` override
 3. Resolve thinking/worker models via priority chain:
-   env var > session command > role override > provider tier > global default
+   per-task inline > session command > env var > role override > provider tier > global default
 4. Map resolved models to Agent tool `model:` parameter (Claude Code: `"opus"`, `"sonnet"`, `"haiku"`)
 
 ### Dispatching Subagents
@@ -210,9 +210,21 @@ Automated branching and commits. See [git-workflow.md](git-workflow.md) for full
 **No push:** Never pushes automatically — waits for user.
 **Disable auto-commit:** "hyperflow: auto-commit off"
 
+## Layer 9: Security
+
+Worker containment via prompt-injected blocklists. See [security.md](security.md) for full rules and configuration.
+
+**Default protections:**
+- Blocked files: `.env`, `*.pem`, `*.key`, `~/.ssh/*`, `~/.aws/credentials`, and other sensitive paths
+- Blocked commands: `rm -rf` (destructive), `git push --force` to main, `sudo`, `chmod 777`, package publish
+- Secret detection: Reviewer checks for hardcoded API keys, private keys, connection strings
+
+**Config:** `~/.hyperflow/config.json` → `security` key (add/remove patterns). Disable per-session: `hyperflow: security off`.
+
+Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
+
 ## What This Does NOT Override
 
-- Security (no secrets in commits, no vulnerabilities)
 - Other active skills (project-specific skills still apply)
 - Project CLAUDE.md coding standards
 
