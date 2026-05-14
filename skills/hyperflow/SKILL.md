@@ -132,36 +132,38 @@ User request
     |
 [Thinking] Dispatch worker-tier agents (parallel where independent)
     |
-[Workers] Execute in parallel -> return results + notes
-    |
-[Thinking] REVIEW BATCH — dispatch thinking-tier reviewer (model: "<resolved-thinking>")
-    |   ⚠️ MANDATORY after EVERY batch. No batch completes without this.
-    |   Simple: L1-2, Medium: L1-3, Complex: L1-5
-    |   APPROVED → continue | NEEDS_FIX → re-dispatch worker to fix
-    |
-[Thinking] UPDATE task files:
-    |   - Check off completed sub-tasks
-    |   - Add new sub-tasks discovered during implementation
-    |   - Remove sub-tasks that turned out unnecessary
-    |   - Add progress notes and learnings
-    |
-[Thinking] Synthesize learnings -> craft context for next batch
-    |
-[Thinking] Dispatch next batch (if needed) with accumulated context
-    |
-    |   ┌─────────────────────────────────────────────┐
-    |   │ LOOP: Workers execute → Thinking reviews    │
-    |   │ → update tasks → synthesize → next batch    │
-    |   │ Repeat until all sub-tasks complete         │
-    |   └─────────────────────────────────────────────┘
+    |   ┌─────────────────────────────────────────────────────────┐
+    |   │ ACTIVE LOOP — thinking model is NEVER idle:             │
+    |   │                                                         │
+    |   │ [Workers] Execute batch                                 │
+    |   │     |                                                   │
+    |   │ [Thinking] As each worker returns:                      │
+    |   │     ├── Review output immediately (thinking-tier)       │
+    |   │     ├── If NEEDS_FIX → re-dispatch worker with fix     │
+    |   │     ├── If worker is slow/stuck → assist or re-scope   │
+    |   │     └── If questions arise → ask user (AskUserQuestion) │
+    |   │     |                                                   │
+    |   │ [Thinking] After batch completes:                       │
+    |   │     ├── Update task files (check off / add / remove)    │
+    |   │     ├── Synthesize learnings for next batch             │
+    |   │     ├── Validate integration between worker outputs     │
+    |   │     └── Dispatch next batch with accumulated context    │
+    |   │                                                         │
+    |   │ Repeat until all sub-tasks complete                     │
+    |   └─────────────────────────────────────────────────────────┘
     |
 [Thinking] FINAL REVIEW — integration review across ALL changes (model: "<resolved-thinking>")
     |
 [Thinking] DELETE completed task files from .hyperflow/tasks/
 ```
 
-**The thinking model owns:** questions, task creation, reviews, task updates, learnings, coordination.
-**Workers only:** execute code changes. Nothing else.
+**The thinking model is ALWAYS active** — it never waits passively:
+- Owns: questions, task creation, reviews, task updates, learnings, coordination
+- Between batches: reviews, synthesizes, plans next steps, asks user if needed
+- During worker execution: monitors, assists stuck workers, validates early outputs
+- If a worker is slow or blocked: re-scope, break into smaller tasks, or take over
+
+**Workers only:** execute code changes. They never ask questions, review, or coordinate.
 
 ### Rules
 
@@ -171,14 +173,15 @@ User request
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md) for the dispatch template.
 6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) for template and [review-levels.md](review-levels.md) for full checklist.
-7. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
+7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
+8. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
    - `⚡ [Implementer] Creating auth middleware`
    - `⚡ [Reviewer] Reviewing auth middleware output`
    - `⚡ [Searcher] Finding related test files`
    - `⚡ [Debugger] Investigating test failure in auth.test.ts`
    - `⚡ [Writer] Generating API documentation`
    Format: `⚡ [Role] Short description of what this agent will do`
-8. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
+9. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
    ```
    ── Hyperflow Usage ──────────────────────
    Thinking (Opus 4.6)    2 agents   27.3k tokens  (1 reviewer: 15.2k, 1 debugger: 12.1k)
@@ -187,7 +190,7 @@ User request
    ─────────────────────────────────────────
    ```
    Include the model names from the current config. Combine same-role agents with count + summed tokens. Format token counts as `Xk` (divide by 1000, one decimal).
-9. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
+10. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
 
 ### Learning Injection Format
 
