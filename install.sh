@@ -31,9 +31,9 @@ SECURITY_ENABLED="true"
 
 detect_providers() {
   local name path key
-  local -a names=("Claude Code" "Cursor" "OpenCode" "Antigravity")
-  local -a paths=("$HOME/.claude/skills" "$HOME/.cursor/skills" "$HOME/.opencode/skills" "$HOME/.antigravity/skills")
-  local -a keys=("claude-code" "cursor" "opencode" "antigravity")
+  local -a names=("Claude Code" "Cursor" "OpenCode" "Antigravity" "Codex")
+  local -a paths=("$HOME/.claude/skills" "$HOME/.cursor/skills" "$HOME/.opencode/skills" "$HOME/.antigravity/skills" "$HOME/.codex/skills")
+  local -a keys=("claude-code" "cursor" "opencode" "antigravity" "codex")
 
   for i in "${!names[@]}"; do
     name="${names[$i]}"
@@ -230,6 +230,26 @@ configure_models_antigravity() {
   SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
 }
 
+configure_models_codex() {
+  header "Model Configuration — Codex"
+
+  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
+    "o3|Strongest reasoning — Hyperflow default" \
+    "o4-mini|Fast reasoning" \
+    "GPT-5.5|Latest GPT"
+  local thinking_options=("o3" "o4-mini" "gpt-5.5")
+  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
+
+  echo ""
+
+  pick_one "Worker model (implementer, searcher, writer):" \
+    "o4-mini|Fast reasoning — Hyperflow default" \
+    "GPT-5.4 Mini|Cost-efficient" \
+    "Codex Mini|Built-in lightweight model"
+  local worker_options=("o4-mini" "gpt-5.4-mini" "codex-mini")
+  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
+}
+
 # ─── Security ───
 
 configure_security() {
@@ -397,6 +417,7 @@ main() {
     Cursor)        configure_models_cursor ;;
     OpenCode)      configure_models_opencode ;;
     Antigravity)   configure_models_antigravity ;;
+    Codex)         configure_models_codex ;;
     *)             configure_models_claude_code ;;
   esac
 

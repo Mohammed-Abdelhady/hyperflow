@@ -8,7 +8,7 @@
 claude plugin add Mohammed-Abdelhady/hyperflow
 ```
 
-### Cursor / OpenCode / Antigravity
+### Cursor / OpenCode / Codex / Antigravity
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -17,7 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/i
 The install script walks you through the full setup:
 
 1. **Clones** the repo to `~/.hyperflow/repo/`
-2. **Detects** which providers are installed (Cursor, OpenCode, Antigravity)
+2. **Detects** which providers are installed (Cursor, OpenCode, Codex, Antigravity)
 3. **Symlinks** the skill into each provider's skills directory
 4. **Asks** you to pick thinking and worker models from your provider's catalog
 5. **Asks** whether to enable the security layer
@@ -96,6 +96,7 @@ git clone https://github.com/Mohammed-Abdelhady/hyperflow.git ~/.hyperflow/repo
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.claude/skills/hyperflow
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.cursor/skills/hyperflow
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.opencode/skills/hyperflow
+ln -s ~/.hyperflow/repo/skills/hyperflow ~/.codex/skills/hyperflow
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.antigravity/skills/hyperflow
 ```
 </details>

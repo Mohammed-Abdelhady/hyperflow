@@ -96,7 +96,7 @@ When presenting the model picker during install:
 
 1. **Claude Code:** Read `~/.claude/settings.json` to detect current model. Supplement hardcoded list.
 2. **OpenCode:** Run `opencode models list --json` (2s timeout). Merge with hardcoded list.
-3. **Cursor / Antigravity:** No CLI — use hardcoded list from `config/defaults.json` only.
+3. **Cursor / Codex / Antigravity:** No CLI — use hardcoded list from `config/defaults.json` only.
 
 Dynamic models supplement the hardcoded list (don't replace). Fall back to hardcoded if fetch fails.
 

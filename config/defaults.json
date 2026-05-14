@@ -100,6 +100,25 @@
           { "id": "gpt-oss-120b", "label": "GPT-OSS 120B", "provider": "OpenAI", "notes": "Open-weight" }
         ]
       }
+    },
+    "codex": {
+      "displayName": "Codex",
+      "detection": {
+        "envPrefix": "CODEX_",
+        "dynamicFetch": null
+      },
+      "models": {
+        "thinking": [
+          { "id": "o3", "label": "o3", "provider": "OpenAI", "notes": "Strongest reasoning, Hyperflow default", "default": true },
+          { "id": "o4-mini", "label": "o4-mini", "provider": "OpenAI", "notes": "Fast reasoning" },
+          { "id": "gpt-5.5", "label": "GPT-5.5", "provider": "OpenAI", "notes": "Latest GPT" }
+        ],
+        "worker": [
+          { "id": "o4-mini", "label": "o4-mini", "provider": "OpenAI", "notes": "Fast reasoning, Hyperflow default", "default": true },
+          { "id": "gpt-5.4-mini", "label": "GPT-5.4 Mini", "provider": "OpenAI", "notes": "Cost-efficient" },
+          { "id": "codex-mini", "label": "Codex Mini", "provider": "OpenAI", "notes": "Built-in lightweight model" }
+        ]
+      }
     }
   },
   "security": {

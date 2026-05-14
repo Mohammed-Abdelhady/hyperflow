@@ -51,7 +51,7 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 | **Higher quality** | Every output gets a two-pass review. Workers learn from each other — Batch 2 benefits from Batch 1's discoveries. |
 | **Lower cost** | Expensive thinking models orchestrate and review. Cheap worker models write the code. Stop paying Opus prices for tasks Sonnet handles. |
 | **Faster execution** | Independent tasks run in parallel. 3 files that don't share state? 3 workers, simultaneously. |
-| **Works everywhere** | Claude Code, Cursor, OpenCode, Antigravity — one config file, auto-detection, same workflow. |
+| **Works everywhere** | Claude Code, Cursor, OpenCode, Codex, Antigravity — one config file, auto-detection, same workflow. |
 
 ---
 
@@ -66,7 +66,7 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 claude plugin add Mohammed-Abdelhady/hyperflow
 ```
 </td></tr>
-<tr><td><strong>Cursor / OpenCode / Antigravity</strong></td><td>
+<tr><td><strong>Cursor / OpenCode / Codex / Antigravity</strong></td><td>
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -103,7 +103,7 @@ Enable security layer? [Y/n]:
 > Config saved to ~/.hyperflow/config.json
 ```
 
-For Cursor/OpenCode/Antigravity, update with: `git -C ~/.hyperflow/repo pull`
+For Cursor/OpenCode/Codex/Antigravity, update with: `git -C ~/.hyperflow/repo pull`
 
 **Activate:**
 
@@ -223,7 +223,7 @@ Defaults for Claude Code (all configurable):
 
 **Iron rule:** Every worker output gets a thinking-model review.
 
-Other providers: Cursor (Claude 4.6 Opus/Sonnet), OpenCode (anthropic/claude-opus-4-6), Antigravity (Gemini 3.1 Pro/Flash). See [Model Routing Guide](docs/model-routing.md).
+Other providers: Cursor (Claude 4.6 Opus/Sonnet), OpenCode (anthropic/claude-opus-4-6), Codex (o3/o4-mini), Antigravity (Gemini 3.1 Pro/Flash). See [Model Routing Guide](docs/model-routing.md).
 </details>
 
 <details>
@@ -312,6 +312,7 @@ Disable per-session: `hyperflow: security off`
 | **Claude Code** | Opus 4.6 | Sonnet 4.6 | Auto |
 | **Cursor** | Claude 4.6 Opus | Claude 4.6 Sonnet | Auto |
 | **OpenCode** | Claude Opus 4.6 | Claude Sonnet 4.6 | Auto |
+| **Codex** | o3 | o4-mini | Auto |
 | **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash | Auto |
 
 All models are configurable per provider. See [Provider Setup](docs/providers.md).
