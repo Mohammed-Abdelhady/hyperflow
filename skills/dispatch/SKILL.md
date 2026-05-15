@@ -57,18 +57,22 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 
 ## Flow
 
-### Step 0 — Confirm mode (only if invoked directly)
+### Step 0 — Choose mode (only if invoked directly · STRUCTURAL GATE)
 
-If no `chain-mode` arg was passed (i.e., the user ran `/hyperflow:dispatch` directly without going through plan), ask via `AskUserQuestion`:
+This is a **structural gate** per DOCTRINE rule 8. When dispatch is invoked directly (no `chain-mode` arg from `scope`), it MUST fire. "No clarifying questions" / "auto-pilot" / any autonomy directive does NOT skip it. Defaulting silently is a doctrine violation.
+
+If a `chain-mode` arg was passed, skip this step — the chain-starter already asked.
+
+Otherwise, ask via `AskUserQuestion`:
 
 ```
-How should I handle the end of execute?
+How should I handle progress through the batches?
 
-  Auto     — finish all batches + final review and stop. Print next-step suggestions.
+  Auto     — run all batches + final review and stop. Print next-step suggestions.
   Manual   — pause between batches and ask before continuing.
 ```
 
-Save and use the chosen mode.
+Wait for the user's answer. Do not proceed without it. If `AskUserQuestion` cannot be presented, print an error and stop — never silently default.
 
 ### Step 1 — Load the task
 

@@ -38,11 +38,13 @@ Substantive steps = 1, 2, 3, 5, 6, 7, 8. Each appears in the usage summary.
 
 ## Flow
 
-### Step 0 — Choose chain mode (FIRST tool call)
+### Step 0 — Choose chain mode (FIRST tool call · STRUCTURAL GATE)
 
-If invoked with a `chain-mode=<auto|manual>` arg (from a prior skill in the chain), skip this step.
+This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the skill is invoked directly. "No clarifying questions" / "auto-pilot" / "always-on" / any other autonomy directive does NOT skip it. The agent MUST `AskUserQuestion` here — defaulting to `auto` without asking is a doctrine violation.
 
-Otherwise, **before any research or analysis**, ask via `AskUserQuestion` with a short explanation:
+If invoked with a `chain-mode=<auto|manual>` arg (from a prior skill in the chain), skip this step — the previous chain-starter already asked.
+
+Otherwise, **before any research, triage, or analysis**, ask via `AskUserQuestion`:
 
 ```
 How should I advance through the chain after each phase?
@@ -54,7 +56,9 @@ How should I advance through the chain after each phase?
              More control, more confirmations.
 ```
 
-Save the chosen mode (`auto` or `manual`) and propagate it via `args: "chain-mode=<mode>"` whenever this skill invokes the next phase. Default to `auto` if the user gives no clear answer.
+Wait for the user's answer. Do not proceed without it. Save the chosen mode (`auto` or `manual`) and propagate it via `args: "chain-mode=<mode>"` whenever this skill invokes the next phase.
+
+If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
 ### Step 1 — Triage (Layer 0.5)
 
