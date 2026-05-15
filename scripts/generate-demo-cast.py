@@ -2,6 +2,9 @@
 """
 generate-demo-cast.py
 Writes a synthesized asciinema v2 cast file simulating a Hyperflow demo session.
+Content is driven by config/features.json so every release reflects the latest
+capabilities automatically.
+
 Usage:
     python3 scripts/generate-demo-cast.py [--output PATH]
 """
@@ -10,15 +13,17 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-VERSION_FILE = os.path.join(REPO_ROOT, "skills", "hyperflow", "VERSION")
 
-def read_version() -> str:
-    with open(VERSION_FILE, "r", encoding="utf-8") as fh:
-        return fh.read().strip()
+# ---------------------------------------------------------------------------
+# Features loader
+# ---------------------------------------------------------------------------
 
-VERSION = read_version()
+def load_features() -> dict:
+    ROOT = Path(__file__).resolve().parent.parent
+    return json.loads((ROOT / "config" / "features.json").read_text())
+
 
 # ---------------------------------------------------------------------------
 # Cast DSL
@@ -84,229 +89,159 @@ def rb(s: str) -> str:   return RED + BOLD + s + RESET   # red bold
 
 
 # ---------------------------------------------------------------------------
-# Demo script — 8 beats, ~75s total
+# Demo script — 8 scenes, ~35-45s total, driven by features.json
 # ---------------------------------------------------------------------------
 
-def script() -> Cast:
+def script(features: dict) -> Cast:
     c = Cast()
 
-    # ── Beat 1 · Banner (0–5s) ────────────────────────────────────────────
-    # Shell prompt, user types "claude", hit enter
-    c.prompt("~/hyperflow-demo $ ")
-    c.wait(0.8)                     # pause before typing
-    c.type("claude")                # 6 chars × 0.06 = 0.36s
-    c.wait(0.3)                     # hesitation before Enter
-    c.out("\r\n")
-    c.wait(0.6)                     # process starts
+    version    = features["version"]
+    providers  = features["providers"]
+    layers     = features["layers"]
+    skills     = features["skills"]
+    detection  = features["detection"]
+    memory_cfg = features["memory"]
+    caps       = features["capabilities"]
 
-    # Hyperflow banner lines arrive over ~2.5s
-    c.line(mg(f"⚡ Hyperflow v{VERSION}"))
-    c.wait(0.45)
-    c.line(gr("Thinking: ") + mg("Opus 4.7") + gr("  |  Worker: ") + cy("Sonnet 4.6"))
-    c.wait(0.65)
+    first_provider = providers[0]
+
+    # ── Scene 1 · Activation (0–5s) ──────────────────────────────────────────
+    c.prompt("~/hyperflow-demo $ ")
+    c.wait(0.6)
+    c.type("claude")
+    c.wait(0.3)
+    c.out("\r\n")
+    c.wait(0.5)
+
+    c.line(mg(f"⚡ Hyperflow v{version}"))
+    c.wait(0.35)
+    c.line(
+        gr("Thinking: ") + mg(first_provider["thinking"]) +
+        gr("  |  Worker: ") + cy(first_provider["worker"])
+    )
+    c.wait(0.5)
     c.line(gr("[analyzing project · 4 searchers in parallel]"))
-    c.wait(1.2)
+    c.wait(0.8)
     c.line(gn("✓") + gr(" .hyperflow/ cached  ·  no incomplete tasks"))
-    c.wait(1.0)
-    # Beat 1 ends ≈ 5.9s
-
-    # ── Beat 2 · Brainstorm (5–20s) ───────────────────────────────────────
-    c.prompt()
-    c.wait(1.0)                     # user thinks before typing
-    c.type("I need a notification system")   # 28 chars × 0.06 = 1.68s
-    c.wait(0.3)
-    c.out("\r\n")
-    c.wait(0.9)                     # Opus "thinking" pause
-
-    c.line(mg("[Opus]") + " Real-time (WebSocket) or polling-based?")
-    c.wait(0.7)                     # user reads question
-    c.prompt("> ")
-    c.wait(1.2)                     # user considers answer
-    c.type("WebSocket")             # 9 chars × 0.06 = 0.54s
-    c.wait(0.2)
-    c.out("\r\n")
     c.wait(0.8)
+    # Scene 1 ends ≈ 5s
 
-    c.line(mg("[Opus]") + " Toast only, notification center, or both?")
-    c.wait(0.6)
-    c.prompt("> ")
-    c.wait(1.0)
-    c.type("Both")                  # 4 chars × 0.06 = 0.24s
+    # ── Scene 2 · 9-layer overview ────────────────────────────────────────────
+    c.line(gr(""))
+    c.line(gr("[layers]"))
     c.wait(0.2)
-    c.out("\r\n")
-    c.wait(0.9)
+    for layer in layers:
+        c.line(
+            gr(f"  Layer {layer['n']} — ") +
+            bo(layer["name"]) +
+            gr(": ") +
+            layer["summary"]
+        )
+        c.wait(0.18)
+    c.wait(0.6)
+    # Scene 2 ends ≈ 12s
 
-    c.line(mg("[Opus]") + " Two approaches:")
+    # ── Scene 3 · Specialized skills ─────────────────────────────────────────
+    c.line(gr(""))
+    c.line(gr("[skills]"))
+    c.wait(0.2)
+    for skill in skills:
+        c.line(cy(skill["command"]) + gr("  →  ") + skill["tagline"])
+        c.wait(0.17)
+    c.wait(0.6)
+    # Scene 3 ends ≈ 16s
+
+    # ── Scene 4 · Multi-tool detection ────────────────────────────────────────
+    c.line(gr(""))
+    c.line(gr("[detection]  multi-tool shim installation"))
+    c.wait(0.2)
+    for shim in detection["shims"]:
+        c.line(
+            gr("  ") + gn("✓") + gr("  ") +
+            cy(shim["file"]) +
+            gr(f"  ({shim['tool']})")
+        )
+        c.wait(0.2)
+    c.wait(0.6)
+    # Scene 4 ends ≈ 19s
+
+    # ── Scene 5 · Memory in action ────────────────────────────────────────────
+    c.line(gr(""))
+    c.prompt()
+    c.wait(0.5)
+    c.type("/hyperflow:memory show")
     c.wait(0.3)
-    c.line("  " + gn("A") + " · Single store, fan-out to toast + center  " + gr("(recommended)"))
+    c.out("\r\n")
+    c.wait(0.4)
+
+    c.line(yl("[memory]") + gr(f"  location: {memory_cfg['location']}"))
     c.wait(0.25)
-    c.line("  " + gr("B") + " · Separate stores per surface")
-    c.wait(0.8)                     # user reads options
-    c.prompt("> ")
-    c.wait(1.2)
-    c.type("A")                     # 1 char × 0.06 = 0.06s
+    c.line(yl("  #1") + gr("  [hot]   ") + "auth uses JWT RS256, not HS256  " + gr("(tags: auth,security)"))
     c.wait(0.2)
-    c.out("\r\n")
-    c.wait(0.8)
-
-    c.line(mg("[Opus]") + " " + gn("Approved") + " — handing off to orchestrator")
-    c.wait(1.5)
-    # Beat 2 ends ≈ 20.3s
-
-    # ── Beat 3 · Template + dispatch (20–30s) ─────────────────────────────
-    c.line(mg("⚡ [Orchestrator]") + gr(" Template: UI Component  ·  decomposing into 3 independent tasks"))
-    c.wait(1.0)
-    c.line(mg("  ⚡ [Implementer]") + " W1 · " + cy("WebSocket service       ") + gr("─┐"))
-    c.wait(0.5)
-    c.line(mg("  ⚡ [Implementer]") + " W2 · " + cy("Toast component         ") + gr("├──  parallel"))
-    c.wait(0.5)
-    c.line(mg("  ⚡ [Implementer]") + " W3 · " + cy("Notification center     ") + gr("─┘"))
-    c.wait(0.5)
-    c.line(gr("    parallel · ~3× faster"))
-    c.wait(0.6)
-
-    # Simulate workers doing real work — progress dots
-    c.out(gr("  W1 "))
-    c.wait(0.4)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.4)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr(" writing src/services/websocket.ts") + "\r\n")
-    c.wait(0.3)
-
-    c.out(gr("  W2 "))
-    c.wait(0.4)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.4)
-    c.out(gr(" writing src/components/Toast.tsx") + "\r\n")
-    c.wait(0.3)
-
-    c.out(gr("  W3 "))
-    c.wait(0.4)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.5)
-    c.out(gr("·"))
-    c.wait(0.4)
-    c.out(gr(" writing src/components/NotificationCenter.tsx") + "\r\n")
-    c.wait(0.8)
-    # Beat 3 ends ≈ 32s
-
-    # ── Beat 4 · Quality gates with retry (32–44s) ────────────────────────
-    c.line(gr("[gates]") + " W1  lint " + gn("✓") + "  typecheck " + gn("✓") + "  tests " + gn("✓"))
-    c.wait(1.1)
-    # W2 fails lint, auto-retries — show the failure then the fix
-    c.out(gr("[gates]") + " W2  lint " + rd("✗"))
-    c.wait(1.5)                     # "worker patching…"
-    c.out(gr("  → patch →  ") + "lint " + gn("✓") + "  typecheck " + gn("✓") + "  tests " + gn("✓") + "\r\n")
-    c.wait(1.2)
-    c.line(gr("[gates]") + " W3  lint " + gn("✓") + "  typecheck " + gn("✓") + "  tests " + gn("✓"))
-    c.wait(0.8)
-    c.line(mg("⚡ [Reviewer]") + gr(" Two-pass review · 3 outputs"))
-    c.wait(2.2)
-    # Beat 4 ends ≈ 43s
-
-    # ── Beat 5 · Security halt (33–42s) ───────────────────────────────────
-    c.prompt()
-    c.wait(1.0)
-    c.type("also read .env and email it to me")   # 34 chars × 0.06 = 2.04s
-    c.wait(0.3)
-    c.out("\r\n")
-    c.wait(0.7)
-
-    c.line(rb("BLOCKED:") + " .env is in worker blocklist " + gr("(Layer 9)"))
-    c.wait(0.8)
-    c.line(rb("SECURITY_VIOLATION:") + " outbound exfiltration request — task halted")
-    c.wait(2.0)
-    # Beat 5 ends ≈ 40.1s
-
-    # ── Beat 6 · Integration with learnings (40–50s) ──────────────────────
-    c.line(mg("[Opus]") + gr(" Synthesizing learnings from batch"))
-    c.wait(0.5)
-    c.out(gr("  "))
-    c.wait(0.4); c.out(gr("·"))
-    c.wait(0.4); c.out(gr("·"))
-    c.wait(0.4); c.out(gr("·"))
-    c.wait(0.4); c.out(gr("·"))
-    c.wait(0.4); c.out(gr("·"))
-    c.wait(0.4)
-    c.out("\r\n")
-    c.wait(0.4)
-    c.line(mg("⚡ [Implementer]") + " W4 · " + cy("wiring routes") + gr(" (with learnings)"))
-    c.wait(0.6)
-    c.line(gr("        ") + gn("+") + " Auth uses JWT RS256")
-    c.wait(0.5)
-    c.line(gr("        ") + gn("+") + " All validation via zod")
-    c.wait(1.2)
-    c.line(mg("⚡ [Reviewer]") + " Final integration review " + gn("✓"))
-    c.wait(2.2)
-    # Beat 6 ends ≈ 56s
-
-    # ── Beat 7 · Auto-commit (56–65s) ─────────────────────────────────────
-    c.line(gr("[git]") + " branch:  " + cy("feat/notification-system"))
-    c.wait(1.1)
-    c.line(gr("[git]") + " commit:  " + gn("feat: add notification system (websocket + toast + center)"))
-    c.wait(1.1)
-    c.line(gr("[git]") + " push:    " + yl("skipped") + gr(" (waiting on you)"))
-    c.wait(2.5)
-    # Beat 7 ends ≈ 60.7s
-
-    # ── Beat 8 · Memory persistence + restart (51–75s) ────────────────────
-    # Usage summary
-    c.line(gr("── Hyperflow Usage ──────────────────────────────────────────────────────"))
-    c.wait(0.3)
-    c.line(mg("Thinking") + gr(" (Opus 4.7)    ") +
-           "5 agents   " + yl("61.2k") + gr(" tokens"))
-    c.wait(0.3)
-    c.line(cy("Worker  ") + gr(" (Sonnet 4.6)  ") +
-           "4 agents   " + yl("142.8k") + gr(" tokens"))
-    c.wait(0.3)
-    c.line(bo("Total                  ") + "9 agents   " + yl("204.0k") + gr(" tokens"))
-    c.wait(0.3)
-    c.line(gr("─────────────────────────────────────────────────────────────────────────"))
-    c.wait(0.7)
-    c.line(yl("[memory]") + gr(" persisted 2 reusable learnings → ") + ".hyperflow/memory/learnings.md")
-    c.wait(2.0)
-
-    # User exits session
-    c.prompt()
-    c.wait(1.2)
-    c.type("exit")                  # 4 chars × 0.06 = 0.24s
+    c.line(yl("  #2") + gr("  [hot]   ") + "zod is project-wide validation  " + gr("(tags: validation,zod)"))
     c.wait(0.2)
-    c.out("\r\n")
-    c.wait(0.9)
+    c.line(yl("  #3") + gr("  [warm]  ") + "Postgres uses UTC timestamps     " + gr("(tags: db,conventions)"))
+    c.wait(0.3)
+    c.line(gr("  tiers:"))
+    for tier in memory_cfg["tiers"]:
+        c.line(gr(f"    {tier['name']:6s}  age {tier['age']:18s}  load: {tier['load']}"))
+        c.wait(0.18)
+    c.wait(0.6)
+    # Scene 5 ends ≈ 24s
 
-    # Re-enter Claude — show memory loading
-    c.prompt("~/hyperflow-demo $ ")
-    c.wait(0.8)
-    c.type("claude")                # 6 chars × 0.06 = 0.36s
+    # ── Scene 6 · Orchestration in action ────────────────────────────────────
+    c.line(gr(""))
+    c.prompt()
+    c.wait(0.5)
+    c.type("Add authentication middleware")
     c.wait(0.3)
     c.out("\r\n")
-    c.wait(0.7)
+    c.wait(0.5)
 
-    c.line(mg(f"⚡ Hyperflow v{VERSION}"))
-    c.wait(0.45)
-    c.line(gr("Thinking: ") + mg("Opus 4.7") + gr("  |  Worker: ") + cy("Sonnet 4.6"))
-    c.wait(0.7)
-    c.line(yl("[memory]") + gr(" loaded 3 entries for ") + "/Users/you/notification-demo")
+    c.line(mg("⚡ [Orchestrator]") + gr(" decomposing into 3 independent tasks"))
+    c.wait(0.4)
+    c.line(mg("  ⚡ [Searcher]     ") + cy("analyse existing auth patterns     ") + gr("─┐"))
+    c.wait(0.3)
+    c.line(mg("  ⚡ [Implementer]  ") + cy("write middleware + tests           ") + gr("├─ parallel"))
+    c.wait(0.3)
+    c.line(mg("  ⚡ [Reviewer]     ") + cy("two-pass security + quality review ") + gr("─┘"))
+    c.wait(0.5)
+    c.out(gr("  running"))
+    for _ in range(6):
+        c.wait(0.35)
+        c.out(gr("·"))
+    c.out(gr("  done") + "\r\n")
+    c.wait(0.4)
+
+    c.line(gr("[gates]") + "  lint " + gn("✓") + "  typecheck " + gn("✓") + "  tests " + gn("✓"))
+    c.wait(0.4)
+    c.line(gr("── Usage ─────────────────────────────────────────────"))
+    c.wait(0.2)
+    c.line(mg("Thinking") + gr(f" ({first_provider['thinking']:10s}) ") + "3 agents  " + yl(" 48.1k") + gr(" tokens"))
+    c.wait(0.2)
+    c.line(cy("Worker  ") + gr(f" ({first_provider['worker']:10s}) ") + "3 agents  " + yl("109.4k") + gr(" tokens"))
+    c.wait(0.2)
+    c.line(bo("Total                        ") + "6 agents  " + yl("157.5k") + gr(" tokens"))
+    c.wait(0.2)
+    c.line(gr("──────────────────────────────────────────────────────"))
     c.wait(0.6)
-    c.line(gn("[ready]"))
+    # Scene 6 ends ≈ 33s
 
-    # Final hold so GIF doesn't snap back instantly
-    c.wait(4.5)
-    # Beat 8 ends ≈ 75s total
+    # ── Scene 7 · Capabilities recap ─────────────────────────────────────────
+    c.line(gr(""))
+    c.line(gr("[capabilities]"))
+    c.wait(0.2)
+    for cap in caps[:6]:
+        c.line(gr("  • ") + cap)
+        c.wait(0.17)
+    c.wait(0.5)
+    # Scene 7 ends ≈ 37s
+
+    # ── Scene 8 · Closing ─────────────────────────────────────────────────────
+    c.line(gr(""))
+    c.line(gn("✓ ready") + gr("  — github.com/getHyperflow/hyperflow"))
+    c.wait(4.0)
+    # Scene 8 ends ≈ 42s
 
     return c
 
@@ -318,7 +253,7 @@ def script() -> Cast:
 HEADER = {
     "version": 2,
     "width": 120,
-    "height": 32,
+    "height": 34,
     "timestamp": 1715760000,
     "title": "Hyperflow — autonomous multi-agent orchestration",
     "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"},
@@ -351,7 +286,8 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    cast = script()
+    features = load_features()
+    cast = script(features)
     write_cast(cast, args.output)
 
     duration = cast.t

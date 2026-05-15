@@ -194,6 +194,73 @@ mv "$TMPFILE2" "$CHANGELOG"
 # ── Bump versions in all manifest files ──────────────────────────────────────
 "$SCRIPT_DIR/bump-version.sh" "$NEW_VERSION"
 
+# ── Regenerate hero.svg + demo.cast/gif ──────────────────────────────────────
+HAS_PYTHON3=0
+if command -v python3 >/dev/null 2>&1; then HAS_PYTHON3=1; fi
+
+# Sync features.json version with the new release version
+if [[ -f "$ROOT/config/features.json" && "$HAS_PYTHON3" == "1" ]]; then
+  if ! python3 - "$ROOT/config/features.json" "$NEW_VERSION" <<'PYEOF'
+import json, sys
+path, version = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    data = json.load(f)
+data["version"] = version
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PYEOF
+  then
+    echo -e "${YELLOW}⚠${RESET} features.json version sync failed; continuing"
+  fi
+elif [[ -f "$ROOT/config/features.json" ]]; then
+  echo -e "${YELLOW}⚠${RESET} python3 not found — skipping features.json sync and generators"
+fi
+
+# Generate hero.svg (pure Python, stdlib only)
+if [[ "$HAS_PYTHON3" == "1" && -f "$SCRIPT_DIR/generate-hero.py" ]]; then
+  echo -e "${CYAN}▸${RESET} regenerating hero.svg"
+  python3 "$SCRIPT_DIR/generate-hero.py" --version "$NEW_VERSION" || {
+    echo -e "${YELLOW}⚠${RESET} hero regeneration failed; continuing"
+  }
+fi
+
+# Generate demo.cast + demo.gif (requires agg for gif)
+if [[ -x "$SCRIPT_DIR/generate-demo.sh" || -f "$SCRIPT_DIR/generate-demo.sh" ]]; then
+  if command -v agg >/dev/null 2>&1; then
+    echo -e "${CYAN}▸${RESET} regenerating demo.cast and demo.gif"
+    bash "$SCRIPT_DIR/generate-demo.sh" || {
+      echo -e "${YELLOW}⚠${RESET} demo regeneration failed; continuing without it"
+    }
+  else
+    # Even without agg, regenerate the cast (still useful)
+    if [[ -f "$SCRIPT_DIR/generate-demo-cast.py" ]]; then
+      echo -e "${CYAN}▸${RESET} regenerating demo.cast (skipping gif — 'agg' not installed)"
+      python3 "$SCRIPT_DIR/generate-demo-cast.py" --output "$ROOT/docs/assets/demo.cast" || true
+    fi
+    echo -e "${YELLOW}⚠${RESET} install agg to also regenerate demo.gif: cargo install --locked agg  |  brew install agg"
+  fi
+fi
+
+# Generate whats-new.cast + whats-new.gif (showcases just this release's changes)
+if [[ "$HAS_PYTHON3" == "1" && -f "$SCRIPT_DIR/generate-whats-new-cast.py" ]]; then
+  WHATS_NEW_ARGS=(--version "$NEW_VERSION")
+  if [[ -n "$LAST_TAG" ]]; then
+    WHATS_NEW_ARGS+=(--from "$LAST_TAG")
+  fi
+  if command -v agg >/dev/null 2>&1; then
+    echo -e "${CYAN}▸${RESET} regenerating whats-new.cast and whats-new.gif"
+    bash "$SCRIPT_DIR/generate-whats-new.sh" "${WHATS_NEW_ARGS[@]}" || {
+      echo -e "${YELLOW}⚠${RESET} whats-new regeneration failed; continuing"
+    }
+  else
+    echo -e "${CYAN}▸${RESET} regenerating whats-new.cast (skipping gif — 'agg' not installed)"
+    python3 "$SCRIPT_DIR/generate-whats-new-cast.py" \
+      --output "$ROOT/docs/assets/whats-new.cast" \
+      "${WHATS_NEW_ARGS[@]}" || true
+  fi
+fi
+
 # ── Stage all changed files ───────────────────────────────────────────────────
 git add \
   "$CHANGELOG" \
@@ -202,6 +269,17 @@ git add \
   "$ROOT/.claude-plugin/marketplace.json" \
   "$README" \
   "$ROOT/skills/hyperflow/VERSION"
+
+# Optional generated artifacts — add if they exist (some require external tools)
+for optional in \
+  "$ROOT/config/features.json" \
+  "$ROOT/docs/assets/hero.svg" \
+  "$ROOT/docs/assets/demo.cast" \
+  "$ROOT/docs/assets/demo.gif" \
+  "$ROOT/docs/assets/whats-new.cast" \
+  "$ROOT/docs/assets/whats-new.gif"; do
+  [[ -f "$optional" ]] && git add "$optional"
+done
 
 # ── Commit and tag ────────────────────────────────────────────────────────────
 git commit -m "chore(release): v${NEW_VERSION}"
