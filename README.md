@@ -70,7 +70,7 @@ Done. Next: /hyperflow:deploy (gates + commit + push) — user-explicit, not aut
 - `/hyperflow:spec` — when the design is ambiguous → auto-chains to `scope` → `dispatch`
 - `/hyperflow:scope` — when the spec is clear → auto-chains to `dispatch`
 - `/hyperflow:dispatch` — when a task file already exists in `.hyperflow/tasks/`
-- `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, `/hyperflow:scaffold`, `/hyperflow:cache` — standalone, don't chain
+- `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, `/hyperflow:scaffold`, `/hyperflow:cache`, `/hyperflow:status` — standalone, don't chain
 
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Hyperflow — chain-of-skills with parallel dispatch, quality gates, and persistent memory" width="100%" />
@@ -119,7 +119,7 @@ You: /hyperflow:spec "Build user auth with login page, middleware, and password 
 
 ## Skills
 
-Hyperflow ships **8 specialized skills**. There is no always-on orchestrator — you pick the entry point, and chain-starters auto-advance forward.
+Hyperflow ships **9 specialized skills**. There is no always-on orchestrator — you pick the entry point, and chain-starters auto-advance forward.
 
 ### Chain-starting skills (auto-advance forward)
 
@@ -140,6 +140,7 @@ Each chain-starter asks at Step 0 whether to advance **auto** (no gates between 
 | **Audit** | `/hyperflow:audit` | Code review | Multi-level review (L1 quick → L5 exhaustive) on uncommitted changes, a file/range, or a PR |
 | **Deploy** | `/hyperflow:deploy` | Pre-push gates | Lint + typecheck + build + tests + security sweep + commit + release + push (push always asks) |
 | **Cache** | `/hyperflow:cache` | Memory CRUD | `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off` |
+| **Status** | `/hyperflow:status` | Project snapshot | Read-only one-screen view: active tasks, memory count, release version, Layer 0 cache freshness |
 
 **Reuse architecture:** every skill is ~80–150 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
 
@@ -220,6 +221,7 @@ There is no always-on activation. Each slash command runs its skill and (for cha
 | Trace | `/hyperflow:trace` | L3, L6, L9 | L1–L3 on fix | None |
 | Deploy | `/hyperflow:deploy` | L5, L8, L9 | — | Push confirmation (mandatory) |
 | Cache | `/hyperflow:cache` | L6 | — | Confirm-on-clear |
+| Status | `/hyperflow:status` | — | — | None |
 
 L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. Full checklist in [`skills/hyperflow/review-levels.md`](skills/hyperflow/review-levels.md).
 
@@ -463,7 +465,8 @@ hyperflow/
 │   ├── trace/SKILL.md            #   /hyperflow:trace    — root-cause a bug
 │   ├── audit/SKILL.md            #   /hyperflow:audit    — multi-level code review
 │   ├── deploy/SKILL.md           #   /hyperflow:deploy   — pre-push gates + commit + push
-│   └── cache/SKILL.md            #   /hyperflow:cache    — memory CRUD
+│   ├── cache/SKILL.md            #   /hyperflow:cache    — memory CRUD
+│   └── status/SKILL.md           #   /hyperflow:status   — read-only project snapshot
 ├── scripts/
 │   ├── release.sh                #   Auto-release with changelog generation
 │   └── bump-version.sh           #   Sync version across all manifests
