@@ -9,13 +9,32 @@ This phase is **thinking, not building**. No code until the user approves the de
 
 This skill drives **Layer 0.5 (Task Triage)** and **Layer 4 (Brainstorming/Spec)** from the doctrine. Multi-level review (L1–L5) runs later during `/hyperflow:dispatch` per the triage's chosen flow profile.
 
+## Per-Step Agent Map (DOCTRINE rule 12)
+
+Every substantive step dispatches at least one Agent. The orchestrator never does "real" work inline — it only coordinates dispatches and prints status.
+
+| Step | Worker tier | Thinking tier | Notes |
+|---|---|---|---|
+| 0 — Chain mode | — | — | `AskUserQuestion` only (exempt) |
+| 1 — Triage | — | **Classifier** (Opus) | Pure thinking work |
+| 2 — Context | Searcher (Sonnet) | **Reviewer** (Opus) verifies coverage | Both tiers per step |
+| 3 — Multi-dim analysis | — | **Analyst** (Opus) produces 6-dim brief | Pure thinking |
+| 4 — Smart questions | — | — | `AskUserQuestion` only (exempt) |
+| 5 — Requirement synthesis | Writer (Sonnet) drafts | **Reviewer** (Opus) verifies fidelity | Both tiers |
+| 6 — Propose approaches | Writer (Sonnet) drafts 2–3 | **Reviewer** (Opus) probes for missing alternatives | Both tiers |
+| 7 — Design sections | Writer (Sonnet) drafts each section | **Reviewer** (Opus) checks each section before user sees it | Both tiers · per section |
+| 8 — Spec output | Writer (Sonnet) writes file | **Reviewer** (Opus) final spec sanity check | Both tiers |
+| 9 — Hand off | — | — | `Skill` tool invocation (exempt) |
+
+Substantive steps = 1, 2, 3, 5, 6, 7, 8. Each appears in the usage summary.
+
 ## Approval Gates
 
 | Gate | When | Format |
 |---|---|---|
 | Chain mode | Step 0, once per chain | `AskUserQuestion` — auto / manual |
-| Design section approval | Step 6, after each of 5 design sections | `AskUserQuestion` — approve / revise |
-| Phase advance (if `manual` mode) | Step 8, before invoking `scope` | `AskUserQuestion` — continue / stop |
+| Design section approval | Step 7, after each of 5 design sections | `AskUserQuestion` — approve / revise |
+| Phase advance (if `manual` mode) | Step 9, before invoking `scope` | `AskUserQuestion` — continue / stop |
 
 ## Flow
 
@@ -39,25 +58,34 @@ Save the chosen mode (`auto` or `manual`) and propagate it via `args: "chain-mod
 
 ### Step 1 — Triage (Layer 0.5)
 
-Dispatch a thinking-tier triage call per [task-triage.md](../hyperflow/task-triage.md). Classify the request into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives:
+Agents — **Classifier** (Opus, thinking-tier).
 
-- **Spec depth** at Step 3 — `ambiguity 0.0–0.2` → silent, `0.2–0.5` → light (1–2 questions), `0.5–0.8` → standard (3 questions), `0.8–1.0` → deep (4–5 questions)
+Dispatch a thinking-tier triage call per [task-triage.md](../hyperflow/task-triage.md). The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives:
+
+- **Spec depth** at Step 4 — `ambiguity 0.0–0.2` → silent, `0.2–0.5` → light (1–2 questions), `0.5–0.8` → standard (3 questions), `0.8–1.0` → deep (4–5 questions)
 - **Flow profile** for the downstream `dispatch` phase — `fast`, `standard`, `deep`, `research`, `creative`, or `scientific` (see [flow-profiles.md](../hyperflow/flow-profiles.md))
 - **Persona stitching** for worker prompts later (see [personas-A.md](../hyperflow/personas-A.md), [personas-B.md](../hyperflow/personas-B.md))
 
-Persist the triage output and propagate it forward through `chain-mode=<mode> triage=<base64-json>` args. Print one line:
+Persist the triage output and propagate it forward through `chain-mode=<mode> triage=<base64-json>` args. Print:
 
 ```
+**Classifier** — triaging request
 Triage — types: [<types>] · flow: <profile> · ambiguity: <score>
 ```
 
-### Step 2 — Context Exploration (silent)
+### Step 2 — Context Exploration
 
-Dispatch `Searcher — mapping context relevant to <idea>`. Find existing code, patterns, similar features. Do not ask the user what you can find in the code.
+Agents — `Searcher` (Sonnet) ⇒ **Reviewer** (Opus).
 
-### Step 3 — Multi-Dimensional Analysis (silent)
+1. Dispatch `Searcher — mapping context relevant to <idea>` (worker). Find existing code, patterns, similar features. Do not ask the user what you can find in the code.
+2. Dispatch `**Reviewer** — verifying context coverage` (thinking-tier). Confirm the Searcher hit the relevant subsystems; if gaps remain, redispatch the Searcher with the missing scope before moving on.
 
-Analyze across 6 dimensions:
+### Step 3 — Multi-Dimensional Analysis
+
+Agents — **Analyst** (Opus, thinking-tier).
+
+Dispatch `**Analyst** — 6-dimension exploration` with the request + context from Step 2. The Analyst produces a brief covering:
+
 1. **User intent** — what is the real underlying need?
 2. **Technical fit** — how does this fit existing architecture?
 3. **Scope** — minimum viable vs maximum scope
@@ -65,7 +93,7 @@ Analyze across 6 dimensions:
 5. **Risks** — what could go wrong, what's irreversible
 6. **Alternatives** — at least 3 ways to solve this
 
-Identify which dimensions have unknowns requiring user input.
+The Analyst flags which dimensions have unknowns the user must resolve. Those unknowns become the Step 4 question set.
 
 ### Step 4 — Smart Questions (`AskUserQuestion` — MANDATORY)
 
@@ -81,22 +109,37 @@ Question categories (in order):
 
 ### Step 5 — Requirement Synthesis
 
-Restate what you heard: "So the goal is X, with constraints Y, excluding Z." Get explicit confirmation.
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+
+1. Dispatch `Writer — drafting requirement synthesis` with the user's answers from Step 4. The Writer produces a one-paragraph restatement: "So the goal is X, with constraints Y, excluding Z."
+2. Dispatch `**Reviewer** — verifying requirement fidelity` to confirm the synthesis matches what the user actually said (catches paraphrase drift).
+3. Print the synthesis to the user and ask for explicit confirmation via `AskUserQuestion` before moving on.
 
 ### Step 6 — Propose 2–3 Approaches with Trade-offs
 
-For each approach:
-- **Name** — short label
-- **What** — 1–2 sentence summary
-- **Pros** — what this gets right
-- **Cons** — what it sacrifices
-- **Fit** — how well it matches the stated goal/constraints
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-Recommend one, but the choice is the user's.
+1. Dispatch `Writer — drafting 2–3 approaches` with the synthesized requirements. The Writer produces, for each approach:
+   - **Name** — short label
+   - **What** — 1–2 sentence summary
+   - **Pros** — what this gets right
+   - **Cons** — what it sacrifices
+   - **Fit** — how well it matches the stated goal/constraints
+2. Dispatch `**Reviewer** — probing for missing alternatives` to challenge whether the proposed set covers the design space (catches anchor bias). If gaps surface, redispatch the Writer with the gap.
+3. Recommend one, but the choice is the user's. Ask via `AskUserQuestion`.
 
-### Step 7 — Section-by-Section Design (approval-gated)
+### Step 7 — Section-by-Section Design (approval-gated · per-section multi-level)
 
-Present design in 5 sections, **getting approval after each before moving on** (this is the second approval gate listed at the top of this skill):
+Agents per section — `Writer` (Sonnet) ⇒ **Reviewer** (Opus) ⇒ user approval.
+
+For each of the 5 sections below:
+
+1. Dispatch `Writer — drafting section: <name>` with the chosen approach + prior approved sections.
+2. Dispatch `**Reviewer** — reviewing section: <name>` (Opus thinking-tier) to validate coherence, surface unstated assumptions, and check against the multi-dim analysis from Step 3.
+3. Present the reviewed draft to the user; ask via `AskUserQuestion`: approve / revise.
+4. If revise → redispatch the Writer with the user's feedback. Loop until approved.
+
+Sections (always in this order):
 
 1. **Architecture** — how components fit together
 2. **Data flow** — what goes where
@@ -104,11 +147,12 @@ Present design in 5 sections, **getting approval after each before moving on** (
 4. **Edge cases** — what could go wrong
 5. **File structure** — what gets created/modified
 
-If user pushes back on any section → revise before continuing.
-
 ### Step 8 — Spec Output
 
-For non-trivial features (3+ files / multiple subsystems), write the approved design to `docs/specs/<feature-slug>.md`. For simpler designs, summarize inline and pass directly to scope.
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+
+1. Dispatch `Writer — writing spec to docs/specs/<slug>.md` for non-trivial features (3+ files / multiple subsystems). For simpler designs, the Writer composes an inline summary instead.
+2. Dispatch `**Reviewer** — final spec sanity check` to verify every approved section is captured and no contradiction exists between sections.
 
 ### Step 9 — Hand off to `/hyperflow:scope`
 

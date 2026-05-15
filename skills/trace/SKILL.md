@@ -9,21 +9,42 @@ Root cause, not symptom. Never patch over a bug without understanding why it hap
 
 Dispatcher and reviewer — Opus 4.7 (thinking-tier). Implementer/Searcher/Writer — Sonnet 4.6.
 
+## Per-Step Agent Map (DOCTRINE rule 12)
+
+Every substantive step dispatches at least one Agent.
+
+| Step | Worker tier | Thinking tier | Notes |
+|---|---|---|---|
+| 1 — Reproduce | Searcher (Sonnet) if repro missing | **Reviewer** (Opus) confirms repro is valid | Both tiers if dispatched |
+| 2 — Gather evidence | Searcher × 3 (Sonnet) parallel | **Reviewer** (Opus) verifies evidence coverage | Both tiers |
+| 3 — Hypothesize | — | **Debugger** (Opus) produces ranked hypotheses | Pure thinking |
+| 4 — Verify | Implementer (Sonnet) minimal change | **Debugger** (Opus) re-evaluates against evidence | Both tiers · loop |
+| 5 — Fix at root | Implementer (Sonnet) | **Reviewer** (Opus) checks no error-swallow / no symptom-patch | Both tiers |
+| 6 — Regression test | Writer (Sonnet) | **Reviewer** (Opus) confirms test fails-without / passes-with | Both tiers |
+| 7 — Memory + final | Writer (Sonnet) appends pitfall | **Reviewer** (Opus) final validation | Both tiers |
+
 ## Step 1 — Reproduce
 
-- Confirm the bug is reproducible.
-- If repro steps missing — dispatch `Searcher — locating bug reproduction in recent changes/tests`.
-- If environmental (CI-only, intermittent, time-dependent) — flag explicitly before proceeding.
+Agents — `Searcher` (Sonnet, if needed) ⇒ **Reviewer** (Opus).
+
+1. Confirm the bug is reproducible.
+2. If repro steps missing — dispatch `Searcher — locating bug reproduction in recent changes/tests`.
+3. Dispatch `**Reviewer** — confirming reproduction is valid` to validate the repro actually fails for the stated reason (not a flake).
+4. If environmental (CI-only, intermittent, time-dependent) — flag explicitly before proceeding.
 
 ## Step 2 — Gather Evidence (parallel)
 
-Dispatch simultaneously in a single message:
+Agents — `Searcher` × 3 (Sonnet) parallel ⇒ **Reviewer** (Opus).
 
-- `Searcher — reading error stack traces and logs`
-- `Searcher — mapping the code paths involved`
-- `Searcher — finding related tests (passing and failing)`
+1. Dispatch simultaneously in a single message:
+   - `Searcher — reading error stack traces and logs`
+   - `Searcher — mapping the code paths involved`
+   - `Searcher — finding related tests (passing and failing)`
+2. Dispatch `**Reviewer** — verifying evidence coverage` to confirm the three Searchers actually triangulate the failure surface. If gaps remain, redispatch.
 
 ## Step 3 — Hypothesize
+
+Agents — **Debugger** (Opus, thinking-tier).
 
 Dispatch `**Debugger** — root cause analysis: <bug-summary>` — model: opus.
 
@@ -37,19 +58,19 @@ Apply **5 Whys** + **hypothesis testing** + **bisect mindset**:
 
 ## Step 4 — Verify
 
-Pick highest-ranked hypothesis.
+Agents — `Implementer` (Sonnet) ⇒ **Debugger** (Opus).
 
-Dispatch `Implementer — verifying hypothesis: <hypothesis>` — model: sonnet.
-
-- Make the minimal change needed to confirm/falsify
-- Confirmed → proceed to Step 5
-- Falsified → return to Step 3 with next hypothesis
+1. Pick highest-ranked hypothesis.
+2. Dispatch `Implementer — verifying hypothesis: <hypothesis>` — make the minimal change needed to confirm/falsify.
+3. Dispatch `**Debugger** — re-evaluating hypothesis against test result` to re-check against the evidence from Step 2.
+4. Confirmed → proceed to Step 5. Falsified → return to Step 3 with next hypothesis.
 
 ## Step 5 — Fix at Root
 
-Dispatch `Implementer — fixing root cause: <root-cause>` — model: sonnet.
+Agents — `Implementer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-Pass full context: the bug, the verified root cause, the minimal fix.
+1. Dispatch `Implementer — fixing root cause: <root-cause>` with full context: the bug, the verified root cause, the minimal fix.
+2. Dispatch `**Reviewer** — checking fix is at root` to verify the fix actually addresses the cause and doesn't patch the symptom.
 
 Constraints (non-negotiable):
 - No error swallowing
@@ -58,18 +79,18 @@ Constraints (non-negotiable):
 
 ## Step 6 — Regression Test
 
-Dispatch `Writer — adding regression test for <bug>` — model: sonnet.
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-- Test must **fail** without the fix, **pass** with it.
-- If existing suite had gaps that allowed this bug → note in `.hyperflow/memory/pitfalls.md`.
+1. Dispatch `Writer — adding regression test for <bug>`.
+2. Dispatch `**Reviewer** — confirming regression test fails-without and passes-with the fix`.
+3. If existing suite had gaps that allowed this bug → note in `.hyperflow/memory/pitfalls.md`.
 
-## Step 7 — Review + Memory
+## Step 7 — Memory + Final Review
 
-Dispatch `**Reviewer** — validating fix and regression test` — model: opus.
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-- Thinking-tier reviewer validates fix correctness and test quality.
-- Append to `.hyperflow/memory/pitfalls.md` per [memory-system.md](../hyperflow/memory-system.md): the bug pattern, why tests missed it, prevention strategy.
-- Tags — `pitfall` plus domain tags.
+1. Dispatch `Writer — appending pitfall to .hyperflow/memory/pitfalls.md` per [memory-system.md](../hyperflow/memory-system.md): the bug pattern, why tests missed it, prevention strategy. Tags — `pitfall` plus domain tags.
+2. Dispatch `**Reviewer** — final validation of fix + test + memory entry`. This is the integration review for the trace flow.
 
 ## Anti-Patterns (refuse these)
 
