@@ -63,13 +63,13 @@ This is a **structural gate** per DOCTRINE rule 8. When dispatch is invoked dire
 
 If a `chain-mode` arg was passed, skip this step — the chain-starter already asked.
 
-Otherwise, ask via `AskUserQuestion`:
+Otherwise, ask via `AskUserQuestion`. Per DOCTRINE rule 8, the recommended option goes first with `(Recommended)`:
 
 ```
 How should I handle progress through the batches?
 
-  Auto     — run all batches + final review and stop. Print next-step suggestions.
-  Manual   — pause between batches and ask before continuing.
+  Auto (Recommended)  — run all batches + final review and stop. Print next-step suggestions.
+  Manual              — pause between batches and ask before continuing.
 ```
 
 Wait for the user's answer. Do not proceed without it. If `AskUserQuestion` cannot be presented, print an error and stop — never silently default.

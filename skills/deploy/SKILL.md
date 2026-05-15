@@ -50,7 +50,14 @@ Per [security.md](../hyperflow/security.md), scan for hardcoded secrets, API key
 ## Step 4 — Commit
 
 - Worker-introduced fixes from Step 2 → commit automatically with a conventional commit message.
-- Pre-existing user-owned uncommitted changes → use `AskUserQuestion` to confirm inclusion.
+- Pre-existing user-owned uncommitted changes → use `AskUserQuestion` to confirm inclusion. Per DOCTRINE rule 8, mark a recommended option:
+
+  ```
+  Include uncommitted user changes in this commit?
+    Include (Recommended) — your local work + the pre-push fixes ship together
+    Exclude               — commit only the worker fixes; user changes stay local
+  ```
+
 - **Never** add `Co-Authored-By: Claude` in commit messages — see [git-workflow.md](../hyperflow/git-workflow.md).
 
 ## Step 5 — Release
@@ -60,9 +67,16 @@ Per [security.md](../hyperflow/security.md), scan for hardcoded secrets, API key
 - "Nothing to release" or no releasable commits → skip.
 - Otherwise → skip (user releases manually).
 
-## Step 6 — Push (confirmation required)
+## Step 6 — Push (confirmation required · STRUCTURAL GATE)
 
-Use `AskUserQuestion` — "Push to origin/<branch>?" → yes/no.
+Use `AskUserQuestion`. Per DOCTRINE rule 8, mark a recommended option — but the recommendation depends on gate state. If all gates passed and the diff looks clean, recommend `Push`; if anything was marginal (test flakiness, large diff, etc.), recommend `Hold`.
+
+```
+Push to origin/<branch>?
+  Push (Recommended)  — all gates pass · safe to ship
+  Hold                — keep local; you can push later
+```
+
 - **Never force-push to main or master.**
 - On yes — `git push`, then `git push --tags` if release created tags.
 
