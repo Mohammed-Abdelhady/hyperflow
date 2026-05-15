@@ -38,6 +38,8 @@
 
 ## Why Hyperflow?
 
+- **Triages every task** — a cheap classification call picks the right flow profile before any worker fires; a 5-line edit gets `fast` (≤30k tokens), not a 300k deep run.
+- **15 composable personas** — `security + api + db + frontend` are stitched per task so every worker gets expert-level guidance for the exact kind of work in front of it.
 - **Higher quality** — every worker output gets a two-pass thinking-model review; workers in batch 2 benefit from batch 1 discoveries via automatic learning injection.
 - **Lower cost** — expensive thinking models orchestrate and review; cheap worker models write the code. Stop paying Opus prices for tasks Sonnet handles.
 - **Faster execution** — independent subtasks run in parallel; three files with no shared state means three workers, simultaneously.
@@ -50,25 +52,28 @@
 
 Instead of a single agent doing everything, Hyperflow splits every task into a **thinking-model orchestrator** coordinating **worker-model agents** in parallel — with automatic code review after every change.
 
+Every request starts with a **triage call** that classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }`. That classification drives the flow profile, brainstorm depth, and which persona blocks are stitched into each worker prompt.
+
 ```text
-You: "Add user auth with login page and middleware"
-
-Orchestrator ─── Decomposes into 3 independent tasks
-    │
-    ├── Worker 1 ── Creates auth middleware     ─┐
-    ├── Worker 2 ── Builds login page            ├── parallel execution
-    └── Worker 3 ── Sets up user model          ─┘
-                           │
-Orchestrator ─── Reviews all 3 outputs
-    │
-Orchestrator ─── Synthesizes learnings
-    │
-    └── Worker 4 ── Wires up routes (with context from prior tasks)
-                           │
-Orchestrator ─── Final integration review ── Done.
+You: "Build user auth with login page, middleware, and password reset"
+         │
+[Triage] ─ types: [api, db, security, frontend, ui]
+           complexity: complex  flow: deep  ambiguity: 0.55
+         │
+[Brainstorm] ─ standard depth (2-3 questions) → design approved
+         │
+[Deep flow] ─ Decompose, dispatch parallel workers with stitched personas:
+         │
+         ├── Worker 1  [security + api]   — Auth middleware
+         ├── Worker 2  [db + security]    — User schema + migration
+         └── Worker 3  [frontend + ui]    — Login + reset pages
+                       │
+[Per-batch reviewer] ─ Reviews each output (thinking-tier)
+         │
+[Final integration review] ─ Cross-file coherence
+         │
+       Done. (Budget: 287k / 300k — within profile)
 ```
-
-Design decisions? Hyperflow brainstorms section-by-section and gets your approval before dispatching workers.
 
 ---
 
@@ -138,6 +143,38 @@ Hyperflow ships 8 skills. The main `hyperflow` skill runs automatically on every
 
 ---
 
+## Adaptive flow profiles
+
+| Profile | Use when | Workers | Reviews | Budget |
+|---------|----------|---------|---------|--------|
+| `fast` | trivial single-file, reversible, low-ambiguity | 1 | inline self-review | ≤30k |
+| `standard` | simple/moderate, 2–5 files | 1–2 | 1 batch reviewer | ≤100k |
+| `deep` | complex / cross-cutting / system-wide | 3+ | per-batch + final | 300k |
+| `research` | unknown territory, library/code evaluation | 3+ searchers | inline | ≤80k |
+| `creative` | UI/UX exploration, design-dominant | 1–2 | 1 reviewer | ≤150k |
+| `scientific` | correctness-critical, numerical/proof | 2–3 + TDD | multi-level L1–L5 | 300k |
+
+Triage picks the profile based on `{ complexity, scope, risk, types, ambiguity }`. Profiles upgrade mid-flight if a worker returns `ESCALATE:` — and downgrade if research shows the task is simpler than expected.
+
+---
+
+## Specialist personas
+
+Every task is tagged with one or more types. The orchestrator stitches matching persona blocks into worker prompts so each worker receives expert-level guidance for the kind of work in front of it. A user-auth task (`[api, db, security]`) gets `api + db + security` guidance composed in priority order in a single worker prompt.
+
+15 personas span the common engineering domains:
+
+| Category | Personas |
+|----------|----------|
+| Foundational | `architect`, `frontend`, `ui`, `api`, `db` |
+| Cross-cutting | `security`, `scientific`, `performance` |
+| Workflow | `refactor`, `bugfix`, `test`, `research` |
+| Surface | `creative`, `devops`, `docs` |
+
+Personas compose by priority. `security` is stitched first so its constraints frame every other decision; `creative` is stitched last so divergent exploration adapts to the structural choices above it.
+
+---
+
 ## Supported providers
 
 | Provider | Thinking model | Worker model |
@@ -196,7 +233,7 @@ On every `SessionStart`, `clear`, and `compact` event, the [`hooks/session-start
 
 ## Contributing
 
-Contributors are expected to keep `README.md` in sync with shipped features on every push. `scripts/release.sh` warns if README has not been updated since the last release tag. See `CLAUDE.md` for the full contributor guide. All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `perf:`, `style:`, `test:`) — the release script reads these to determine the version bump and generate CHANGELOG entries automatically.
+Contributors are expected to keep `README.md` in sync with shipped features on every push. `scripts/release.sh` warns if README has not been updated since the last release tag. See `CLAUDE.md` for the full contributor guide. All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `perf:`, `style:`, `test:`) — the release script reads these to determine the version bump and generate CHANGELOG entries automatically. Major orchestrator changes are documented in the reference files under `skills/hyperflow/*.md`. Start with `task-triage.md`, `flow-profiles.md`, and `adaptive-brainstorming.md` for the new TriageFlow internals.
 
 ---
 
