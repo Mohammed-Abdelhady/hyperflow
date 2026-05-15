@@ -6,3 +6,4 @@ node_modules/
 .in_use/
 .hyperflow/
 .claude/
+.test/

@@ -79,7 +79,7 @@ YELLOW  = "\x1b[33m"   # Memory
 GRAY    = "\x1b[90m"   # Dim/secondary
 
 def mg(s: str) -> str:   return MAGENTA + s + RESET
-def cy(s: str) -> str:   return CYAN    + s + RESET
+def worker(s: str) -> str:   return CYAN    + s + RESET
 def gn(s: str) -> str:   return GREEN   + s + RESET
 def rd(s: str) -> str:   return RED     + s + RESET
 def yl(s: str) -> str:   return YELLOW  + s + RESET
@@ -118,7 +118,7 @@ def script(features: dict) -> Cast:
     c.wait(0.12)
     c.line(
         gr("Thinking: ") + mg(first_provider["thinking"]) +
-        gr("  ·  Worker: ") + cy(first_provider["worker"])
+        gr("  ·  Worker: ") + worker(first_provider["worker"])
     )
     c.wait(0.30)
     c.line(gr("Analyzing project — 4 searchers in parallel"))
@@ -144,13 +144,13 @@ def script(features: dict) -> Cast:
 
     # ── Scene 3 · Chain-of-skills ────────────────────────────────────────────
     c.line(gr(""))
-    c.line(gr("[skills]  ") + gr("chain: ") + cy("scaffold → spec → scope → dispatch → audit → deploy"))
+    c.line(gr("[skills]  ") + gr("chain: ") + worker("scaffold → spec → scope → dispatch → audit → deploy"))
     c.wait(0.14)
     for skill in skills:
         chain_marker = {"starter": gr(" → "), "endpoint": gr(" ◇ "), "standalone": gr(" · ")}.get(
             skill.get("chain", "standalone"), gr(" · ")
         )
-        c.line(cy(f"  {skill['command']:24s}") + chain_marker + skill["tagline"])
+        c.line(worker(f"  {skill['command']:24s}") + chain_marker + skill["tagline"])
         c.wait(0.12)
     c.wait(0.30)
     # Scene 3 ends ≈ 17s
@@ -162,7 +162,7 @@ def script(features: dict) -> Cast:
     for shim in detection["shims"]:
         c.line(
             gr("  ") + gn("ok") + gr("  ") +
-            cy(shim["file"]) +
+            worker(shim["file"]) +
             gr(f"  ({shim['tool']})")
         )
         c.wait(0.13)
@@ -193,7 +193,7 @@ def script(features: dict) -> Cast:
     c.wait(0.30)
     # Scene 5 ends ≈ 24s
 
-    # ── Scene 6 · Chain in action with interactive gates ─────────────────────
+    # ── Scene 6 · Chain in action (matches real Claude Code output style) ────
     c.line(gr(""))
     c.prompt()
     c.wait(0.24)
@@ -202,137 +202,163 @@ def script(features: dict) -> Cast:
     c.out("\r\n")
     c.wait(0.24)
 
-    # ── Step 0 gate · chain mode question ────────────────────────────────────
+    # ── Skill load (real Claude Code marker) ─────────────────────────────────
+    c.line(gn("●") + gr(" ") + bo("Skill") + gr("(hyperflow:spec)"))
+    c.wait(0.10)
+    c.line(gr("  └ Successfully loaded skill"))
+    c.wait(0.24)
+
+    # ── Step 0 gate · chain mode question (with Recommended marker) ──────────
+    c.line(gr(""))
     c.line(yl("?  How should I advance through the chain after each phase?"))
     c.wait(0.13)
-    c.line(gr("   ") + bo("Auto") + gr("    — chain forward with no gates. faster, fewer interruptions."))
+    c.line(gr("   ") + bo("Auto (Recommended)") + gr("  — chain forward with no gates. faster, fewer interruptions."))
     c.wait(0.13)
-    c.line(gr("   Manual  — pause between phases and ask before advancing."))
+    c.line(gr("   Manual               — pause between phases and ask before advancing."))
     c.wait(0.15)
-    c.line(gr("   your choice: ") + cy("Auto"))
+    c.line(gr("   your choice: ") + worker("Auto"))
     c.wait(0.28)
 
     # ── Layer 0.5 triage ─────────────────────────────────────────────────────
     c.line(gr(""))
-    c.line(mg("Triage") + gr(" — types: [api, security, frontend] · flow: ") + bo("standard") + gr(" · ambiguity: 0.4 (light depth)"))
+    c.line(gn("●") + gr(" ") + bo("Classifier") + gr(" — triaging request"))
+    c.wait(0.13)
+    c.line(gr("  └ Triage — types: [api, security, frontend] · flow: ") + bo("standard") + gr(" · ambiguity: 0.4 (light)"))
     c.wait(0.28)
 
-    # ── Spec questions (interactive) ─────────────────────────────────────────
+    # ── Spec questions (floor 2 · Recommended marker) ────────────────────────
     c.line(gr(""))
     c.line(yl("?  Token storage approach?"))
     c.wait(0.14)
-    c.line(gr("   ") + bo("Server sessions") + gr(" — refreshable, revocable, DB-backed"))
+    c.line(gr("   ") + bo("Server sessions (Recommended)") + gr("  — revocable, refreshable, fits this project's DB conventions"))
     c.wait(0.13)
-    c.line(gr("   JWT stateless ") + gr("— simpler, no DB, harder to revoke"))
+    c.line(gr("   JWT stateless                 — simpler, no DB, harder to revoke"))
     c.wait(0.15)
-    c.line(gr("   your choice: ") + cy("Server sessions"))
+    c.line(gr("   your choice: ") + worker("Server sessions"))
     c.wait(0.30)
 
     c.line(gr(""))
     c.line(yl("?  Password reset flow?"))
     c.wait(0.14)
-    c.line(gr("   ") + bo("Email link, 1-hour expiry"))
+    c.line(gr("   ") + bo("Email link, 1-hour expiry (Recommended)"))
     c.wait(0.13)
     c.line(gr("   SMS code"))
     c.wait(0.15)
-    c.line(gr("   your choice: ") + cy("Email link"))
-    c.wait(0.15)
+    c.line(gr("   your choice: ") + worker("Email link"))
+    c.wait(0.30)
 
     # ── Spec phase · per-step Worker → Reviewer (rule 12) ────────────────────
     c.line(gr(""))
-    c.line(gr("── Spec phase · per-step multi-level (rule 12) ────────────"))
+    c.line(gn("●") + gr(" Spec phase — per-step multi-level (rule 12)"))
     c.wait(0.18)
-    c.line(bo("**Classifier**") + gr("  triage — types:[api,security,frontend] · flow:standard · amb:0.4"))
-    c.wait(0.18)
-    c.line(cy("Searcher       ") + gr("mapping existing auth context"))
+    c.line(gr("  ") + worker("Searcher       ") + gr("— mapping existing auth context"))
     c.wait(0.13)
-    c.line(bo("**Reviewer**   ") + gr("context coverage  ") + gn("PASS"))
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— context coverage  ") + gn("PASS"))
     c.wait(0.18)
-    c.line(bo("**Analyst**    ") + gr("6-dim exploration (intent, fit, scope, constraints, risks, alternatives)"))
+    c.line(gr("  ") + bo("**Analyst**    ") + gr("— 6-dim exploration (intent, fit, scope, constraints, risks, alternatives)"))
     c.wait(0.18)
-    c.line(cy("Writer         ") + gr("drafting requirement synthesis"))
+    c.line(gr("  ") + worker("Writer         ") + gr("— drafting requirement synthesis"))
     c.wait(0.13)
-    c.line(bo("**Reviewer**   ") + gr("verifying fidelity  ") + gn("PASS"))
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— verifying fidelity  ") + gn("PASS"))
     c.wait(0.18)
-    c.line(cy("Writer         ") + gr("drafting 2 approaches with trade-offs"))
+    c.line(gr("  ") + worker("Writer         ") + gr("— drafting 2 approaches with trade-offs"))
     c.wait(0.13)
-    c.line(bo("**Reviewer**   ") + gr("probing for missing alternatives  ") + gn("PASS"))
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— probing for missing alternatives  ") + gn("PASS"))
     c.wait(0.15)
-    c.line(gr("   you pick: ") + cy("Approach A — server sessions + email reset"))
+    c.line(gr("    you pick: ") + worker("Approach A — server sessions + email reset"))
     c.wait(0.30)
 
-    # ── Spec · section-by-section Writer + Reviewer + user approval ──────────
+    # ── Spec · section-by-section ────────────────────────────────────────────
     c.line(gr(""))
-    c.line(gr("Section-by-section design (5 sections · Writer drafts → Reviewer checks → you approve):"))
+    c.line(gr("  Section-by-section design (5 sections · Writer drafts → Reviewer checks → you approve):"))
     c.wait(0.15)
     for sec in ("Architecture", "Data flow", "Key decisions", "Edge cases", "File structure"):
-        c.line(gr("  ") + cy("Writer       ") + gr("→ ") + bo("**Reviewer**") + gr(" → you ") + gn("approve") + gr(" — ") + sec)
+        c.line(gr("    ") + worker("Writer") + gr(" → ") + bo("**Reviewer**") + gr(" → you ") + gn("approve") + gr(" — ") + sec)
         c.wait(0.16)
     c.wait(0.20)
 
-    c.line(cy("Writer         ") + gr("writing .hyperflow/specs/auth.md"))
+    c.line(gr("  ") + worker("Writer         ") + gr("— writing .hyperflow/specs/auth.md"))
     c.wait(0.13)
-    c.line(bo("**Reviewer**   ") + gr("final spec sanity check  ") + gn("PASS"))
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— final spec sanity check  ") + gn("PASS"))
     c.wait(0.20)
-    c.line(gr("→ auto-chain to ") + cy("/hyperflow:scope") + gr("…"))
-    c.wait(0.36)
+    c.line(gn("●") + gr(" Spec complete — design approved"))
+    c.wait(0.13)
+    c.line(gr("  Auto-chaining to ") + worker("/hyperflow:scope") + gr("."))
+    c.wait(0.30)
 
     # ── Scope phase ──────────────────────────────────────────────────────────
     c.line(gr(""))
-    c.line(gr("── Scope phase ─────────────────────────────────────────────"))
-    c.wait(0.18)
-    c.line(cy("Searcher × 2   ") + gr("(parallel) mapping affected files + related tests"))
-    c.wait(0.18)
-    c.line(bo("**Reviewer**   ") + gr("research coverage  ") + gn("PASS"))
-    c.wait(0.18)
-    c.line(bo("**Planner**    ") + gr("producing batch graph — ") + bo("2 batches, 5 tasks"))
-    c.wait(0.18)
-    c.line(cy("Writer         ") + gr("emitting .hyperflow/tasks/auth.md"))
-    c.wait(0.13)
-    c.line(bo("**Reviewer**   ") + gr("verifying plan vs design  ") + gn("PASS"))
-    c.wait(0.18)
-    c.line(cy("Writer         ") + gr("appending decisions to .hyperflow/memory/"))
-    c.wait(0.13)
-    c.line(bo("**Reviewer**   ") + gr("memory dedup check  ") + gn("PASS"))
+    c.line(gn("●") + gr(" ") + bo("Skill") + gr("(hyperflow:scope)"))
+    c.line(gr("  └ Successfully loaded skill"))
     c.wait(0.20)
-    c.line(gr("→ auto-chain to ") + cy("/hyperflow:dispatch") + gr("…"))
-    c.wait(0.36)
+    c.line(gr("  ") + worker("Searcher × 2   ") + gr("— (parallel) mapping affected files + related tests"))
+    c.wait(0.18)
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— research coverage  ") + gn("PASS"))
+    c.wait(0.18)
+    c.line(gr("  ") + bo("**Planner**    ") + gr("— producing batch graph"))
+    c.wait(0.18)
+    c.line(gr("  ") + worker("Writer         ") + gr("— emitting .hyperflow/tasks/auth.md"))
+    c.wait(0.13)
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— verifying plan vs design  ") + gn("PASS"))
+    c.wait(0.18)
+    c.line(gr("  ") + worker("Writer         ") + gr("— appending decisions to .hyperflow/memory/"))
+    c.wait(0.13)
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— memory dedup check  ") + gn("PASS"))
+    c.wait(0.30)
+
+    # ── Real-style batch table (matches /hyperflow:scope output) ─────────────
+    c.line(gr(""))
+    c.line(gn("●") + gr(" Plan ready — .hyperflow/tasks/auth.md (") + bo("2 batches, 5 sub-tasks") + gr(")."))
+    c.wait(0.18)
+    c.line(gr(""))
+    c.line(gr("  ┌───────┬──────────────┬────────────────────────────────────────┐"))
+    c.line(gr("  │ ") + bo("Batch") + gr(" │ ") + bo("Workers") + gr("      │ ") + bo("Theme") + gr("                                  │"))
+    c.line(gr("  ├───────┼──────────────┼────────────────────────────────────────┤"))
+    c.line(gr("  │ 1     │ 3 parallel   │ User model · auth middleware · search  │"))
+    c.line(gr("  │ 2     │ 1 sequential │ Login + reset pages (uses batch 1)     │"))
+    c.line(gr("  └───────┴──────────────┴────────────────────────────────────────┘"))
+    c.wait(0.30)
+    c.line(gr(""))
+    c.line(gr("  Auto-chaining to ") + worker("/hyperflow:dispatch") + gr("."))
+    c.wait(0.30)
 
     # ── Dispatch · Batch 1 (with persona stitching) ──────────────────────────
     c.line(gr(""))
-    c.line(gr("── Dispatch phase ──────────────────────────────────────────"))
-    c.wait(0.18)
-    c.line(mg("Batch 1") + gr(" — standard profile · L1–L2 · 3 parallel workers (persona-stitched)"))
-    c.wait(0.18)
-    c.line(cy("  Searcher     ") + yl("[security + api]    ") + gr("analyse auth patterns"))
-    c.wait(0.13)
-    c.line(cy("  Implementer  ") + yl("[db + security]     ") + gr("User model + migration"))
-    c.wait(0.13)
-    c.line(cy("  Implementer  ") + yl("[security + api]    ") + gr("auth middleware"))
+    c.line(gn("●") + gr(" ") + bo("Skill") + gr("(hyperflow:dispatch)"))
+    c.line(gr("  └ Successfully loaded skill"))
     c.wait(0.20)
-    c.line(bo("  **Reviewer** ") + gr("reviewing batch 1 (L1–L2)  ") + gn("PASS"))
+    c.line(gr(""))
+    c.line(mg("  Batch 1") + gr(" — standard profile · L1–L2 · 3 parallel workers (persona-stitched)"))
     c.wait(0.18)
-    c.line(gr("   learnings injected: JWT RS256 · zod validation · server sessions"))
+    c.line(gr("    ") + worker("Searcher     ") + yl("[security + api]    ") + gr("— analyse auth patterns"))
+    c.wait(0.13)
+    c.line(gr("    ") + worker("Implementer  ") + yl("[db + security]     ") + gr("— User model + migration"))
+    c.wait(0.13)
+    c.line(gr("    ") + worker("Implementer  ") + yl("[security + api]    ") + gr("— auth middleware"))
+    c.wait(0.20)
+    c.line(gr("    ") + bo("**Reviewer** ") + gr("— reviewing batch 1 (L1–L2)  ") + gn("PASS"))
     c.wait(0.18)
-    c.line(gr("   gates — lint: ") + gn("pass") + gr(" · typecheck: ") + gn("pass") + gr(" · tests: ") + gn("pass"))
+    c.line(gr("    learnings injected: JWT RS256 · zod validation · server sessions"))
+    c.wait(0.18)
+    c.line(gr("    gates — lint: ") + gn("pass") + gr(" · typecheck: ") + gn("pass") + gr(" · tests: ") + gn("pass"))
     c.wait(0.26)
 
     # ── Dispatch · Batch 2 ───────────────────────────────────────────────────
     c.line(gr(""))
-    c.line(mg("Batch 2") + gr(" — depends on Batch 1"))
+    c.line(mg("  Batch 2") + gr(" — depends on Batch 1"))
     c.wait(0.18)
-    c.line(cy("  Implementer  ") + yl("[frontend + ui]     ") + gr("login + reset pages (with learnings)"))
+    c.line(gr("    ") + worker("Implementer  ") + yl("[frontend + ui]     ") + gr("— login + reset pages (with learnings)"))
     c.wait(0.20)
-    c.line(bo("  **Reviewer** ") + gr("final integration (L1–L2)  ") + gn("PASS"))
+    c.line(gr("    ") + bo("**Reviewer** ") + gr("— final integration (L1–L2)  ") + gn("PASS"))
     c.wait(0.18)
-    c.line(gr("   gates — lint: ") + gn("pass") + gr(" · typecheck: ") + gn("pass") + gr(" · tests: ") + gn("pass") + gr(" · build: ") + gn("pass"))
+    c.line(gr("    gates — lint: ") + gn("pass") + gr(" · typecheck: ") + gn("pass") + gr(" · tests: ") + gn("pass") + gr(" · build: ") + gn("pass"))
     c.wait(0.26)
 
     # ── Dispatch · Step 4 wrap-up (rule 12 added) ────────────────────────────
     c.line(gr(""))
-    c.line(cy("Writer         ") + gr("wrap-up: delete task · append memory · auto-commit"))
+    c.line(gr("  ") + worker("Writer         ") + gr("— wrap-up: delete task · append memory · auto-commit"))
     c.wait(0.18)
-    c.line(bo("**Reviewer**   ") + gr("wrap-up sanity (dedup, commit msg, no orphans)  ") + gn("PASS"))
+    c.line(gr("  ") + bo("**Reviewer**   ") + gr("— wrap-up sanity (dedup, commit msg, no orphans)  ") + gn("PASS"))
     c.wait(0.30)
 
     # ── Usage summary ────────────────────────────────────────────────────────
@@ -347,7 +373,7 @@ def script(features: dict) -> Cast:
     c.wait(0.11)
     c.line(mg("Thinking") + gr(f"  ({first_provider['thinking']:10s})  ") + "14 agents   " + yl("89.2k") + gr(" tokens"))
     c.wait(0.11)
-    c.line(cy("Worker  ") + gr(f"  ({first_provider['worker']:10s})  ") + "13 agents  " + yl("198.4k") + gr(" tokens"))
+    c.line(worker("Worker  ") + gr(f"  ({first_provider['worker']:10s})  ") + "13 agents  " + yl("198.4k") + gr(" tokens"))
     c.wait(0.11)
     c.line(gr("Escalations                     0"))
     c.wait(0.11)
@@ -356,7 +382,7 @@ def script(features: dict) -> Cast:
     c.line(gr("────────────────────────────────────────────────────────────"))
     c.wait(0.28)
     c.line(gr(""))
-    c.line(gr("Done · Next: ") + cy("/hyperflow:deploy") + gr(" (gates + commit + push) — user-explicit, not auto."))
+    c.line(gr("Done · Next: ") + worker("/hyperflow:deploy") + gr(" (gates + commit + push) — user-explicit, not auto."))
     c.wait(0.36)
     # Scene 6 ends ≈ 50s (longer but shows all the interactive gates + reviews)
 
