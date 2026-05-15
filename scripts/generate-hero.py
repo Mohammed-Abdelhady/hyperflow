@@ -56,7 +56,7 @@ HEADER_H   = 110
 PROVIDER_Y = HEADER_H + SECTION_GAP           # ~138
 PROVIDER_H = 90
 LAYERS_Y   = PROVIDER_Y + PROVIDER_H + SECTION_GAP   # ~256
-LAYERS_H   = 10 * 56  # 10 layers × 56px each = 560
+LAYERS_H   = 11 * 56  # 11 layers × 56px each = 616
 SKILLS_Y   = LAYERS_Y + LAYERS_H + SECTION_GAP       # ~844
 SKILLS_H   = 2 * 100 + COL_GAP  # 2 rows × 100px = 216
 CAPS_Y     = SKILLS_Y + SKILLS_H + SECTION_GAP       # ~1088
@@ -209,14 +209,14 @@ def render(features: dict, version_override: str | None) -> str:
     LAYER_H = 52
     layer_w = VB_W - 2 * PAD
 
-    for layer in layers:
+    for i, layer in enumerate(layers):
         n     = layer["n"]
         name  = layer["name"]
         summ  = layer["summary"]
         ckey  = layer["color"]
         base  = colors.get(ckey, "#64748B")
         light = LIGHT_TINTS.get(ckey, base)
-        ly    = layer_y_start + n * LAYER_H
+        ly    = layer_y_start + i * LAYER_H
 
         circle_r = 18
         cx_center = PAD + circle_r
