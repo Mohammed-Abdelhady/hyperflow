@@ -22,7 +22,7 @@ Step 1: Does .hyperflow/ exist at project root?
                   │
                   ├─ ALL MATCH + no new config files appeared
                   │  → SKIP ANALYSIS entirely
-                  │    Print "✓ Analysis cache fresh — skipping"
+                  │    Print "Analysis cache fresh — skipping"
                   │    The thinking model reads cached .hyperflow/*.md directly
                   │    Zero agents dispatched for analysis
                   │
@@ -30,7 +30,7 @@ Step 1: Does .hyperflow/ exist at project root?
                   │  → PARTIAL REFRESH
                   │    Use the Staleness Mapping table to find affected analysis files
                   │    Dispatch searcher agents ONLY for those specific analysis files
-                  │    Print "⚡ Refreshing: profile.md, dependencies.md" (example)
+                  │    Print "Refreshing — profile.md, dependencies.md" (example)
                   │    Rewrite .checksums with all current hashes
                   │
                   └─ ALL CHANGED (e.g., major refactor, new project)

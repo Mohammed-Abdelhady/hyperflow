@@ -1,9 +1,6 @@
----
-name: hyperflow
-description: Use at the start of every conversation and every task. Enforces fully autonomous execution with configurable model routing (multi-provider), always-on multi-agent orchestration, and collaborative brainstorming for design decisions. Always active.
----
+# Hyperflow Doctrine
 
-# Hyperflow
+> Shared reference for every Hyperflow skill. Not a registered skill itself — invoked indirectly by `/hyperflow:scaffold`, `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, and `/hyperflow:cache`.
 
 You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
 
@@ -38,11 +35,11 @@ On session start, the **thinking model decides** whether analysis is needed. See
 
 ### Session start flow
 
-1. **Version check** — fetch latest tag from GitHub (`gh api repos/Mohammed-Abdelhady/hyperflow/tags --jq '.[0].name'`). Compare against installed version. If newer exists, print: `⚡ Hyperflow update available: vX.Y.Z → vX.Y.Z (run: claude plugin update hyperflow@hyperflow-marketplace)`
+1. **Version check** — fetch latest tag from GitHub (`gh api repos/Mohammed-Abdelhady/hyperflow/tags --jq '.[0].name'`). Compare against installed version. If newer exists, print: `Hyperflow update available — vX.Y.Z → vX.Y.Z (run: claude plugin update hyperflow@hyperflow-marketplace)`
 2. **Print active models** — read version from `VERSION` file (same directory as SKILL.md), then print:
    ```
-   ⚡ Hyperflow v<version>
-     Thinking: <resolved-thinking-model>  |  Worker: <resolved-worker-model>
+   Hyperflow v<version>
+     Thinking: <resolved-thinking-model>  ·  Worker: <resolved-worker-model>
    ```
 3. **Smart analysis decision** — the thinking model evaluates before dispatching anything:
 
@@ -62,13 +59,13 @@ On session start, the **thinking model decides** whether analysis is needed. See
              Compare each checksum
              │
              ├─ ALL FRESH → SKIP ANALYSIS
-             │  Print "✓ Analysis cache fresh — skipping"
+             │  Print "Analysis cache fresh — skipping"
              │  Load cached files directly (no agents dispatched)
              │
              ├─ SOME STALE → PARTIAL REFRESH
              │  Use staleness mapping (project-analysis.md) to identify affected files
              │  Dispatch searcher agents ONLY for stale analysis files
-             │  Print "⚡ Refreshing: <comma-separated list of stale files>"
+             │  Print "Refreshing — <comma-separated list of stale files>"
              │  Update .checksums with new hashes
              │
              └─ .checksums MISSING or CORRUPT → FULL ANALYSIS (same as NO path)
@@ -198,23 +195,30 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 2. **Parallel by default.** Sub-tasks that don't share state get dispatched simultaneously in a single message with multiple Agent tool calls.
 3. **Learning injection.** After each batch, extract patterns/gotchas from worker outputs. Inject synthesized learnings into subsequent worker prompts.
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
-5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas are injected under a `## Persona` section in the worker prompt.
-6. **Multi-level review (MUST use thinking-tier model).** After each batch dispatch a reviewer with `model: "<resolved-thinking>"`. Scale by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) and [review-levels.md](review-levels.md).
-7. **Thinking model stays active.** Never goes idle while workers run. Reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, validates integration between outputs.
-8. **Minimum thinking agents = profile-dependent.** `fast` = 1; `standard` ≥ 1 per batch; `deep`/`scientific` = batches + 1. A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong.
-9. **Agent labels.** Before every Agent dispatch print: `⚡ [Role] Short description`. Examples: `⚡ [Implementer] Creating auth middleware`, `⚡ [Reviewer] Reviewing auth middleware output`. See [output-style.md](output-style.md) for parallel dispatch bracket format.
-10. **Usage tracking.** Track every agent dispatch and token usage. After task completes print a usage summary. See [escalation.md](escalation.md) for the canonical format and [output-style.md](output-style.md) for visual rules. Example:
-    ```
-    ── Hyperflow Usage ──────────────────────────────────────────
-    Triage                         1 agent     1.8k tokens
-    Brainstorm depth: standard     1 agent     3.2k tokens
-    Flow profile: deep             —           —
-    Thinking (Opus 4.7)            5 agents   68.4k tokens
-    Worker   (Sonnet 4.6)          9 agents  194.0k tokens
-    Escalations                    0
-    Total                         16 agents  267.4k tokens
-    ─────────────────────────────────────────────────────────────
-    ```
+5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas (from triage `personas[]`) are stitched under a `## Persona` section in the worker prompt — see [personas-A.md](personas-A.md) and [personas-B.md](personas-B.md).
+6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1–2, medium: L1–3, complex: L1–5). See [reviewer-prompt.md](reviewer-prompt.md) for the template and [review-levels.md](review-levels.md) for the full checklist.
+7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
+8. **Minimum thinking agents = profile-dependent.** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration). A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped.
+9. **Agent labels.** Before every Agent dispatch, print a single elegant line. No icons, no brackets, no emoji. Format: `Role — short description` (em-dash separator, description lowercase, under 80 chars).
+   - `**Reviewer** — reviewing auth middleware output`
+   - `**Debugger** — investigating test failure in auth.test.ts`
+   - `Implementer — creating auth middleware`
+   - `Searcher — finding related test files`
+   - `Writer — generating API documentation`
+   Thinking-tier roles (`Reviewer`, `Debugger`) wrap the role in `**bold**`. Worker-tier roles (`Implementer`, `Searcher`, `Writer`) stay plain. The bold gives visual hierarchy between "brain" and "execution" without using icons. Never use `⚡`, `→`, `*`, `[]`, `✓`, `✗`, or any decorative character. See [output-style.md](output-style.md) for parallel dispatch format.
+10. **Usage tracking.** Track every agent dispatch and token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary. Triage, spec depth, and profile lines surface up-front when a flow profile is in play. See [escalation.md](escalation.md) for the canonical format and [output-style.md](output-style.md) for visual rules.
+
+   ```
+   ── Hyperflow Usage ─────────────────────────────────────────
+   Triage                          1 agent     1.8k tokens
+   Spec depth: standard            1 agent     3.2k tokens
+   Profile: deep                   —           —
+   Thinking  (Opus 4.7  )          4 agents   52.1k tokens  (3 batch · 1 final)
+   Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
+   Escalations                     0
+   Total                          14 agents  243.1k tokens
+   ────────────────────────────────────────────────────────────
+   ```
 
     **What counts as a thinking agent:**
     - Every batch review MUST be a dispatched `Agent` call with `model: "<resolved-thinking>"` — reading files yourself and saying "looks good" is NOT a review and does NOT count.
@@ -307,27 +311,28 @@ Worker containment via prompt-injected blocklists. See [security.md](security.md
 
 Workers that hit a blocked resource report `BLOCKED:`. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
 
-## Specialized Skills
+## Skills
 
-The main `hyperflow:hyperflow` skill is the all-in-one orchestrator that runs on every task. For focused workflows, invoke a specialized skill directly:
+Hyperflow has no always-on entry. Each skill is invoked explicitly. Chain-starters auto-advance forward.
 
-| Skill | Invoke | When to use |
-|-------|--------|-------------|
-| Init | `/hyperflow:init` | Set up `.hyperflow/`, install multi-tool shims, refresh analysis cache |
-| Review | `/hyperflow:review` | Multi-level code review (L1-L5) on uncommitted changes or a target |
-| Debug | `/hyperflow:debug` | Systematic root-cause analysis for bugs and test failures |
-| Brainstorm | `/hyperflow:brainstorm` | Design exploration before implementing — never writes code |
-| Plan | `/hyperflow:plan` | Decompose a task into worker subtasks; writes `.hyperflow/tasks/<slug>.md`; does not execute |
-| Ship | `/hyperflow:ship` | Pre-push gates (lint, typecheck, build, tests) + commit + release + push |
-| Memory | `/hyperflow:memory` | CRUD on `.hyperflow/memory/` — show, search, add, prune, archive, clear |
+| Skill | Invoke | Chain | When to use |
+|-------|--------|-------|-------------|
+| Scaffold | `/hyperflow:scaffold` | standalone | Set up `.hyperflow/`, install multi-tool shims, refresh analysis cache |
+| Spec | `/hyperflow:spec` | starter → scope | Specify the design before implementing — never writes code |
+| Scope | `/hyperflow:scope` | starter → dispatch | Decompose a task into worker subtasks; writes `.hyperflow/tasks/<slug>.md` |
+| Dispatch | `/hyperflow:dispatch` | endpoint | Run a task file — parallel workers + thinking-tier reviews + final integration |
+| Trace | `/hyperflow:trace` | standalone | Systematic root-cause analysis for bugs and test failures |
+| Audit | `/hyperflow:audit` | standalone | Multi-level code review (L1–L5) on uncommitted changes or a target |
+| Deploy | `/hyperflow:deploy` | standalone | Pre-push gates (lint, typecheck, build, tests) + commit + release + push |
+| Cache | `/hyperflow:cache` | standalone | CRUD on `.hyperflow/memory/` — show, search, add, prune, archive, clear |
 
-All specialized skills inherit from this orchestration framework — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system.
+All skills inherit this doctrine — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system. Each skill file is short (~80–150 lines) and references shared files in `skills/hyperflow/*.md`.
 
 Hand-off pattern:
-- `/hyperflow:brainstorm` → produces a design → user invokes `/hyperflow:plan` or `/hyperflow:hyperflow`
-- `/hyperflow:plan` → produces a task file → user invokes `/hyperflow:hyperflow` to execute
-- `/hyperflow:debug` → fixes the bug + adds a regression test → user invokes `/hyperflow:ship`
-- `/hyperflow:hyperflow` → completes implementation → user invokes `/hyperflow:review` then `/hyperflow:ship`
+- `/hyperflow:spec` → asks chain-mode → produces a design → auto-invokes `/hyperflow:scope`
+- `/hyperflow:scope` → produces a task file → auto-invokes `/hyperflow:dispatch`
+- `/hyperflow:dispatch` → runs batches + final review → suggests `/hyperflow:audit` or `/hyperflow:deploy` (no auto-push)
+- `/hyperflow:trace` → fixes the bug at root + adds regression test → user invokes `/hyperflow:deploy`
 
 ## What This Does NOT Override
 
@@ -359,7 +364,7 @@ Hand-off pattern:
 - Ask more than one question per message (during brainstorming)
 - Skip the alternatives step and jump to a single solution (during `standard`/`deep` brainstorming)
 - Add features the user didn't ask for
-- Dispatch an agent without printing `⚡ [Role] description` first
+- Dispatch an agent without printing `Role — description` first (no icons, no brackets)
 - Finish a task without printing the usage summary
 - Dispatch workers without creating task files in `.hyperflow/tasks/` first
 - Complete a task without deleting its task file

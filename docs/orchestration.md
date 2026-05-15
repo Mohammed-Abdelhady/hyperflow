@@ -35,7 +35,7 @@ Tasks 1-3 run in parallel. Task 4 waits.
 
 ### Step 2: Dispatch
 
-Opus crafts a self-contained prompt for each worker using the template in `skills/auto-pilot/worker-prompt.md`. Key principle: workers never "check the plan" — they receive everything they need in the prompt.
+The orchestrating thinking model crafts a self-contained prompt for each worker using the template in [`skills/hyperflow/worker-prompt.md`](../skills/hyperflow/worker-prompt.md). Key principle — workers never "check the plan"; they receive everything they need in the prompt.
 
 ### Step 3: Execute
 

@@ -2,12 +2,8 @@
 set -euo pipefail
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-SKILL_FILE="$PLUGIN_ROOT/skills/hyperflow/SKILL.md"
-
-if [ ! -f "$SKILL_FILE" ]; then
-  echo "hyperflow: skill not found at $SKILL_FILE" >&2
-  exit 0
-fi
+VERSION_FILE="$PLUGIN_ROOT/skills/hyperflow/VERSION"
+HYPERFLOW_VERSION="$( [ -f "$VERSION_FILE" ] && cat "$VERSION_FILE" || echo "unknown" )"
 
 # Detect runtime via env-var prefix
 TOOL_NAME="unknown"
@@ -28,7 +24,30 @@ find_hyperflow_dir() {
 HF_DIR="$(find_hyperflow_dir)"
 
 CONTENT="<!-- hyperflow-runtime: $TOOL_NAME -->
-$(cat "$SKILL_FILE")"
+# Hyperflow v$HYPERFLOW_VERSION
+
+Hyperflow is installed. It is **not** always-on — invoke a skill explicitly when you need it.
+
+## Canonical chain
+
+Start from any skill — chain-starters auto-advance forward through the chain (with one Step-0 question: auto or manual).
+
+\`scaffold\` → \`spec\` → \`scope\` → \`dispatch\` → \`audit\` → \`deploy\`
+
+## Direct entries
+
+| Command | When to use |
+|---|---|
+| \`/hyperflow:scaffold\` | First-time setup — analyze project, build \`.hyperflow/\` cache, install shims |
+| \`/hyperflow:spec\` | Design exploration before any code is written |
+| \`/hyperflow:scope\` | Decompose a task into a worker-friendly batch file in \`.hyperflow/tasks/\` |
+| \`/hyperflow:dispatch\` | Run a planned task: dispatch workers in parallel with thinking-tier reviews |
+| \`/hyperflow:trace\` | Systematic root-cause analysis for any bug or test failure |
+| \`/hyperflow:audit\` | Multi-level code review (L1–L5) on a diff, file, or PR |
+| \`/hyperflow:deploy\` | Pre-push gates + commit + release + push |
+| \`/hyperflow:cache\` | Read or curate \`.hyperflow/memory/\` |
+
+Shared doctrine (autonomy rules, model routing, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
 
 if [ -n "$HF_DIR" ]; then
   # Project Snapshot (first 20 lines of each profile file)

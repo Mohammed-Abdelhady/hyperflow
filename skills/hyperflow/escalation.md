@@ -241,32 +241,32 @@ The orchestrator must not guess the user's preference and continue. It must paus
 Print this block at the end of every task, regardless of profile. It is always the last thing printed — after the actual task output, not before. The summary is for the user's awareness of cost and process, not a replacement for the task result itself.
 
 ```text
-── Hyperflow Usage ────────────────────────────────
-Triage:    moderate   | flow: standard   | types: [api, db]
-Profile:   standard   | budget: 100k     | actual: 87k  ✓
-Brainstorm: light     | 1 question       | 2.3k tokens
-────────────────────────────────────────────────────
-Thinking (Opus 4.7)    2 agents    42.1k tokens
-Worker   (Sonnet 4.6)  3 agents    45.0k tokens
-Total                  5 agents    87.1k tokens
-────────────────────────────────────────────────────
-Escalations: 0   | Downgrades: 0   | Overruns: none
+── Hyperflow Usage ─────────────────────────────────
+Triage:      moderate   · flow: standard   · types: [api, db]
+Profile:     standard   · budget: 100k     · actual: 87k  (under)
+Spec depth:  light      · 1 question       · 2.3k tokens
+─────────────────────────────────────────────────────
+Thinking  (Opus 4.7  )   2 agents    42.1k tokens
+Worker    (Sonnet 4.6)   3 agents    45.0k tokens
+Total                    5 agents    87.1k tokens
+─────────────────────────────────────────────────────
+Escalations: 0   · Downgrades: 0   · Overruns: none
 ```
 
 For tasks with escalation, replace the last line with:
 
 ```text
 Escalations: 1 (fast → standard, reason: scope-expansion)
-Downgrades: 0   | Overruns: none
+Downgrades: 0   · Overruns: none
 ```
 
 For budget overruns:
 
 ```text
-Escalations: 0   | Downgrades: 0   | Overruns: 1 (1.7× at batch 3, yellow)
+Escalations: 0   · Downgrades: 0   · Overruns: 1 (1.7× at batch 3, yellow)
 ```
 
-The `actual` field shows a checkmark (`✓`) when under budget, a yellow `⚠` when 1.5×–2.0×, and a red `⚠` when over 2.0×.
+The `actual` field reads `under`, `over`, `yellow` (1.5×–2.0×), or `red` (>2.0×). No icons or emoji — plain words only.
 
 The `types` field mirrors what triage identified (e.g., `[api, db, config]`). If escalation surfaced new types mid-flight, append them with a `*` marker: `[api, db, config*]` where `*` means discovered during execution.
 
