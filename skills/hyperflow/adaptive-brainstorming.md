@@ -6,52 +6,22 @@ In the old design, brainstorming was a conditional gate — easy to skip when a 
 "obviously simple." That created a systematic blind spot: even trivial-seeming tasks carry
 hidden decisions (naming, scope boundaries, caller impact, edge cases) that surface as
 expensive rework once implementation is underway. In TriageFlow, every task gets brainstorming
-because even a one-line rename has an interpretation the orchestrator must commit to. But depth
-is scaled to ambiguity — a silent one-sentence recap on low-ambiguity tasks, full multi-section
-exploration on creative or open-ended ones — so the protocol never wastes tokens on work that
-is already well-specified. The front-loaded cost of brainstorming is always less than the
-back-loaded cost of misaligned output.
+because even a one-line rename has an interpretation the orchestrator must commit to. Depth
+scales to ambiguity — 2 questions on low-ambiguity tasks, full multi-section exploration on
+open-ended ones — but the floor is **2 questions, always**. The front-loaded cost of
+brainstorming is always less than the back-loaded cost of misaligned output.
 
 ## Depth derivation
 
-Brainstorm depth is derived from the `ambiguity` field in the triage output. If a task type
-forces a higher minimum depth, the higher value wins (see Depth overrides section).
+Brainstorm depth is derived from the `ambiguity` field in the triage output. **Hard floor: every spec run asks at least 2 questions via `AskUserQuestion`** — silent mode is retired. If a task type forces a higher minimum depth, the higher value wins (see Depth overrides section).
 
-| Ambiguity score | Depth    | Behavior summary                                                      |
-|-----------------|----------|-----------------------------------------------------------------------|
-| 0.0 – 0.2       | silent   | 1-sentence intent recap; no question; proceed to flow                 |
-| 0.2 – 0.5       | light    | 0-1 AskUserQuestion calls; no design proposal step                    |
-| 0.5 – 0.8       | standard | 2-3 AskUserQuestion calls; 1 alternative proposal with trade-offs     |
-| 0.8 – 1.0       | deep     | Full 6-dimension exploration; 2-3 alternatives; section-by-section approval |
+| Ambiguity score | Depth    | Behavior summary                                                              |
+|-----------------|----------|-------------------------------------------------------------------------------|
+| 0.0 – 0.5       | light    | **2 AskUserQuestion calls** (intent + constraints); no alternatives proposal  |
+| 0.5 – 0.8       | standard | **3 AskUserQuestion calls**; 2–3 alternatives proposal with trade-offs        |
+| 0.8 – 1.0       | deep     | Full 6-dimension exploration; 4–5 questions; section-by-section approval      |
 
-## The 4 depth modes
-
-### Mode: silent
-
-**When:** ambiguity < 0.2 AND no type forces a higher minimum depth.
-
-**Behavior:**
-
-1. Orchestrator prints a one-sentence intent recap in this exact format:
-   `Intent: <restated request>. Approach: <one-line plan>.`
-2. NO `AskUserQuestion` call.
-3. Proceed directly to the flow profile chosen by triage.
-
-**Why this still counts as brainstorming:** the recap forces the orchestrator to consciously
-commit to an interpretation before touching any file. If the recap mis-states the user's goal,
-the user catches it in under two seconds — far cheaper than discovering the mismatch after
-a full implementation.
-
-**Token cost:** ~50 tokens.
-
-**Example:**
-
-```text
-Intent: rename `getUser` to `fetchUser` in `src/auth.ts`. Approach: single-edit + update 3 callers.
-[proceeds to fast flow]
-```
-
----
+## The 3 depth modes
 
 ### Mode: light
 
@@ -181,7 +151,7 @@ The orchestrator must apply this algorithm exactly, in order, on every task:
 7. Run brainstorming at the resolved depth.
 ```
 
-**Depth ordering** (from lowest to highest): silent < light < standard < deep.
+**Depth ordering** (from lowest to highest): light < standard < deep. (Silent mode was retired — the floor is now 2 questions, always.)
 
 If multiple types appear in a single triage output and they force different minimums, take the
 highest among them. Example: a task classified as both `security` and `creative` forces `deep`
@@ -201,12 +171,10 @@ forced minimum is higher than what ambiguity alone would produce, the higher dep
 | security               | standard      | Security choices need informed user consent         |
 | scientific             | standard      | Correctness assumptions must be stated explicitly   |
 | research               | light         | The research itself is the brainstorming            |
-| bugfix (clear repro)   | silent        | The reproduction steps are the spec                 |
-| docs                   | silent        | Usually clear unless target audience is ambiguous   |
+| bugfix (clear repro)   | light         | Repro is the spec — still 2 questions for scope/edges |
+| docs                   | light         | Usually clear — still 2 questions for audience/depth   |
 
-**Override rule:** compare the ambiguity-derived depth to the type-forced minimum. Take
-whichever is deeper. If `docs` would derive `silent` from ambiguity but the audience is
-genuinely ambiguous (ambiguity ≥ 0.5), ambiguity wins and overrides the `docs` default.
+**Override rule:** compare the ambiguity-derived depth to the type-forced minimum. Take whichever is deeper. Light (2 questions) is the floor for every type — never zero.
 
 ## Section-by-section approval
 
@@ -266,7 +234,7 @@ existing code or configs.
 
 ## Hand-off to flow
 
-When brainstorming closes — meaning silent recap is printed, or all questions are answered and
+When brainstorming closes — meaning all questions are answered and
 (in standard/deep mode) an alternative is approved — perform the following steps in order:
 
 1. Update the triage output object in working memory with any new information surfaced during
@@ -309,7 +277,7 @@ approved approach without escalating back to the orchestrator.
 
 The following behaviors are explicitly prohibited. The orchestrator must not exhibit any of them.
 
-- **Skipping brainstorming** because a task "looks small" → use silent mode instead. Brainstorming
+- **Skipping brainstorming** because a task "looks small" → still ask 2 questions. Brainstorming
   is never skipped; only the depth changes.
 - **Asking "should I X?"** — this is confirmation-seeking, not clarification. It is banned in all
   depth modes.

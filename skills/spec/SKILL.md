@@ -66,7 +66,10 @@ Agents — **Classifier** (Opus, thinking-tier).
 
 Dispatch a thinking-tier triage call per [task-triage.md](../hyperflow/task-triage.md). The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives:
 
-- **Spec depth** at Step 4 — `ambiguity 0.0–0.2` → silent, `0.2–0.5` → light (1–2 questions), `0.5–0.8` → standard (3 questions), `0.8–1.0` → deep (4–5 questions)
+- **Spec depth** at Step 4 — **floor: 2 questions always**.
+  - `ambiguity 0.0–0.5` → light: **2 questions**
+  - `0.5–0.8` → standard: **3 questions**
+  - `0.8–1.0` → deep: **4–5 questions**
 - **Flow profile** for the downstream `dispatch` phase — `fast`, `standard`, `deep`, `research`, `creative`, or `scientific` (see [flow-profiles.md](../hyperflow/flow-profiles.md))
 - **Persona stitching** for worker prompts later (see [personas-A.md](../hyperflow/personas-A.md), [personas-B.md](../hyperflow/personas-B.md))
 
@@ -99,17 +102,27 @@ Dispatch `**Analyst** — 6-dimension exploration` with the request + context fr
 
 The Analyst flags which dimensions have unknowns the user must resolve. Those unknowns become the Step 4 question set.
 
-### Step 4 — Smart Questions (`AskUserQuestion` — MANDATORY)
+### Step 4 — Smart Questions (`AskUserQuestion` — MANDATORY · floor 2)
 
-Use the `AskUserQuestion` tool. Never plain text questions. Ask only about unknowns from step 3.
+Use the `AskUserQuestion` tool. Never plain text questions. Ask about unknowns from step 3.
 
-**Question budget scales with triage depth** — see Step 1: silent (0), light (1–2), standard (3), deep (4–5). Never stack more than 2 questions per `AskUserQuestion` call.
+**Hard floor: every spec run asks at least 2 questions**, regardless of how confident the triage was. The two minimum questions give the user a structural place to redirect before any decomposition runs. Question budget:
 
-Question categories (in order):
-1. **Intent clarification** — confirm the real goal
-2. **Constraint discovery** — what must / must not happen
+- light depth (ambiguity 0.0–0.5) — **exactly 2 questions**
+- standard depth (0.5–0.8) — **3 questions**
+- deep depth (0.8–1.0) — **4–5 questions**
+
+Never stack more than 2 questions per `AskUserQuestion` call.
+
+Question categories (in order — pick the first N for depth N):
+
+1. **Intent clarification** — confirm the real goal (always ask)
+2. **Constraint discovery** — what must / must not happen (always ask)
 3. **Assumption challenging** — "you said X, did you mean Y instead?"
 4. **Scope boundaries** — what's IN vs OUT
+5. **Edge-case stance** — how strict on the unhappy paths
+
+If the request feels "completely clear" — ask anyway. The first two questions exist so the user can spot a misalignment the agent missed.
 
 ### Step 5 — Requirement Synthesis
 
@@ -182,6 +195,7 @@ In both modes, the `scope` skill decomposes the design into worker batches; `dis
 
 - Writing code during the spec phase
 - Asking more than 5 questions total (the Step 0 chain-mode question doesn't count)
+- **Asking fewer than 2 questions** — the floor is mandatory even when the request looks unambiguous
 - Stacking 3+ questions in one `AskUserQuestion` call
 - Skipping the alternatives step (always offer 2–3)
 - Asking what's discoverable from the codebase
