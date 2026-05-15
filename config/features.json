@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "tagline": "Sequenced multi-agent workflow for AI coding tools",
   "subtitle": "Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets reviewed.",
   "layers": [

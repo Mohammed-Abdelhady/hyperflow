@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] — 2026-05-15
+
+### Added
+- Make 10 layers, L1-L5 review, and approval gates explicit in chain
+
+### Changed
+- Re-render demo.gif at font 10 (1.3 MB · 735×490)
+
+
 ## [2.0.1] — 2026-05-15
 
 ### Changed
@@ -272,7 +281,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.1...v2.0.0
 [1.13.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.0...v1.13.1
