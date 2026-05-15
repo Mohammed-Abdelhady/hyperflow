@@ -98,7 +98,7 @@ The installer auto-detects your providers, clones the repo, symlinks the skill, 
 
 Thinking model (orchestrator, reviewer, debugger):
   [1] Claude 4.7 Opus — Hyperflow default
-  [2] Claude 4.7 Opus — Requires Max Mode
+  [2] Claude 4.6 Opus — Previous Opus
   [3] GPT-5.5 — Latest GPT
   [4] Gemini 3.1 Pro — Standard availability
 
