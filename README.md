@@ -22,14 +22,11 @@
 
 ---
 
-## Demo
+## Overview
 
-<!-- TODO: add a hero GIF or screenshot here (e.g. orchestrator dispatching workers, parallel execution panel, or quality-gate run).
-     Recommended: 600-900px wide, <5MB. Drop it in `docs/assets/` and reference below. -->
-
-<!-- ![Hyperflow in action](docs/assets/demo.gif) -->
-
-> *Drop a short demo GIF or screenshot here showing the orchestrator decomposing a task and dispatching parallel workers.*
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="Hyperflow orchestration flow: thinking-model orchestrator decomposes a task, three worker-model agents execute in parallel, the reviewer synthesizes outputs, and a final worker integrates with learnings injected back into the next batch" width="100%" />
+</p>
 
 ---
 

@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif">
+  <title id="title">Hyperflow — Multi-agent orchestration</title>
+  <desc id="desc">A thinking-model orchestrator decomposes a task, dispatches three parallel worker-model agents, reviews each output, synthesizes learnings, and runs a final integration review.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B0F1A"/>
+      <stop offset="100%" stop-color="#0E1422"/>
+    </linearGradient>
+    <linearGradient id="thinking" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="worker" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+    <linearGradient id="user" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#64748B"/>
+    </marker>
+    <marker id="arrow-thinking" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#A78BFA"/>
+    </marker>
+    <marker id="arrow-worker" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#5EEAD4"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="640" fill="url(#bg)"/>
+
+  <!-- subtle grid -->
+  <g opacity="0.06" stroke="#94A3B8" stroke-width="1">
+    <path d="M0 80 H1200 M0 160 H1200 M0 240 H1200 M0 320 H1200 M0 400 H1200 M0 480 H1200 M0 560 H1200"/>
+    <path d="M120 0 V640 M240 0 V640 M360 0 V640 M480 0 V640 M600 0 V640 M720 0 V640 M840 0 V640 M960 0 V640 M1080 0 V640"/>
+  </g>
+
+  <!-- Title -->
+  <g>
+    <text x="60" y="68" fill="#F8FAFC" font-size="34" font-weight="700" letter-spacing="-0.5">Hyperflow</text>
+    <text x="60" y="100" fill="#94A3B8" font-size="16" font-weight="500">Thinking model orchestrates · Workers execute in parallel · Every output reviewed</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(810,52)" font-size="13" font-weight="500">
+    <circle cx="0" cy="0" r="6" fill="url(#thinking)"/>
+    <text x="14" y="4" fill="#E2E8F0">Thinking model</text>
+    <circle cx="138" cy="0" r="6" fill="url(#worker)"/>
+    <text x="152" y="4" fill="#E2E8F0">Worker model</text>
+    <circle cx="282" cy="0" r="6" fill="url(#user)"/>
+    <text x="296" y="4" fill="#E2E8F0">You</text>
+  </g>
+
+  <!-- Step labels (top) -->
+  <g font-size="12" font-weight="600" fill="#64748B" letter-spacing="1.5">
+    <text x="100"  y="158" text-anchor="middle">INPUT</text>
+    <text x="320"  y="158" text-anchor="middle">DECOMPOSE</text>
+    <text x="600"  y="158" text-anchor="middle">PARALLEL EXECUTION</text>
+    <text x="880"  y="158" text-anchor="middle">REVIEW + SYNTHESIZE</text>
+    <text x="1100" y="158" text-anchor="middle">INTEGRATE</text>
+  </g>
+
+  <!-- USER -->
+  <g transform="translate(50,200)">
+    <rect width="100" height="200" rx="14" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <circle cx="50" cy="48" r="20" fill="url(#user)"/>
+    <text x="50" y="92" text-anchor="middle" fill="#F1F5F9" font-size="13" font-weight="700">You</text>
+    <text x="50" y="124" text-anchor="middle" fill="#94A3B8" font-size="11">"Add user auth</text>
+    <text x="50" y="140" text-anchor="middle" fill="#94A3B8" font-size="11">with login page</text>
+    <text x="50" y="156" text-anchor="middle" fill="#94A3B8" font-size="11">and middleware"</text>
+  </g>
+
+  <!-- arrow user -> orchestrator -->
+  <path d="M152 300 H262" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- ORCHESTRATOR -->
+  <g transform="translate(264,200)">
+    <rect width="130" height="200" rx="14" fill="rgba(167,139,250,0.08)" stroke="url(#thinking)" stroke-width="1.5"/>
+    <g transform="translate(65,48)">
+      <circle r="22" fill="url(#thinking)" opacity="0.18"/>
+      <circle r="14" fill="url(#thinking)"/>
+      <text y="4" text-anchor="middle" fill="#0B0F1A" font-size="11" font-weight="800">O</text>
+    </g>
+    <text x="65" y="100" text-anchor="middle" fill="#E2E8F0" font-size="13" font-weight="700">Orchestrator</text>
+    <text x="65" y="118" text-anchor="middle" fill="#A78BFA" font-size="11" font-weight="500">Opus 4.7</text>
+    <line x1="20" y1="138" x2="110" y2="138" stroke="#1E293B" stroke-width="1"/>
+    <text x="65" y="156" text-anchor="middle" fill="#94A3B8" font-size="11">Decomposes</text>
+    <text x="65" y="172" text-anchor="middle" fill="#94A3B8" font-size="11">into 3 tasks</text>
+  </g>
+
+  <!-- arrows orchestrator -> workers -->
+  <g stroke="url(#thinking)" stroke-width="2" fill="none">
+    <path d="M396 240 C460 240, 470 240, 538 240" marker-end="url(#arrow-thinking)"/>
+    <path d="M396 300 H538" marker-end="url(#arrow-thinking)"/>
+    <path d="M396 360 C460 360, 470 360, 538 360" marker-end="url(#arrow-thinking)"/>
+  </g>
+
+  <!-- WORKERS -->
+  <g transform="translate(540,210)">
+    <rect width="200" height="56" rx="12" fill="rgba(94,234,212,0.08)" stroke="url(#worker)" stroke-width="1.5"/>
+    <circle cx="28" cy="28" r="14" fill="url(#worker)"/>
+    <text x="28" y="32" text-anchor="middle" fill="#0B0F1A" font-size="11" font-weight="800">W1</text>
+    <text x="56" y="24" fill="#E2E8F0" font-size="12" font-weight="700">Auth middleware</text>
+    <text x="56" y="42" fill="#94A3B8" font-size="11">Sonnet 4.6 · in flight</text>
+  </g>
+  <g transform="translate(540,272)">
+    <rect width="200" height="56" rx="12" fill="rgba(94,234,212,0.08)" stroke="url(#worker)" stroke-width="1.5"/>
+    <circle cx="28" cy="28" r="14" fill="url(#worker)"/>
+    <text x="28" y="32" text-anchor="middle" fill="#0B0F1A" font-size="11" font-weight="800">W2</text>
+    <text x="56" y="24" fill="#E2E8F0" font-size="12" font-weight="700">Login page</text>
+    <text x="56" y="42" fill="#94A3B8" font-size="11">Sonnet 4.6 · in flight</text>
+  </g>
+  <g transform="translate(540,334)">
+    <rect width="200" height="56" rx="12" fill="rgba(94,234,212,0.08)" stroke="url(#worker)" stroke-width="1.5"/>
+    <circle cx="28" cy="28" r="14" fill="url(#worker)"/>
+    <text x="28" y="32" text-anchor="middle" fill="#0B0F1A" font-size="11" font-weight="800">W3</text>
+    <text x="56" y="24" fill="#E2E8F0" font-size="12" font-weight="700">User model</text>
+    <text x="56" y="42" fill="#94A3B8" font-size="11">Sonnet 4.6 · in flight</text>
+  </g>
+
+  <!-- parallel braces -->
+  <g stroke="#475569" stroke-width="1.5" fill="none">
+    <path d="M748 232 C758 232, 758 296, 768 296"/>
+    <path d="M748 360 C758 360, 758 296, 768 296"/>
+  </g>
+  <text x="788" y="290" fill="#64748B" font-size="11" font-weight="600" letter-spacing="1.2">PARALLEL</text>
+  <text x="788" y="306" fill="#64748B" font-size="11" font-weight="600" letter-spacing="1.2">~3× FASTER</text>
+
+  <!-- arrows workers -> reviewer -->
+  <g stroke="url(#worker)" stroke-width="2" fill="none">
+    <path d="M740 240 C800 240, 810 240, 838 280" marker-end="url(#arrow-worker)"/>
+    <path d="M740 300 H838" marker-end="url(#arrow-worker)"/>
+    <path d="M740 360 C800 360, 810 360, 838 320" marker-end="url(#arrow-worker)"/>
+  </g>
+
+  <!-- REVIEWER -->
+  <g transform="translate(840,200)">
+    <rect width="130" height="200" rx="14" fill="rgba(167,139,250,0.08)" stroke="url(#thinking)" stroke-width="1.5"/>
+    <g transform="translate(65,48)">
+      <circle r="22" fill="url(#thinking)" opacity="0.18"/>
+      <circle r="14" fill="url(#thinking)"/>
+      <text y="4" text-anchor="middle" fill="#0B0F1A" font-size="11" font-weight="800">R</text>
+    </g>
+    <text x="65" y="100" text-anchor="middle" fill="#E2E8F0" font-size="13" font-weight="700">Reviewer</text>
+    <text x="65" y="118" text-anchor="middle" fill="#A78BFA" font-size="11" font-weight="500">Opus 4.7</text>
+    <line x1="20" y1="138" x2="110" y2="138" stroke="#1E293B" stroke-width="1"/>
+    <text x="65" y="156" text-anchor="middle" fill="#94A3B8" font-size="11">Two-pass review</text>
+    <text x="65" y="172" text-anchor="middle" fill="#94A3B8" font-size="11">+ synthesize</text>
+  </g>
+
+  <!-- arrow reviewer -> integration -->
+  <path d="M972 300 H1038" stroke="url(#thinking)" stroke-width="2" fill="none" marker-end="url(#arrow-thinking)"/>
+
+  <!-- INTEGRATION -->
+  <g transform="translate(1040,200)">
+    <rect width="110" height="200" rx="14" fill="rgba(94,234,212,0.08)" stroke="url(#worker)" stroke-width="1.5"/>
+    <g transform="translate(55,48)">
+      <circle r="22" fill="url(#worker)" opacity="0.18"/>
+      <circle r="14" fill="url(#worker)"/>
+      <text y="4" text-anchor="middle" fill="#0B0F1A" font-size="11" font-weight="800">W4</text>
+    </g>
+    <text x="55" y="100" text-anchor="middle" fill="#E2E8F0" font-size="13" font-weight="700">Integration</text>
+    <text x="55" y="118" text-anchor="middle" fill="#5EEAD4" font-size="11" font-weight="500">Sonnet 4.6</text>
+    <line x1="14" y1="138" x2="96" y2="138" stroke="#1E293B" stroke-width="1"/>
+    <text x="55" y="156" text-anchor="middle" fill="#94A3B8" font-size="11">Wires it up</text>
+    <text x="55" y="172" text-anchor="middle" fill="#94A3B8" font-size="11">w/ learnings</text>
+  </g>
+
+  <!-- Learnings feedback loop -->
+  <g>
+    <path d="M905 410 Q905 460, 700 460 Q495 460, 495 410" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="4 4" fill="none" opacity="0.6"/>
+    <text x="700" y="478" text-anchor="middle" fill="#A78BFA" font-size="11" font-weight="600" letter-spacing="0.5" opacity="0.9">↻ Learnings injected into next batch · persisted to ~/.claude/hyperflow-memory.md</text>
+  </g>
+
+  <!-- Bottom stats -->
+  <g transform="translate(60,540)" font-size="12">
+    <g>
+      <text x="0" y="0" fill="#64748B" font-weight="600" letter-spacing="1.2">QUALITY GATES</text>
+      <text x="0" y="22" fill="#E2E8F0" font-weight="600">Lint · Typecheck · Tests</text>
+      <text x="0" y="42" fill="#94A3B8">Auto-retry on failure</text>
+    </g>
+    <g transform="translate(260,0)">
+      <text x="0" y="0" fill="#64748B" font-weight="600" letter-spacing="1.2">COST PROFILE</text>
+      <text x="0" y="22" fill="#E2E8F0" font-weight="600">Opus thinks · Sonnet builds</text>
+      <text x="0" y="42" fill="#94A3B8">Stop paying Opus for boilerplate</text>
+    </g>
+    <g transform="translate(560,0)">
+      <text x="0" y="0" fill="#64748B" font-weight="600" letter-spacing="1.2">SECURITY</text>
+      <text x="0" y="22" fill="#E2E8F0" font-weight="600">Worker containment</text>
+      <text x="0" y="42" fill="#94A3B8">No .env · no sudo · no force-push</text>
+    </g>
+    <g transform="translate(820,0)">
+      <text x="0" y="0" fill="#64748B" font-weight="600" letter-spacing="1.2">EVERYWHERE</text>
+      <text x="0" y="22" fill="#E2E8F0" font-weight="600">Claude Code · Cursor · OpenCode</text>
+      <text x="0" y="42" fill="#94A3B8">Codex · Antigravity</text>
+    </g>
+  </g>
+</svg>
