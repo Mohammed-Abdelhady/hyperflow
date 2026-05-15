@@ -15,9 +15,9 @@ CAST_FILE="$ASSETS_DIR/demo.cast"
 GIF_FILE="$ASSETS_DIR/demo.gif"
 GENERATOR="$REPO_ROOT/scripts/generate-demo-cast.py"
 
-SPEED="${HYPERFLOW_DEMO_SPEED:-1.0}"
+SPEED="${HYPERFLOW_DEMO_SPEED:-1.6}"
 THEME="${HYPERFLOW_DEMO_THEME:-monokai}"
-FONT_SIZE="${HYPERFLOW_DEMO_FONT_SIZE:-14}"
+FONT_SIZE="${HYPERFLOW_DEMO_FONT_SIZE:-11}"
 
 require() {
   command -v "$1" >/dev/null 2>&1 || {
