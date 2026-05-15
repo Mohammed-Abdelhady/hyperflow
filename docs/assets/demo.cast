@@ -169,7 +169,7 @@
 [18.11,"o","\u001b[90m  \u001b[0m\u001b[36mWriter       \u001b[0m\u001b[90m→ \u001b[0m\u001b[1m**Reviewer**\u001b[0m\u001b[90m → you \u001b[0m\u001b[32mapprove\u001b[0m\u001b[90m — \u001b[0mKey decisions\r\n"]
 [18.27,"o","\u001b[90m  \u001b[0m\u001b[36mWriter       \u001b[0m\u001b[90m→ \u001b[0m\u001b[1m**Reviewer**\u001b[0m\u001b[90m → you \u001b[0m\u001b[32mapprove\u001b[0m\u001b[90m — \u001b[0mEdge cases\r\n"]
 [18.43,"o","\u001b[90m  \u001b[0m\u001b[36mWriter       \u001b[0m\u001b[90m→ \u001b[0m\u001b[1m**Reviewer**\u001b[0m\u001b[90m → you \u001b[0m\u001b[32mapprove\u001b[0m\u001b[90m — \u001b[0mFile structure\r\n"]
-[18.79,"o","\u001b[36mWriter         \u001b[0m\u001b[90mwriting docs/specs/auth.md\u001b[0m\r\n"]
+[18.79,"o","\u001b[36mWriter         \u001b[0m\u001b[90mwriting .hyperflow/specs/auth.md\u001b[0m\r\n"]
 [18.92,"o","\u001b[1m**Reviewer**   \u001b[0m\u001b[90mfinal spec sanity check  \u001b[0m\u001b[32mPASS\u001b[0m\r\n"]
 [19.12,"o","\u001b[90m→ auto-chain to \u001b[0m\u001b[36m/hyperflow:scope\u001b[0m\u001b[90m…\u001b[0m\r\n"]
 [19.48,"o","\u001b[90m\u001b[0m\r\n"]

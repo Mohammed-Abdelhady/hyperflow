@@ -105,7 +105,7 @@ Intent: rename `getUser` to `fetchUser` and propagate to all callers in this rep
    - Edge cases — what could break and the mitigation plan
    - File structure — what files get created, modified, or deleted
 5. Present ONE section per message. Wait for approval before the next.
-6. For features touching 3+ files, write a brief spec to `docs/specs/` before dispatching workers.
+6. For features touching 3+ files, write a brief spec to `.hyperflow/specs/` before dispatching workers.
 
 **Token cost:** ~10k–40k tokens (front-loaded, preventing 10× that cost in rework).
 
@@ -245,7 +245,7 @@ When brainstorming closes — meaning all questions are answered and
 4. The approved design — including chosen alternative and any section approvals — becomes the
    authoritative spec passed into worker prompts. Workers must not re-derive intent independently.
 
-**Spec file format** (deep mode, 3+ files, written to `docs/specs/<slug>.md` before dispatch):
+**Spec file format** (deep mode, 3+ files, written to `.hyperflow/specs/<slug>.md` before dispatch):
 
 ```text
 # Spec: <feature name>

@@ -178,7 +178,7 @@ Sections (always in this order):
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-1. Dispatch `Writer — writing spec to docs/specs/<slug>.md` for non-trivial features (3+ files / multiple subsystems). For simpler designs, the Writer composes an inline summary instead.
+1. Dispatch `Writer — writing spec to .hyperflow/specs/<slug>.md` for non-trivial features (3+ files / multiple subsystems). For simpler designs, the Writer composes an inline summary instead.
 2. Dispatch `**Reviewer** — final spec sanity check` to verify every approved section is captured and no contradiction exists between sections.
 
 ### Step 9 — Hand off to `/hyperflow:scope`
