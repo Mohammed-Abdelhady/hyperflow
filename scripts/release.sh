@@ -200,7 +200,8 @@ git add \
   "$PACKAGE_JSON" \
   "$ROOT/.claude-plugin/plugin.json" \
   "$ROOT/.claude-plugin/marketplace.json" \
-  "$README"
+  "$README" \
+  "$ROOT/skills/hyperflow/VERSION"
 
 # ── Commit and tag ────────────────────────────────────────────────────────────
 git commit -m "chore(release): v${NEW_VERSION}"
