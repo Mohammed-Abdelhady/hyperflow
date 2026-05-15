@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] — 2026-05-15
+
+### Fixed
+- Enforce final integration review as separate step
+
+
 ## [1.7.0] — 2026-05-15
 
 ### Added
@@ -158,7 +164,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.5.0...v1.6.0
