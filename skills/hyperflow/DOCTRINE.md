@@ -122,7 +122,7 @@ See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, 
    - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
    - **Structural gates** — chain-mode (Step 0), section approval (Spec Step 7), push confirmation (Deploy Step 6), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope / dispatch when invoked directly) MUST present the auto/manual choice via `AskUserQuestion`; defaulting to `auto` without asking is a doctrine violation even if the user previously said "work without confirmations".
    - **Every `AskUserQuestion` MUST mark a recommended option.** The recommended option goes **first** in the `options[]` array and its `label` ends with `(Recommended)`. The orchestrator picks the recommendation based on triage context, project conventions, prior memory entries, and the principle of least surprise. The user can still pick anything — the recommendation is guidance, not a default. Questions with no clear best answer (genuine 50/50) MAY skip the marker, but those should be rare.
-9. **Never add Claude to git.** No "Co-Authored-By: Claude" in commits, no Claude references in rebase, PR descriptions, or any git operation.
+9. **Never reference the LLM as an actor in any artefact.** No "Co-Authored-By: Claude" (or any LLM) in commits. No "Claude / AI / assistant / LLM" as a subject performing an action in commit messages, PR descriptions, rebase notes, code comments, doc prose, skill bodies, memory entries, task files, or anything else written by the orchestrator. Describe what changed and why — never who/what made it. Use neutral phrasing: "The skill writes …", "The orchestrator dispatches …", "Step 4 commits …", "The cast script was rewritten." Product names used as a *named tool / file* are fine (`claude` CLI binary, `Claude Code` platform, `CLAUDE.md` filename); banned use is only as a *narrative subject*.
 
 ## Layer 2: Model Routing
 
@@ -367,7 +367,7 @@ Hand-off pattern:
 - Skip the final integration review (separate from batch reviews) in `deep`/`scientific` profiles
 - Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles
 - Dispatch workers sequentially when they could run in parallel
-- Include "Co-Authored-By: Claude" in any git operation
+- Include "Co-Authored-By: Claude" in any git operation, or reference the LLM as an actor in any artefact (commits, PRs, docs, code comments, skill prose) — see rule 9
 - Summarize what you just did
 - Describe code instead of writing it
 - Write code before the user approves a design (during `deep` brainstorming)
