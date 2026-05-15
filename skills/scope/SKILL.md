@@ -40,16 +40,16 @@ This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the s
 
 If invoked with a `chain-mode=<auto|manual>` arg (from `/hyperflow:spec` or a prior skill), skip this step — the previous chain-starter already asked.
 
-Otherwise, **before research**, ask via `AskUserQuestion`:
+Otherwise, **before research**, ask via `AskUserQuestion`. Per DOCTRINE rule 8, the recommended option goes first with `(Recommended)`:
 
 ```
 How should I advance through the chain after this phase?
 
-  Auto     — chain forward through scope → dispatch with no gate.
-             Fewer interruptions, faster end-to-end.
+  Auto (Recommended)  — chain forward through scope → dispatch with no gate.
+                        Fewer interruptions, faster end-to-end.
 
-  Manual   — pause between phases and ask before advancing.
-             More control, more confirmations.
+  Manual              — pause between phases and ask before advancing.
+                        More control, more confirmations.
 ```
 
 Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking dispatch.

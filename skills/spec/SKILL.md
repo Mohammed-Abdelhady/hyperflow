@@ -44,19 +44,19 @@ This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the s
 
 If invoked with a `chain-mode=<auto|manual>` arg (from a prior skill in the chain), skip this step — the previous chain-starter already asked.
 
-Otherwise, **before any research, triage, or analysis**, ask via `AskUserQuestion`:
+Otherwise, **before any research, triage, or analysis**, ask via `AskUserQuestion`. Per DOCTRINE rule 8, the recommended option goes first with `(Recommended)`:
 
 ```
 How should I advance through the chain after each phase?
 
-  Auto     — chain forward through spec → scope → dispatch with no gates.
-             Fewer interruptions, faster end-to-end.
+  Auto (Recommended)  — chain forward through spec → scope → dispatch with no gates.
+                        Fewer interruptions, faster end-to-end.
 
-  Manual   — pause between phases and ask before advancing.
-             More control, more confirmations.
+  Manual              — pause between phases and ask before advancing.
+                        More control, more confirmations.
 ```
 
-Wait for the user's answer. Do not proceed without it. Save the chosen mode (`auto` or `manual`) and propagate it via `args: "chain-mode=<mode>"` whenever this skill invokes the next phase.
+`Auto` is the recommended default because most users invoking a chain-starter want momentum; `Manual` exists for high-risk or exploratory work. Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"`.
 
 If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
@@ -114,6 +114,8 @@ Use the `AskUserQuestion` tool. Never plain text questions. Ask about unknowns f
 
 Never stack more than 2 questions per `AskUserQuestion` call.
 
+**Every option list MUST mark a recommended choice** (DOCTRINE rule 8). The Analyst's leading hypothesis from Step 3 goes first with `(Recommended)`; alternatives follow. The user can pick anything — the marker is guidance, not a default.
+
 Question categories (in order — pick the first N for depth N):
 
 1. **Intent clarification** — confirm the real goal (always ask)
@@ -123,6 +125,14 @@ Question categories (in order — pick the first N for depth N):
 5. **Edge-case stance** — how strict on the unhappy paths
 
 If the request feels "completely clear" — ask anyway. The first two questions exist so the user can spot a misalignment the agent missed.
+
+Example structure (DON'T omit the recommendation marker):
+
+```
+?  Where should auth state live?
+   Server sessions (Recommended)  — revocable, refreshable, fits this project's DB conventions
+   JWT stateless                  — simpler, no DB, harder to revoke
+```
 
 ### Step 5 — Requirement Synthesis
 
