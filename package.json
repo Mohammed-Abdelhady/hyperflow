@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "description": "Multi-agent orchestration for AI coding tools. Thinking models think, worker models execute, everything runs in parallel.",
   "type": "module",
   "license": "MIT",
