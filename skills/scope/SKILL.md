@@ -5,7 +5,17 @@ description: Use when the user says "plan this", "decompose this task", "break t
 
 # Scope
 
-Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/memory/`, and `docs/specs/`. When the task file is ready, hand off to execute (auto or with a gate, depending on chain mode).
+Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/memory/`, and `docs/specs/`. When the task file is ready, hand off to `dispatch` (auto or with a gate, depending on chain mode).
+
+This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Project Memory)** for past-learning surfacing, and **Layer 7 (Task Templates)** for decomposition patterns. It also inherits the triage classification from `/hyperflow:spec` to size each batch correctly.
+
+## Approval Gates
+
+| Gate | When | Format |
+|---|---|---|
+| Chain mode | Step 0, only if invoked directly | `AskUserQuestion` — auto / manual |
+| Decomposition sanity | Step 4, after writing the task file | Print the batch summary; user reads it |
+| Phase advance (if `manual` mode) | Step 7, before invoking `dispatch` | `AskUserQuestion` — continue / stop |
 
 ## Flow
 
