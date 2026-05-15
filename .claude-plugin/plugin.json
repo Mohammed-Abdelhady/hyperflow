@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "1.9.0",
-  "description": "Multi-agent orchestration for AI coding tools. Thinking models think. Worker models execute. Everything runs in parallel with automatic review.",
+  "description": "Multi-agent orchestration for AI coding tools. Main orchestrator + specialized skills (init, review, debug, brainstorm, plan, ship, memory). Thinking models think. Worker models execute. Project-scoped memory, multi-tool auto-detection.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -13,6 +13,11 @@
     "claude-code-plugin",
     "orchestration",
     "multi-agent",
-    "auto-pilot"
+    "auto-pilot",
+    "code-review",
+    "debugging",
+    "brainstorming",
+    "project-memory",
+    "multi-tool"
   ]
 }

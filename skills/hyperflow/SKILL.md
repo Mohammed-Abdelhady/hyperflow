@@ -322,6 +322,28 @@ Worker containment via prompt-injected blocklists. See [security.md](security.md
 
 Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
 
+## Specialized Skills
+
+The main `hyperflow:hyperflow` skill is the all-in-one orchestrator that runs on every task. For focused workflows, invoke a specialized skill directly:
+
+| Skill | Invoke | When to use |
+|-------|--------|-------------|
+| Init | `/hyperflow:init` | Set up `.hyperflow/`, install multi-tool shims, refresh analysis cache |
+| Review | `/hyperflow:review` | Multi-level code review (L1-L5) on uncommitted changes or a target |
+| Debug | `/hyperflow:debug` | Systematic root-cause analysis for bugs and test failures |
+| Brainstorm | `/hyperflow:brainstorm` | Design exploration before implementing — never writes code |
+| Plan | `/hyperflow:plan` | Decompose a task into worker subtasks; writes `.hyperflow/tasks/<slug>.md`; does not execute |
+| Ship | `/hyperflow:ship` | Pre-push gates (lint, typecheck, build, tests) + commit + release + push |
+| Memory | `/hyperflow:memory` | CRUD on `.hyperflow/memory/` — show, search, add, prune, archive, clear |
+
+All specialized skills inherit from this orchestration framework — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system. The specialized skills are short (~80 lines each) and reference shared files in `skills/hyperflow/*.md`.
+
+Hand-off pattern:
+- `/hyperflow:brainstorm` → produces a design → user invokes `/hyperflow:plan` or `/hyperflow:hyperflow`
+- `/hyperflow:plan` → produces a task file → user invokes `/hyperflow:hyperflow` to execute
+- `/hyperflow:debug` → fixes the bug + adds a regression test → user invokes `/hyperflow:ship`
+- `/hyperflow:hyperflow` → completes implementation → user invokes `/hyperflow:review` then `/hyperflow:ship`
+
 ## What This Does NOT Override
 
 - Other active skills (project-specific skills still apply)

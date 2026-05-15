@@ -72,6 +72,31 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 
 ---
 
+## Specialized Skills
+
+In addition to the main `hyperflow:hyperflow` orchestrator that runs on every task, hyperflow ships **7 specialized skills** you can invoke directly for focused workflows:
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| **Init** | `/hyperflow:init` | First-time setup — analyzes the project, creates `.hyperflow/` cache, installs multi-tool auto-detection shims |
+| **Review** | `/hyperflow:review` | Multi-level code review (L1 quick → L5 exhaustive) on uncommitted changes or a target file/range/PR |
+| **Debug** | `/hyperflow:debug` | Systematic root-cause analysis using 5 Whys + hypothesis testing — never blind-patches symptoms |
+| **Brainstorm** | `/hyperflow:brainstorm` | Design exploration with multi-dimensional analysis, AskUserQuestion clarification, and 2-3 alternative approaches — refuses to write code until design is approved |
+| **Plan** | `/hyperflow:plan` | Decomposes a task into parallel worker subtasks and writes `.hyperflow/tasks/<slug>.md` — does not execute |
+| **Ship** | `/hyperflow:ship` | Pre-push gates (lint, typecheck, build, tests, security sweep) + commit + release + push (with explicit confirmation) |
+| **Memory** | `/hyperflow:memory` | CRUD on `.hyperflow/memory/` — `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off` |
+
+**Reuse architecture:** Each specialized skill is ~80 lines and references shared protocol files (`skills/hyperflow/worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`). No content duplication.
+
+**Typical hand-offs:**
+- Brainstorm a design → Plan the work → run main orchestrator → Review → Ship
+- Hit a bug → Debug → Review the fix → Ship
+- New project → Init → main orchestrator
+
+**Model routing inherited from main skill:** Reviewer/Debugger agents use the thinking-tier model (Opus 4.7 in Claude Code by default); Implementer/Searcher/Writer agents use the worker-tier (Sonnet 4.6). Configurable via `~/.hyperflow/config.json`.
+
+---
+
 ## Quick Start
 
 ### Claude Code
@@ -495,7 +520,7 @@ After running, push with `git push && git push --tags`.
 
 ```
 hyperflow/
-├── skills/hyperflow/           # The unified skill (9 layers)
+├── skills/hyperflow/           # The unified skill (9 layers) + 7 specialized skills (see Specialized Skills)
 │   ├── SKILL.md                #   Core skill definition
 │   ├── model-config.md         #   Model configuration reference
 │   ├── worker-prompt.md        #   Worker dispatch template
