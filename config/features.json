@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
-  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere — every step dispatches its own Worker → Reviewer pair.",
+  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
   "layers": [
     {
       "n": 0,
