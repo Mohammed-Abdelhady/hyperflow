@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] — 2026-05-15
+
+### Fixed
+- Make Step 0 chain-mode question an unskippable structural gate
+- Show per-step Worker→Reviewer (rule 12), Classifier, Analyst, Planner, personas, wrap-up reviewer
+
+### Changed
+- Refresh repo descriptions for v2.2.0 chain + rule 12
+
+
 ## [2.2.0] — 2026-05-15
 
 ### Added
@@ -293,7 +303,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.0...v2.0.1
