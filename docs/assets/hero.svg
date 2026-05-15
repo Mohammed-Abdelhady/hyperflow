@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1520"
      role="img" aria-labelledby="hf-title hf-desc"
      font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif">
-  <title id="hf-title">Hyperflow v1.13.1 — Multi-agent orchestration for AI coding tools</title>
-  <desc id="hf-desc">Thinking models think. Worker models execute. Everything runs in parallel with automatic review.</desc>
+  <title id="hf-title">Hyperflow v2.0.0 — Sequenced multi-agent workflow for AI coding tools</title>
+  <desc id="hf-desc">Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets reviewed.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
@@ -48,13 +48,14 @@
   <!-- ======================== HEADER ======================== -->
   <g transform="translate(48,20)">
     <text y="46" fill="#F8FAFC" font-size="42" font-weight="800" letter-spacing="-1">Hyperflow</text>
-    <text y="74" fill="#94A3B8" font-size="15" font-weight="500">Multi-agent orchestration for AI coding tools</text>
-    <text y="94" fill="#94A3B8" font-size="12" opacity="0.75">Thinking models think. Worker models execute. Everything runs in parallel with automatic review.</text>
+    <text y="74" fill="#94A3B8" font-size="15" font-weight="500">Sequenced multi-agent workflow for AI coding tools</text>
+    <text y="94" fill="#94A3B8" font-size="12" opacity="0.75">Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets</text>
+    <text y="110" fill="#94A3B8" font-size="12" opacity="0.75">reviewed.</text>
   </g>
   <rect x="1272" y="20" width="80" height="30" rx="15"
         fill="#0B0F1A" stroke="#334155" stroke-width="1.5"/>
   <text x="1312" y="40" text-anchor="middle"
-        fill="#94A3B8" font-size="13" font-weight="700">v1.13.1</text>
+        fill="#94A3B8" font-size="13" font-weight="700">v2.0.0</text>
 
   <!-- ======================== PROVIDERS ======================== -->
   <text x="48" y="152" fill="#94A3B8"
@@ -246,72 +247,72 @@
   <g transform="translate(48,866)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="152" height="22" rx="11"
+    <rect x="12" y="12" width="145" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:hyperflow</text>
-    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">All-in-one orchestrator</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">Main orchestration that runs on every task</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:scaffold</text>
+    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Project setup</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">Analyze project, create .hyperflow/ cache, install multi-tool shims</text>
   </g>
   <g transform="translate(708,866)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="117" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:init</text>
-    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Project setup</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">Analyze project, create .hyperflow/ cache, install multi-tool shims</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:spec</text>
+    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Specify the design</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">Multi-dimensional analysis + alternatives — refuses to code before appr…</text>
   </g>
   <g transform="translate(48,970)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="131" height="22" rx="11"
+    <rect x="12" y="12" width="124" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:review</text>
-    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Multi-level code review</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">L1 quick → L5 exhaustive review on changes, files, or PRs</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:scope</text>
+    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Decompose the work</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">Decompose into parallel worker subtasks; writes task file; auto-chains …</text>
   </g>
   <g transform="translate(708,970)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="124" height="22" rx="11"
+    <rect x="12" y="12" width="145" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:debug</text>
-    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Root-cause analysis</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">Systematic 5-Whys + hypothesis testing — never patches symptoms</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:dispatch</text>
+    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Execute the batches</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">Dispatch parallel workers + thinking-tier reviews + final integration r…</text>
   </g>
   <g transform="translate(48,1074)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="159" height="22" rx="11"
+    <rect x="12" y="12" width="124" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:brainstorm</text>
-    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Design exploration</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">Multi-dimensional analysis + alternatives — refuses to code before appr…</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:trace</text>
+    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Root-cause a bug</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">Systematic 5-Whys + hypothesis testing — never patches symptoms</text>
   </g>
   <g transform="translate(708,1074)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="117" height="22" rx="11"
+    <rect x="12" y="12" width="124" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:plan</text>
-    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Task decomposition</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">Decompose into parallel worker subtasks; writes task file; does not exe…</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:audit</text>
+    <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Code review</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">L1 quick → L5 exhaustive review on changes, files, or PRs</text>
   </g>
   <g transform="translate(48,1178)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="117" height="22" rx="11"
+    <rect x="12" y="12" width="131" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:ship</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:deploy</text>
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Pre-push gates</text>
-    <text x="12" y="70" fill="#94A3B8" font-size="11">Lint, typecheck, build, tests, security sweep, commit, release, push</text>
+    <text x="12" y="70" fill="#94A3B8" font-size="11">Lint, typecheck, build, tests, security sweep, commit, release, push (p…</text>
   </g>
   <g transform="translate(708,1178)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
-    <rect x="12" y="12" width="131" height="22" rx="11"
+    <rect x="12" y="12" width="124" height="22" rx="11"
           fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>
-    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:memory</text>
+    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">/hyperflow:cache</text>
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Memory CRUD</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Show, search, add, edit, prune, archive, clear, stats, migrate</text>
   </g>
@@ -416,6 +417,6 @@
   <!-- ======================== FOOTER ======================== -->
   <text x="48" y="1476"
         fill="#475569" font-size="11" font-weight="500">
-    github.com/Mohammed-Abdelhady/hyperflow · v1.13.1</text>
+    github.com/Mohammed-Abdelhady/hyperflow · v2.0.0</text>
 
 </svg>

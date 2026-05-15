@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] — 2026-05-15
+
+### Added
+- Rename slugs, drop always-on orchestrator, elegant output style
+
+
 ## [1.13.1] — 2026-05-15
 
 ### Fixed
@@ -260,7 +266,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.1...v2.0.0
 [1.13.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.0...v1.13.1
 [1.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.0...v1.12.1

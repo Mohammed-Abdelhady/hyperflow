@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.13.1-blueviolet?style=flat-square" alt="version v1.13.1" />
+  <img src="https://img.shields.io/badge/version-v2.0.0-blueviolet?style=flat-square" alt="version v2.0.0" />
   &nbsp;
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
   &nbsp;
@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  <code>v1.13.1</code> · <a href="CHANGELOG.md">Changelog</a>
+  <code>v2.0.0</code> · <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 <p align="center">
