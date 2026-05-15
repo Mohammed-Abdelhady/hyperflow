@@ -7,15 +7,15 @@ Hyperflow supports four platforms. Each has its own model naming, detection meth
 **Detection:** `CLAUDE_CODE_*` environment variables (set automatically by the CLI).
 
 **Default models:**
-- Thinking: `opus-4-6` (Opus 4.6)
+- Thinking: `opus-4-7` (Opus 4.7)
 - Worker: `sonnet-4-6` (Sonnet 4.6)
 
 **Available models:**
 
 | Model ID | Name | Type | Notes |
 |---|---|---|---|
-| `opus-4-7` | Opus 4.7 | Thinking | Latest, default on Max plans |
-| `opus-4-6` | Opus 4.6 | Thinking | Hyperflow default |
+| `opus-4-7` | Opus 4.7 | Thinking | Latest, Hyperflow default |
+| `opus-4-6` | Opus 4.6 | Thinking | Previous Opus |
 | `opus-4-5` | Opus 4.5 | Thinking | Legacy |
 | `sonnet-4-6` | Sonnet 4.6 | Worker | Hyperflow default |
 | `sonnet-4-5` | Sonnet 4.5 | Worker | Legacy |
@@ -24,7 +24,7 @@ Hyperflow supports four platforms. Each has its own model naming, detection meth
 **Version pinning:** Claude Code's Agent tool accepts `"opus"`, `"sonnet"`, `"haiku"` aliases that resolve to the latest version. To pin a specific version, set environment variables:
 
 ```bash
-export ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6
+export ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-7
 export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 ```
 
@@ -37,15 +37,15 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 **Detection:** `CURSOR_*` environment variables (injected by the Cursor IDE).
 
 **Default models:**
-- Thinking: `claude-4.6-opus` (Claude Opus 4.6)
+- Thinking: `claude-4.7-opus` (Claude Opus 4.7)
 - Worker: `claude-4.6-sonnet` (Claude Sonnet 4.6)
 
 **Available models:**
 
 | Model ID | Name | Provider | Type | Notes |
 |---|---|---|---|---|
-| `claude-4.7-opus` | Claude 4.7 Opus | Anthropic | Thinking | Requires Max Mode |
-| `claude-4.6-opus` | Claude 4.6 Opus | Anthropic | Thinking | Hyperflow default |
+| `claude-4.7-opus` | Claude 4.7 Opus | Anthropic | Thinking | Hyperflow default (may require Max Mode) |
+| `claude-4.6-opus` | Claude 4.6 Opus | Anthropic | Thinking | Previous Opus |
 | `gpt-5.5` | GPT-5.5 | OpenAI | Thinking | Latest GPT |
 | `gpt-5.4` | GPT-5.4 | OpenAI | Thinking | Cached input discount |
 | `gemini-3.1-pro` | Gemini 3.1 Pro | Google | Thinking | Standard |
@@ -68,15 +68,15 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 **Detection:** `OPENCODE_*` environment variables or `opencode` binary in PATH.
 
 **Default models:**
-- Thinking: `anthropic/claude-opus-4-6` (Claude Opus 4.6)
+- Thinking: `anthropic/claude-opus-4-7` (Claude Opus 4.7)
 - Worker: `anthropic/claude-sonnet-4-6` (Claude Sonnet 4.6)
 
 **Available models:**
 
 | Model ID | Name | Provider | Type | Notes |
 |---|---|---|---|---|
-| `anthropic/claude-opus-4-7` | Claude Opus 4.7 | Anthropic | Thinking | Latest |
-| `anthropic/claude-opus-4-6` | Claude Opus 4.6 | Anthropic | Thinking | Hyperflow default |
+| `anthropic/claude-opus-4-7` | Claude Opus 4.7 | Anthropic | Thinking | Hyperflow default |
+| `anthropic/claude-opus-4-6` | Claude Opus 4.6 | Anthropic | Thinking | Previous Opus |
 | `openai/gpt-5.5` | GPT-5.5 | OpenAI | Thinking | Latest GPT |
 | `openai/gpt-5.4` | GPT-5.4 | OpenAI | Thinking | Cached input discount |
 | `google-vertex-ai/gemini-3.1-pro` | Gemini 3.1 Pro | Google | Thinking | 2M context |
@@ -86,7 +86,7 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 | `openai/gpt-5.4-mini` | GPT-5.4 Mini | OpenAI | Worker | Cost-efficient |
 | `google-vertex-ai/gemini-3-flash` | Gemini 3 Flash | Google | Worker | Fast/cheap |
 
-**Model format:** OpenCode uses `provider/model` format (e.g., `anthropic/claude-opus-4-6`).
+**Model format:** OpenCode uses `provider/model` format (e.g., `anthropic/claude-opus-4-7`).
 
 **75+ providers:** OpenCode supports Anthropic, OpenAI, Google Vertex, Amazon Bedrock, Azure, DeepSeek, xAI, GitHub Copilot, Ollama, LM Studio, OpenRouter, Together AI, Groq, and many more via the Vercel AI SDK.
 
@@ -110,7 +110,7 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 |---|---|---|---|---|
 | `gemini-3.1-pro` | Gemini 3.1 Pro | Google | Thinking | 2M context, Hyperflow default |
 | `gemini-3.1-pro-low` | Gemini 3.1 Pro (Low) | Google | Thinking | Lighter variant |
-| `claude-opus-4.6` | Claude Opus 4.6 | Anthropic | Thinking | Available on free tier |
+| `claude-opus-4.7` | Claude Opus 4.7 | Anthropic | Thinking | Available on free tier |
 | `gemini-3-flash` | Gemini 3 Flash | Google | Worker | Hyperflow default |
 | `claude-sonnet-4.6` | Claude Sonnet 4.6 | Anthropic | Worker | Stronger for refactors |
 | `gpt-oss-120b` | GPT-OSS 120B | OpenAI | Worker | Open-weight |

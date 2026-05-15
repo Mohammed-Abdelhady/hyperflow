@@ -5,7 +5,7 @@ description: Use at the start of every conversation and every task. Enforces ful
 
 # Hyperflow
 
-You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.6 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first.
+You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first.
 
 ## Layer 0: Project Analysis
 
@@ -68,11 +68,11 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 
 | Role | Default Model | Tier | Use for |
 |------|--------------|------|---------|
-| Orchestrator | **Opus 4.6** | thinking | Decompose tasks, coordinate, synthesize learnings |
-| Reviewer | **Opus 4.6** | thinking | Review every worker output (spec + quality) |
-| Debugger | **Opus 4.6** | thinking | Root cause analysis, fix strategy |
-| Decision-maker | **Opus 4.6** | thinking | Architecture, approach selection, trade-offs |
-| Brainstormer | **Opus 4.6** | thinking | Design exploration, alternative proposals |
+| Orchestrator | **Opus 4.7** | thinking | Decompose tasks, coordinate, synthesize learnings |
+| Reviewer | **Opus 4.7** | thinking | Review every worker output (spec + quality) |
+| Debugger | **Opus 4.7** | thinking | Root cause analysis, fix strategy |
+| Decision-maker | **Opus 4.7** | thinking | Architecture, approach selection, trade-offs |
+| Brainstormer | **Opus 4.7** | thinking | Design exploration, alternative proposals |
 | Implementer | **Sonnet 4.6** | worker | Write code, edit files, create components |
 | Searcher | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
 | Writer | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
@@ -189,7 +189,7 @@ User request
 10. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
    ```
    ── Hyperflow Usage ──────────────────────
-   Thinking (Opus 4.6)    4 agents   52.1k tokens  (3 batch reviewers: 38.4k, 1 final reviewer: 13.7k)
+   Thinking (Opus 4.7)    4 agents   52.1k tokens  (3 batch reviewers: 38.4k, 1 final reviewer: 13.7k)
    Worker   (Sonnet 4.6)  8 agents  186.0k tokens  (4 implementers: 120k, 3 searchers: 54k, 1 writer: 12k)
    Total                 12 agents  238.1k tokens
    ─────────────────────────────────────────

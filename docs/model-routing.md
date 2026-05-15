@@ -13,11 +13,11 @@ This keeps costs lower and speed higher without sacrificing quality — because 
 
 | Role | Tier | Default (Claude Code) | Examples |
 |------|------|----------------------|----------|
-| Orchestrator | Thinking | Opus 4.6 | Decomposing "build a dashboard" into 5 parallel tasks |
-| Reviewer | Thinking | Opus 4.6 | Checking if a worker's component matches the spec |
-| Debugger | Thinking | Opus 4.6 | Root-causing why tests fail after a refactor |
-| Decision-maker | Thinking | Opus 4.6 | Choosing between REST vs tRPC for a new API |
-| Brainstormer | Thinking | Opus 4.6 | Exploring 2-3 approaches with trade-offs |
+| Orchestrator | Thinking | Opus 4.7 | Decomposing "build a dashboard" into 5 parallel tasks |
+| Reviewer | Thinking | Opus 4.7 | Checking if a worker's component matches the spec |
+| Debugger | Thinking | Opus 4.7 | Root-causing why tests fail after a refactor |
+| Decision-maker | Thinking | Opus 4.7 | Choosing between REST vs tRPC for a new API |
+| Brainstormer | Thinking | Opus 4.7 | Exploring 2-3 approaches with trade-offs |
 | Implementer | Worker | Sonnet 4.6 | Writing a React component from a clear spec |
 | Searcher | Worker | Sonnet 4.6 | Finding all files that import a specific module |
 | Writer | Worker | Sonnet 4.6 | Creating test files, config files, documentation |
@@ -28,9 +28,9 @@ Hyperflow works across four platforms. Each has its own default models:
 
 | Provider | Default Thinking | Default Worker |
 |----------|-----------------|----------------|
-| **Claude Code** | Opus 4.6 | Sonnet 4.6 |
-| **Cursor** | Claude 4.6 Opus | Claude 4.6 Sonnet |
-| **OpenCode** | anthropic/claude-opus-4-6 | anthropic/claude-sonnet-4-6 |
+| **Claude Code** | Opus 4.7 | Sonnet 4.6 |
+| **Cursor** | Claude 4.7 Opus | Claude 4.6 Sonnet |
+| **OpenCode** | anthropic/claude-opus-4-7 | anthropic/claude-sonnet-4-6 |
 | **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash |
 
 See [providers.md](providers.md) for the full model list per platform.
@@ -59,8 +59,8 @@ When Hyperflow needs to determine which model to use for a role:
 | 2 | Session command | Current session | `hyperflow: thinking opus-4-7` |
 | 3 | Environment variable | Current session | `HYPERFLOW_THINKING_MODEL=opus-4-7` |
 | 4 | Role override | Persistent | `providers.claude-code.roles.reviewer: "opus-4-7"` |
-| 5 | Provider tier | Persistent | `providers.claude-code.thinking: "opus-4-6"` |
-| 6 | Global default | Persistent | `defaults.thinking: "opus-4-6"` |
+| 5 | Provider tier | Persistent | `providers.claude-code.thinking: "opus-4-7"` |
+| 6 | Global default | Persistent | `defaults.thinking: "opus-4-7"` |
 
 ## Customization
 
@@ -79,16 +79,16 @@ Edit `~/.hyperflow/config.json`:
 
 ### Override a specific role
 
-Give the reviewer a more powerful model while keeping other thinking roles on the default:
+Drop the reviewer down to the previous Opus to save cost while keeping orchestration on the latest:
 
 ```json
 {
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-6",
+      "thinking": "opus-4-7",
       "worker": "sonnet-4-6",
       "roles": {
-        "reviewer": "opus-4-7"
+        "reviewer": "opus-4-6"
       }
     }
   }
@@ -101,7 +101,7 @@ Give the reviewer a more powerful model while keeping other thinking roles on th
 {
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-6",
+      "thinking": "opus-4-7",
       "worker": "sonnet-4-6",
       "roles": {
         "searcher": "haiku-4-5"

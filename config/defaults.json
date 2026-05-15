@@ -8,8 +8,8 @@
       },
       "models": {
         "thinking": [
-          { "id": "opus-4-7", "label": "Opus 4.7", "provider": "Anthropic", "notes": "Latest Opus, default on Max plans" },
-          { "id": "opus-4-6", "label": "Opus 4.6", "provider": "Anthropic", "notes": "Pinned Opus (Hyperflow default)", "default": true },
+          { "id": "opus-4-7", "label": "Opus 4.7", "provider": "Anthropic", "notes": "Latest Opus (Hyperflow default)", "default": true },
+          { "id": "opus-4-6", "label": "Opus 4.6", "provider": "Anthropic", "notes": "Previous Opus" },
           { "id": "opus-4-5", "label": "Opus 4.5", "provider": "Anthropic", "notes": "Legacy" },
           { "id": "sonnet-4-6", "label": "Sonnet 4.6", "provider": "Anthropic", "notes": "Can be used as thinking model for cost savings" }
         ],
@@ -41,8 +41,8 @@
       },
       "models": {
         "thinking": [
-          { "id": "claude-4.7-opus", "label": "Claude 4.7 Opus", "provider": "Anthropic", "notes": "Requires Max Mode on request-based plans" },
-          { "id": "claude-4.6-opus", "label": "Claude 4.6 Opus", "provider": "Anthropic", "notes": "Hyperflow default", "default": true },
+          { "id": "claude-4.7-opus", "label": "Claude 4.7 Opus", "provider": "Anthropic", "notes": "Hyperflow default (may require Max Mode on request-based plans)", "default": true },
+          { "id": "claude-4.6-opus", "label": "Claude 4.6 Opus", "provider": "Anthropic", "notes": "Previous Opus" },
           { "id": "gpt-5.5", "label": "GPT-5.5", "provider": "OpenAI", "notes": "Latest GPT" },
           { "id": "gpt-5.4", "label": "GPT-5.4", "provider": "OpenAI", "notes": "Cached input discount" },
           { "id": "gemini-3.1-pro", "label": "Gemini 3.1 Pro", "provider": "Google", "notes": "Standard availability" },
@@ -67,8 +67,8 @@
       },
       "models": {
         "thinking": [
-          { "id": "anthropic/claude-opus-4-7", "label": "Claude Opus 4.7", "provider": "Anthropic", "notes": "Latest Opus" },
-          { "id": "anthropic/claude-opus-4-6", "label": "Claude Opus 4.6", "provider": "Anthropic", "notes": "Hyperflow default", "default": true },
+          { "id": "anthropic/claude-opus-4-7", "label": "Claude Opus 4.7", "provider": "Anthropic", "notes": "Hyperflow default", "default": true },
+          { "id": "anthropic/claude-opus-4-6", "label": "Claude Opus 4.6", "provider": "Anthropic", "notes": "Previous Opus" },
           { "id": "openai/gpt-5.5", "label": "GPT-5.5", "provider": "OpenAI", "notes": "Latest GPT" },
           { "id": "openai/gpt-5.4", "label": "GPT-5.4", "provider": "OpenAI", "notes": "Cached input discount" },
           { "id": "google-vertex-ai/gemini-3.1-pro", "label": "Gemini 3.1 Pro", "provider": "Google", "notes": "2M context window" },
@@ -92,7 +92,7 @@
         "thinking": [
           { "id": "gemini-3.1-pro", "label": "Gemini 3.1 Pro", "provider": "Google", "notes": "2M context, Hyperflow default", "default": true },
           { "id": "gemini-3.1-pro-low", "label": "Gemini 3.1 Pro (Low)", "provider": "Google", "notes": "Lighter variant" },
-          { "id": "claude-opus-4.6", "label": "Claude Opus 4.6", "provider": "Anthropic", "notes": "Available on free tier with limits" }
+          { "id": "claude-opus-4.7", "label": "Claude Opus 4.7", "provider": "Anthropic", "notes": "Available on free tier with limits" }
         ],
         "worker": [
           { "id": "gemini-3-flash", "label": "Gemini 3 Flash", "provider": "Google", "notes": "Fast/cheap, Hyperflow default", "default": true },

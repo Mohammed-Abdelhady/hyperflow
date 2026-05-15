@@ -22,6 +22,17 @@
 
 ---
 
+## Demo
+
+<!-- TODO: add a hero GIF or screenshot here (e.g. orchestrator dispatching workers, parallel execution panel, or quality-gate run).
+     Recommended: 600-900px wide, <5MB. Drop it in `docs/assets/` and reference below. -->
+
+<!-- ![Hyperflow in action](docs/assets/demo.gif) -->
+
+> *Drop a short demo GIF or screenshot here showing the orchestrator decomposing a task and dispatching parallel workers.*
+
+---
+
 ## How It Works
 
 Instead of a single agent doing everything, Hyperflow splits every task into a **thinking-model orchestrator** coordinating **worker-model agents** in parallel — with automatic review after every change.
@@ -55,6 +66,7 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 | **Higher quality** | Every output gets a two-pass review. Workers learn from each other — Batch 2 benefits from Batch 1's discoveries. |
 | **Lower cost** | Expensive thinking models orchestrate and review. Cheap worker models write the code. Stop paying Opus prices for tasks Sonnet handles. |
 | **Faster execution** | Independent tasks run in parallel. 3 files that don't share state? 3 workers, simultaneously. |
+| **Persistent memory** | Project conventions, gotchas, and architectural decisions persist across conversations. Hyperflow remembers what it learned yesterday and applies it today — fully local at `~/.claude/hyperflow-memory.md`. |
 | **Works everywhere** | Claude Code, Cursor, OpenCode, Codex, Antigravity — one config file, auto-detection, same workflow. |
 
 ---
@@ -68,7 +80,7 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-Works immediately with defaults (Opus 4.6 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
+Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -88,7 +100,7 @@ The installer auto-detects your providers, clones the repo, symlinks the skill, 
   Cursor — linked
 
 Thinking model (orchestrator, reviewer, debugger):
-  [1] Claude 4.6 Opus — Hyperflow default
+  [1] Claude 4.7 Opus — Hyperflow default
   [2] Claude 4.7 Opus — Requires Max Mode
   [3] GPT-5.5 — Latest GPT
   [4] Gemini 3.1 Pro — Standard availability
@@ -210,24 +222,24 @@ Defaults for Claude Code (all configurable):
 
 | Role | Model | Use for |
 |------|-------|---------|
-| Orchestrator | Opus 4.6 | Decompose, coordinate, synthesize |
-| Reviewer | Opus 4.6 | Review every worker output |
-| Debugger | Opus 4.6 | Root cause analysis |
-| Decision-maker | Opus 4.6 | Architecture, approach selection |
-| Brainstormer | Opus 4.6 | Design exploration, proposals |
+| Orchestrator | Opus 4.7 | Decompose, coordinate, synthesize |
+| Reviewer | Opus 4.7 | Review every worker output |
+| Debugger | Opus 4.7 | Root cause analysis |
+| Decision-maker | Opus 4.7 | Architecture, approach selection |
+| Brainstormer | Opus 4.7 | Design exploration, proposals |
 | Implementer | Sonnet 4.6 | Write code, edit files |
 | Searcher | Sonnet 4.6 | Explore codebase, find files |
 | Writer | Sonnet 4.6 | Tests, docs, configs |
 
 **Iron rule:** Every worker output gets a thinking-model review.
 
-Other providers: Cursor (Claude 4.6 Opus/Sonnet), OpenCode (anthropic/claude-opus-4-6), Codex (o3/o4-mini), Antigravity (Gemini 3.1 Pro/Flash). See [Model Routing Guide](docs/model-routing.md).
+Other providers: Cursor (Claude 4.7 Opus/Sonnet), OpenCode (anthropic/claude-opus-4-7), Codex (o3/o4-mini), Antigravity (Gemini 3.1 Pro/Flash). See [Model Routing Guide](docs/model-routing.md).
 </details>
 
 <details>
-<summary><strong>Learning Injection</strong> — workers get smarter over time</summary>
+<summary><strong>Memory & Learning Injection</strong> — workers get smarter over time and across sessions</summary>
 
-After each batch, the orchestrator synthesizes patterns and gotchas into a learnings block injected into subsequent worker prompts:
+**Within a session:** after each batch, the orchestrator synthesizes patterns and gotchas into a learnings block injected into subsequent worker prompts:
 
 ```markdown
 ## Learnings from prior tasks
@@ -236,7 +248,25 @@ After each batch, the orchestrator synthesizes patterns and gotchas into a learn
 - CSS uses logical properties for RTL support
 ```
 
-Learnings also persist across conversations via `~/.claude/hyperflow-memory.md`.
+**Across sessions:** reusable learnings (project conventions, architectural decisions, gotchas) persist to `~/.claude/hyperflow-memory.md` — a local plain-markdown file, organized by project path. At session start, Hyperflow reads memory entries for the current project and injects them into the first worker prompt.
+
+```markdown
+## [2026-05-14] /path/to/project
+- Tailwind v4 uses CSS variable tokens, not tailwind.config
+- All validation goes through zod schemas in src/shared/validation/
+- Auth middleware is at src/domains/auth/server/auth.ts (singleton)
+```
+
+**Curation rules** built in:
+- **Project-scoped** — only learnings from the current project are injected
+- **Auto-pruning** — entries older than 30 days, or contradicted by newer ones, are removed at session start
+- **Patterns, not code** — learnings capture facts and conventions, never code snippets
+- **User-editable** — it's plain markdown; edit, delete, or back it up as you like
+- **Local-only** — nothing leaves your machine
+
+Disable per-session: `hyperflow: memory off`. Clear everything: delete the file.
+
+Full spec: [skills/hyperflow/session-memory.md](skills/hyperflow/session-memory.md).
 </details>
 
 <details>
@@ -307,9 +337,9 @@ Disable per-session: `hyperflow: security off`
 
 | Platform | Thinking Model | Worker Model | Detection |
 |----------|---------------|-------------|-----------|
-| **Claude Code** | Opus 4.6 | Sonnet 4.6 | Auto |
-| **Cursor** | Claude 4.6 Opus | Claude 4.6 Sonnet | Auto |
-| **OpenCode** | Claude Opus 4.6 | Claude Sonnet 4.6 | Auto |
+| **Claude Code** | Opus 4.7 | Sonnet 4.6 | Auto |
+| **Cursor** | Claude 4.7 Opus | Claude 4.6 Sonnet | Auto |
+| **OpenCode** | Claude Opus 4.7 | Claude Sonnet 4.6 | Auto |
 | **Codex** | o3 | o4-mini | Auto |
 | **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash | Auto |
 
@@ -449,6 +479,25 @@ claude plugin uninstall hyperflow@hyperflow-marketplace
 </table>
 
 This removes all symlinks, the cloned repo, and config. Session memory at `~/.claude/hyperflow-memory.md` is kept — delete it manually if you want a clean slate.
+
+---
+
+## Plugin Behavior & Permissions
+
+For full transparency — what this plugin does at runtime, so reviewers and users know exactly what they're installing:
+
+| Surface | What happens | Code |
+|---|---|---|
+| **`SessionStart` hook** | On `startup`, `clear`, and `compact` events, runs `hooks/session-start` (bash). The script reads `skills/hyperflow/SKILL.md`, JSON-encodes it via Python 3, and emits a `system-prompt-inject` payload that adds the Hyperflow skill to the model's system prompt. | [`hooks/session-start`](hooks/session-start), [`hooks/hooks.json`](hooks/hooks.json) |
+| **Skill content** | Instructs the agent to operate as a thinking-model orchestrator coordinating worker-model subagents, with brainstorming for design decisions and reviews after every change. | [`skills/hyperflow/SKILL.md`](skills/hyperflow/SKILL.md) |
+| **Session memory** | Reads and appends to `~/.claude/hyperflow-memory.md` to persist learnings across conversations. No data leaves your machine. | [`skills/hyperflow/session-memory.md`](skills/hyperflow/session-memory.md) |
+| **Config** | Optional `~/.hyperflow/config.json` for model selection and security overrides. Created only if you run the installer wizard; not required. | [`config/schema.json`](config/schema.json) |
+| **Network access** | None at runtime. The plugin does not make outbound network calls. The optional `install.sh` setup wizard clones the repo and writes config locally. | — |
+| **File writes** | Only `~/.claude/hyperflow-memory.md` (session memory) and, if you run the installer, `~/.hyperflow/config.json`. The skill instructs the orchestrator to follow project conventions for everything else. | — |
+| **Worker containment** | Workers are constrained by prompt-injected blocklists for sensitive files (`.env`, `*.pem`, `*.key`, `~/.ssh/*`, cloud creds) and destructive commands (`rm -rf`, `git push --force` to main, `sudo`, `chmod 777`). See Layer 9 above. | [`skills/hyperflow/security.md`](skills/hyperflow/security.md) |
+| **Dependencies** | The hook script requires `bash`, `python3`, and standard POSIX tools — all available by default on macOS and Linux. No Node, no package installs. | — |
+
+**Why a system-prompt injection?** Hyperflow's orchestration pattern needs to be active from the first user turn — including after `/clear` and after compaction — which is what the `SessionStart` hook delivers. The injected content is the skill body and nothing else; you can read it in full at [`skills/hyperflow/SKILL.md`](skills/hyperflow/SKILL.md).
 
 ---
 
