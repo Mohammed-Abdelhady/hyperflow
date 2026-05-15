@@ -9,6 +9,21 @@ Decompose, don't build. Read-only with respect to source code. The only writes a
 
 This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Project Memory)** for past-learning surfacing, and **Layer 7 (Task Templates)** for decomposition patterns. It also inherits the triage classification from `/hyperflow:spec` to size each batch correctly.
 
+## Per-Step Agent Map (DOCTRINE rule 12)
+
+Every substantive step dispatches at least one Agent.
+
+| Step | Worker tier | Thinking tier | Notes |
+|---|---|---|---|
+| 0 — Chain mode | — | — | `AskUserQuestion` only (exempt) |
+| 1 — Understand | — | — | `AskUserQuestion` if ambiguous (exempt) |
+| 2 — Research | Searcher × 2 (Sonnet) parallel | **Reviewer** (Opus) verifies coverage | Both tiers |
+| 3 — Decompose | — | **Planner** (Opus) produces the batch graph | Pure thinking |
+| 4 — Write task file | Writer (Sonnet) emits the markdown | **Reviewer** (Opus) verifies the plan vs the design | Both tiers |
+| 5 — Output | — | — | Print only (exempt) |
+| 6 — Memory | Writer (Sonnet) appends to memory files | **Reviewer** (Opus) checks for duplicates / contradictions | Both tiers |
+| 7 — Hand off | — | — | `Skill` tool invocation (exempt) |
+
 ## Approval Gates
 
 | Gate | When | Format |
@@ -44,25 +59,34 @@ Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking
 
 ### Step 2 — Research (parallel)
 
-Dispatch both in a single message:
-- `Searcher — mapping affected files and existing patterns`
-- `Searcher — finding related tests and conventions`
+Agents — `Searcher` × 2 (Sonnet) ⇒ **Reviewer** (Opus).
 
-Also read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, and `.hyperflow/memory/index.md` to surface relevant past learnings.
+1. Dispatch in a single message (parallel):
+   - `Searcher — mapping affected files and existing patterns`
+   - `Searcher — finding related tests and conventions`
+2. Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, and `.hyperflow/memory/index.md` to surface relevant past learnings.
+3. Dispatch `**Reviewer** — verifying research coverage` to confirm both Searchers hit the relevant subsystems. If gaps remain, redispatch a Searcher targeting the gap before moving on.
 
 ### Step 3 — Decompose
 
-Apply [task-templates.md](../hyperflow/task-templates.md) patterns where they fit (CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix), else bespoke.
+Agents — **Planner** (Opus, thinking-tier).
 
-For each sub-task identify:
+Dispatch `**Planner** — producing batch graph` with the research findings, triage classification, and applicable templates from [task-templates.md](../hyperflow/task-templates.md) (CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix — else bespoke).
+
+The Planner produces, for each sub-task:
 - Worker role — Implementer / Searcher / Writer
 - Files to read / modify / create
 - Dependencies — parallel vs sequential
-- Complexity estimate
+- Complexity estimate (drives review level cap downstream)
 
 ### Step 4 — Write Task File
 
-Path — `.hyperflow/tasks/<task-slug>.md`
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+
+1. Dispatch `Writer — emitting task file` with the Planner's output. The Writer writes to `.hyperflow/tasks/<task-slug>.md` using the template below.
+2. Dispatch `**Reviewer** — verifying task file vs design` to confirm every design requirement maps to at least one sub-task and no orphan sub-tasks exist.
+
+Task-file template —
 
 ```markdown
 # Task: <Name>
@@ -114,9 +138,12 @@ Plan ready — .hyperflow/tasks/<slug>.md (3 batches, 7 sub-tasks)
 
 ### Step 6 — Memory
 
-Append non-trivial decisions to `.hyperflow/memory/decisions.md`. Skip trivial ones.
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-For complex features (3+ files, multiple subsystems) also write `docs/specs/<feature-slug>.md` and reference it from the task file. See [task-tracking.md](../hyperflow/task-tracking.md) and [worker-prompt.md](../hyperflow/worker-prompt.md).
+1. Dispatch `Writer — appending decisions to .hyperflow/memory/decisions.md`. Skip trivial ones. For complex features (3+ files, multiple subsystems) the Writer also produces `docs/specs/<feature-slug>.md` referenced from the task file.
+2. Dispatch `**Reviewer** — checking memory entries` to catch duplicates or contradictions with existing entries before they land in `.hyperflow/memory/`.
+
+See [task-tracking.md](../hyperflow/task-tracking.md) and [worker-prompt.md](../hyperflow/worker-prompt.md).
 
 ### Step 7 — Hand off to `/hyperflow:dispatch`
 

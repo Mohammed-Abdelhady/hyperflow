@@ -9,6 +9,22 @@ Workhorse phase. Picks up a task file from `/hyperflow:scope` and runs it throug
 
 This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **Layer 6 (Project Memory)**, **Layer 8 (Git Workflow)**, and **Layer 9 (Security)** from the doctrine. Multi-level review (L1–L5) is applied per the triage's flow profile.
 
+## Per-Step Agent Map (DOCTRINE rule 12)
+
+Every substantive step dispatches at least one Agent.
+
+| Step | Worker tier | Thinking tier | Notes |
+|---|---|---|---|
+| 0 — Mode confirm | — | — | `AskUserQuestion` only (exempt) |
+| 1 — Load task | — | — | File read only (exempt) |
+| 2 — Per batch | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Opus) per sub-task at L1–L<n> | Both tiers · per sub-task |
+| 2b — Quality gates | Worker (Sonnet) runs lint/typecheck/tests | **Reviewer** (Opus) judges gate output | Both tiers |
+| 3 — Final integration | — | **Reviewer** (Opus) L1–L<n> over full diff | Mandatory |
+| 4 — Wrap up | Writer (Sonnet) deletes task, appends memory, auto-commits | **Reviewer** (Opus) sanity-checks the commit + memory entries | Both tiers |
+| 5 — End of chain | — | — | Print only (exempt) |
+
+Iron rule — `thinking agents ≥ batches + 1` (per-batch reviewer + final integration). With per-step thinking-tier reviewers in Step 4, the floor rises to `batches + 2`.
+
 ## Review Levels (scale by flow profile)
 
 Every batch reviewer and the final integration reviewer uses the level set below. Profile comes from `/hyperflow:spec` triage and is propagated via the `chain-mode` args.
@@ -75,10 +91,14 @@ Mandatory and **separate from batch reviews**. Dispatch a thinking-tier reviewer
 
 ### Step 4 — Wrap Up
 
-- Delete the completed task file from `.hyperflow/tasks/`.
-- Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](../hyperflow/memory-system.md).
-- Auto-commit per [git-workflow.md](../hyperflow/git-workflow.md), unless `auto-commit off`.
-- Print the usage summary per [output-style.md](../hyperflow/output-style.md).
+Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+
+1. Dispatch `Writer — finalizing dispatch artifacts` to:
+   - Delete the completed task file from `.hyperflow/tasks/`.
+   - Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](../hyperflow/memory-system.md).
+   - Auto-commit per [git-workflow.md](../hyperflow/git-workflow.md), unless `auto-commit off`.
+2. Dispatch `**Reviewer** — verifying wrap-up` to confirm: memory entries are non-duplicate, commit message matches the change, no half-written artifacts remain in `.hyperflow/`.
+3. Print the usage summary per [output-style.md](../hyperflow/output-style.md).
 
 ### Step 5 — End of Auto-Chain
 
@@ -108,7 +128,8 @@ Writer — generating API documentation
 - Workers never review, never coordinate, never ask the user questions.
 - Every batch produces **one** thinking-tier batch reviewer dispatch.
 - Plus **one** thinking-tier final integration review at the end.
-- Therefore — `thinking agents in usage summary >= batches + 1`. If less, batch reviews were skipped. The task was done wrong.
+- Plus **one** thinking-tier wrap-up reviewer at Step 4 (DOCTRINE rule 12).
+- Therefore — `thinking agents in usage summary >= batches + 2`. If less, a per-step reviewer was skipped. The task was done wrong.
 
 ## Doctrine
 

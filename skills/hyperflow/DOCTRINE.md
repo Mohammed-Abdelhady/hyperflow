@@ -226,6 +226,12 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
     - If a thinking agent shows `0.0k tokens`, it wasn't actually dispatched — it was inline work that doesn't count.
     - The orchestrator's own work (decomposition, coordination, tool calls) is inherently untracked. This is exactly why reviews must be dispatched — they are the only measurable thinking work.
 11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md).
+12. **Multi-level agents inside every step.** Every substantive step in every chain skill MUST dispatch at least one Agent — never do "real" work inline. A step counts as substantive when it produces output the next step depends on (analysis, decomposition, generation, review, decision). Pure user-interaction steps (`AskUserQuestion`, `Skill` hand-off, printing a status line) are exempt. The pattern for each substantive step:
+   - **Worker tier** does the production work (research, synthesis, drafting, decomposition).
+   - **Thinking tier** reviews/decides on the worker's output (verdict, gate, escalation).
+   - Both dispatches appear in the usage summary; both count toward the `thinking ≥ batches + 1` minimum.
+   - If a step's worker output is trivial (e.g. one-line restate), the thinking-tier review may be merged into the next step's review — but never both skipped.
+   Skills MUST declare per-step agents in their body so this is auditable: each Step block lists `Worker → <role>` and/or `Reviewer → <tier>` lines.
 
 ### Learning injection format
 
