@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.2] — 2026-05-15
+
+### Fixed
+- Correct duplicate Opus listing and sync VERSION file
+
+
 ## [1.8.1] — 2026-05-15
 
 ### Changed
@@ -176,7 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.2...HEAD
+[1.8.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.1...v1.8.0
 [1.7.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.0...v1.7.1
