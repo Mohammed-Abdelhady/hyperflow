@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Multi-agent orchestration for AI coding tools. Main orchestrator + specialized skills (init, review, debug, brainstorm, plan, ship, memory). Thinking models think. Worker models execute. Project-scoped memory, multi-tool auto-detection.",
   "author": {
     "name": "Mohammed Abdelhady",
