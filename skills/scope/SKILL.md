@@ -5,7 +5,7 @@ description: Use when the user says "plan this", "decompose this task", "break t
 
 # Scope
 
-Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/memory/`, and `docs/specs/`. When the task file is ready, hand off to `dispatch` (auto or with a gate, depending on chain mode).
+Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/memory/`, and `.hyperflow/specs/`. When the task file is ready, hand off to `dispatch` (auto or with a gate, depending on chain mode).
 
 This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Project Memory)** for past-learning surfacing, and **Layer 7 (Task Templates)** for decomposition patterns. It also inherits the triage classification from `/hyperflow:spec` to size each batch correctly.
 
@@ -144,7 +144,7 @@ Plan ready — .hyperflow/tasks/<slug>.md (3 batches, 7 sub-tasks)
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-1. Dispatch `Writer — appending decisions to .hyperflow/memory/decisions.md`. Skip trivial ones. For complex features (3+ files, multiple subsystems) the Writer also produces `docs/specs/<feature-slug>.md` referenced from the task file.
+1. Dispatch `Writer — appending decisions to .hyperflow/memory/decisions.md`. Skip trivial ones. For complex features (3+ files, multiple subsystems) the Writer also produces `.hyperflow/specs/<feature-slug>.md` referenced from the task file.
 2. Dispatch `**Reviewer** — checking memory entries` to catch duplicates or contradictions with existing entries before they land in `.hyperflow/memory/`.
 
 See [task-tracking.md](../hyperflow/task-tracking.md) and [worker-prompt.md](../hyperflow/worker-prompt.md).
@@ -162,7 +162,7 @@ Auto-chaining to /hyperflow:dispatch…
 ## Anti-patterns
 
 - Writing implementation code
-- Modifying source files outside `.hyperflow/` and `docs/specs/`
+- Modifying source files outside `.hyperflow/` and `.hyperflow/specs/`
 - Skipping the research step
 - Single-batch plans for multi-file work
 - Omitting the verification plan

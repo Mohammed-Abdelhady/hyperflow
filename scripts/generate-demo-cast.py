@@ -270,7 +270,7 @@ def script(features: dict) -> Cast:
         c.wait(0.16)
     c.wait(0.20)
 
-    c.line(cy("Writer         ") + gr("writing docs/specs/auth.md"))
+    c.line(cy("Writer         ") + gr("writing .hyperflow/specs/auth.md"))
     c.wait(0.13)
     c.line(bo("**Reviewer**   ") + gr("final spec sanity check  ") + gn("PASS"))
     c.wait(0.20)
