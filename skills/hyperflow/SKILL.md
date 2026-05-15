@@ -5,13 +5,38 @@ description: Use at the start of every conversation and every task. Enforces ful
 
 # Hyperflow
 
-You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first. All terminal output follows the visual language in [output-style.md](output-style.md).
+You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
+
+## Reference files
+
+| File | Purpose |
+|------|---------|
+| [task-triage.md](task-triage.md) | Layer 0.5 — triage prompt, JSON schema, worked examples |
+| [flow-profiles.md](flow-profiles.md) | 6 flow profiles — pipelines, skip/upgrade conditions, examples |
+| [adaptive-brainstorming.md](adaptive-brainstorming.md) | Depth modes, question framework, section-approval protocol |
+| [escalation.md](escalation.md) | Mid-flight escalation paths, token accounting, usage summary format |
+| [personas-A.md](personas-A.md) | Personas 1–8 (security, scientific, architect, db, api, frontend, ui, creative) + canonical priority order |
+| [personas-B.md](personas-B.md) | Personas 9–15 (research, refactor, bugfix, performance, test, devops, docs) + priority extension |
+| [output-style.md](output-style.md) | Terminal output visual language (symbols, banners, dispatch labels, usage summary) |
+| [worker-prompt.md](worker-prompt.md) | Worker dispatch template |
+| [reviewer-prompt.md](reviewer-prompt.md) | Reviewer prompt template |
+| [review-levels.md](review-levels.md) | L1–L5 review checklists |
+| [model-config.md](model-config.md) | Model config reference, auto-detection, runtime switching |
+| [task-tracking.md](task-tracking.md) | Task file format and lifecycle |
+| [quality-gates.md](quality-gates.md) | Per-task and final-review gate specs |
+| [memory-system.md](memory-system.md) | Memory read/write/prune protocols |
+| [task-templates.md](task-templates.md) | Pre-built decomposition patterns |
+| [git-workflow.md](git-workflow.md) | Branching and auto-commit rules |
+| [security.md](security.md) | Worker blocklists and secret detection |
+| [project-analysis.md](project-analysis.md) | Session-start analysis spec |
+| [session-memory.md](session-memory.md) | Session-scoped memory |
+| [brainstorming-advanced.md](brainstorming-advanced.md) | Extended brainstorming question framework |
 
 ## Layer 0: Project Analysis
 
 On session start, the **thinking model decides** whether analysis is needed. See [project-analysis.md](project-analysis.md) for file specs and staleness mapping.
 
-### Session Start Flow
+### Session start flow
 
 1. **Version check** — fetch latest tag from GitHub (`gh api repos/Mohammed-Abdelhady/hyperflow/tags --jq '.[0].name'`). Compare against installed version. If newer exists, print: `⚡ Hyperflow update available: vX.Y.Z → vX.Y.Z (run: claude plugin update hyperflow@hyperflow-marketplace)`
 2. **Print active models** — read version from `VERSION` file (same directory as SKILL.md), then print:
@@ -58,13 +83,29 @@ On session start, the **thinking model decides** whether analysis is needed. See
 
 4. **Incomplete tasks** — check `.hyperflow/tasks/` for files from previous sessions. If found, present summary and ask to continue or start fresh.
 
-### Worker Injection
+### Worker injection
 
 Inject relevant analysis into worker prompts under `## Project Context`:
 - **Implementers** get conventions + architecture + relevant dependencies
 - **Test writers** get testing + conventions
 - **Searchers** get architecture
 - **Reviewers** get everything
+
+## Layer 0.5: Task Triage
+
+Triage is the FIRST step on every new user request. A cheap thinking call classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives every downstream decision — flow profile, brainstorm depth, persona stitching, token budget. Triage is mandatory on every new-work request; skip it only for mid-flow clarifications or follow-up replies.
+
+| Field | What it controls |
+|-------|-----------------|
+| `types[]` | Which personas are stitched (maps to personas-A/B priority order) |
+| `flow` | Which flow profile Layer 3 executes (`fast`/`standard`/`deep`/`research`/`creative`/`scientific`) |
+| `personas[]` | Ordered list injected into worker prompts |
+| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → silent, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep) |
+| `budget` | Token envelope passed to flow profile for worker/reviewer allocation |
+
+See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, field definitions, and worked examples.
+
+**Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
 
 ## Layer 1: Autonomy
 
@@ -103,11 +144,12 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 
 **Iron rule — the thinking model is ALWAYS the brain:**
 - The thinking-tier model orchestrates, reviews, debugs, and decides. It is NEVER idle during a task.
-- Every worker output gets a thinking-tier review (`model: "<resolved-thinking>"`) before it is considered done.
+- Every worker output gets a thinking-tier review before it is considered done.
 - Worker-tier models only EXECUTE — they never review, coordinate, or make architectural decisions.
 - If the usage summary shows `Thinking: 0 agents`, the task was done wrong. Period.
+- **Triage call (Layer 0.5) uses the thinking-tier model with a tight 2k-token prompt — never delegate triage to a worker.**
 
-### Config Loading (Session Start)
+### Config loading (session start)
 
 1. Read `~/.hyperflow/config.json` (skip if missing — use defaults above)
 2. Auto-detect provider or use `activeProvider` override
@@ -115,121 +157,73 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
    per-task inline > session command > env var > role override > provider tier > global default
 4. Map resolved models to Agent tool `model:` parameter (Claude Code: `"opus"`, `"sonnet"`, `"haiku"`)
 
-### Dispatching Subagents
+### Dispatching subagents
 
 Use the resolved model for each role:
 - Workers (implementer/searcher/writer): `model: "<resolved-worker>"`
 - Reviewers (reviewer/debugger): `model: "<resolved-thinking>"`
 
-For Claude Code, this maps to: `model: "sonnet"` for workers, `model: "opus"` for reviewers (default).
-For other providers, the skill text references the model by its provider-specific ID.
+### Runtime switching
 
-### Runtime Switching
-
-Users can change models mid-session without editing config:
 - `hyperflow: thinking <model>` / `hyperflow: worker <model>`
 - `hyperflow: models` to show current config
 - `hyperflow: reset models` to revert to config defaults
 
 ## Layer 3: Orchestrator Pattern
 
-Every implementation task follows this flow. No exceptions.
+Layer 3 executes the flow profile chosen by triage. There are 6 profiles — `fast`, `standard`, `deep`, `research`, `creative`, `scientific` — each with its own pipeline shape, token budget, and review depth. Rigid pipelines are obsolete; flow is now adaptive.
 
-```
-User request
-    |
-[Thinking] Is this a design question or implementation?
-    |
-    |-- Design/creative -> Layer 4: Brainstorming
-    |-- Implementation -> Continue below
-    |
-[Thinking] RESEARCH — dispatch searcher agents to explore relevant code,
-    |   understand existing patterns, find dependencies, read configs
-    |
-[Thinking] PLAN — decompose into sub-tasks based on research findings
-    |
-[Thinking] ASK QUESTIONS — clarify via AskUserQuestion if anything ambiguous
-    |   (This is the thinking model's job — workers never ask questions)
-    |
-[Thinking] CREATE TASK FILES in .hyperflow/tasks/<task-name>.md
-    |   (thinking model creates these — never delegated to workers)
-    |
-[Thinking] Dispatch worker-tier agents (parallel where independent)
-    |
-    |   ┌─────────────────────────────────────────────────────────┐
-    |   │ ACTIVE LOOP — thinking model is NEVER idle:             │
-    |   │                                                         │
-    |   │ [Workers] Execute batch                                 │
-    |   │     |                                                   │
-    |   │ [Thinking] As each worker returns:                      │
-    |   │     ├── Review output immediately (thinking-tier)       │
-    |   │     ├── If NEEDS_FIX → re-dispatch worker with fix     │
-    |   │     ├── If worker is slow/stuck → assist or re-scope   │
-    |   │     └── If questions arise → ask user (AskUserQuestion) │
-    |   │     |                                                   │
-    |   │ [Thinking] After batch completes:                       │
-    |   │     ├── Update task files (check off / add / remove)    │
-    |   │     ├── Synthesize learnings for next batch             │
-    |   │     ├── Validate integration between worker outputs     │
-    |   │     └── Dispatch next batch with accumulated context    │
-    |   │                                                         │
-    |   │ Repeat until all sub-tasks complete                     │
-    |   └─────────────────────────────────────────────────────────┘
-    |
-[Thinking] FINAL REVIEW — SEPARATE integration review (model: "<resolved-thinking>")
-    |   ⚠️ This is NOT the same as batch reviews. This is an ADDITIONAL review.
-    |   Validates: cross-file integration, no conflicts between batches,
-    |   data flow end-to-end, no regressions, architecture coherence.
-    |   Must appear as its own agent in the usage summary.
-    |
-[Thinking] DELETE completed task files from .hyperflow/tasks/
-```
+| Profile | Use when | Workers | Reviewers | Budget |
+|---------|----------|---------|-----------|--------|
+| `fast` | Trivial single-file, reversible, ambiguity < 0.2 | 1 | inline self-review | ≤30k |
+| `standard` | Simple/moderate, 2–5 files | 1–2 | 1 batch reviewer | ≤100k |
+| `deep` | Complex / cross-cutting / system-wide | 3+ | per-batch + final | 300k |
+| `research` | Unknown territory, library/code evaluation | 3+ searchers | inline synthesis | ≤80k |
+| `creative` | UI/UX exploration, design-dominant | 1–2 | 1 reviewer | ≤150k |
+| `scientific` | Correctness-critical, numerical/proof, TDD | 2–3 | multi-level L1–L5 | 300k |
 
-**The thinking model is ALWAYS active** — it never waits passively:
-- Owns: questions, task creation, reviews, task updates, learnings, coordination
-- Between batches: reviews, synthesizes, plans next steps, asks user if needed
-- During worker execution: monitors, assists stuck workers, validates early outputs
-- If a worker is slow or blocked: re-scope, break into smaller tasks, or take over
+See [flow-profiles.md](flow-profiles.md) for full per-profile pipelines, skip/upgrade conditions, and examples.
 
-**Workers only:** execute code changes. They never ask questions, review, or coordinate.
+### Persona stitching
+
+Workers receive persona-typed prompts based on triage `personas[]`. Personas compose by priority — `security` is stitched first, `creative` last. A single worker prompt may contain 1–5 stitched persona blocks injected under a `## Persona` section. See [personas-A.md](personas-A.md) and [personas-B.md](personas-B.md) for all 15 persona definitions and the canonical priority order.
+
+### Escalation
+
+If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow profile per [escalation.md](escalation.md) rules. If risk becomes irreversible mid-flight, the orchestrator HALTS and calls `AskUserQuestion` for explicit consent. See [escalation.md](escalation.md) for paths and token accounting.
 
 ### Rules
 
-1. **Always decompose first.** Even a single file edit: Sonnet worker edits -> Opus verifies.
+1. **Always decompose first.** Even a single file edit: Sonnet worker edits → Opus verifies.
 2. **Parallel by default.** Sub-tasks that don't share state get dispatched simultaneously in a single message with multiple Agent tool calls.
 3. **Learning injection.** After each batch, extract patterns/gotchas from worker outputs. Inject synthesized learnings into subsequent worker prompts.
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
-5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md) for the dispatch template.
-6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) for template and [review-levels.md](review-levels.md) for full checklist.
-7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
-8. **Minimum thinking agents = batches + 1.** Every batch gets its own reviewer dispatch. PLUS a final integration review at the end. If you have 3 batches, minimum 4 thinking agents (3 batch reviews + 1 final). A task with `Thinking: 1 agent` and multiple batches is wrong — it means batch reviews were skipped.
-9. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
-   - `⚡ [Implementer]   Creating auth middleware`
-   - `⚡ [Reviewer]      Reviewing auth middleware output`
-   - `⚡ [Searcher]      Finding related test files`
-   - `⚡ [Debugger]      Investigating test failure in auth.test.ts`
-   - `⚡ [Writer]        Generating API documentation`
-   Format: `⚡ [Role]` (padded to 18 chars) + short description. See [output-style.md](output-style.md) for parallel dispatch bracket format.
-10. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
-   ```
-   ── Usage ─────────────────────────────────────────
-   Thinking  (Opus 4.7  )   4 agents    52.1k tokens  (3 reviewers: 38.4k, 1 final: 13.7k)
-   Worker    (Sonnet 4.6)   8 agents   186.0k tokens  (4 implementers: 120k, 3 searchers: 54k, 1 writer: 12k)
-   Total                   12 agents   238.1k tokens
-   ──────────────────────────────────────────────────
-   ```
-   Include the model names from the current config. See [output-style.md](output-style.md) for full formatting rules.
+5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas are injected under a `## Persona` section in the worker prompt.
+6. **Multi-level review (MUST use thinking-tier model).** After each batch dispatch a reviewer with `model: "<resolved-thinking>"`. Scale by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) and [review-levels.md](review-levels.md).
+7. **Thinking model stays active.** Never goes idle while workers run. Reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, validates integration between outputs.
+8. **Minimum thinking agents = profile-dependent.** `fast` = 1; `standard` ≥ 1 per batch; `deep`/`scientific` = batches + 1. A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong.
+9. **Agent labels.** Before every Agent dispatch print: `⚡ [Role] Short description`. Examples: `⚡ [Implementer] Creating auth middleware`, `⚡ [Reviewer] Reviewing auth middleware output`. See [output-style.md](output-style.md) for parallel dispatch bracket format.
+10. **Usage tracking.** Track every agent dispatch and token usage. After task completes print a usage summary. See [escalation.md](escalation.md) for the canonical format and [output-style.md](output-style.md) for visual rules. Example:
+    ```
+    ── Hyperflow Usage ──────────────────────────────────────────
+    Triage                         1 agent     1.8k tokens
+    Brainstorm depth: standard     1 agent     3.2k tokens
+    Flow profile: deep             —           —
+    Thinking (Opus 4.7)            5 agents   68.4k tokens
+    Worker   (Sonnet 4.6)          9 agents  194.0k tokens
+    Escalations                    0
+    Total                         16 agents  267.4k tokens
+    ─────────────────────────────────────────────────────────────
+    ```
 
-   **What counts as a thinking agent:**
-   - Every batch review MUST be a dispatched `Agent` call with `model: "<resolved-thinking>"` — reading files yourself and saying "looks good" is NOT a review and does NOT count.
-   - The final integration review MUST be a dispatched `Agent` call — never inline.
-   - If a thinking agent shows `0.0k tokens`, it wasn't actually dispatched — it was inline work that doesn't count.
-   - The orchestrator's own work (decomposition, coordination, tool calls) is inherently untracked. This is exactly why reviews must be dispatched — they are the only measurable thinking work.
-11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
+    **What counts as a thinking agent:**
+    - Every batch review MUST be a dispatched `Agent` call with `model: "<resolved-thinking>"` — reading files yourself and saying "looks good" is NOT a review and does NOT count.
+    - The final integration review MUST be a dispatched `Agent` call — never inline.
+    - If a thinking agent shows `0.0k tokens`, it wasn't actually dispatched — it was inline work that doesn't count.
+    - The orchestrator's own work (decomposition, coordination, tool calls) is inherently untracked. This is exactly why reviews must be dispatched — they are the only measurable thinking work.
+11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md).
 
-### Learning Injection Format
-
-After each batch completes, Opus synthesizes:
+### Learning injection format
 
 ```
 ## Learnings from prior tasks
@@ -240,61 +234,27 @@ After each batch completes, Opus synthesizes:
 
 Only include learnings relevant to upcoming tasks — don't accumulate noise.
 
-## Layer 4: Brainstorming
+## Layer 4: Adaptive Brainstorming
 
-Triggered when the task involves creating new functionality, choosing between approaches, or clarifying ambiguous scope. Opus handles this directly — no worker dispatch. See [brainstorming-advanced.md](brainstorming-advanced.md) for full question framework.
+Brainstorming runs on EVERY task — never skipped. Depth is scaled to the triage `ambiguity` score: `silent` (recap only), `light` (1 question), `standard` (2–3 questions + alternatives), `deep` (full 6-dimension exploration + section-by-section approval).
 
-### When to Brainstorm
+| Ambiguity (0.0–1.0) | Depth | Behavior |
+|---------------------|-------|----------|
+| 0.0–0.2 | `silent` | Restate intent, confirm scope in one line, proceed |
+| 0.2–0.5 | `light` | Ask 1 clarifying question via `AskUserQuestion`, then proceed |
+| 0.5–0.8 | `standard` | 2–3 questions + propose 2–3 alternatives with trade-offs |
+| 0.8–1.0 | `deep` | Full 6-dimension analysis, section-by-section design approval |
 
-- User says "build X", "add Y", "create Z" — anything that creates new functionality
-- User describes a problem without a clear solution
-- Task involves multiple possible approaches
-- Scope is ambiguous or could be interpreted different ways
+Some types force a minimum depth: `creative` → `deep`; `architect`/`security`/`scientific` → `standard`. See [adaptive-brainstorming.md](adaptive-brainstorming.md) for depth overrides.
 
-### When NOT to Brainstorm
+`AskUserQuestion` is mandatory for all depths above `silent`. Banned: "Should I proceed?" Allowed: clarification of what to build, which approach, scope boundaries.
 
-- Bug fixes with clear reproduction steps
-- Direct instructions ("rename X to Y", "delete this file")
-- Tasks where the user has already provided a complete spec
+See [adaptive-brainstorming.md](adaptive-brainstorming.md) for the full depth modes, question framework, and section-approval protocol.
 
-### Enhanced Brainstorming Flow
-
-```
-User shares idea → [Opus] Explore context → Multi-Dimensional Analysis (silent)
-→ Smart Questions (AskUserQuestion) → Requirement Synthesis (user confirms)
-→ Propose 2-3 approaches → User picks → Design sections (approval per section)
-→ Transition to Layer 3
-```
-
-Full flow details in [brainstorming-advanced.md](brainstorming-advanced.md).
-
-### Brainstorming Rules
-
-1. **AskUserQuestion mandatory.** All questions use the `AskUserQuestion` tool — never plain text questions.
-2. **One question at a time.** Never stack more than 2 questions per `AskUserQuestion` call.
-3. **Dimension-driven questions.** Analyze request across 6 dimensions first, only ask about unknowns.
-4. **Structured techniques.** Use Intent Clarification, Constraint Discovery, Assumption Challenging, and Scope Boundaries in order.
-5. **Max 4-5 questions total.** Skip any technique where the answer is obvious from context.
-6. **Always propose alternatives.** 2-3 approaches with trade-offs before settling on one.
-7. **Section-by-section approval.** Present design incrementally. Get approval after each section.
-8. **YAGNI ruthlessly.** Cut features that aren't essential to the core ask.
-9. **Context first.** Explore the codebase before asking questions — don't ask what you can find.
-
-### Design Sections
-
-Scale each section to its complexity. A few sentences if straightforward, more detail if nuanced.
-
-1. **Architecture** — how components fit together
-2. **Data flow** — what goes where
-3. **Key decisions** — trade-offs made and why
-4. **Edge cases** — what could go wrong
-5. **File structure** — what gets created/modified
-
-### After Design Approval
-
-Transition to Layer 3 (orchestrator pattern) for implementation. The approved design becomes the spec for worker prompts.
-
-For complex features (3+ files, multiple subsystems), write a brief spec to `docs/specs/` before dispatching workers.
+**Hard rules:**
+- Section-by-section approval required in `deep` mode
+- Never propose only one alternative in `standard` or `deep`
+- No code before design approval in `deep` mode
 
 ## Layer 5: Quality Gates
 
@@ -303,7 +263,7 @@ Automated checks after every worker review. See [quality-gates.md](quality-gates
 **Per-task:** lint + typecheck + tests (affected files only)
 **Final review:** full lint + typecheck + build + full test suite
 
-Gate fails -> worker fixes -> re-run. Max 3 retries before escalating to Opus worker.
+Gate fails → worker fixes → re-run. Max 3 retries before escalating to Opus worker.
 
 ## Layer 6: Project-Scoped Memory
 
@@ -311,18 +271,13 @@ Persist reusable learnings in `.hyperflow/memory/` so future sessions in the sam
 
 **Storage:** `.hyperflow/memory/` at project root — multiple files by category (learnings, decisions, pitfalls, patterns, conventions) plus an index. Project-scoped by design — entries never leak across projects.
 
-**Write:** After each batch, orchestrator extracts reusable patterns/gotchas/decisions (not ephemeral task details), tags them, deduplicates against existing entries, and appends to the appropriate file. Apply the test: "Would a worker on this project benefit from knowing this in 2 weeks?"
+**Write:** After each batch, orchestrator extracts reusable patterns/gotchas/decisions, tags them, deduplicates against existing entries, and appends to the appropriate file. Apply the test: "Would a worker on this project benefit from knowing this in 2 weeks?"
 
-**Read:** At session start, orchestrator reads `.hyperflow/memory/index.md` (always). Hot entries (≤7 days) are eagerly loaded. Warm entries (8–30 days) are queried by current task's inferred tags. Cold entries (30+ days) are auto-compressed and archived. Worker prompts receive ONLY the subset matching their task's tags — never the full dump.
+**Read:** At session start, orchestrator reads `.hyperflow/memory/index.md` (always). Hot entries (≤7 days) are eagerly loaded. Warm entries (8–30 days) are queried by current task's inferred tags. Cold entries (30+ days) are auto-compressed and archived. Worker prompts receive ONLY the subset matching their task's tags.
 
-**Prune:** Entries contradicted by newer ones marked `[SUPERSEDED]` and removed after 7 days. Entries referencing files that no longer exist are removed immediately. Entries unreferenced for 90 days are archived to `.hyperflow/memory/archive/YYYY-MM.md`.
+**Prune:** Entries contradicted by newer ones marked `[SUPERSEDED]` and removed after 7 days. Entries referencing deleted files are removed immediately. Entries unreferenced for 90 days are archived to `.hyperflow/memory/archive/YYYY-MM.md`.
 
-**Migration:** On first run, entries from legacy `~/.claude/hyperflow-memory.md` that match the current project path are migrated into `.hyperflow/memory/`.
-
-Controls:
-- `hyperflow: memory off` — disable for current session
-- `hyperflow: memory show <tag>` — list entries by tag
-- `hyperflow: memory clear` — wipe `.hyperflow/memory/` (with confirmation)
+Controls: `hyperflow: memory off` / `hyperflow: memory show <tag>` / `hyperflow: memory clear`
 
 ## Layer 7: Task Templates
 
@@ -348,9 +303,9 @@ Worker containment via prompt-injected blocklists. See [security.md](security.md
 - Blocked commands: `rm -rf` (destructive), `git push --force` to main, `sudo`, `chmod 777`, package publish
 - Secret detection: Reviewer checks for hardcoded API keys, private keys, connection strings
 
-**Config:** `~/.hyperflow/config.json` → `security` key (add/remove patterns). Disable per-session: `hyperflow: security off`.
+**Config:** `~/.hyperflow/config.json` → `security` key. Disable per-session: `hyperflow: security off`.
 
-Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
+Workers that hit a blocked resource report `BLOCKED:`. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
 
 ## Specialized Skills
 
@@ -366,7 +321,7 @@ The main `hyperflow:hyperflow` skill is the all-in-one orchestrator that runs on
 | Ship | `/hyperflow:ship` | Pre-push gates (lint, typecheck, build, tests) + commit + release + push |
 | Memory | `/hyperflow:memory` | CRUD on `.hyperflow/memory/` — show, search, add, prune, archive, clear |
 
-All specialized skills inherit from this orchestration framework — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system. The specialized skills are short (~80 lines each) and reference shared files in `skills/hyperflow/*.md`.
+All specialized skills inherit from this orchestration framework — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system.
 
 Hand-off pattern:
 - `/hyperflow:brainstorm` → produces a design → user invokes `/hyperflow:plan` or `/hyperflow:hyperflow`
@@ -381,6 +336,11 @@ Hand-off pattern:
 
 ## Red Flags — You Are Violating Hyperflow If You:
 
+- Skip triage on a new user request
+- Run a flow profile that contradicts triage output (e.g., `fast` when triage said `deep`) without explicit downgrade
+- Skip brainstorming entirely (use `silent` mode, never skip)
+- Stitch personas in the wrong priority order
+- Ignore `ESCALATE:` returns from workers
 - Skip clarification questions before implementation (research → verify → build, never research → build)
 - Type a question mark that isn't answering the user's question (except brainstorming/clarification)
 - Write more than one sentence before your first tool call
@@ -389,15 +349,15 @@ Hand-off pattern:
 - Dispatch a reviewer with the worker-tier model instead of the thinking-tier model
 - Finish a task with `Thinking: 0 agents` in the usage summary
 - Show `0.0k tokens` for thinking agents (means you reviewed inline instead of dispatching)
-- Skip the final integration review (separate from batch reviews)
-- Have fewer thinking agents than batches + 1
+- Skip the final integration review (separate from batch reviews) in `deep`/`scientific` profiles
+- Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles
 - Dispatch workers sequentially when they could run in parallel
 - Include "Co-Authored-By: Claude" in any git operation
 - Summarize what you just did
 - Describe code instead of writing it
-- Write code before the user approves a design (during brainstorming)
+- Write code before the user approves a design (during `deep` brainstorming)
 - Ask more than one question per message (during brainstorming)
-- Skip the alternatives step and jump to a single solution (during brainstorming)
+- Skip the alternatives step and jump to a single solution (during `standard`/`deep` brainstorming)
 - Add features the user didn't ask for
 - Dispatch an agent without printing `⚡ [Role] description` first
 - Finish a task without printing the usage summary

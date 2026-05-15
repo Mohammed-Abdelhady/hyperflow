@@ -7,11 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **README overhaul** — rewrote for current features (8 skills, 10 orchestration layers, 5 supported providers), removed standalone hero image, added shields.io badges, condensed from 631 to 230 lines, restructured for SEO with descriptive section headings and keyword-rich opening.
-
 ### Added
+- **Layer 0.5: Task Triage** — every user request now starts with a cheap thinking-tier classification call producing `{ types[], complexity, risk, scope, ambiguity, brainstormDepth, flow, personas[], estimatedWorkers, estimatedBatches, budget, rationale }` JSON. The output drives every downstream decision. See `skills/hyperflow/task-triage.md`.
+
+- **6 adaptive flow profiles** — replace the rigid pipeline with profiles sized to the task: `fast` (≤30k tokens, trivial single-file edits), `standard` (≤100k, moderate work), `deep` (300k, complex/cross-cutting), `research` (≤80k, exploration), `creative` (≤150k, design-dominant), `scientific` (300k, correctness-critical with TDD). Triage picks the profile; workers can `ESCALATE:` mid-flight to upgrade. See `skills/hyperflow/flow-profiles.md`.
+
+- **15 specialist personas** — `architect`, `frontend`, `ui`, `api`, `db`, `security`, `scientific`, `creative`, `refactor`, `bugfix`, `devops`, `docs`, `test`, `research`, `performance`. Tasks can have multiple types (e.g. user auth = `[api, db, security]`); persona blocks are stitched into worker prompts in priority order (`security` first, `creative` last). See `skills/hyperflow/personas-A.md` and `skills/hyperflow/personas-B.md`.
+
+- **Mid-flight escalation protocol** — workers return `ESCALATE: <reason>` when a profile turns out to be wrong. Orchestrator upgrades the profile and re-dispatches with preserved context. Irreversible-risk discoveries (prod data, secrets, force pushes, schema-destructive migrations) halt for `AskUserQuestion` consent. See `skills/hyperflow/escalation.md`.
+
+- **Token budget tracking** — every flow profile has a soft budget. Usage summary flags overruns at 1.5× (warn) and 2.0× (halt for user approval). Per-task usage now reports triage classification, brainstorm depth, flow profile, actual vs budget, escalations, and downgrades.
+
 - **README maintenance rule** — `scripts/release.sh` now warns if `README.md` has not been modified since the last release tag, prompting contributors to keep the README in sync with shipped features. Codified in `CLAUDE.md` under a new README Maintenance section.
+
+### Changed
+- **Brainstorming is now always-on with adaptive depth.** Previously hard-gated ("when to brainstorm" / "when not to"). Now runs on every task, depth scaled to the triage `ambiguity` score (0.0–1.0): `silent` (recap only), `light` (1 question), `standard` (2-3 questions + alternatives), `deep` (full 6-dimension exploration + section-by-section approval). Some types force a minimum depth (`creative` → deep; `architect`/`security`/`scientific` → standard). See `skills/hyperflow/adaptive-brainstorming.md`.
+
+- **Layer 3 (Orchestrator) restructured.** The rigid `research → plan → dispatch → review → integrate` pipeline is replaced by flow-profile execution. Profile-dependent rules: minimum thinking agents is now `1` for `fast`, `≥1` for `standard`, `batches + 1` for `deep` and `scientific`. Workers receive persona-typed prompts based on the triage `personas[]` field.
+
+- **`skills/hyperflow/SKILL.md` integration.** Reduced rigid pipeline detail in favor of flow-profile references. SKILL.md stays under 500 lines per project convention; detail offloaded to the new reference files.
+
+- **README overhaul** — rewrote for current features (8 skills, 10 orchestration layers, 5 supported providers), removed standalone hero image, added shields.io badges, condensed from 631 to 230 lines, restructured for SEO with descriptive section headings and keyword-rich opening.
 
 
 ## [1.12.1] — 2026-05-15
