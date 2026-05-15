@@ -22,7 +22,7 @@ Step 1: Does .hyperflow/ exist at project root?
                   │
                   ├─ ALL MATCH + no new config files appeared
                   │  → SKIP ANALYSIS entirely
-                  │    Print "⚡ Analysis cache fresh — skipping"
+                  │    Print "✓ Analysis cache fresh — skipping"
                   │    The thinking model reads cached .hyperflow/*.md directly
                   │    Zero agents dispatched for analysis
                   │
