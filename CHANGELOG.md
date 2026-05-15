@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] — 2026-05-15
+
+### Changed
+- Add hero SVG illustrating orchestration flow
+
+
 ## [1.8.0] — 2026-05-15
 
 ### Added
@@ -170,7 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.1...v1.8.0
 [1.7.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.6.1...v1.7.0
