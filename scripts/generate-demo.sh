@@ -48,6 +48,6 @@ DIMS=$(file "$GIF_FILE" | awk -F', ' '{for(i=1;i<=NF;i++) if($i ~ /[0-9]+ x [0-9
 
 printf '\033[32m✓\033[0m %s  ·  %s  ·  %d KB\n' "${GIF_FILE#$REPO_ROOT/}" "$DIMS" "$SIZE_KB"
 
-if [ "$SIZE_KB" -gt 2048 ]; then
-  printf '\033[33m⚠\033[0m gif > 2 MB — try HYPERFLOW_DEMO_SPEED=1.5 or HYPERFLOW_DEMO_FONT_SIZE=10\n'
+if [ "$SIZE_KB" -gt 3072 ]; then
+  printf '\033[33m⚠\033[0m gif > 3 MB — try HYPERFLOW_DEMO_SPEED=1.5 or HYPERFLOW_DEMO_FONT_SIZE=9\n'
 fi
