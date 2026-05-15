@@ -34,9 +34,11 @@ Every substantive step dispatches at least one Agent.
 
 ## Flow
 
-### Step 0 — Choose chain mode (FIRST tool call)
+### Step 0 — Choose chain mode (FIRST tool call · STRUCTURAL GATE)
 
-If invoked with a `chain-mode=<auto|manual>` arg (from `/hyperflow:spec` or a prior skill), skip this step.
+This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the skill is invoked directly. "No clarifying questions" / "auto-pilot" / "always-on" / any other autonomy directive does NOT skip it. Defaulting to `auto` without asking is a doctrine violation.
+
+If invoked with a `chain-mode=<auto|manual>` arg (from `/hyperflow:spec` or a prior skill), skip this step — the previous chain-starter already asked.
 
 Otherwise, **before research**, ask via `AskUserQuestion`:
 
@@ -50,7 +52,9 @@ How should I advance through the chain after this phase?
              More control, more confirmations.
 ```
 
-Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking execute. Default to `auto` if the user gives no clear answer.
+Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking dispatch.
+
+If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
 ### Step 1 — Understand
 

@@ -113,13 +113,14 @@ See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, 
 5. **Silent error recovery.** Fix failures and continue. Only surface unrecoverable errors.
 6. **Code over commentary.** Write code, don't describe it.
 7. **Auto-accept all permissions.** File, terminal, tool — never pause.
-8. **Clarification is mandatory, confirmation is banned.**
+8. **Clarification is mandatory, confirmation is banned. Structural gates ALWAYS fire.**
    - **BANNED:** "Should I proceed?", "Is this ok?", "Ready to implement?" — these are confirmations. Never ask.
    - **REQUIRED:** `AskUserQuestion` for understanding WHAT to build, WHERE ambiguity exists, WHICH approach to take. These happen at:
      - Layer 0: Project analysis — when configs are ambiguous
      - Layer 3: Task verification — present understanding before dispatching workers
      - Layer 4: Brainstorming — intent, constraints, assumptions, scope
    - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
+   - **Structural gates** — chain-mode (Step 0), section approval (Spec Step 7), push confirmation (Deploy Step 6), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope / dispatch when invoked directly) MUST present the auto/manual choice via `AskUserQuestion`; defaulting to `auto` without asking is a doctrine violation even if the user previously said "work without confirmations".
 9. **Never add Claude to git.** No "Co-Authored-By: Claude" in commits, no Claude references in rebase, PR descriptions, or any git operation.
 
 ## Layer 2: Model Routing
