@@ -5,7 +5,7 @@ description: Use at the start of every conversation and every task. Enforces ful
 
 # Hyperflow
 
-You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first.
+You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Design decisions go through brainstorming first. All terminal output follows the visual language in [output-style.md](output-style.md).
 
 ## Layer 0: Project Analysis
 
@@ -17,7 +17,7 @@ On session start, the **thinking model decides** whether analysis is needed. See
 2. **Print active models** — read version from `VERSION` file (same directory as SKILL.md), then print:
    ```
    ⚡ Hyperflow v<version>
-   Thinking: <resolved-thinking-model>  |  Worker: <resolved-worker-model>
+     Thinking: <resolved-thinking-model>  |  Worker: <resolved-worker-model>
    ```
 3. **Smart analysis decision** — the thinking model evaluates before dispatching anything:
 
@@ -37,7 +37,7 @@ On session start, the **thinking model decides** whether analysis is needed. See
              Compare each checksum
              │
              ├─ ALL FRESH → SKIP ANALYSIS
-             │  Print "⚡ Analysis cache fresh — skipping"
+             │  Print "✓ Analysis cache fresh — skipping"
              │  Load cached files directly (no agents dispatched)
              │
              ├─ SOME STALE → PARTIAL REFRESH
@@ -204,21 +204,21 @@ User request
 7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
 8. **Minimum thinking agents = batches + 1.** Every batch gets its own reviewer dispatch. PLUS a final integration review at the end. If you have 3 batches, minimum 4 thinking agents (3 batch reviews + 1 final). A task with `Thinking: 1 agent` and multiple batches is wrong — it means batch reviews were skipped.
 9. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
-   - `⚡ [Implementer] Creating auth middleware`
-   - `⚡ [Reviewer] Reviewing auth middleware output`
-   - `⚡ [Searcher] Finding related test files`
-   - `⚡ [Debugger] Investigating test failure in auth.test.ts`
-   - `⚡ [Writer] Generating API documentation`
-   Format: `⚡ [Role] Short description of what this agent will do`
+   - `⚡ [Implementer]   Creating auth middleware`
+   - `⚡ [Reviewer]      Reviewing auth middleware output`
+   - `⚡ [Searcher]      Finding related test files`
+   - `⚡ [Debugger]      Investigating test failure in auth.test.ts`
+   - `⚡ [Writer]        Generating API documentation`
+   Format: `⚡ [Role]` (padded to 18 chars) + short description. See [output-style.md](output-style.md) for parallel dispatch bracket format.
 10. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
    ```
-   ── Hyperflow Usage ──────────────────────
-   Thinking (Opus 4.7)    4 agents   52.1k tokens  (3 batch reviewers: 38.4k, 1 final reviewer: 13.7k)
-   Worker   (Sonnet 4.6)  8 agents  186.0k tokens  (4 implementers: 120k, 3 searchers: 54k, 1 writer: 12k)
-   Total                 12 agents  238.1k tokens
-   ─────────────────────────────────────────
+   ── Usage ─────────────────────────────────────────
+   Thinking  (Opus 4.7  )   4 agents    52.1k tokens  (3 reviewers: 38.4k, 1 final: 13.7k)
+   Worker    (Sonnet 4.6)   8 agents   186.0k tokens  (4 implementers: 120k, 3 searchers: 54k, 1 writer: 12k)
+   Total                   12 agents   238.1k tokens
+   ──────────────────────────────────────────────────
    ```
-   Include the model names from the current config. Combine same-role agents with count + summed tokens. Format token counts as `Xk` (divide by 1000, one decimal). The thinking count must be ≥ batches + 1.
+   Include the model names from the current config. See [output-style.md](output-style.md) for full formatting rules.
 11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
 
 ### Learning Injection Format
