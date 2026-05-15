@@ -7,7 +7,8 @@
 <p align="center">
   Start anywhere. Auto-advance through the chain.<br/>
   <code>scaffold</code> → <code>spec</code> → <code>scope</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
-  Thinking models think. Worker models execute. Every output gets reviewed. Project memory persisted. Quality gates enforced.
+  Thinking models think. Worker models execute. Multi-level review <code>L1–L5</code> inside every step.<br/>
+  15 stitched personas · 6 flow profiles · persistent project memory.
 </p>
 
 <p align="center">

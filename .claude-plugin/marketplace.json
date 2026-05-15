@@ -5,7 +5,7 @@
     "email": "abdelhadycongar@gmail.com"
   },
   "metadata": {
-    "description": "Multi-agent orchestration for AI coding tools",
+    "description": "Sequenced multi-agent workflow with persona stitching, flow profiles, and per-step multi-level review",
     "version": "2.2.0"
   },
   "plugins": [
@@ -15,20 +15,20 @@
         "source": "url",
         "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
       },
-      "description": "Multi-agent orchestration for AI coding tools. Main orchestrator + specialized skills (init, review, debug, brainstorm, plan, ship, memory). Thinking models think. Worker models execute. Project-scoped memory, multi-tool auto-detection.",
+      "description": "Sequenced multi-agent workflow for Claude Code, Cursor, OpenCode, Codex, Antigravity. Chain: scaffold → spec → scope → dispatch → audit → deploy. Thinking models think, worker models execute. Multi-level review L1–L5 inside every step, 15 stitched personas, 6 flow profiles, persistent project memory.",
       "version": "2.2.0",
       "author": {
         "name": "Mohammed Abdelhady",
         "url": "https://github.com/Mohammed-Abdelhady"
       },
       "keywords": [
-        "orchestration",
         "multi-agent",
-        "auto-pilot",
+        "workflow-chain",
+        "triageflow",
+        "personas",
+        "flow-profiles",
         "parallel-execution",
         "code-review",
-        "debugging",
-        "brainstorming",
         "project-memory",
         "multi-tool"
       ],
