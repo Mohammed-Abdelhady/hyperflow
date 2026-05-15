@@ -32,10 +32,6 @@
   <code>v2.0.0</code> · <a href="CHANGELOG.md">Changelog</a>
 </p>
 
-<p align="center">
-  <img src="docs/assets/hero.svg" alt="Hyperflow orchestration flow: thinking-model orchestrator decomposes a task, three worker-model agents execute in parallel, the reviewer synthesizes outputs, and a final worker integrates with learnings injected back into the next batch" width="100%" />
-</p>
-
 ---
 
 ## How It Works
