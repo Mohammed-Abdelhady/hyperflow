@@ -219,6 +219,12 @@ User request
    ──────────────────────────────────────────────────
    ```
    Include the model names from the current config. See [output-style.md](output-style.md) for full formatting rules.
+
+   **What counts as a thinking agent:**
+   - Every batch review MUST be a dispatched `Agent` call with `model: "<resolved-thinking>"` — reading files yourself and saying "looks good" is NOT a review and does NOT count.
+   - The final integration review MUST be a dispatched `Agent` call — never inline.
+   - If a thinking agent shows `0.0k tokens`, it wasn't actually dispatched — it was inline work that doesn't count.
+   - The orchestrator's own work (decomposition, coordination, tool calls) is inherently untracked. This is exactly why reviews must be dispatched — they are the only measurable thinking work.
 11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
 
 ### Learning Injection Format
@@ -382,6 +388,7 @@ Hand-off pattern:
 - Skip the thinking-tier review after a worker completes
 - Dispatch a reviewer with the worker-tier model instead of the thinking-tier model
 - Finish a task with `Thinking: 0 agents` in the usage summary
+- Show `0.0k tokens` for thinking agents (means you reviewed inline instead of dispatching)
 - Skip the final integration review (separate from batch reviews)
 - Have fewer thinking agents than batches + 1
 - Dispatch workers sequentially when they could run in parallel
