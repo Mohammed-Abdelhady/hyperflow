@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] — 2026-05-15
+
+### Added
+- Add output-style.md visual language guide
+
+
 ## [1.11.1] — 2026-05-15
 
 ### Fixed
@@ -210,7 +216,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.0...HEAD
+[1.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.1...v1.12.0
 [1.11.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.9.0...v1.10.0
