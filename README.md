@@ -63,7 +63,7 @@ Design decisions? Hyperflow brainstorms with you first — exploring options and
 | **Higher quality** | Every output gets a two-pass review. Workers learn from each other — Batch 2 benefits from Batch 1's discoveries. |
 | **Lower cost** | Expensive thinking models orchestrate and review. Cheap worker models write the code. Stop paying Opus prices for tasks Sonnet handles. |
 | **Faster execution** | Independent tasks run in parallel. 3 files that don't share state? 3 workers, simultaneously. |
-| **Persistent memory** | Project conventions, gotchas, and architectural decisions persist across conversations. Hyperflow remembers what it learned yesterday and applies it today — fully local at `~/.claude/hyperflow-memory.md`. |
+| **Persistent memory** | Project conventions, gotchas, and architectural decisions persist across conversations. Hyperflow remembers what it learned yesterday and applies it today — project-scoped under `.hyperflow/memory/`, fully local. |
 | **Works everywhere** | Claude Code, Cursor, OpenCode, Codex, Antigravity — one config file, auto-detection, same workflow. |
 
 ---
@@ -245,23 +245,34 @@ Other providers: Cursor (Claude 4.7 Opus/Sonnet), OpenCode (anthropic/claude-opu
 - CSS uses logical properties for RTL support
 ```
 
-**Across sessions:** reusable learnings (project conventions, architectural decisions, gotchas) persist to `~/.claude/hyperflow-memory.md` — a local plain-markdown file, organized by project path. At session start, Hyperflow reads memory entries for the current project and injects them into the first worker prompt.
+**Across sessions:** reusable learnings persist to `.hyperflow/memory/` inside the project — project-scoped, version-controllable, and never mixed with other repos. At session start, Hyperflow reads only tag-matched entries (hot tier) and injects them into the first worker prompt.
 
-```markdown
-## [2026-05-14] /path/to/project
-- Tailwind v4 uses CSS variable tokens, not tailwind.config
-- All validation goes through zod schemas in src/shared/validation/
-- Auth middleware is at src/domains/auth/server/auth.ts (singleton)
+```
+.hyperflow/memory/
+├── index.md        ← entry registry + tags
+├── learnings.md    ← discovered facts and conventions
+├── decisions.md    ← architectural decisions and rationale
+├── pitfalls.md     ← gotchas and anti-patterns
+├── patterns.md     ← recurring code and design patterns
+└── conventions.md  ← project-specific style and naming rules
 ```
 
+**Tier model:**
+- **Hot** — injected automatically at session start (tagged as `#hot`)
+- **Warm** — injected when a task matches entry tags
+- **Cold** — available on demand; never auto-injected
+
 **Curation rules** built in:
-- **Project-scoped** — only learnings from the current project are injected
+- **Project-scoped** — lives in `.hyperflow/memory/`, not a global file
+- **Lazy injection** — only tag-matched entries reach worker prompts
 - **Auto-pruning** — entries older than 30 days, or contradicted by newer ones, are removed at session start
 - **Patterns, not code** — learnings capture facts and conventions, never code snippets
-- **User-editable** — it's plain markdown; edit, delete, or back it up as you like
+- **User-editable** — plain markdown; edit, delete, or commit to git as you like
 - **Local-only** — nothing leaves your machine
 
-Disable per-session: `hyperflow: memory off`. Clear everything: delete the file.
+Controls: `hyperflow: memory off` (disable for session) · `hyperflow: memory show` (print current entries) · `hyperflow: memory clear` (wipe all entries)
+
+> **Migrating from legacy global memory:** if you have an existing `~/.claude/hyperflow-memory.md`, copy the relevant entries for each project into that project's `.hyperflow/memory/learnings.md` and delete (or archive) the global file.
 
 Full spec: [skills/hyperflow/session-memory.md](skills/hyperflow/session-memory.md).
 </details>
@@ -341,6 +352,86 @@ Disable per-session: `hyperflow: security off`
 | **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash | Auto |
 
 All models are configurable per provider. See [Provider Setup](docs/providers.md).
+
+---
+
+## Multi-Tool Auto-Detection
+
+Hyperflow generates native config shim files so every supported tool auto-loads it without manual setup.
+
+```bash
+./scripts/setup-detection.sh          # generate shims for all detected tools
+./scripts/setup-detection.sh --tools claude,cursor,codex   # specific tools only
+./scripts/setup-detection.sh --dry-run   # preview what would be written
+./scripts/setup-detection.sh --force     # overwrite existing shim files
+```
+
+The installer (`install.sh`) runs `setup-detection.sh` automatically. Re-run it any time you add a new tool to the project.
+
+### Which file does each tool read?
+
+| Tool | Shim file written | Location |
+|------|------------------|----------|
+| **Claude Code** | `CLAUDE.md` | project root |
+| **Cursor** | `hyperflow.mdc` | `.cursor/rules/` |
+| **Codex** | `AGENTS.md` | project root |
+| **OpenCode** | `AGENTS.md` | project root |
+| **GitHub Copilot** | `AGENTS.md` | project root |
+| **Antigravity / Gemini CLI** | `GEMINI.md` | project root |
+
+Each shim is a one-liner that sources the real skill from `.hyperflow/` — you never edit the shims directly.
+
+### What the shims point to
+
+| Path | Contents |
+|------|----------|
+| `.hyperflow/` | Project analysis cache (codebase map, dependency graph) |
+| `.hyperflow/memory/` | Persistent learnings — injected into each session |
+
+Commit the shim files (and `.hyperflow/memory/`) to version control so every team member and every tool gets the same context automatically.
+
+---
+
+## Project Memory
+
+Memory lives at `.hyperflow/memory/` — project-scoped, plain markdown, version-controllable.
+
+```
+.hyperflow/memory/
+├── index.md        ← entry registry + tags
+├── learnings.md    ← discovered facts and conventions
+├── decisions.md    ← architectural decisions and rationale
+├── pitfalls.md     ← gotchas and anti-patterns
+├── patterns.md     ← recurring code and design patterns
+└── conventions.md  ← project-specific style and naming rules
+```
+
+### Tiering
+
+| Tier | Tag | Behaviour |
+|------|-----|-----------|
+| **Hot** | `#hot` | Always injected at session start |
+| **Warm** | any topic tag | Injected when a task matches the tag |
+| **Cold** | none | Available on demand; never auto-injected |
+
+### Controls
+
+| Command | Effect |
+|---------|--------|
+| `hyperflow: memory off` | Disable memory injection for this session |
+| `hyperflow: memory show` | Print all current memory entries |
+| `hyperflow: memory clear` | Wipe all entries in `.hyperflow/memory/` |
+
+### Migrating from legacy global memory
+
+If you have an existing `~/.claude/hyperflow-memory.md`, copy the relevant project entries into `.hyperflow/memory/learnings.md` and delete (or archive) the global file.
+
+```bash
+# example one-shot migration
+grep -A5 "$(pwd)" ~/.claude/hyperflow-memory.md >> .hyperflow/memory/learnings.md
+```
+
+Full spec: [skills/hyperflow/session-memory.md](skills/hyperflow/session-memory.md).
 
 ---
 
@@ -475,7 +566,7 @@ claude plugin uninstall hyperflow@hyperflow-marketplace
 </td></tr>
 </table>
 
-This removes all symlinks, the cloned repo, and config. Session memory at `~/.claude/hyperflow-memory.md` is kept — delete it manually if you want a clean slate.
+This removes all symlinks, the cloned repo, and config. Project memory at `.hyperflow/memory/` is kept — delete it manually if you want a clean slate.
 
 ---
 
@@ -487,10 +578,10 @@ For full transparency — what this plugin does at runtime, so reviewers and use
 |---|---|---|
 | **`SessionStart` hook** | On `startup`, `clear`, and `compact` events, runs `hooks/session-start` (bash). The script reads `skills/hyperflow/SKILL.md`, JSON-encodes it via Python 3, and emits a `system-prompt-inject` payload that adds the Hyperflow skill to the model's system prompt. | [`hooks/session-start`](hooks/session-start), [`hooks/hooks.json`](hooks/hooks.json) |
 | **Skill content** | Instructs the agent to operate as a thinking-model orchestrator coordinating worker-model subagents, with brainstorming for design decisions and reviews after every change. | [`skills/hyperflow/SKILL.md`](skills/hyperflow/SKILL.md) |
-| **Session memory** | Reads and appends to `~/.claude/hyperflow-memory.md` to persist learnings across conversations. No data leaves your machine. | [`skills/hyperflow/session-memory.md`](skills/hyperflow/session-memory.md) |
+| **Session memory** | Reads and appends to `.hyperflow/memory/` (project-scoped) to persist learnings across conversations. No data leaves your machine. | [`skills/hyperflow/session-memory.md`](skills/hyperflow/session-memory.md) |
 | **Config** | Optional `~/.hyperflow/config.json` for model selection and security overrides. Created only if you run the installer wizard; not required. | [`config/schema.json`](config/schema.json) |
 | **Network access** | None at runtime. The plugin does not make outbound network calls. The optional `install.sh` setup wizard clones the repo and writes config locally. | — |
-| **File writes** | Only `~/.claude/hyperflow-memory.md` (session memory) and, if you run the installer, `~/.hyperflow/config.json`. The skill instructs the orchestrator to follow project conventions for everything else. | — |
+| **File writes** | `.hyperflow/memory/` (project-scoped session memory) and, if you run the installer, `~/.hyperflow/config.json` and tool shim files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules/hyperflow.mdc`). The skill instructs the orchestrator to follow project conventions for everything else. | — |
 | **Worker containment** | Workers are constrained by prompt-injected blocklists for sensitive files (`.env`, `*.pem`, `*.key`, `~/.ssh/*`, cloud creds) and destructive commands (`rm -rf`, `git push --force` to main, `sudo`, `chmod 777`). See Layer 9 above. | [`skills/hyperflow/security.md`](skills/hyperflow/security.md) |
 | **Dependencies** | The hook script requires `bash`, `python3`, and standard POSIX tools — all available by default on macOS and Linux. No Node, no package installs. | — |
 

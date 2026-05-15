@@ -316,6 +316,34 @@ EOF
   info "Config saved to $CONFIG_FILE"
 }
 
+# ─── Project Detection Setup ───
+
+setup_project_detection() {
+  # Skip if non-interactive
+  if [[ "${INSTALL_NONINTERACTIVE:-0}" == "1" ]] || [[ "$-" != *i* && ! -t 0 ]]; then
+    return
+  fi
+
+  echo ""
+  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md, .cursor/rules/hyperflow.mdc, GEMINI.md, CLAUDE.md so other AI tools (Codex, Cursor, Antigravity, etc.) auto-load hyperflow in that project." "n"; then
+    return
+  fi
+
+  printf "${BOLD}Project path${RESET} [%s]: " "$PWD"
+  read -r project_path </dev/tty
+  project_path="${project_path:-$PWD}"
+
+  local detection_script="$INSTALL_DIR/scripts/setup-detection.sh"
+
+  if [ ! -f "$detection_script" ]; then
+    warn "setup-detection.sh not found at $detection_script"
+    warn "Run manually: scripts/setup-detection.sh <project-path>"
+    return
+  fi
+
+  bash "$detection_script" "$project_path"
+}
+
 # ─── Summary ───
 
 print_summary() {
@@ -416,7 +444,7 @@ uninstall() {
     step "Nothing to remove."
   else
     info "Hyperflow uninstalled"
-    step "Session memory at ~/.claude/hyperflow-memory.md was kept."
+    step "Project memory at .hyperflow/memory/ (per-project) was kept."
     step "Delete it manually if you want a clean slate."
   fi
   echo ""
@@ -503,6 +531,8 @@ main() {
 
   echo ""
   write_config "$config_provider_key"
+
+  setup_project_detection
 
   print_summary
 }
