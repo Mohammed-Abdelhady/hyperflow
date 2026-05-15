@@ -5,7 +5,7 @@
     "email": "abdelhadycongar@gmail.com"
   },
   "metadata": {
-    "description": "Sequenced multi-agent workflow with persona stitching, flow profiles, and per-step multi-level review",
+    "description": "Advanced multi-agent orchestration with persistent cross-session memory, per-step multi-level review, persona stitching, and adaptive flow profiles",
     "version": "2.5.0"
   },
   "plugins": [
@@ -15,7 +15,7 @@
         "source": "url",
         "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
       },
-      "description": "Sequenced multi-agent workflow for Claude Code, Cursor, OpenCode, Codex, Antigravity. Chain: scaffold → spec → scope → dispatch → audit → deploy. Thinking models think, worker models execute. Multi-level review L1–L5 inside every step, 15 stitched personas, 6 flow profiles, persistent project memory.",
+      "description": "Advanced multi-agent orchestration with persistent cross-session memory, per-step multi-level review, persona stitching, and adaptive flow profiles. Chain: scaffold → spec → scope → dispatch → audit → deploy. Thinking models think, worker models execute. Every step dispatches its own Worker → Reviewer pair (rule 12). 15 stitched personas, 6 flow profiles, multi-level review L1–L5.",
       "version": "2.5.0",
       "author": {
         "name": "Mohammed Abdelhady",

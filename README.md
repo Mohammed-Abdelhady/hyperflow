@@ -1,14 +1,14 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>Sequenced multi-agent workflow for Claude Code, Cursor, OpenCode, Codex, and Antigravity.</strong>
+  <strong>Advanced multi-agent orchestration with persistent cross-session memory, per-step multi-level review, persona stitching, and adaptive flow profiles.</strong>
 </p>
 
 <p align="center">
   Start anywhere. Auto-advance through the chain.<br/>
   <code>scaffold</code> → <code>spec</code> → <code>scope</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
-  Thinking models think. Worker models execute. Multi-level review <code>L1–L5</code> inside every step.<br/>
-  15 stitched personas · 6 flow profiles · persistent project memory.
+  Thinking models think. Worker models execute. Every step dispatches its own Worker → Reviewer pair (rule 12).<br/>
+  Project memory persists across sessions · 15 stitched personas · 6 adaptive flow profiles · multi-level review <code>L1–L5</code>.
 </p>
 
 <p align="center">
