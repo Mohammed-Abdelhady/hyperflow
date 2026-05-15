@@ -247,14 +247,16 @@ Only include learnings relevant to upcoming tasks — don't accumulate noise.
 
 ## Layer 4: Adaptive Brainstorming
 
-Brainstorming runs on EVERY task — never skipped. Depth is scaled to the triage `ambiguity` score: `silent` (recap only), `light` (1 question), `standard` (2–3 questions + alternatives), `deep` (full 6-dimension exploration + section-by-section approval).
+Brainstorming runs on EVERY task — never skipped. Depth is scaled to the triage `ambiguity` score, **with a hard floor of 2 questions per spec run**. Skipping questions entirely (`silent` mode) is no longer allowed — even trivial tasks get two structural questions so the user always has a chance to redirect.
 
 | Ambiguity (0.0–1.0) | Depth | Behavior |
 |---------------------|-------|----------|
-| 0.0–0.2 | `silent` | Restate intent, confirm scope in one line, proceed |
-| 0.2–0.5 | `light` | Ask 1 clarifying question via `AskUserQuestion`, then proceed |
-| 0.5–0.8 | `standard` | 2–3 questions + propose 2–3 alternatives with trade-offs |
-| 0.8–1.0 | `deep` | Full 6-dimension analysis, section-by-section design approval |
+| 0.0–0.2 | `light` | **Always 2 questions** — usually scope-confirm + 1 constraint check |
+| 0.2–0.5 | `light` | **Always 2 questions** — intent clarify + constraint discovery |
+| 0.5–0.8 | `standard` | **3 questions** + propose 2–3 alternatives with trade-offs |
+| 0.8–1.0 | `deep` | **4–5 questions** + full 6-dimension analysis + section-by-section design approval |
+
+**Hard floor:** every spec run dispatches `AskUserQuestion` at least twice, regardless of how confident the triage was. The 2-question minimum gives the user a structural place to course-correct before workers run.
 
 Some types force a minimum depth: `creative` → `deep`; `architect`/`security`/`scientific` → `standard`. See [adaptive-brainstorming.md](adaptive-brainstorming.md) for depth overrides.
 
