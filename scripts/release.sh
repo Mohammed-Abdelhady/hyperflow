@@ -93,6 +93,30 @@ if git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
   exit 0
 fi
 
+# ── README staleness check (warn-only, never blocks) ─────────────────────────
+# If commits since the last tag contain anything other than chore/docs(internal)/
+# release commits and README.md hasn't been touched since the last tag, surface
+# a warning so the contributor remembers to keep the README in sync.
+if [ -n "$LAST_TAG" ]; then
+  README_LAST_TOUCHED=$(git log -1 --format=%H -- README.md 2>/dev/null)
+  LAST_TAG_COMMIT=$(git rev-list -n 1 "$LAST_TAG" 2>/dev/null)
+  README_CHANGED_SINCE_TAG=$(git diff --name-only "$LAST_TAG"...HEAD -- README.md 2>/dev/null)
+
+  # Count commits since last tag that are NOT release/chore/internal-docs.
+  FEATURE_COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s" 2>/dev/null \
+    | grep -Ev '^(chore\(release\)|chore: release|docs\(internal\))' \
+    | grep -cE '^(feat|fix|perf|refactor|revert)(\(|:)' || true)
+
+  if [ -z "$README_CHANGED_SINCE_TAG" ] && [ "$FEATURE_COMMITS" -gt 0 ]; then
+    echo ""
+    echo -e "${YELLOW}⚠  README STALE${RESET} — README.md was not modified since ${LAST_TAG}, but ${FEATURE_COMMITS} feature/fix commit(s) landed."
+    echo -e "   Consider updating README.md so users see the new behavior on the project landing page."
+    echo -e "   Continuing in 3 seconds — press Ctrl+C to abort and update the README first."
+    sleep 3
+    echo ""
+  fi
+fi
+
 TODAY=$(date +%Y-%m-%d)
 
 # ── Parse commits into categories ────────────────────────────────────────────

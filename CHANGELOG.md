@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **README overhaul** — rewrote for current features (8 skills, 10 orchestration layers, 5 supported providers), removed standalone hero image, added shields.io badges, condensed from 631 to 230 lines, restructured for SEO with descriptive section headings and keyword-rich opening.
+
+### Added
+- **README maintenance rule** — `scripts/release.sh` now warns if `README.md` has not been modified since the last release tag, prompting contributors to keep the README in sync with shipped features. Codified in `CLAUDE.md` under a new README Maintenance section.
+
+
 ## [1.12.1] — 2026-05-15
 
 ### Fixed
@@ -29,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Smart analysis — skip/partial/full decision tree
-
 
 ## [1.10.0] — 2026-05-15
 
