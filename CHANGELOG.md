@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.1] — 2026-05-15
+
+### Fixed
+- Enforce dispatched reviews over inline — fix usage tracking
+
+
 ## [1.12.0] — 2026-05-15
 
 ### Added
@@ -216,7 +222,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.1...HEAD
+[1.12.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.1...v1.12.0
 [1.11.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.0...v1.11.1
 [1.11.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.10.0...v1.11.0
