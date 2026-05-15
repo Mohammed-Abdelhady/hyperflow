@@ -9,7 +9,7 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-Works immediately with defaults (Opus 4.6 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
+Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -40,8 +40,8 @@ Hyperflow Installer
 Model Configuration — Cursor
 
 Thinking model (orchestrator, reviewer, debugger):
-  [1] Claude 4.6 Opus — Hyperflow default
-  [2] Claude 4.7 Opus — Requires Max Mode
+  [1] Claude 4.7 Opus — Hyperflow default
+  [2] Claude 4.6 Opus — Previous Opus
   [3] GPT-5.5 — Latest GPT
   [4] Gemini 3.1 Pro — Standard availability
 
@@ -73,7 +73,7 @@ Hyperflow installed
   Config:    ~/.hyperflow/config.json
   Update:    git -C ~/.hyperflow/repo pull
 
-  Models:    thinking=claude-4.6-opus  worker=claude-4.6-sonnet
+  Models:    thinking=claude-4.7-opus  worker=claude-4.6-sonnet
   Security:  enabled
 ```
 
@@ -129,14 +129,14 @@ Add these to your `~/.claude/settings.json` for the full auto-pilot experience:
       "mcp__*"
     ]
   },
-  "model": "claude-opus-4-6",
+  "model": "claude-opus-4-7",
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true
 }
 ```
 
-This eliminates all permission prompts and pins the main session to Opus 4.6.
+This eliminates all permission prompts and pins the main session to Opus 4.7.
 
 ## Model Configuration
 
@@ -149,7 +149,7 @@ Create or edit `~/.hyperflow/config.json` directly:
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-6",
+    "thinking": "opus-4-7",
     "worker": "sonnet-4-6"
   }
 }
@@ -163,22 +163,22 @@ If you use multiple platforms, configure each one:
 {
   "activeProvider": null,
   "defaults": {
-    "thinking": "opus-4-6",
+    "thinking": "opus-4-7",
     "worker": "sonnet-4-6"
   },
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-6",
+      "thinking": "opus-4-7",
       "worker": "sonnet-4-6",
       "roles": {}
     },
     "cursor": {
-      "thinking": "claude-4.6-opus",
+      "thinking": "claude-4.7-opus",
       "worker": "claude-4.6-sonnet",
       "roles": {}
     },
     "opencode": {
-      "thinking": "anthropic/claude-opus-4-6",
+      "thinking": "anthropic/claude-opus-4-7",
       "worker": "anthropic/claude-sonnet-4-6",
       "roles": {}
     },
@@ -200,15 +200,15 @@ Override the model for specific roles within a provider:
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-6",
+    "thinking": "opus-4-7",
     "worker": "sonnet-4-6"
   },
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-6",
+      "thinking": "opus-4-7",
       "worker": "sonnet-4-6",
       "roles": {
-        "reviewer": "opus-4-7",
+        "reviewer": "opus-4-6",
         "searcher": "haiku-4-5"
       }
     }
@@ -253,7 +253,7 @@ Add project-specific patterns or remove defaults that don't apply:
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-6",
+    "thinking": "opus-4-7",
     "worker": "sonnet-4-6"
   },
   "security": {

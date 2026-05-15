@@ -153,10 +153,10 @@ configure_models_claude_code() {
   header "Model Configuration — Claude Code"
 
   pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Opus 4.6|Pinned Opus — Hyperflow default" \
-    "Opus 4.7|Latest Opus" \
+    "Opus 4.7|Latest Opus — Hyperflow default" \
+    "Opus 4.6|Previous Opus" \
     "Sonnet 4.6|Cost savings — less capable for review"
-  local thinking_options=("opus-4-6" "opus-4-7" "sonnet-4-6")
+  local thinking_options=("opus-4-7" "opus-4-6" "sonnet-4-6")
   SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
 
   echo ""
@@ -172,11 +172,11 @@ configure_models_cursor() {
   header "Model Configuration — Cursor"
 
   pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Claude 4.6 Opus|Hyperflow default" \
-    "Claude 4.7 Opus|Requires Max Mode" \
+    "Claude 4.7 Opus|Hyperflow default (may require Max Mode)" \
+    "Claude 4.6 Opus|Previous Opus" \
     "GPT-5.5|Latest GPT" \
     "Gemini 3.1 Pro|Standard availability"
-  local thinking_options=("claude-4.6-opus" "claude-4.7-opus" "gpt-5.5" "gemini-3.1-pro")
+  local thinking_options=("claude-4.7-opus" "claude-4.6-opus" "gpt-5.5" "gemini-3.1-pro")
   SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
 
   echo ""
@@ -194,11 +194,11 @@ configure_models_opencode() {
   header "Model Configuration — OpenCode"
 
   pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Claude Opus 4.6|Hyperflow default" \
-    "Claude Opus 4.7|Latest Opus" \
+    "Claude Opus 4.7|Hyperflow default" \
+    "Claude Opus 4.6|Previous Opus" \
     "GPT-5.5|Latest GPT" \
     "Gemini 3.1 Pro|2M context window"
-  local thinking_options=("anthropic/claude-opus-4-6" "anthropic/claude-opus-4-7" "openai/gpt-5.5" "google-vertex-ai/gemini-3.1-pro")
+  local thinking_options=("anthropic/claude-opus-4-7" "anthropic/claude-opus-4-6" "openai/gpt-5.5" "google-vertex-ai/gemini-3.1-pro")
   SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
 
   echo ""
@@ -218,8 +218,8 @@ configure_models_antigravity() {
   pick_one "Thinking model (orchestrator, reviewer, debugger):" \
     "Gemini 3.1 Pro|2M context — Hyperflow default" \
     "Gemini 3.1 Pro (Low)|Lighter variant" \
-    "Claude Opus 4.6|Free tier with limits"
-  local thinking_options=("gemini-3.1-pro" "gemini-3.1-pro-low" "claude-opus-4.6")
+    "Claude Opus 4.7|Free tier with limits"
+  local thinking_options=("gemini-3.1-pro" "gemini-3.1-pro-low" "claude-opus-4.7")
   SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
 
   echo ""

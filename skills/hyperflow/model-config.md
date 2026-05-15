@@ -11,7 +11,7 @@ Location: `~/.hyperflow/config.json` (global, all projects).
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-6",
+    "thinking": "opus-4-7",
     "worker": "sonnet-4-6"
   }
 }
@@ -23,15 +23,15 @@ Location: `~/.hyperflow/config.json` (global, all projects).
 {
   "activeProvider": null,
   "defaults": {
-    "thinking": "opus-4-6",
+    "thinking": "opus-4-7",
     "worker": "sonnet-4-6"
   },
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-6",
+      "thinking": "opus-4-7",
       "worker": "sonnet-4-6",
       "roles": {
-        "reviewer": "opus-4-7",
+        "reviewer": "opus-4-6",
         "searcher": "haiku-4-5"
       }
     }
