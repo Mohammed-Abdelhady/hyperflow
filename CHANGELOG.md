@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] — 2026-05-15
+
+### Added
+- Force multi-level agents inside every chain step (rule 12)
+
+### Fixed
+- Show interactive gates + questions + multi-level review
+
+### Changed
+- Raise demo.gif size threshold from 1.5 MB to 2 MB
+
+
 ## [2.1.0] — 2026-05-15
 
 ### Added
@@ -281,7 +293,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.1...v2.0.0
