@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "tagline": "Multi-agent orchestration for AI coding tools",
   "subtitle": "Thinking models think. Worker models execute. Everything runs in parallel with automatic review.",
   "layers": [
