@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1520"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1556"
      role="img" aria-labelledby="hf-title hf-desc"
      font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif">
-  <title id="hf-title">Hyperflow v2.0.1 — Sequenced multi-agent workflow for AI coding tools</title>
-  <desc id="hf-desc">Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets reviewed.</desc>
+  <title id="hf-title">Hyperflow v2.6.1 — Advanced multi-agent orchestration with persistent cross-session memory</title>
+  <desc id="hf-desc">Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere — every step dispatches its own Worker → Reviewer pair.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
@@ -38,24 +38,24 @@
     </marker>
   </defs>
 
-  <rect width="1400" height="1520" fill="url(#bg)"/>
+  <rect width="1400" height="1556" fill="url(#bg)"/>
 
   <g opacity="0.04" stroke="#94A3B8" stroke-width="1">
-    <path d="M0 80 H1400 M0 160 H1400 M0 240 H1400 M0 320 H1400 M0 400 H1400 M0 480 H1400 M0 560 H1400 M0 640 H1400 M0 720 H1400 M0 800 H1400 M0 880 H1400 M0 960 H1400 M0 1040 H1400 M0 1120 H1400 M0 1200 H1400 M0 1280 H1400 M0 1360 H1400 M0 1440 H1400"/>
-    <path d="M120 0 V1520 M240 0 V1520 M360 0 V1520 M480 0 V1520 M600 0 V1520 M720 0 V1520 M840 0 V1520 M960 0 V1520 M1080 0 V1520 M1200 0 V1520 M1320 0 V1520"/>
+    <path d="M0 80 H1400 M0 160 H1400 M0 240 H1400 M0 320 H1400 M0 400 H1400 M0 480 H1400 M0 560 H1400 M0 640 H1400 M0 720 H1400 M0 800 H1400 M0 880 H1400 M0 960 H1400 M0 1040 H1400 M0 1120 H1400 M0 1200 H1400 M0 1280 H1400 M0 1360 H1400 M0 1440 H1400 M0 1520 H1400"/>
+    <path d="M120 0 V1556 M240 0 V1556 M360 0 V1556 M480 0 V1556 M600 0 V1556 M720 0 V1556 M840 0 V1556 M960 0 V1556 M1080 0 V1556 M1200 0 V1556 M1320 0 V1556"/>
   </g>
 
   <!-- ======================== HEADER ======================== -->
   <g transform="translate(48,20)">
     <text y="46" fill="#F8FAFC" font-size="42" font-weight="800" letter-spacing="-1">Hyperflow</text>
-    <text y="74" fill="#94A3B8" font-size="15" font-weight="500">Sequenced multi-agent workflow for AI coding tools</text>
-    <text y="94" fill="#94A3B8" font-size="12" opacity="0.75">Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets</text>
-    <text y="110" fill="#94A3B8" font-size="12" opacity="0.75">reviewed.</text>
+    <text y="74" fill="#94A3B8" font-size="15" font-weight="500">Advanced multi-agent orchestration with persistent cross-session memory</text>
+    <text y="94" fill="#94A3B8" font-size="12" opacity="0.75">Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere — every step dispatches its own</text>
+    <text y="110" fill="#94A3B8" font-size="12" opacity="0.75">Worker → Reviewer pair.</text>
   </g>
   <rect x="1272" y="20" width="80" height="30" rx="15"
         fill="#0B0F1A" stroke="#334155" stroke-width="1.5"/>
   <text x="1312" y="40" text-anchor="middle"
-        fill="#94A3B8" font-size="13" font-weight="700">v2.0.1</text>
+        fill="#94A3B8" font-size="13" font-weight="700">v2.6.1</text>
 
   <!-- ======================== PROVIDERS ======================== -->
   <text x="48" y="152" fill="#94A3B8"
@@ -137,11 +137,11 @@
   <circle cx="80" cy="354" r="18"
           fill="url(#grad-thinking)" opacity="0.9"/>
   <text x="80" y="359" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">1</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">0.5</text>
   <text x="112" y="348"
-        fill="#F8FAFC" font-size="13" font-weight="700">Autonomy</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Task Triage</text>
   <text x="112" y="366"
-        fill="#94A3B8" font-size="11">Zero confirmations, minimal output, silent recovery</text>
+        fill="#94A3B8" font-size="11">Classify the task (types, complexity, risk, ambiguity, flow profile, personas) before any…</text>
   <rect x="48" y="382" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="382" width="4" height="48" rx="2"
@@ -149,102 +149,114 @@
   <circle cx="80" cy="406" r="18"
           fill="url(#grad-thinking)" opacity="0.9"/>
   <text x="80" y="411" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">2</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">1</text>
   <text x="112" y="400"
-        fill="#F8FAFC" font-size="13" font-weight="700">Model Routing</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Autonomy</text>
   <text x="112" y="418"
-        fill="#94A3B8" font-size="11">Configurable thinking/worker per provider + priority chain</text>
+        fill="#94A3B8" font-size="11">Zero confirmations, minimal output, silent recovery</text>
   <rect x="48" y="434" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="434" width="4" height="48" rx="2"
-        fill="url(#grad-worker)" opacity="0.9"/>
+        fill="url(#grad-thinking)" opacity="0.9"/>
   <circle cx="80" cy="458" r="18"
-          fill="url(#grad-worker)" opacity="0.9"/>
+          fill="url(#grad-thinking)" opacity="0.9"/>
   <text x="80" y="463" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">3</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">2</text>
   <text x="112" y="452"
-        fill="#F8FAFC" font-size="13" font-weight="700">Orchestrator</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Model Routing</text>
   <text x="112" y="470"
-        fill="#94A3B8" font-size="11">Decompose → parallel dispatch → review → synthesize</text>
+        fill="#94A3B8" font-size="11">Configurable thinking/worker per provider + priority chain</text>
   <rect x="48" y="486" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="486" width="4" height="48" rx="2"
-        fill="url(#grad-thinking)" opacity="0.9"/>
+        fill="url(#grad-worker)" opacity="0.9"/>
   <circle cx="80" cy="510" r="18"
-          fill="url(#grad-thinking)" opacity="0.9"/>
+          fill="url(#grad-worker)" opacity="0.9"/>
   <text x="80" y="515" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">4</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">3</text>
   <text x="112" y="504"
-        fill="#F8FAFC" font-size="13" font-weight="700">Brainstorming</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Orchestrator</text>
   <text x="112" y="522"
-        fill="#94A3B8" font-size="11">Design exploration + approval before implementation</text>
+        fill="#94A3B8" font-size="11">Decompose → parallel dispatch → review → synthesize</text>
   <rect x="48" y="538" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="538" width="4" height="48" rx="2"
-        fill="url(#grad-worker)" opacity="0.9"/>
+        fill="url(#grad-thinking)" opacity="0.9"/>
   <circle cx="80" cy="562" r="18"
-          fill="url(#grad-worker)" opacity="0.9"/>
+          fill="url(#grad-thinking)" opacity="0.9"/>
   <text x="80" y="567" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">5</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">4</text>
   <text x="112" y="556"
-        fill="#F8FAFC" font-size="13" font-weight="700">Quality Gates</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Brainstorming</text>
   <text x="112" y="574"
-        fill="#94A3B8" font-size="11">Automated lint/typecheck/tests after every review</text>
+        fill="#94A3B8" font-size="11">Design exploration + approval before implementation</text>
   <rect x="48" y="590" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="590" width="4" height="48" rx="2"
-        fill="url(#grad-memory)" opacity="0.9"/>
+        fill="url(#grad-worker)" opacity="0.9"/>
   <circle cx="80" cy="614" r="18"
-          fill="url(#grad-memory)" opacity="0.9"/>
+          fill="url(#grad-worker)" opacity="0.9"/>
   <text x="80" y="619" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">6</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">5</text>
   <text x="112" y="608"
-        fill="#F8FAFC" font-size="13" font-weight="700">Project Memory</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Quality Gates</text>
   <text x="112" y="626"
-        fill="#94A3B8" font-size="11">Persistent learnings in .hyperflow/memory/ (project-scoped, tagged, tiered)</text>
+        fill="#94A3B8" font-size="11">Automated lint/typecheck/tests after every review</text>
   <rect x="48" y="642" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="642" width="4" height="48" rx="2"
-        fill="url(#grad-worker)" opacity="0.9"/>
+        fill="url(#grad-memory)" opacity="0.9"/>
   <circle cx="80" cy="666" r="18"
-          fill="url(#grad-worker)" opacity="0.9"/>
+          fill="url(#grad-memory)" opacity="0.9"/>
   <text x="80" y="671" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">7</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">6</text>
   <text x="112" y="660"
-        fill="#F8FAFC" font-size="13" font-weight="700">Task Templates</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Project Memory</text>
   <text x="112" y="678"
-        fill="#94A3B8" font-size="11">Pre-built decomposition: CRUD, API, UI, migration, refactor, debug</text>
+        fill="#94A3B8" font-size="11">Persistent learnings in .hyperflow/memory/ (project-scoped, tagged, tiered)</text>
   <rect x="48" y="694" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="694" width="4" height="48" rx="2"
-        fill="url(#grad-git)" opacity="0.9"/>
+        fill="url(#grad-worker)" opacity="0.9"/>
   <circle cx="80" cy="718" r="18"
-          fill="url(#grad-git)" opacity="0.9"/>
+          fill="url(#grad-worker)" opacity="0.9"/>
   <text x="80" y="723" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">8</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">7</text>
   <text x="112" y="712"
-        fill="#F8FAFC" font-size="13" font-weight="700">Git Workflow</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Task Templates</text>
   <text x="112" y="730"
-        fill="#94A3B8" font-size="11">Auto-branch creation, auto-commit after approval</text>
+        fill="#94A3B8" font-size="11">Pre-built decomposition: CRUD, API, UI, migration, refactor, debug</text>
   <rect x="48" y="746" width="1304" height="48" rx="10"
         fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
   <rect x="48" y="746" width="4" height="48" rx="2"
-        fill="url(#grad-security)" opacity="0.9"/>
+        fill="url(#grad-git)" opacity="0.9"/>
   <circle cx="80" cy="770" r="18"
-          fill="url(#grad-security)" opacity="0.9"/>
+          fill="url(#grad-git)" opacity="0.9"/>
   <text x="80" y="775" text-anchor="middle"
-        fill="#0B0F1A" font-size="12" font-weight="800">9</text>
+        fill="#0B0F1A" font-size="12" font-weight="800">8</text>
   <text x="112" y="764"
-        fill="#F8FAFC" font-size="13" font-weight="700">Security</text>
+        fill="#F8FAFC" font-size="13" font-weight="700">Git Workflow</text>
   <text x="112" y="782"
+        fill="#94A3B8" font-size="11">Auto-branch creation, auto-commit after approval</text>
+  <rect x="48" y="798" width="1304" height="48" rx="10"
+        fill="rgba(255,255,255,0.02)" stroke="#334155" stroke-width="1" opacity="0.8"/>
+  <rect x="48" y="798" width="4" height="48" rx="2"
+        fill="url(#grad-security)" opacity="0.9"/>
+  <circle cx="80" cy="822" r="18"
+          fill="url(#grad-security)" opacity="0.9"/>
+  <text x="80" y="827" text-anchor="middle"
+        fill="#0B0F1A" font-size="12" font-weight="800">9</text>
+  <text x="112" y="816"
+        fill="#F8FAFC" font-size="13" font-weight="700">Security</text>
+  <text x="112" y="834"
         fill="#94A3B8" font-size="11">Prompt-injected blocklists for worker containment</text>
 
   <!-- ======================== SKILLS ======================== -->
-  <text x="48" y="858" fill="#94A3B8"
+  <text x="48" y="914" fill="#94A3B8"
         font-size="10" font-weight="700" letter-spacing="1.6">SKILLS</text>
-  <line x1="48" y1="862" x2="1352" y2="862"
+  <line x1="48" y1="918" x2="1352" y2="918"
         stroke="#334155" stroke-width="1" opacity="0.5"/>
-  <g transform="translate(48,866)">
+  <g transform="translate(48,922)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="145" height="22" rx="11"
@@ -253,7 +265,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Project setup</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Analyze project, create .hyperflow/ cache, install multi-tool shims</text>
   </g>
-  <g transform="translate(708,866)">
+  <g transform="translate(708,922)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="117" height="22" rx="11"
@@ -262,7 +274,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Specify the design</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Multi-dimensional analysis + alternatives — refuses to code before appr…</text>
   </g>
-  <g transform="translate(48,970)">
+  <g transform="translate(48,1026)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="124" height="22" rx="11"
@@ -271,7 +283,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Decompose the work</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Decompose into parallel worker subtasks; writes task file; auto-chains …</text>
   </g>
-  <g transform="translate(708,970)">
+  <g transform="translate(708,1026)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="145" height="22" rx="11"
@@ -280,7 +292,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Execute the batches</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Dispatch parallel workers + thinking-tier reviews + final integration r…</text>
   </g>
-  <g transform="translate(48,1074)">
+  <g transform="translate(48,1130)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="124" height="22" rx="11"
@@ -289,7 +301,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Root-cause a bug</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Systematic 5-Whys + hypothesis testing — never patches symptoms</text>
   </g>
-  <g transform="translate(708,1074)">
+  <g transform="translate(708,1130)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="124" height="22" rx="11"
@@ -298,7 +310,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Code review</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">L1 quick → L5 exhaustive review on changes, files, or PRs</text>
   </g>
-  <g transform="translate(48,1178)">
+  <g transform="translate(48,1234)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="131" height="22" rx="11"
@@ -307,7 +319,7 @@
     <text x="12" y="52" fill="#F8FAFC" font-size="13" font-weight="700">Pre-push gates</text>
     <text x="12" y="70" fill="#94A3B8" font-size="11">Lint, typecheck, build, tests, security sweep, commit, release, push (p…</text>
   </g>
-  <g transform="translate(708,1178)">
+  <g transform="translate(708,1234)">
     <rect width="644" height="88" rx="12"
           fill="rgba(167,139,250,0.05)" stroke="#334155" stroke-width="1"/>
     <rect x="12" y="12" width="124" height="22" rx="11"
@@ -318,105 +330,105 @@
   </g>
 
   <!-- ======================== CAPABILITIES ======================== -->
-  <text x="48" y="1102" fill="#94A3B8"
+  <text x="48" y="1158" fill="#94A3B8"
         font-size="10" font-weight="700" letter-spacing="1.6">CAPABILITIES</text>
-  <line x1="48" y1="1106" x2="1352" y2="1106"
+  <line x1="48" y1="1162" x2="1352" y2="1162"
         stroke="#334155" stroke-width="1" opacity="0.5"/>
-  <circle cx="54" cy="1106" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1110"
+  <circle cx="54" cy="1162" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1166"
         fill="#94A3B8" font-size="11">Parallel worker dispatch (independent subtasks run simultaneously)</text>
-  <circle cx="54" cy="1126" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1130"
+  <circle cx="54" cy="1182" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1186"
         fill="#94A3B8" font-size="11">Thinking-tier review of every worker output (iron rule)</text>
-  <circle cx="54" cy="1146" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1150"
+  <circle cx="54" cy="1202" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1206"
         fill="#94A3B8" font-size="11">Multi-level review depth (L1-L5)</text>
-  <circle cx="54" cy="1166" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1170"
+  <circle cx="54" cy="1222" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1226"
         fill="#94A3B8" font-size="11">Systematic root-cause debugging</text>
-  <circle cx="54" cy="1186" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1190"
+  <circle cx="54" cy="1242" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1246"
         fill="#94A3B8" font-size="11">Project-scoped persistent memory with tag taxonomy</text>
-  <circle cx="54" cy="1206" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1210"
+  <circle cx="54" cy="1262" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1266"
         fill="#94A3B8" font-size="11">Hot/warm/cold memory tiering with automatic compression</text>
-  <circle cx="54" cy="1226" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1230"
+  <circle cx="54" cy="1282" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1286"
         fill="#94A3B8" font-size="11">Lazy memory injection (only tag-matched entries per task)</text>
-  <circle cx="54" cy="1246" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="64" y="1250"
+  <circle cx="54" cy="1302" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="64" y="1306"
         fill="#94A3B8" font-size="11">Multi-tool auto-detection (AGENTS.md, Cursor rules, GEMINI.md, CLAUDE.md)</text>
-  <circle cx="714" cy="1106" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1110"
+  <circle cx="714" cy="1162" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1166"
         fill="#94A3B8" font-size="11">5 provider support (Claude Code, Cursor, OpenCode, Codex, Antigravity)</text>
-  <circle cx="714" cy="1126" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1130"
+  <circle cx="714" cy="1182" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1186"
         fill="#94A3B8" font-size="11">Auto-detect provider via env vars or folder presence</text>
-  <circle cx="714" cy="1146" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1150"
+  <circle cx="714" cy="1202" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1206"
         fill="#94A3B8" font-size="11">Configurable model routing per role</text>
-  <circle cx="714" cy="1166" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1170"
+  <circle cx="714" cy="1222" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1226"
         fill="#94A3B8" font-size="11">Quality gates (lint, typecheck, build, tests)</text>
-  <circle cx="714" cy="1186" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1190"
+  <circle cx="714" cy="1242" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1246"
         fill="#94A3B8" font-size="11">Security blocklists for sensitive files and destructive commands</text>
-  <circle cx="714" cy="1206" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1210"
+  <circle cx="714" cy="1262" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1266"
         fill="#94A3B8" font-size="11">Conventional commits + automated release versioning</text>
-  <circle cx="714" cy="1226" r="3" fill="#94A3B8" opacity="0.5"/>
-  <text x="724" y="1230"
+  <circle cx="714" cy="1282" r="3" fill="#94A3B8" opacity="0.5"/>
+  <text x="724" y="1286"
         fill="#94A3B8" font-size="11">Task tracking with incomplete-task recovery across sessions</text>
 
   <!-- ======================== DETECTION SHIMS ======================== -->
-  <text x="48" y="1290" fill="#94A3B8"
+  <text x="48" y="1346" fill="#94A3B8"
         font-size="10" font-weight="700" letter-spacing="1.6">MULTI-TOOL AUTO-DETECTION</text>
-  <line x1="48" y1="1294" x2="1352" y2="1294"
+  <line x1="48" y1="1350" x2="1352" y2="1350"
         stroke="#334155" stroke-width="1" opacity="0.5"/>
-  <text x="48" y="1298"
+  <text x="48" y="1354"
         fill="#94A3B8" font-size="10" font-weight="700" letter-spacing="0.8">TOOL</text>
-  <text x="708" y="1298"
+  <text x="708" y="1354"
         fill="#94A3B8" font-size="10" font-weight="700" letter-spacing="0.8">SHIM FILE WRITTEN</text>
-  <text x="48" y="1316" fill="#F8FAFC" font-size="11">Codex / OpenCode / Copilot</text>
-  <text x="708" y="1316"
+  <text x="48" y="1372" fill="#F8FAFC" font-size="11">Codex / OpenCode / Copilot</text>
+  <text x="708" y="1372"
         fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">AGENTS.md</text>
-  <text x="48" y="1332" fill="#F8FAFC" font-size="11">Cursor</text>
-  <text x="708" y="1332"
+  <text x="48" y="1388" fill="#F8FAFC" font-size="11">Cursor</text>
+  <text x="708" y="1388"
         fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">.cursor/rules/hyperflow.mdc</text>
-  <text x="48" y="1348" fill="#F8FAFC" font-size="11">Antigravity / Gemini CLI</text>
-  <text x="708" y="1348"
+  <text x="48" y="1404" fill="#F8FAFC" font-size="11">Antigravity / Gemini CLI</text>
+  <text x="708" y="1404"
         fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">GEMINI.md</text>
-  <text x="48" y="1364" fill="#F8FAFC" font-size="11">Claude Code</text>
-  <text x="708" y="1364"
+  <text x="48" y="1420" fill="#F8FAFC" font-size="11">Claude Code</text>
+  <text x="708" y="1420"
         fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">CLAUDE.md (appended in place)</text>
 
   <!-- ======================== MEMORY TIERS ======================== -->
-  <text x="48" y="1386" fill="#94A3B8"
+  <text x="48" y="1442" fill="#94A3B8"
         font-size="10" font-weight="700" letter-spacing="1.6">MEMORY TIERS</text>
-  <line x1="48" y1="1390" x2="1352" y2="1390"
+  <line x1="48" y1="1446" x2="1352" y2="1446"
         stroke="#334155" stroke-width="1" opacity="0.5"/>
-  <rect x="48" y="1394" width="424" height="42" rx="10"
+  <rect x="48" y="1450" width="424" height="42" rx="10"
         fill="rgba(245,158,11,0.12)" stroke="#F59E0B" stroke-width="1"/>
-  <text x="260" y="1411" text-anchor="middle"
+  <text x="260" y="1467" text-anchor="middle"
         fill="#F59E0B" font-size="13" font-weight="700">HOT</text>
-  <text x="260" y="1427" text-anchor="middle"
+  <text x="260" y="1483" text-anchor="middle"
         fill="#94A3B8" font-size="11">≤7 days · eager</text>
-  <rect x="488" y="1394" width="424" height="42" rx="10"
+  <rect x="488" y="1450" width="424" height="42" rx="10"
         fill="rgba(148,163,184,0.08)" stroke="#334155" stroke-width="1"/>
-  <text x="700" y="1411" text-anchor="middle"
+  <text x="700" y="1467" text-anchor="middle"
         fill="#94A3B8" font-size="13" font-weight="700">WARM</text>
-  <text x="700" y="1427" text-anchor="middle"
+  <text x="700" y="1483" text-anchor="middle"
         fill="#94A3B8" font-size="11">8-30 days · tag-matched</text>
-  <rect x="928" y="1394" width="424" height="42" rx="10"
+  <rect x="928" y="1450" width="424" height="42" rx="10"
         fill="rgba(239,68,68,0.08)" stroke="#EF4444" stroke-width="1"/>
-  <text x="1140" y="1411" text-anchor="middle"
+  <text x="1140" y="1467" text-anchor="middle"
         fill="#EF4444" font-size="13" font-weight="700">COLD</text>
-  <text x="1140" y="1427" text-anchor="middle"
+  <text x="1140" y="1483" text-anchor="middle"
         fill="#94A3B8" font-size="11">30+ days · explicit only, compressed</text>
 
   <!-- ======================== FOOTER ======================== -->
-  <text x="48" y="1476"
+  <text x="48" y="1532"
         fill="#475569" font-size="11" font-weight="500">
-    github.com/Mohammed-Abdelhady/hyperflow · v2.0.1</text>
+    github.com/Mohammed-Abdelhady/hyperflow · v2.6.1</text>
 
 </svg>
