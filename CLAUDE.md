@@ -19,6 +19,29 @@ A Claude Code plugin providing autonomous multi-agent orchestration. Skills live
 - SKILL.md body stays under 500 lines — split into reference files if needed
 - Reference files are one level deep from SKILL.md (no nested references)
 
+## Commit Cadence — One Task Per Commit (MANDATORY)
+
+This repo's own development follows the same per-task commit rule that `skills/hyperflow/git-workflow.md` rule 2 prescribes for `/hyperflow:dispatch`. Eat the dogfood.
+
+**Rule:** every distinct task or request the user gives produces its own commit. Never bundle two features, two fixes, or a feature-plus-its-doc-update into a single commit just because you happen to be touching both files in one session.
+
+**Concretely:**
+
+| User asked for | Commits to produce |
+|---|---|
+| "Fix decorative-char violations in escalation.md" | 1 commit — `fix(style): …` |
+| "Add per-task commits to dispatch AND ask audit/deploy gates" | **2 commits** — one for the commit-cadence rule, one for the gate questions. Not one combined commit. |
+| "Add /hyperflow:newskill that does X (+ update README + features.json)" | 1 commit — README and features.json belong to the feature's commit (they document/register the same change) |
+| "Refresh repo description AND plugin description" | 2 commits — different surfaces, different audiences |
+
+**Edge cases:**
+
+- A single feature naturally touches several files (skill body + README table + features.json registration) → still 1 commit, because those files all describe the same change.
+- A README badge bump that happens because `release.sh` ran → folded into the `chore(release):` commit; that's correct.
+- A typo fix discovered while doing feature X → separate commit, `fix(typo): …`, even though you noticed it during feature X work.
+
+**Why:** bisectable history, surgical reverts, clean PRs, readable changelogs. Mirrors what dispatch enforces for user-facing work.
+
 ## Git Push Flow
 
 When pushing, always run `./scripts/release.sh` first:
@@ -29,6 +52,8 @@ When pushing, always run `./scripts/release.sh` first:
 5. Then push with `git push && git push --tags`
 
 If release.sh says "Nothing to release", skip and push directly.
+
+**Caveat:** the per-task commit rule above runs *before* release.sh. By the time release.sh runs, the working tree already has N small task-commits — release.sh just adds its own `chore(release):` on top. Don't try to fold multiple tasks into one commit just to keep the release tidy.
 
 ## README Maintenance
 
