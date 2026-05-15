@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1] — 2026-05-16
+
+### Fixed
+- Rule 9 expanded — no LLM as narrative subject anywhere
+
+### Changed
+- Mandate per-task commits when developing this repo
+
+
 ## [2.6.0] — 2026-05-16
 
 ### Added
@@ -342,7 +351,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.1...HEAD
+[2.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.5.1...v2.6.0
 [2.5.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.4.0...v2.5.0
