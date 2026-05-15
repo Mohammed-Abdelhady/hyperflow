@@ -333,7 +333,7 @@ Each profile has a soft budget. The orchestrator tracks cumulative token usage p
 Profile: deep (budget: 300k)
 Thinking (Opus 4.7)   4 agents   80k
 Worker   (Sonnet 4.6) 9 agents  220k
-Total                13 agents  300k  ✓ within budget
+Total                13 agents  300k  · within budget
 ─────────────────────────────────────────
 ```
 

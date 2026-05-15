@@ -135,7 +135,7 @@ When a worker returns `ESCALATE: <reason>`, the orchestrator follows this sequen
 4. Pick the new profile per the escalation paths table above. If multiple paths apply, take the highest profile.
 5. Print to the user:
    ```text
-   ⚡ ESCALATED: <from> → <to>. Reason: <reason>
+   ESCALATED — <from> → <to> · reason: <reason>
    ```
 6. Preserve the worker's partial output as input context for the next batch. Prepend it to the next batch's context as: `Prior work (before escalation): <output>`. Do not discard completed work.
 7. Re-plan: generate a fresh task breakdown under the new profile. Completed sub-tasks do not need to be re-run unless the escalation reason invalidates them.
@@ -270,7 +270,7 @@ The `actual` field reads `under`, `over`, `yellow` (1.5×–2.0×), or `red` (>2
 
 The `types` field mirrors what triage identified (e.g., `[api, db, config]`). If escalation surfaced new types mid-flight, append them with a `*` marker: `[api, db, config*]` where `*` means discovered during execution.
 
-If the task was downgraded, the profile line reads: `Profile: deep → standard | budget: 200k → 100k | actual: 78k ✓` to make the downgrade visible at a glance.
+If the task was downgraded, the profile line reads: `Profile: deep → standard · budget: 200k → 100k · actual: 78k (under)` to make the downgrade visible at a glance.
 
 ---
 
@@ -280,7 +280,7 @@ If the task was downgraded, the profile line reads: `Profile: deep → standard 
 
 **Do not downgrade to save tokens if the task is risky.** Token budget is secondary to correctness and safety. Never downgrade a task touching auth, secrets, or prod config just because it is running long. When in doubt: stay at the higher profile.
 
-**Do not swallow ESCALATE signals.** If a worker returns `ESCALATE:`, the orchestrator must surface it. Silent escalation handling (absorbing the signal and continuing at the same profile) defeats the purpose and hides scope creep from the user. The `⚡ ESCALATED` line must always be printed.
+**Do not swallow ESCALATE signals.** If a worker returns `ESCALATE:`, the orchestrator must surface it. Silent escalation handling (absorbing the signal and continuing at the same profile) defeats the purpose and hides scope creep from the user. The `ESCALATED —` line must always be printed.
 
 **Do not skip risk escalation for "small" irreversible changes.** There is no such thing as a small schema drop or a minor auth bypass. The irreversibility check is binary — it either is or it isn't. Size does not factor in.
 
