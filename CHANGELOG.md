@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-05-15
+
+### Added
+- Move spec files from docs/specs/ to .hyperflow/specs/
+
+
 ## [2.4.0] — 2026-05-15
 
 ### Added
@@ -315,7 +321,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.2.1...v2.3.0
 [2.2.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.2.0...v2.2.1
