@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] — 2026-05-15
+
+### Added
+- TriageFlow — adaptive flow profiles + 15 personas
+
+### Changed
+- Document TriageFlow orchestrator for v1.11.0
+- Modernize README and enforce README-on-every-push
+
+
 ### Added
 - **Layer 0.5: Task Triage** — every user request now starts with a cheap thinking-tier classification call producing `{ types[], complexity, risk, scope, ambiguity, brainstormDepth, flow, personas[], estimatedWorkers, estimatedBatches, budget, rationale }` JSON. The output drives every downstream decision. See `skills/hyperflow/task-triage.md`.
 
@@ -244,7 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.13.0...HEAD
+[1.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.1...v1.12.0
 [1.11.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.11.0...v1.11.1
