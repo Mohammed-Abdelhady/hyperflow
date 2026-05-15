@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
   "version": "1.13.1",
-  "tagline": "Multi-agent orchestration for AI coding tools",
-  "subtitle": "Thinking models think. Worker models execute. Everything runs in parallel with automatic review.",
+  "tagline": "Sequenced multi-agent workflow for AI coding tools",
+  "subtitle": "Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets reviewed.",
   "layers": [
     {
       "n": 0,
@@ -67,52 +67,60 @@
   ],
   "skills": [
     {
-      "name": "hyperflow",
-      "command": "/hyperflow:hyperflow",
-      "tagline": "All-in-one orchestrator",
-      "purpose": "Main orchestration that runs on every task"
-    },
-    {
-      "name": "init",
-      "command": "/hyperflow:init",
+      "name": "scaffold",
+      "command": "/hyperflow:scaffold",
       "tagline": "Project setup",
-      "purpose": "Analyze project, create .hyperflow/ cache, install multi-tool shims"
+      "purpose": "Analyze project, create .hyperflow/ cache, install multi-tool shims",
+      "chain": "standalone"
     },
     {
-      "name": "review",
-      "command": "/hyperflow:review",
-      "tagline": "Multi-level code review",
-      "purpose": "L1 quick \u2192 L5 exhaustive review on changes, files, or PRs"
+      "name": "spec",
+      "command": "/hyperflow:spec",
+      "tagline": "Specify the design",
+      "purpose": "Multi-dimensional analysis + alternatives \u2014 refuses to code before approval; auto-chains to scope",
+      "chain": "starter"
     },
     {
-      "name": "debug",
-      "command": "/hyperflow:debug",
-      "tagline": "Root-cause analysis",
-      "purpose": "Systematic 5-Whys + hypothesis testing \u2014 never patches symptoms"
+      "name": "scope",
+      "command": "/hyperflow:scope",
+      "tagline": "Decompose the work",
+      "purpose": "Decompose into parallel worker subtasks; writes task file; auto-chains to dispatch",
+      "chain": "starter"
     },
     {
-      "name": "brainstorm",
-      "command": "/hyperflow:brainstorm",
-      "tagline": "Design exploration",
-      "purpose": "Multi-dimensional analysis + alternatives \u2014 refuses to code before approval"
+      "name": "dispatch",
+      "command": "/hyperflow:dispatch",
+      "tagline": "Execute the batches",
+      "purpose": "Dispatch parallel workers + thinking-tier reviews + final integration review; endpoint of the chain",
+      "chain": "endpoint"
     },
     {
-      "name": "plan",
-      "command": "/hyperflow:plan",
-      "tagline": "Task decomposition",
-      "purpose": "Decompose into parallel worker subtasks; writes task file; does not execute"
+      "name": "trace",
+      "command": "/hyperflow:trace",
+      "tagline": "Root-cause a bug",
+      "purpose": "Systematic 5-Whys + hypothesis testing \u2014 never patches symptoms",
+      "chain": "standalone"
     },
     {
-      "name": "ship",
-      "command": "/hyperflow:ship",
+      "name": "audit",
+      "command": "/hyperflow:audit",
+      "tagline": "Code review",
+      "purpose": "L1 quick \u2192 L5 exhaustive review on changes, files, or PRs",
+      "chain": "standalone"
+    },
+    {
+      "name": "deploy",
+      "command": "/hyperflow:deploy",
       "tagline": "Pre-push gates",
-      "purpose": "Lint, typecheck, build, tests, security sweep, commit, release, push"
+      "purpose": "Lint, typecheck, build, tests, security sweep, commit, release, push (push always asks)",
+      "chain": "standalone"
     },
     {
-      "name": "memory",
-      "command": "/hyperflow:memory",
+      "name": "cache",
+      "command": "/hyperflow:cache",
       "tagline": "Memory CRUD",
-      "purpose": "Show, search, add, edit, prune, archive, clear, stats, migrate"
+      "purpose": "Show, search, add, edit, prune, archive, clear, stats, migrate",
+      "chain": "standalone"
     }
   ],
   "providers": [

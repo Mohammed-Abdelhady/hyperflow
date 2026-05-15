@@ -56,11 +56,11 @@ Opus determines complexity BEFORE dispatching the reviewer:
 ## Output format
 ```
 ── Review ──────────────────────────────
-✓ L1 Requirements    [summary]
-✓ L2 Code Quality    [summary]
-✓ L3 Integration     [summary]
-✗ L4 Performance     [issue found]
-⊘ L5 UX/A11y        Skipped
+L1 Requirements    pass     — [summary]
+L2 Code Quality    pass     — [summary]
+L3 Integration     pass     — [summary]
+L4 Performance     fail     — [issue found]
+L5 UX/A11y         skipped  — not applicable
 ────────────────────────────────────────
 VERDICT: APPROVED | NEEDS_FIX | SECURITY_VIOLATION
 [Issues per failed level]
@@ -104,7 +104,7 @@ Complexity: Complex (4 files, new feature, security-sensitive)
 
 ## Output format
 ── Review ──
-✓/✗/⊘ per level + VERDICT`
+pass / fail / skipped per level + VERDICT`
 })
 ```
 

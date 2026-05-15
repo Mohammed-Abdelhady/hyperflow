@@ -41,18 +41,18 @@ Opus classifies before dispatching. Classification criteria:
 
 ```
 ── Review ──────────────────────────────
-✓ L1 Requirements    [one-line summary]
-✓ L2 Code Quality    [one-line summary]
-✓ L3 Integration     [one-line summary]
-✗ L4 Performance     [specific issue found]
-⊘ L5 UX/A11y        Skipped (not applicable)
+L1 Requirements    pass     — [one-line summary]
+L2 Code Quality    pass     — [one-line summary]
+L3 Integration     pass     — [one-line summary]
+L4 Performance     fail     — [specific issue found]
+L5 UX/A11y         skipped  — not applicable
 ────────────────────────────────────────
 VERDICT: APPROVED | NEEDS_FIX | SECURITY_VIOLATION
 [If NEEDS_FIX: specific issues per level, each on its own line]
 [Notes for future tasks if any]
 ```
 
-Symbols: `✓` passed · `✗` failed (blocks approval) · `⊘` skipped (not applicable)
+Status words: `pass` (level passed) · `fail` (blocks approval) · `skipped` (not applicable). Plain words only — no `✓` / `✗` / `⊘`.
 
 ---
 

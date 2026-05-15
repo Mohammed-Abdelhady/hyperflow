@@ -1,15 +1,17 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  Multi-agent orchestration for Claude Code, Cursor, OpenCode, Codex, and Antigravity.
+  <strong>Sequenced multi-agent workflow for Claude Code, Cursor, OpenCode, Codex, and Antigravity.</strong>
 </p>
 
 <p align="center">
-  Thinking models orchestrate. Worker models execute. Every output reviewed. Project memory persisted. Quality gates enforced.
+  Start anywhere. Auto-advance through the chain.<br/>
+  <code>scaffold</code> → <code>spec</code> → <code>scope</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
+  Thinking models think. Worker models execute. Every output gets reviewed. Project memory persisted. Quality gates enforced.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.10.0-blueviolet?style=flat-square" alt="version v1.10.0" />
+  <img src="https://img.shields.io/badge/version-v1.13.1-blueviolet?style=flat-square" alt="version v1.13.1" />
   &nbsp;
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
   &nbsp;
@@ -31,7 +33,50 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Hyperflow Claude Code plugin demo — multi-agent orchestration with parallel worker execution, automatic code review, quality gates, and persistent project memory" width="100%" />
+  <img src="docs/assets/hero.svg" alt="Hyperflow orchestration flow: thinking-model orchestrator decomposes a task, three worker-model agents execute in parallel, the reviewer synthesizes outputs, and a final worker integrates with learnings injected back into the next batch" width="100%" />
+</p>
+
+---
+
+## How It Works
+
+Hyperflow is **not always-on**. You invoke a skill, and chain-starters auto-advance forward through the rest of the chain.
+
+```
+/hyperflow:spec "Add user auth with login page and middleware"
+    │
+    │ Step 0 — asks: auto or manual chain mode?
+    │ Triage classifies the task (flow profile, depth, personas)
+    │ Step 1–8 — asks design questions, proposes approaches, approves design
+    ▼
+/hyperflow:scope (auto-invoked, inherits chain mode + triage)
+    │
+    │ Decomposes into a task file with parallel batches
+    │ Writes .hyperflow/tasks/add-auth.md
+    ▼
+/hyperflow:dispatch (auto-invoked, inherits chain mode + triage)
+    │
+    │ Batch 1 (parallel) — 3 workers, each persona-stitched and thinking-tier reviewed
+    │ Batch 2 — depends on batch 1, gets learnings injected
+    │ Final integration review
+    ▼
+Done. Next: /hyperflow:deploy (gates + commit + push) — user-explicit, not auto.
+```
+
+**Chain mode** is set once at the first skill's Step 0:
+
+- **Auto** — chain forward through each phase with no confirmations
+- **Manual** — pause between phases and confirm before advancing
+
+**Start from any skill:**
+
+- `/hyperflow:spec` — when the design is ambiguous → auto-chains to `scope` → `dispatch`
+- `/hyperflow:scope` — when the spec is clear → auto-chains to `dispatch`
+- `/hyperflow:dispatch` — when a task file already exists in `.hyperflow/tasks/`
+- `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, `/hyperflow:scaffold`, `/hyperflow:cache` — standalone, don't chain
+
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Hyperflow — chain-of-skills with parallel dispatch, quality gates, and persistent memory" width="100%" />
 </p>
 
 ---
@@ -48,21 +93,21 @@
 
 ---
 
-## How it works
+## Inside a chain
 
-Instead of a single agent doing everything, Hyperflow splits every task into a **thinking-model orchestrator** coordinating **worker-model agents** in parallel — with automatic code review after every change.
-
-Every request starts with a **triage call** that classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }`. That classification drives the flow profile, brainstorm depth, and which persona blocks are stitched into each worker prompt.
+Every chain-starter begins with a **triage call** that classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }`. That classification picks the flow profile, the spec depth, and which persona blocks are stitched into each worker prompt.
 
 ```text
-You: "Build user auth with login page, middleware, and password reset"
+You: /hyperflow:spec "Build user auth with login page, middleware, and password reset"
          │
 [Triage] ─ types: [api, db, security, frontend, ui]
            complexity: complex  flow: deep  ambiguity: 0.55
          │
-[Brainstorm] ─ standard depth (2-3 questions) → design approved
+[Spec] ─ standard depth (2-3 questions) → design approved
          │
-[Deep flow] ─ Decompose, dispatch parallel workers with stitched personas:
+[Scope] ─ Decompose, write .hyperflow/tasks/auth.md
+         │
+[Dispatch — deep flow] ─ Parallel workers with stitched personas:
          │
          ├── Worker 1  [security + api]   — Auth middleware
          ├── Worker 2  [db + security]    — User schema + migration
@@ -74,6 +119,42 @@ You: "Build user auth with login page, middleware, and password reset"
          │
        Done. (Budget: 287k / 300k — within profile)
 ```
+
+## Skills
+
+Hyperflow ships **8 specialized skills**. There is no always-on orchestrator — you pick the entry point, and chain-starters auto-advance forward.
+
+### Chain-starting skills (auto-advance forward)
+
+| Skill | Command | Phase | Auto-chains to |
+|-------|---------|-------|----------------|
+| **Spec** | `/hyperflow:spec` | Specify the design | `scope` → `dispatch` |
+| **Scope** | `/hyperflow:scope` | Decompose the work | `dispatch` |
+| **Dispatch** | `/hyperflow:dispatch` | Execute the batches | endpoint — suggests `audit`/`deploy` |
+
+Each chain-starter asks at Step 0 whether to advance **auto** (no gates between phases) or **manual** (confirm before each phase), then propagates that mode to the next skill via the `Skill` tool's `args` parameter.
+
+### Standalone skills
+
+| Skill | Command | Phase | Purpose |
+|-------|---------|-------|---------|
+| **Scaffold** | `/hyperflow:scaffold` | Project setup | Analyzes the project, creates `.hyperflow/` cache, installs multi-tool auto-detection shims |
+| **Trace** | `/hyperflow:trace` | Root-cause a bug | Systematic 5 Whys + hypothesis testing — never blind-patches symptoms |
+| **Audit** | `/hyperflow:audit` | Code review | Multi-level review (L1 quick → L5 exhaustive) on uncommitted changes, a file/range, or a PR |
+| **Deploy** | `/hyperflow:deploy` | Pre-push gates | Lint + typecheck + build + tests + security sweep + commit + release + push (push always asks) |
+| **Cache** | `/hyperflow:cache` | Memory CRUD | `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off` |
+
+**Reuse architecture:** every skill is ~80–150 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
+
+**Typical chains:**
+- New feature, ambiguous scope → `/hyperflow:spec` → (auto) `scope` → `dispatch` → suggest `deploy`
+- New feature, clear spec → `/hyperflow:scope` → (auto) `dispatch` → suggest `deploy`
+- Hit a bug → `/hyperflow:trace` → internal audit → suggest `deploy`
+- New project → `/hyperflow:scaffold` → stop; user picks next entry point
+
+**Model routing:** Reviewer/Debugger agents use the thinking-tier model (Opus 4.7 in Claude Code by default); Implementer/Searcher/Writer agents use the worker-tier (Sonnet 4.6). Configurable via `~/.hyperflow/config.json`.
+
+**Output style:** elegant, no decorative icons. Agent labels use `Role — short description` with `**Reviewer**` and `**Debugger**` in bold; workers stay plain. Full spec in [`skills/hyperflow/output-style.md`](skills/hyperflow/output-style.md).
 
 ---
 
@@ -100,29 +181,17 @@ curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/i
 
 The installer auto-detects your tool, symlinks the skill, and walks you through model and security configuration.
 
-**Activate:**
+**Invoke a skill:**
 
 ```text
-You: /hyperflow
-[Hyperflow loaded — autonomous orchestration active]
+You: /hyperflow:scaffold                       # first-time project setup
+You: /hyperflow:spec "add auth"                # design → scope → dispatch (auto-chain)
+You: /hyperflow:scope "fix login bug"          # scope → dispatch
+You: /hyperflow:trace                          # root-cause a failing test
+You: /hyperflow:deploy                         # pre-push gates + commit + push
 ```
 
----
-
-## Skills
-
-Hyperflow ships 8 skills. The main `hyperflow` skill runs automatically on every task; the remaining 7 are focused workflows you invoke directly.
-
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| hyperflow | `/hyperflow:hyperflow` | All-in-one orchestrator that runs on every task — research, plan, dispatch, review, integrate |
-| init | `/hyperflow:init` | Set up `.hyperflow/` cache, install multi-tool auto-detection shims, refresh analysis |
-| review | `/hyperflow:review` | Multi-level code review (L1–L5) on uncommitted changes or a target |
-| debug | `/hyperflow:debug` | Systematic root-cause analysis for bugs and test failures — fixes the cause, not the symptom |
-| brainstorm | `/hyperflow:brainstorm` | Design exploration with section-by-section approval — never writes code until approved |
-| plan | `/hyperflow:plan` | Decompose a task into worker subtasks; writes `.hyperflow/tasks/<slug>.md`; does not execute |
-| ship | `/hyperflow:ship` | Pre-push gates (lint, typecheck, build, tests) + commit + release + push in one flow |
-| memory | `/hyperflow:memory` | CRUD on `.hyperflow/memory/` — show, search, add, prune, archive, clear |
+There is no always-on activation. Each slash command runs its skill and (for chain-starters) auto-advances until the review phase. The user is asked **once** at Step 0 whether to advance in auto or manual mode.
 
 ---
 
@@ -131,15 +200,82 @@ Hyperflow ships 8 skills. The main `hyperflow` skill runs automatically on every
 | Layer | Name | Summary |
 |-------|------|---------|
 | L0 | Project analysis | Caches tech stack, architecture, and conventions in `.hyperflow/` |
+| L0.5 | Task triage | Classifies each request into `{ types, complexity, risk, flow, personas[] }` to drive the rest |
 | L1 | Autonomy | Zero confirmations, minimal output, silent error recovery |
 | L2 | Model routing | Configurable thinking/worker models per provider + priority chain |
 | L3 | Orchestrator | Decompose → parallel dispatch → review → synthesize → integrate |
-| L4 | Brainstorming | Design exploration with approval before implementation |
+| L4 | Spec (Brainstorming) | Design exploration with approval before implementation |
 | L5 | Quality gates | Automated lint, typecheck, build, tests after every review |
 | L6 | Project memory | Persistent learnings in `.hyperflow/memory/` (tagged, tiered) |
 | L7 | Task templates | Pre-built decomposition (CRUD, API, UI, migration, refactor, bug fix) |
 | L8 | Git workflow | Auto-branch, auto-commit after approval, never auto-push |
 | L9 | Security | Prompt-injected blocklists for sensitive files and dangerous commands |
+
+---
+
+## Examples
+
+<details open>
+<summary><strong>Implementation</strong> — clear approach, just build it</summary>
+
+```
+You: /hyperflow:scope "Add a search bar to the dashboard with debounced input"
+
+  Triage      classifies: standard flow, 2 files, ambiguity 0.1
+  Scope       decomposes into: SearchBar + useDebounce + wire into Dashboard
+  Dispatch    Implementer — builds SearchBar          ─┐
+              Implementer — creates useDebounce        ├── parallel
+                                                       ─┘
+  **Reviewer** reviews both outputs
+  Implementer wires SearchBar into Dashboard (with learnings)
+  **Reviewer** final integration review
+```
+</details>
+
+<details>
+<summary><strong>Design</strong> — ambiguous scope, spec first</summary>
+
+```
+You: /hyperflow:spec "I need a notification system for the app"
+
+  Triage     classifies: deep flow, ambiguity 0.7
+  Spec       explores codebase, asks 2 targeted questions
+             proposes 2 approaches with trade-offs → you pick
+             presents design section by section → you approve
+  Scope      (auto) decomposes into batches
+  Dispatch   (auto) workers + per-batch reviews + final integration
+```
+</details>
+
+<details>
+<summary><strong>Debugging</strong> — parallel investigation</summary>
+
+```
+You: /hyperflow:trace "Tests are failing after the auth refactor"
+
+  **Debugger** identifies 3 independent broken test files
+  Searcher    auth-middleware.test.ts    ─┐
+  Searcher    login-flow.test.ts          ├── parallel
+  Searcher    session-handler.test.ts    ─┘
+  Implementer applies root-cause fix
+  Writer      adds regression test
+  **Reviewer** validates fix + test
+```
+</details>
+
+<details>
+<summary><strong>Quick tasks</strong> — fast flow profile, still reviewed</summary>
+
+```
+You: /hyperflow:scope "Rename the Button component to PrimaryButton"
+
+  Triage      classifies: fast flow, 1 file, ambiguity 0.0
+  Dispatch    Implementer renames component + updates all imports
+  **Reviewer** inline self-review (fast profile)
+```
+</details>
+
+**What you'll notice:** No "should I proceed?" prompts within a phase. The only gates are (a) the Step 0 chain-mode question, (b) the Deploy step's push confirmation, and (c) optional inter-phase gates if you chose **manual** mode at Step 0.
 
 ---
 
@@ -227,13 +363,112 @@ Full spec: [skills/hyperflow/session-memory.md](skills/hyperflow/session-memory.
 
 ## Plugin behavior
 
-On every `SessionStart`, `clear`, and `compact` event, the [`hooks/session-start`](hooks/session-start) script reads [`skills/hyperflow/SKILL.md`](skills/hyperflow/SKILL.md) and injects it into the model's system prompt so orchestration is active from the first turn. No network calls are made at runtime; all data stays local. Worker containment rules live in [`skills/hyperflow/security.md`](skills/hyperflow/security.md). Hook configuration: [`hooks/hooks.json`](hooks/hooks.json).
+<details>
+<summary><strong>Change model versions</strong></summary>
+
+Edit `~/.hyperflow/config.json` or use runtime commands. See [Model Routing Guide](docs/model-routing.md) for all options, role overrides, and runtime commands.
+</details>
+
+<details>
+<summary><strong>Add your own skills</strong></summary>
+
+Create a new folder under `skills/` with a `SKILL.md`:
+
+```markdown
+---
+name: my-skill
+description: Use when [specific triggering conditions]
+---
+
+# My Skill
+
+[Your skill content here]
+```
+</details>
+
+<details>
+<summary><strong>Modify autonomy rules</strong></summary>
+
+The 9 autonomy rules live in [`skills/hyperflow/DOCTRINE.md`](skills/hyperflow/DOCTRINE.md) under "Layer 1: Autonomy". `DOCTRINE.md` is the shared rule sheet referenced by every skill — not a registered skill itself. Add, remove, or modify rules to match your workflow; the changes apply to all skills that reference it.
+</details>
+
+<details>
+<summary><strong>Release a new version</strong></summary>
+
+The release script reads conventional commits, generates CHANGELOG entries, bumps version across all manifests, and creates a git tag:
+
+```bash
+./scripts/release.sh          # auto-detect bump type from commits
+./scripts/release.sh minor    # force a minor bump
+./scripts/release.sh patch    # force a patch bump
+```
+
+Commit prefixes determine the bump type:
+- `feat:` → minor
+- `fix:`, `refactor:`, `docs:`, `chore:` → patch
+- `BREAKING CHANGE` → major
+
+After running, push with `git push && git push --tags`.
+</details>
 
 ---
 
 ## Contributing
 
-Contributors are expected to keep `README.md` in sync with shipped features on every push. `scripts/release.sh` warns if README has not been updated since the last release tag. See `CLAUDE.md` for the full contributor guide. All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `perf:`, `style:`, `test:`) — the release script reads these to determine the version bump and generate CHANGELOG entries automatically. Major orchestrator changes are documented in the reference files under `skills/hyperflow/*.md`. Start with `task-triage.md`, `flow-profiles.md`, and `adaptive-brainstorming.md` for the new TriageFlow internals.
+Contributors keep `README.md` in sync with shipped features on every push. `scripts/release.sh` warns if README has not been updated since the last release tag. See `CLAUDE.md` for the full contributor guide. All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `perf:`, `style:`, `test:`) — the release script reads these to determine the version bump and generate CHANGELOG entries automatically. Major orchestrator changes are documented in the reference files under `skills/hyperflow/*.md`. Start with `DOCTRINE.md`, `task-triage.md`, `flow-profiles.md`, and `adaptive-brainstorming.md` for the orchestration internals.
+
+### Project structure
+
+```
+hyperflow/
+├── skills/
+│   ├── hyperflow/                #   Shared doctrine + reference docs (not a skill itself)
+│   │   ├── DOCTRINE.md           #     Layers 0–9: autonomy, model routing, orchestrator, gates, memory, security
+│   │   ├── task-triage.md        #     Layer 0.5 triage prompt + JSON schema + examples
+│   │   ├── flow-profiles.md      #     6 flow profiles + pipelines + skip/upgrade conditions
+│   │   ├── adaptive-brainstorming.md  # Depth modes, question framework, section-approval
+│   │   ├── escalation.md         #     Mid-flight escalation paths, token accounting
+│   │   ├── personas-A.md         #     Personas 1–8 (security, scientific, architect, …)
+│   │   ├── personas-B.md         #     Personas 9–15 (research, refactor, bugfix, …)
+│   │   ├── output-style.md       #     Elegant label/status style (no icons, em-dash, bold-for-thinking)
+│   │   ├── model-config.md       #     Model configuration reference
+│   │   ├── worker-prompt.md      #     Worker dispatch template
+│   │   ├── reviewer-prompt.md    #     Review template
+│   │   ├── review-levels.md      #     L1–L5 review checklists
+│   │   ├── quality-gates.md      #     Automated checks
+│   │   ├── memory-system.md      #     Cross-session learnings
+│   │   ├── session-memory.md     #     Session-scoped memory protocol
+│   │   ├── task-templates.md     #     Decomposition patterns
+│   │   ├── task-tracking.md      #     Task-file format and lifecycle
+│   │   ├── git-workflow.md       #     Branching + auto-commit
+│   │   ├── security.md           #     Worker containment
+│   │   ├── project-analysis.md   #     .hyperflow/ cache spec
+│   │   └── brainstorming-advanced.md
+│   ├── scaffold/SKILL.md         #   /hyperflow:scaffold — project setup (standalone)
+│   ├── spec/SKILL.md             #   /hyperflow:spec     — specify the design (chain-starter)
+│   ├── scope/SKILL.md            #   /hyperflow:scope    — decompose into task file (chain-starter)
+│   ├── dispatch/SKILL.md         #   /hyperflow:dispatch — dispatch workers + reviews (chain-endpoint)
+│   ├── trace/SKILL.md            #   /hyperflow:trace    — root-cause a bug
+│   ├── audit/SKILL.md            #   /hyperflow:audit    — multi-level code review
+│   ├── deploy/SKILL.md           #   /hyperflow:deploy   — pre-push gates + commit + push
+│   └── cache/SKILL.md            #   /hyperflow:cache    — memory CRUD
+├── scripts/
+│   ├── release.sh                #   Auto-release with changelog generation
+│   └── bump-version.sh           #   Sync version across all manifests
+├── config/
+│   ├── defaults.json             #   Default model catalogs
+│   └── schema.json               #   Config JSON Schema
+├── hooks/
+│   ├── hooks.json                #   Session startup config
+│   └── session-start             #   Welcome injection (lists entry skills — no longer injects an always-on orchestrator)
+├── docs/                         #   Guides and references
+├── .claude-plugin/plugin.json    #   Claude Code plugin manifest
+├── install.sh                    #   Installer + setup wizard
+├── package.json
+├── CHANGELOG.md                  #   Version history
+├── LICENSE                       #   MIT
+└── README.md
+```
 
 ---
 
@@ -253,7 +488,26 @@ See [CHANGELOG](CHANGELOG.md) for what's new in v1.10.0.
 claude plugin uninstall hyperflow@hyperflow-marketplace
 ```
 
-This removes all plugin files. Project memory at `.hyperflow/` can be deleted manually if you no longer need it.
+This removes all plugin files. Project memory at `.hyperflow/memory/` is kept — delete it manually if you want a clean slate.
+
+---
+
+## Plugin behavior & permissions
+
+For full transparency — what this plugin does at runtime, so reviewers and users know exactly what they're installing:
+
+| Surface | What happens | Code |
+|---|---|---|
+| **`SessionStart` hook** | On `startup`, `clear`, and `compact` events, runs `hooks/session-start` (bash). The script emits a small welcome message listing the available `/hyperflow:*` entry skills. It does **not** inject an always-on orchestrator — each skill is loaded only when invoked. | [`hooks/session-start`](hooks/session-start), [`hooks/hooks.json`](hooks/hooks.json) |
+| **Skill content** | Each skill file (`skills/<name>/SKILL.md`) is loaded only when the user invokes that slash command. Chain-starting skills (`spec`, `scope`, `dispatch`) ask at Step 0 whether to auto-advance forward or pause between phases, then run their phase. Shared rules live in `skills/hyperflow/DOCTRINE.md` and supporting reference files. | [`skills/hyperflow/DOCTRINE.md`](skills/hyperflow/DOCTRINE.md) |
+| **Session memory** | Reads and appends to `.hyperflow/memory/` (project-scoped) to persist learnings across conversations. No data leaves your machine. | [`skills/hyperflow/session-memory.md`](skills/hyperflow/session-memory.md) |
+| **Config** | Optional `~/.hyperflow/config.json` for model selection and security overrides. Created only if you run the installer wizard; not required. | [`config/schema.json`](config/schema.json) |
+| **Network access** | None at runtime. The plugin does not make outbound network calls. The optional `install.sh` setup wizard clones the repo and writes config locally. | — |
+| **File writes** | `.hyperflow/memory/` (project-scoped session memory) and, if you run the installer, `~/.hyperflow/config.json` and tool shim files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules/hyperflow.mdc`). The skill instructs the orchestrator to follow project conventions for everything else. | — |
+| **Worker containment** | Workers are constrained by prompt-injected blocklists for sensitive files (`.env`, `*.pem`, `*.key`, `~/.ssh/*`, cloud creds) and destructive commands (`rm -rf`, `git push --force` to main, `sudo`, `chmod 777`). See Layer 9 above. | [`skills/hyperflow/security.md`](skills/hyperflow/security.md) |
+| **Dependencies** | The hook script requires `bash`, `python3`, and standard POSIX tools — all available by default on macOS and Linux. No Node, no package installs. | — |
+
+**Why the welcome injection?** The hook only surfaces the available `/hyperflow:*` entry skills and a brief overview — it does not embed a full doctrine. Each skill loads independently when invoked. The doctrine (autonomy rules, model routing, output style, security) lives in [`skills/hyperflow/DOCTRINE.md`](skills/hyperflow/DOCTRINE.md) and is referenced by each skill on demand.
 
 ---
 

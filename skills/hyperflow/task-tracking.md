@@ -86,12 +86,12 @@ User request
 [Opus] Dispatch workers
     |
 [Opus] UPDATE task files dynamically:
-    |   ✓ Check off completed sub-tasks
-    |   + Add new sub-tasks discovered during work
+    |   - Check off completed sub-tasks
+    |   - Add new sub-tasks discovered during work
     |   - Remove sub-tasks that are unnecessary
-    |   ~ Reorder based on new dependencies found
-    |   📝 Append to Progress with timestamps
-    |   💡 Add Learnings as discoveries happen
+    |   - Reorder based on new dependencies found
+    |   - Append to Progress with timestamps
+    |   - Add Learnings as discoveries happen
     |
 [Opus] Review → APPROVED → DELETE task file
     |         → NEEDS_FIX → update task file, re-dispatch

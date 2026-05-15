@@ -143,7 +143,7 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 1. Parse the legacy file for entries belonging to the current project path.
 2. Map each bullet point to a `learnings.md` entry, tagging as `pattern` + best-guess domain.
 3. Write migrated entries to `learnings.md` and update `index.md`.
-4. Print: `⚡ Hyperflow: migrated N entries from ~/.claude/hyperflow-memory.md`
+4. Print: `Hyperflow — migrated N entries from ~/.claude/hyperflow-memory.md`
 5. Do not delete the legacy file — the user may have other projects in it.
 
 ## User Controls

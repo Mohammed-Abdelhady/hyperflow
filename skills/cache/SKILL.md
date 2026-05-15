@@ -1,9 +1,9 @@
 ---
-name: memory
+name: cache
 description: Use when the user wants to view, search, add, edit, prune, archive, or clear hyperflow memory entries — phrases like "show memory", "search memory for X", "clear memory", "what does hyperflow remember about Y", or any `hyperflow: memory *` invocation.
 ---
 
-# hyperflow:memory
+# Cache
 
 CRUD interface for `.hyperflow/memory/`. Full protocol: [memory-system.md](../hyperflow/memory-system.md).
 
