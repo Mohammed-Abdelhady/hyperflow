@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
   "version": "2.5.0",
-  "tagline": "Sequenced multi-agent workflow for AI coding tools",
-  "subtitle": "Start anywhere. Auto-advance through the chain. Thinking models think, worker models execute, every output gets reviewed.",
+  "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
+  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere — every step dispatches its own Worker → Reviewer pair.",
   "layers": [
     {
       "n": 0,
