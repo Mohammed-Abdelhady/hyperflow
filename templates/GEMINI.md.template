@@ -1,0 +1,26 @@
+<!-- hyperflow-shim-start v${HYPERFLOW_VERSION} -->
+# GEMINI.md — ${PROJECT_NAME}
+
+## Hyperflow
+
+This project uses **hyperflow v${HYPERFLOW_VERSION}** for autonomous multi-agent orchestration.
+
+**Activation:** On session start, load and follow the hyperflow protocol. If you have access to the `hyperflow` skill or extension, invoke it. Otherwise, read `~/.hyperflow/config.json` for model routing and apply the 9-layer protocol from https://github.com/Mohammed-Abdelhady/hyperflow.
+
+**Project context (read on session start):**
+- `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
+
+**Persistent memory (project-scoped):**
+- `.hyperflow/memory/index.md` — start here for past learnings
+- `.hyperflow/memory/learnings.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md`
+
+**Workflow:**
+- Decompose every task; dispatch worker subagents in parallel where possible
+- Thinking-tier model reviews every worker output
+- Print `⚡ [Role] description` before each dispatch
+- After each batch, append durable learnings to `.hyperflow/memory/`
+- Print usage summary at task end
+
+**Active work:** `.hyperflow/tasks/`
+
+<!-- hyperflow-shim-end -->

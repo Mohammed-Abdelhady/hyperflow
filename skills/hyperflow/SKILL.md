@@ -275,16 +275,24 @@ Automated checks after every worker review. See [quality-gates.md](quality-gates
 
 Gate fails -> worker fixes -> re-run. Max 3 retries before escalating to Opus worker.
 
-## Layer 6: Session Memory
+## Layer 6: Project-Scoped Memory
 
-Persist reusable learnings across conversations. See [session-memory.md](session-memory.md) for full details.
+Persist reusable learnings in `.hyperflow/memory/` so future sessions in the same project benefit from past discoveries. See [memory-system.md](memory-system.md) for full protocols.
 
-**Storage:** `~/.claude/hyperflow-memory.md` (auto-created, project-scoped entries)
-**Write:** After each batch, persist reusable patterns/gotchas (not ephemeral task details)
-**Read:** At session start, inject relevant entries into worker prompts
-**Prune:** Remove entries older than 30 days or contradicted by newer ones
+**Storage:** `.hyperflow/memory/` at project root — multiple files by category (learnings, decisions, pitfalls, patterns, conventions) plus an index. Project-scoped by design — entries never leak across projects.
 
-Disable: "hyperflow: memory off"
+**Write:** After each batch, orchestrator extracts reusable patterns/gotchas/decisions (not ephemeral task details), tags them, deduplicates against existing entries, and appends to the appropriate file. Apply the test: "Would a worker on this project benefit from knowing this in 2 weeks?"
+
+**Read:** At session start, orchestrator reads `.hyperflow/memory/index.md` (always). Hot entries (≤7 days) are eagerly loaded. Warm entries (8–30 days) are queried by current task's inferred tags. Cold entries (30+ days) are auto-compressed and archived. Worker prompts receive ONLY the subset matching their task's tags — never the full dump.
+
+**Prune:** Entries contradicted by newer ones marked `[SUPERSEDED]` and removed after 7 days. Entries referencing files that no longer exist are removed immediately. Entries unreferenced for 90 days are archived to `.hyperflow/memory/archive/YYYY-MM.md`.
+
+**Migration:** On first run, entries from legacy `~/.claude/hyperflow-memory.md` that match the current project path are migrated into `.hyperflow/memory/`.
+
+Controls:
+- `hyperflow: memory off` — disable for current session
+- `hyperflow: memory show <tag>` — list entries by tag
+- `hyperflow: memory clear` — wipe `.hyperflow/memory/` (with confirmation)
 
 ## Layer 7: Task Templates
 

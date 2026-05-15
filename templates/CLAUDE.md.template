@@ -1,0 +1,14 @@
+## Hyperflow
+
+This project uses **hyperflow v${HYPERFLOW_VERSION}** for autonomous multi-agent orchestration. The plugin's hook injects the full protocol at session start; this section is a fallback reference when the hook is unavailable.
+
+**Project context** (Layer 0 cache):
+- `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
+
+**Persistent project memory** (Layer 6):
+- `.hyperflow/memory/index.md` — start here
+- `.hyperflow/memory/learnings.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md`
+
+**Active tasks** (Layer 3): `.hyperflow/tasks/`
+
+After each batch, append durable learnings to `.hyperflow/memory/` using the tagged format documented in the hyperflow skill.
