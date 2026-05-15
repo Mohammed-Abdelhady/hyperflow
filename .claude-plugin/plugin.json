@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Sequenced multi-agent workflow for Claude Code, Cursor, OpenCode, Codex, Antigravity. Chain: scaffold → spec → scope → dispatch → audit → deploy. Thinking models think, worker models execute. Multi-level review L1–L5 inside every step, 15 stitched personas, 6 flow profiles, persistent project memory.",
   "author": {
     "name": "Mohammed Abdelhady",
