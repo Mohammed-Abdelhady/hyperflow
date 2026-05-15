@@ -9,7 +9,7 @@ You operate as a thinking-model orchestrator coordinating worker-model agents. M
 
 ## Layer 0: Project Analysis
 
-On session start, analyze the project and cache results in `.hyperflow/` at project root. See [project-analysis.md](project-analysis.md) for full spec.
+On session start, the **thinking model decides** whether analysis is needed. See [project-analysis.md](project-analysis.md) for file specs and staleness mapping.
 
 ### Session Start Flow
 
@@ -19,20 +19,44 @@ On session start, analyze the project and cache results in `.hyperflow/` at proj
    ⚡ Hyperflow v<version>
    Thinking: <resolved-thinking-model>  |  Worker: <resolved-worker-model>
    ```
-3. Check if `.hyperflow/` exists in project root
-4. If missing → dispatch parallel searcher agents to analyze tech stack, architecture, conventions, dependencies, testing setup, and git workflow
-5. If ambiguous (conflicting configs, unclear entry points) → ask 2-3 clarifying questions via `AskUserQuestion`
-6. Generate analysis files: `profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md`
-7. Create `.checksums` file for staleness detection
-8. Add `.hyperflow/` to `.gitignore` if not already there
-9. Check `.hyperflow/tasks/` for incomplete tasks from previous sessions — present summary and ask to continue or start fresh
+3. **Smart analysis decision** — the thinking model evaluates before dispatching anything:
 
-### On Subsequent Sessions
+   ```
+   .hyperflow/ exists at project root?
+       │
+       NO → FULL ANALYSIS
+       │    Dispatch 6 parallel searcher agents (profile, architecture,
+       │    conventions, dependencies, testing, git-workflow)
+       │    Generate all analysis files + .checksums
+       │    Add .hyperflow/ to .gitignore if missing
+       │
+       YES → Read .hyperflow/.checksums
+             │
+             Compute current SHA256 of tracked config files (see project-analysis.md)
+             │
+             Compare each checksum
+             │
+             ├─ ALL FRESH → SKIP ANALYSIS
+             │  Print "⚡ Analysis cache fresh — skipping"
+             │  Load cached files directly (no agents dispatched)
+             │
+             ├─ SOME STALE → PARTIAL REFRESH
+             │  Use staleness mapping (project-analysis.md) to identify affected files
+             │  Dispatch searcher agents ONLY for stale analysis files
+             │  Print "⚡ Refreshing: <comma-separated list of stale files>"
+             │  Update .checksums with new hashes
+             │
+             └─ .checksums MISSING or CORRUPT → FULL ANALYSIS (same as NO path)
+   ```
 
-1. Compute SHA256 of tracked config files (package.json, tsconfig, eslint config, CI configs, etc.)
-2. Compare against `.hyperflow/.checksums`
-3. If stale → refresh only affected analysis files
-4. If fresh → load cached analysis, skip re-analysis
+   **CRITICAL RULES:**
+   - Do NOT dispatch searcher agents if all checksums are fresh. Read cached `.hyperflow/` files directly.
+   - Do NOT regenerate analysis files that aren't affected by the stale config. Use the staleness mapping.
+   - The thinking model makes this decision — never delegate staleness evaluation to a worker.
+   - New config files appearing (not in `.checksums`) trigger refresh of their mapped analysis files only.
+   - Config files being deleted (in `.checksums` but missing on disk) trigger refresh of their mapped analysis files.
+
+4. **Incomplete tasks** — check `.hyperflow/tasks/` for files from previous sessions. If found, present summary and ask to continue or start fresh.
 
 ### Worker Injection
 

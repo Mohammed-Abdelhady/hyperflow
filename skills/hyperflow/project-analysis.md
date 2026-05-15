@@ -1,32 +1,52 @@
 # Project Analysis
 
-On first `/hyperflow` session in a project, analyze the entire codebase and generate a profile in `.hyperflow/`. On subsequent sessions, check for staleness and refresh only sections affected by changed config files.
+On first `/hyperflow` session in a project, analyze the entire codebase and generate a profile in `.hyperflow/`. On subsequent sessions, the **thinking model** evaluates staleness and decides what to refresh — it never blindly regenerates.
 
-## Session Start Flow
+## Decision Tree (Thinking Model Executes This)
+
+The thinking model runs this decision tree at session start. No workers are dispatched until this completes.
 
 ```
-User runs /hyperflow
-    |
-[Opus] Version check — compare installed vs latest GitHub tag
-    |   If newer: print update notification
-    |
-[Opus] Does .hyperflow/ exist in project root?
-    |
-    |-- NO  → Full analysis (dispatch parallel searcher agents)
-    |         → Ask 2-3 clarifying questions if ambiguous (via AskUserQuestion)
-    |         → Generate all analysis files
-    |         → Create .checksums
-    |         → Add .hyperflow/ to .gitignore if not already there
-    |
-    |-- YES → Load .checksums, compute current hashes
-    |         |-- STALE → Identify affected files, refresh only those
-    |         |-- FRESH → Skip analysis, load cached files
-    |
-[Opus] Check .hyperflow/tasks/ for incomplete tasks from previous sessions
-    |   If found: present summary, ask continue or start fresh
-    |
-[Opus] Session ready — analysis context available for worker injection
+Step 1: Does .hyperflow/ exist at project root?
+    │
+    NO → Go to FULL ANALYSIS
+    │
+    YES → Step 2: Does .hyperflow/.checksums exist and parse correctly?
+           │
+           NO → Go to FULL ANALYSIS
+           │
+           YES → Step 3: Compute current SHA256 of every tracked config file
+                  that exists on disk (see "Config Files to Track" below)
+                  │
+                  Step 4: Compare each hash against .checksums
+                  │
+                  ├─ ALL MATCH + no new config files appeared
+                  │  → SKIP ANALYSIS entirely
+                  │    Print "⚡ Analysis cache fresh — skipping"
+                  │    The thinking model reads cached .hyperflow/*.md directly
+                  │    Zero agents dispatched for analysis
+                  │
+                  ├─ SOME CHANGED, ADDED, or REMOVED
+                  │  → PARTIAL REFRESH
+                  │    Use the Staleness Mapping table to find affected analysis files
+                  │    Dispatch searcher agents ONLY for those specific analysis files
+                  │    Print "⚡ Refreshing: profile.md, dependencies.md" (example)
+                  │    Rewrite .checksums with all current hashes
+                  │
+                  └─ ALL CHANGED (e.g., major refactor, new project)
+                     → FULL ANALYSIS
+                       Dispatch 6 parallel searcher agents
+                       Regenerate everything
 ```
+
+### Enforcement Rules
+
+1. **No agents if fresh.** If all checksums match, zero searcher agents are dispatched. The thinking model reads cached files with the Read tool.
+2. **Partial over full.** If only `package.json` changed, only `profile.md`, `dependencies.md`, and `testing.md` get refreshed. The other 3 files are untouched.
+3. **Thinking model decides.** Staleness evaluation is never delegated to a worker agent. The thinking model runs `sha256sum`, compares, and decides.
+4. **New files trigger refresh.** A config file appearing on disk that wasn't in `.checksums` triggers refresh of its mapped analysis files.
+5. **Deleted files trigger refresh.** A config file in `.checksums` that no longer exists triggers refresh of its mapped analysis files.
+6. **Folder structure changes.** If the thinking model notices major folder additions/removals (via `ls` or `find`), it refreshes `architecture.md` even if no config checksums changed. This is a judgment call — not every new file warrants it.
 
 ## Analysis Files
 
@@ -67,21 +87,11 @@ Discover: test runner (Jest, Vitest, pytest), assertion library, component testi
 ### git-workflow.md
 Discover: default/main branch name, branch naming conventions (from recent branches), commit message conventions (from recent commits — conventional commits?), CI/CD pipeline (GitHub Actions, GitLab CI) and stages, deploy targets/environments, PR template from `.github/PULL_REQUEST_TEMPLATE.md`, release process.
 
-## Staleness Detection
+## Config Files to Track
 
-### .checksums format
+Check whichever exist on disk. Only include files that are present — don't fail on missing ones.
 
-```
-# Hyperflow project analysis checksums
-# Generated: 2026-05-15T14:30:00Z
-package.json=sha256:a1b2c3d4e5f6...
-tsconfig.json=sha256:a1b2c3d4e5f6...
-eslint.config.js=sha256:a1b2c3d4e5f6...
-```
-
-### Config files to track (check whichever exist)
-
-- `package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+- `package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`
 - `tsconfig.json`, `jsconfig.json`
 - `eslint.config.*`, `.eslintrc*`, `biome.json`, `.prettierrc*`
 - `vite.config.*`, `next.config.*`, `webpack.config.*`
@@ -89,15 +99,31 @@ eslint.config.js=sha256:a1b2c3d4e5f6...
 - `.github/workflows/*`, `.gitlab-ci.yml`
 - `pyproject.toml`, `Cargo.toml`, `go.mod`, `composer.json`
 
-### Staleness → refresh mapping
+## Staleness Mapping
 
-| Changed file | Refresh |
+When a tracked config file's checksum changes (or the file appears/disappears), refresh ONLY the mapped analysis files:
+
+| Changed config file | Refresh these analysis files |
 |---|---|
-| package.json, lock file | profile.md, dependencies.md, testing.md |
-| tsconfig, eslint/prettier/biome config | conventions.md |
-| vite/next/webpack config | profile.md, architecture.md |
-| Dockerfile, CI configs | git-workflow.md |
-| Major folder additions/removals | architecture.md |
+| `package.json`, any lock file | `profile.md`, `dependencies.md`, `testing.md` |
+| `tsconfig.json`, `jsconfig.json` | `conventions.md`, `profile.md` |
+| `eslint.config.*`, `.eslintrc*`, `.prettierrc*`, `biome.json` | `conventions.md` |
+| `vite.config.*`, `next.config.*`, `webpack.config.*` | `profile.md`, `architecture.md` |
+| `Dockerfile`, `docker-compose.yml` | `git-workflow.md` |
+| `.github/workflows/*`, `.gitlab-ci.yml` | `git-workflow.md` |
+| `pyproject.toml`, `Cargo.toml`, `go.mod`, `composer.json` | `profile.md`, `dependencies.md` |
+
+**Deduplication:** If multiple changed files map to the same analysis file, dispatch only ONE searcher for that analysis file — not one per changed config.
+
+### .checksums Format
+
+```
+# Hyperflow analysis checksums
+# Generated: <ISO-8601 timestamp>
+<sha256-hash>  <relative-file-path>
+```
+
+Use raw `sha256sum` output format (hash + two-space + path). One line per tracked file. Only files that exist on disk are included.
 
 ## Worker Prompt Injection
 
