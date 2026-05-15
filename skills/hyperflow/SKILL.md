@@ -152,7 +152,11 @@ User request
     |   │ Repeat until all sub-tasks complete                     │
     |   └─────────────────────────────────────────────────────────┘
     |
-[Thinking] FINAL REVIEW — integration review across ALL changes (model: "<resolved-thinking>")
+[Thinking] FINAL REVIEW — SEPARATE integration review (model: "<resolved-thinking>")
+    |   ⚠️ This is NOT the same as batch reviews. This is an ADDITIONAL review.
+    |   Validates: cross-file integration, no conflicts between batches,
+    |   data flow end-to-end, no regressions, architecture coherence.
+    |   Must appear as its own agent in the usage summary.
     |
 [Thinking] DELETE completed task files from .hyperflow/tasks/
 ```
@@ -174,23 +178,24 @@ User request
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md) for the dispatch template.
 6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) for template and [review-levels.md](review-levels.md) for full checklist.
 7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
-8. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
+8. **Minimum thinking agents = batches + 1.** Every batch gets its own reviewer dispatch. PLUS a final integration review at the end. If you have 3 batches, minimum 4 thinking agents (3 batch reviews + 1 final). A task with `Thinking: 1 agent` and multiple batches is wrong — it means batch reviews were skipped.
+9. **Agent labels.** Before every Agent dispatch, print a visible label with the role and task:
    - `⚡ [Implementer] Creating auth middleware`
    - `⚡ [Reviewer] Reviewing auth middleware output`
    - `⚡ [Searcher] Finding related test files`
    - `⚡ [Debugger] Investigating test failure in auth.test.ts`
    - `⚡ [Writer] Generating API documentation`
    Format: `⚡ [Role] Short description of what this agent will do`
-9. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
+10. **Usage tracking.** Track every agent dispatch and its token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary:
    ```
    ── Hyperflow Usage ──────────────────────
-   Thinking (Opus 4.6)    2 agents   27.3k tokens  (1 reviewer: 15.2k, 1 debugger: 12.1k)
-   Worker   (Sonnet 4.6)  3 agents   41.5k tokens  (2 implementers: 32.6k, 1 searcher: 8.9k)
-   Total                  5 agents   68.8k tokens
+   Thinking (Opus 4.6)    4 agents   52.1k tokens  (3 batch reviewers: 38.4k, 1 final reviewer: 13.7k)
+   Worker   (Sonnet 4.6)  8 agents  186.0k tokens  (4 implementers: 120k, 3 searchers: 54k, 1 writer: 12k)
+   Total                 12 agents  238.1k tokens
    ─────────────────────────────────────────
    ```
-   Include the model names from the current config. Combine same-role agents with count + summed tokens. Format token counts as `Xk` (divide by 1000, one decimal).
-10. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
+   Include the model names from the current config. Combine same-role agents with count + summed tokens. Format token counts as `Xk` (divide by 1000, one decimal). The thinking count must be ≥ batches + 1.
+11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md) for format and lifecycle.
 
 ### Learning Injection Format
 
@@ -323,6 +328,8 @@ Workers that hit a blocked resource report `BLOCKED:` instead of proceeding. Rev
 - Skip the thinking-tier review after a worker completes
 - Dispatch a reviewer with the worker-tier model instead of the thinking-tier model
 - Finish a task with `Thinking: 0 agents` in the usage summary
+- Skip the final integration review (separate from batch reviews)
+- Have fewer thinking agents than batches + 1
 - Dispatch workers sequentially when they could run in parallel
 - Include "Co-Authored-By: Claude" in any git operation
 - Summarize what you just did
