@@ -11,6 +11,12 @@
       "color": "user"
     },
     {
+      "n": "0.5",
+      "name": "Task Triage",
+      "summary": "Classify the task (types, complexity, risk, ambiguity, flow profile, personas) before any worker fires",
+      "color": "thinking"
+    },
+    {
       "n": 1,
       "name": "Autonomy",
       "summary": "Zero confirmations, minimal output, silent recovery",

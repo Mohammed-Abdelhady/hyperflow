@@ -207,6 +207,21 @@ There is no always-on activation. Each slash command runs its skill and (for cha
 | L8 | Git workflow | Auto-branch, auto-commit after approval, never auto-push |
 | L9 | Security | Prompt-injected blocklists for sensitive files and dangerous commands |
 
+### How the layers map onto the chain
+
+| Phase | Skill | Layers exercised | Review levels | Approval gates |
+|---|---|---|---|---|
+| Setup | `/hyperflow:scaffold` | L0 | — | None |
+| Spec | `/hyperflow:spec` | L0.5, L4 | — | Chain-mode (Step 0) · Section approval (×5) · Phase advance (manual) |
+| Scope | `/hyperflow:scope` | L0, L6, L7 | — | Chain-mode (if direct) · Phase advance (manual) |
+| Dispatch | `/hyperflow:dispatch` | L2, L3, L5, L6, L8, L9 | L1–L5 per profile (fast=L1 · standard=L1–2 · deep/scientific=L1–5) | Inter-batch (manual) · `SECURITY_VIOLATION` halt |
+| Audit | `/hyperflow:audit` | L9 | L1–L5 explicit | None |
+| Trace | `/hyperflow:trace` | L3, L6, L9 | L1–L3 on fix | None |
+| Deploy | `/hyperflow:deploy` | L5, L8, L9 | — | Push confirmation (mandatory) |
+| Cache | `/hyperflow:cache` | L6 | — | Confirm-on-clear |
+
+L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. Full checklist in [`skills/hyperflow/review-levels.md`](skills/hyperflow/review-levels.md).
+
 ---
 
 ## Examples
