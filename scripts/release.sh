@@ -303,5 +303,5 @@ if [[ ${#CHANGED[@]} -gt 0 ]]; then
 fi
 echo ""
 echo -e "${CYAN}Push when ready:${RESET}"
-echo -e "  git push && git push --tags"
+echo -e "  git push && git push origin v${NEW_VERSION}"
 echo ""
