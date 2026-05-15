@@ -54,6 +54,10 @@ Orchestrator ─── Final integration review ── Done.
 
 Design decisions? Hyperflow brainstorms with you first — exploring options and getting approval — then dispatches workers to build it.
 
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Hyperflow — 9 layers in 75 seconds: project analysis, brainstorming, parallel dispatch, quality gates with auto-retry, security halt, learnings injection, auto-commit, and persistent memory" width="100%" />
+</p>
+
 ---
 
 ## Why Hyperflow?
