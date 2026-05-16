@@ -48,11 +48,8 @@ Detection runs at session start. First match wins:
 | 1 | `HYPERFLOW_PROVIDER` env var | Value of env var |
 | 2 | `activeProvider` in config.json | Config value |
 | 3 | `CLAUDE_CODE_*` env vars present | `claude-code` |
-| 4 | `CURSOR_*` env vars present | `cursor` |
-| 5 | `OPENCODE_*` env vars or `opencode` in PATH | `opencode` |
-| 6 | `CODEX_*` env vars present | `codex` |
-| 7 | `ANTIGRAVITY_*` env vars present | `antigravity` |
-| 8 | None matched | Use `defaults` directly |
+| 4 | `OPENCODE_*` env vars or `opencode` in PATH | `opencode` |
+| 5 | None matched | Use `defaults` directly |
 
 ## Model Resolution
 
@@ -97,7 +94,6 @@ When presenting the model picker during install:
 
 1. **Claude Code:** Read `~/.claude/settings.json` to detect current model. Supplement hardcoded list.
 2. **OpenCode:** Run `opencode models list --json` (2s timeout). Merge with hardcoded list.
-3. **Cursor / Codex / Antigravity:** No CLI — use hardcoded list from `config/defaults.json` only.
 
 Dynamic models supplement the hardcoded list (don't replace). Fall back to hardcoded if fetch fails.
 

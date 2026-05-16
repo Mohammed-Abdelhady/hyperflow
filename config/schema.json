@@ -7,7 +7,7 @@
     "activeProvider": {
       "description": "Force a specific provider. null = auto-detect at runtime.",
       "type": ["string", "null"],
-      "enum": ["claude-code", "cursor", "opencode", "codex", "antigravity", null],
+      "enum": ["claude-code", "opencode", null],
       "default": null
     },
     "defaults": {

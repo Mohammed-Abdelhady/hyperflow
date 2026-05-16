@@ -15,7 +15,7 @@ Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customi
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-### Cursor / OpenCode / Codex / Antigravity
+### OpenCode
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/i
 The install script walks you through the full setup:
 
 1. **Clones** the repo to `~/.hyperflow/repo/`
-2. **Detects** which providers are installed (Cursor, OpenCode, Codex, Antigravity)
+2. **Detects** which providers are installed (OpenCode)
 3. **Symlinks** the skill into each provider's skills directory
 4. **Asks** you to pick thinking and worker models from your provider's catalog
 5. **Asks** whether to enable the security layer
@@ -33,25 +33,21 @@ The install script walks you through the full setup:
 ```
 Hyperflow Installer
 
-> Detected: Cursor
+> Detected: OpenCode
 
-  Cursor — linked
+  OpenCode — linked
 
-Model Configuration — Cursor
+Model Configuration — OpenCode
 
 Thinking model (orchestrator, reviewer, debugger):
-  [1] Claude 4.7 Opus — Hyperflow default
-  [2] Claude 4.6 Opus — Previous Opus
-  [3] GPT-5.5 — Latest GPT
-  [4] Gemini 3.1 Pro — Standard availability
+  [1] Claude Opus 4.7 — Hyperflow default
+  [2] Claude Opus 4.6 — Previous Opus
 
   Choice [1]: 1
 
 Worker model (implementer, searcher, writer):
-  [1] Claude 4.6 Sonnet — Hyperflow default
-  [2] Claude 4.5 Haiku — Fast and cheap
-  [3] GPT-5.4 Mini — Cost-efficient
-  [4] Gemini 3 Flash — Fast and cheap
+  [1] Claude Sonnet 4.6 — Hyperflow default
+  [2] Claude Haiku 4.5 — Fast and cheap
 
   Choice [1]: 1
 
@@ -73,7 +69,7 @@ Hyperflow installed
   Config:    ~/.hyperflow/config.json
   Update:    git -C ~/.hyperflow/repo pull
 
-  Models:    thinking=claude-4.7-opus  worker=claude-4.6-sonnet
+  Models:    thinking=anthropic/claude-opus-4-7  worker=anthropic/claude-sonnet-4-6
   Security:  enabled
 ```
 
@@ -101,10 +97,7 @@ git clone https://github.com/Mohammed-Abdelhady/hyperflow.git ~/.hyperflow/repo
 
 # Then symlink for your provider(s):
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.claude/skills/hyperflow
-ln -s ~/.hyperflow/repo/skills/hyperflow ~/.cursor/skills/hyperflow
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.opencode/skills/hyperflow
-ln -s ~/.hyperflow/repo/skills/hyperflow ~/.codex/skills/hyperflow
-ln -s ~/.hyperflow/repo/skills/hyperflow ~/.antigravity/skills/hyperflow
 ```
 </details>
 
@@ -157,7 +150,7 @@ Create or edit `~/.hyperflow/config.json` directly:
 
 ### Multi-Provider Setup
 
-If you use multiple platforms, configure each one:
+If you use both platforms, configure each one:
 
 ```json
 {
@@ -172,19 +165,9 @@ If you use multiple platforms, configure each one:
       "worker": "sonnet-4-6",
       "roles": {}
     },
-    "cursor": {
-      "thinking": "claude-4.7-opus",
-      "worker": "claude-4.6-sonnet",
-      "roles": {}
-    },
     "opencode": {
       "thinking": "anthropic/claude-opus-4-7",
       "worker": "anthropic/claude-sonnet-4-6",
-      "roles": {}
-    },
-    "antigravity": {
-      "thinking": "gemini-3.1-pro",
-      "worker": "gemini-3-flash",
       "roles": {}
     }
   }
@@ -317,7 +300,7 @@ Start a new Claude Code session. You should see `hyperflow` in the available ski
 claude plugin uninstall hyperflow@hyperflow-marketplace
 ```
 
-### All other providers
+### OpenCode
 
 ```bash
 ~/.hyperflow/repo/install.sh --uninstall

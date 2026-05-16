@@ -63,54 +63,24 @@
   <line x1="48" y1="156" x2="1352" y2="156"
         stroke="#334155" stroke-width="1" opacity="0.5"/>
   <g transform="translate(48,160)">
-    <rect width="248" height="64" rx="12"
+    <rect width="644" height="64" rx="12"
           fill="rgba(148,163,184,0.06)" stroke="#334155" stroke-width="1"/>
-    <text x="124" y="22" text-anchor="middle"
+    <text x="322" y="22" text-anchor="middle"
           fill="#F8FAFC" font-size="13" font-weight="700">Claude Code</text>
-    <text x="124" y="38" text-anchor="middle"
+    <text x="322" y="38" text-anchor="middle"
           fill="#A78BFA" font-size="10" font-weight="600">think: Opus 4.7</text>
-    <text x="124" y="54" text-anchor="middle"
+    <text x="322" y="54" text-anchor="middle"
           fill="#5EEAD4" font-size="10" font-weight="600">work: Sonnet 4.6</text>
   </g>
-  <g transform="translate(312,160)">
-    <rect width="248" height="64" rx="12"
+  <g transform="translate(708,160)">
+    <rect width="644" height="64" rx="12"
           fill="rgba(148,163,184,0.06)" stroke="#334155" stroke-width="1"/>
-    <text x="124" y="22" text-anchor="middle"
-          fill="#F8FAFC" font-size="13" font-weight="700">Cursor</text>
-    <text x="124" y="38" text-anchor="middle"
-          fill="#A78BFA" font-size="10" font-weight="600">think: Claude Opus 4.7</text>
-    <text x="124" y="54" text-anchor="middle"
-          fill="#5EEAD4" font-size="10" font-weight="600">work: Sonnet 4.6</text>
-  </g>
-  <g transform="translate(576,160)">
-    <rect width="248" height="64" rx="12"
-          fill="rgba(148,163,184,0.06)" stroke="#334155" stroke-width="1"/>
-    <text x="124" y="22" text-anchor="middle"
+    <text x="322" y="22" text-anchor="middle"
           fill="#F8FAFC" font-size="13" font-weight="700">OpenCode</text>
-    <text x="124" y="38" text-anchor="middle"
+    <text x="322" y="38" text-anchor="middle"
           fill="#A78BFA" font-size="10" font-weight="600">think: Claude Opus 4.7</text>
-    <text x="124" y="54" text-anchor="middle"
+    <text x="322" y="54" text-anchor="middle"
           fill="#5EEAD4" font-size="10" font-weight="600">work: Sonnet 4.6</text>
-  </g>
-  <g transform="translate(840,160)">
-    <rect width="248" height="64" rx="12"
-          fill="rgba(148,163,184,0.06)" stroke="#334155" stroke-width="1"/>
-    <text x="124" y="22" text-anchor="middle"
-          fill="#F8FAFC" font-size="13" font-weight="700">Codex</text>
-    <text x="124" y="38" text-anchor="middle"
-          fill="#A78BFA" font-size="10" font-weight="600">think: o3</text>
-    <text x="124" y="54" text-anchor="middle"
-          fill="#5EEAD4" font-size="10" font-weight="600">work: o4-mini</text>
-  </g>
-  <g transform="translate(1104,160)">
-    <rect width="248" height="64" rx="12"
-          fill="rgba(148,163,184,0.06)" stroke="#334155" stroke-width="1"/>
-    <text x="124" y="22" text-anchor="middle"
-          fill="#F8FAFC" font-size="13" font-weight="700">Antigravity</text>
-    <text x="124" y="38" text-anchor="middle"
-          fill="#A78BFA" font-size="10" font-weight="600">think: Gemini 3.1 Pro</text>
-    <text x="124" y="54" text-anchor="middle"
-          fill="#5EEAD4" font-size="10" font-weight="600">work: 3 Flash</text>
   </g>
 
   <!-- ======================== LAYERS ======================== -->
@@ -357,10 +327,10 @@
         fill="#94A3B8" font-size="11">Lazy memory injection (only tag-matched entries per task)</text>
   <circle cx="54" cy="1302" r="3" fill="#94A3B8" opacity="0.5"/>
   <text x="64" y="1306"
-        fill="#94A3B8" font-size="11">Multi-tool auto-detection (AGENTS.md, Cursor rules, GEMINI.md, CLAUDE.md)</text>
+        fill="#94A3B8" font-size="11">Multi-tool auto-detection (AGENTS.md, CLAUDE.md)</text>
   <circle cx="714" cy="1162" r="3" fill="#94A3B8" opacity="0.5"/>
   <text x="724" y="1166"
-        fill="#94A3B8" font-size="11">5 provider support (Claude Code, Cursor, OpenCode, Codex, Antigravity)</text>
+        fill="#94A3B8" font-size="11">2 provider support (Claude Code, OpenCode)</text>
   <circle cx="714" cy="1182" r="3" fill="#94A3B8" opacity="0.5"/>
   <text x="724" y="1186"
         fill="#94A3B8" font-size="11">Auto-detect provider via env vars or folder presence</text>
@@ -389,17 +359,11 @@
         fill="#94A3B8" font-size="10" font-weight="700" letter-spacing="0.8">TOOL</text>
   <text x="708" y="1354"
         fill="#94A3B8" font-size="10" font-weight="700" letter-spacing="0.8">SHIM FILE WRITTEN</text>
-  <text x="48" y="1372" fill="#F8FAFC" font-size="11">Codex / OpenCode / Copilot</text>
+  <text x="48" y="1372" fill="#F8FAFC" font-size="11">OpenCode</text>
   <text x="708" y="1372"
         fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">AGENTS.md</text>
-  <text x="48" y="1388" fill="#F8FAFC" font-size="11">Cursor</text>
+  <text x="48" y="1388" fill="#F8FAFC" font-size="11">Claude Code</text>
   <text x="708" y="1388"
-        fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">.cursor/rules/hyperflow.mdc</text>
-  <text x="48" y="1404" fill="#F8FAFC" font-size="11">Antigravity / Gemini CLI</text>
-  <text x="708" y="1404"
-        fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">GEMINI.md</text>
-  <text x="48" y="1420" fill="#F8FAFC" font-size="11">Claude Code</text>
-  <text x="708" y="1420"
         fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">CLAUDE.md (appended in place)</text>
 
   <!-- ======================== MEMORY TIERS ======================== -->

@@ -24,14 +24,12 @@ This keeps costs lower and speed higher without sacrificing quality — because 
 
 ## Multi-Provider Support
 
-Hyperflow works across four platforms. Each has its own default models:
+Hyperflow works across two platforms. Each has its own default models:
 
 | Provider | Default Thinking | Default Worker |
 |----------|-----------------|----------------|
 | **Claude Code** | Opus 4.7 | Sonnet 4.6 |
-| **Cursor** | Claude 4.7 Opus | Claude 4.6 Sonnet |
 | **OpenCode** | anthropic/claude-opus-4-7 | anthropic/claude-sonnet-4-6 |
-| **Antigravity** | Gemini 3.1 Pro | Gemini 3 Flash |
 
 See [providers.md](providers.md) for the full model list per platform.
 

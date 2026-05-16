@@ -33,9 +33,9 @@ SECURITY_ENABLED="true"
 
 detect_providers() {
   local name path key
-  local -a names=("Claude Code" "Cursor" "OpenCode" "Antigravity" "Codex")
-  local -a paths=("$HOME/.claude/skills" "$HOME/.cursor/skills" "$HOME/.opencode/skills" "$HOME/.antigravity/skills" "$HOME/.codex/skills")
-  local -a keys=("claude-code" "cursor" "opencode" "antigravity" "codex")
+  local -a names=("Claude Code" "OpenCode")
+  local -a paths=("$HOME/.claude/skills" "$HOME/.opencode/skills")
+  local -a keys=("claude-code" "opencode")
 
   for i in "${!names[@]}"; do
     name="${names[$i]}"
@@ -168,28 +168,6 @@ configure_models_claude_code() {
   SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
 }
 
-configure_models_cursor() {
-  header "Model Configuration — Cursor"
-
-  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Claude 4.7 Opus|Hyperflow default (may require Max Mode)" \
-    "Claude 4.6 Opus|Previous Opus" \
-    "GPT-5.5|Latest GPT" \
-    "Gemini 3.1 Pro|Standard availability"
-  local thinking_options=("claude-4.7-opus" "claude-4.6-opus" "gpt-5.5" "gemini-3.1-pro")
-  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
-
-  echo ""
-
-  pick_one "Worker model (implementer, searcher, writer):" \
-    "Claude 4.6 Sonnet|Hyperflow default" \
-    "Claude 4.5 Haiku|Fast and cheap" \
-    "GPT-5.4 Mini|Cost-efficient" \
-    "Gemini 3 Flash|Fast and cheap"
-  local worker_options=("claude-4.6-sonnet" "claude-4.5-haiku" "gpt-5.4-mini" "gemini-3-flash")
-  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
-}
-
 configure_models_opencode() {
   header "Model Configuration — OpenCode"
 
@@ -209,46 +187,6 @@ configure_models_opencode() {
     "GPT-5.4 Mini|Cost-efficient" \
     "Gemini 3 Flash|Fast and cheap"
   local worker_options=("anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" "openai/gpt-5.4-mini" "google-vertex-ai/gemini-3-flash")
-  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
-}
-
-configure_models_antigravity() {
-  header "Model Configuration — Antigravity"
-
-  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Gemini 3.1 Pro|2M context — Hyperflow default" \
-    "Gemini 3.1 Pro (Low)|Lighter variant" \
-    "Claude Opus 4.7|Free tier with limits"
-  local thinking_options=("gemini-3.1-pro" "gemini-3.1-pro-low" "claude-opus-4.7")
-  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
-
-  echo ""
-
-  pick_one "Worker model (implementer, searcher, writer):" \
-    "Gemini 3 Flash|Fast and cheap — Hyperflow default" \
-    "Claude Sonnet 4.6|Stronger for refactors" \
-    "GPT-OSS 120B|Open-weight"
-  local worker_options=("gemini-3-flash" "claude-sonnet-4.6" "gpt-oss-120b")
-  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
-}
-
-configure_models_codex() {
-  header "Model Configuration — Codex"
-
-  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "o3|Strongest reasoning — Hyperflow default" \
-    "o4-mini|Fast reasoning" \
-    "GPT-5.5|Latest GPT"
-  local thinking_options=("o3" "o4-mini" "gpt-5.5")
-  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
-
-  echo ""
-
-  pick_one "Worker model (implementer, searcher, writer):" \
-    "o4-mini|Fast reasoning — Hyperflow default" \
-    "GPT-5.4 Mini|Cost-efficient" \
-    "Codex Mini|Built-in lightweight model"
-  local worker_options=("o4-mini" "gpt-5.4-mini" "codex-mini")
   SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
 }
 
@@ -325,7 +263,7 @@ setup_project_detection() {
   fi
 
   echo ""
-  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md, .cursor/rules/hyperflow.mdc, GEMINI.md, CLAUDE.md so other AI tools (Codex, Cursor, Antigravity, etc.) auto-load hyperflow in that project." "n"; then
+  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md and CLAUDE.md so Claude Code and OpenCode auto-load hyperflow in that project." "n"; then
     return
   fi
 
@@ -520,10 +458,7 @@ main() {
 
   case "$config_provider" in
     "Claude Code") configure_models_claude_code ;;
-    Cursor)        configure_models_cursor ;;
     OpenCode)      configure_models_opencode ;;
-    Antigravity)   configure_models_antigravity ;;
-    Codex)         configure_models_codex ;;
     *)             configure_models_claude_code ;;
   esac
 
