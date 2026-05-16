@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-05-16
+
+### Added
+- Make parallel dispatch provable from the usage summary
+- Add /hyperflow:status read-only project snapshot skill
+
+
 ## [2.6.2] — 2026-05-16
 
 ### Fixed
@@ -358,7 +365,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.2...v2.7.0
 [2.6.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.5.1...v2.6.0
