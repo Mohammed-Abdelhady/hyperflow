@@ -4,7 +4,7 @@ description: |
   Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel Sonnet workers under per-batch Opus reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
 allowed-tools: Read, Write, Edit, Bash(git:*), Agent
-argument-hint: "[task-file] [chain-mode=auto|manual] [--from-batch N] [--final-only]"
+argument-hint: "[task-file] [chain-mode=auto|manual] [--from-batch N] [--final-only] [--thorough]"
 version: 3.1.2
 license: MIT
 compatibility: Designed for Claude Code
@@ -25,13 +25,13 @@ Every substantive step dispatches at least one Agent.
 |---|---|---|---|
 | 0 — Mode confirm | — | — | `AskUserQuestion` only (exempt) |
 | 1 — Load task | — | — | File read only (exempt) |
-| 2 — Per batch | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Opus) per sub-task at L1–L<n> | Both tiers · per sub-task |
+| 2 — Per batch | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Opus) batched per batch (or per sub-task if mixed level caps) | Both tiers · one Reviewer per batch |
 | 2b — Quality gates | Worker (Sonnet) runs lint/typecheck/tests | **Reviewer** (Opus) judges gate output | Both tiers |
 | 3 — Final integration | — | **Reviewer** (Opus) L1–L<n> over full diff | Mandatory |
 | 4 — Wrap up | Writer (Sonnet) deletes task, appends memory, auto-commits | **Reviewer** (Opus) sanity-checks the commit + memory entries | Both tiers |
 | 5 — End of chain | — | — | Two `AskUserQuestion` gates: audit? deploy? (exempt — gates only) |
 
-Iron rule — `thinking agents ≥ batches + 1` (per-batch reviewer + final integration). With per-step thinking-tier reviewers in Step 4, the floor rises to `batches + 2`.
+Iron rule — `thinking agents ≥ batches + 2` (one batched Reviewer per batch + final integration + wrap-up). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
 
 ## Review Levels (scale by flow profile)
 
@@ -64,6 +64,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 - **`chain-mode=<auto|manual>`** — passed in by `/hyperflow:scope`. Controls whether to pause for confirmation after the final integration review. If absent, assume `auto`.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
+- **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch. Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on.
 
 ## Flow
 
@@ -92,14 +93,17 @@ Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope
 
 1. Print the batch header: `Batch <n> — <one-line description>`.
 2. Dispatch all sub-tasks in the batch in a **single message** with parallel `Agent` calls (one per sub-task). Use the [worker-prompt.md](references/worker-prompt.md) template. Inject `Project Context` (from `.hyperflow/profile.md`, `architecture.md`, `conventions.md`) plus accumulated `Learnings from prior batches`.
-3. As each worker returns:
-   - Print `Implementer — completed <subtask>` (or relevant role).
-   - Immediately dispatch a thinking-tier reviewer per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** — reviewing <subtask> (L1–L<n>)` where `n` is set by the flow-profile table above.
-   - If verdict is `NEEDS_FIX` — re-dispatch worker with the fix list. Repeat until `PASS` (max 3 retries before escalating to a thinking-tier worker).
-   - If verdict is `SECURITY_VIOLATION` — **halt the chain** immediately and surface the finding to the user (no auto-continue).
-   - On `PASS` — **commit this sub-task immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files this sub-task touched, write a conventional commit (`feat(<scope>): <title>` derived from the task file), commit. One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits.
-   - **Update the task file's `## Status` block** after the commit lands: tick the sub-task's `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add this dispatch's tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads to render live progress without needing a process-level watcher.
-4. After the full batch — synthesize learnings, check off the batch in the task file, run **Layer 5 quality gates** (lint / typecheck / tests on affected files) per [quality-gates.md](references/quality-gates.md). If gates fix anything, those become small additional commits on top (never amend per-sub-task commits). Print a one-line status update — *"Batch 1 done · 9/36 sub-tasks · next: B2 deps"* — but do **NOT** ask any question between batches in `auto` mode. Per DOCTRINE rule 8, "transparency checkpoints" / "midway sanity checks" / "scope re-confirmations" / "cost heads-ups" are banned — they are confirmations dressed as clarifications and they break the auto-mode contract. The only inter-batch gates are: (a) `chain-mode=manual` → pause and ask before the next batch fires; (b) `SECURITY_VIOLATION` from a reviewer → hard halt; (c) `ESCALATE: <reason>` crossing the irreversibility boundary → fire the escalation gate per [escalation.md](references/escalation.md) with the reason. If none of those apply, the next batch fires immediately.
+3. When all workers in the batch have returned — dispatch **one** batched thinking-tier reviewer for the entire batch (P2 — batched single-pass review):
+   - **Check level-cap homogeneity first.** Inspect the flow-profile table to confirm every sub-task in this batch shares the same review-level cap (e.g., all L1–L3). If they all match → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers (old pattern).
+   - **Also fall back to per-sub-task reviewers** when `--thorough` was passed.
+   - **Batched reviewer dispatch:** Use the [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) template. Print `**Reviewer** — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. The batched Reviewer returns one verdict per sub-task.
+   - **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** — reviewing <subtask> (L1–L<n>)`.
+4. Parse the per-sub-task verdicts from the batched Reviewer (or individual verdicts in fallback mode):
+   - If any verdict is `SECURITY_VIOLATION` — **halt the chain** immediately and surface the finding to the user (no auto-continue). Do not commit any sub-task in the batch.
+   - For each sub-task whose verdict is `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. Do not re-dispatch passing sub-tasks. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before escalating to a thinking-tier worker).
+   - For each sub-task whose verdict is `PASS` — **commit that sub-task immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files that sub-task touched, write a conventional commit (`feat(<scope>): <title>` derived from the task file), commit. One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits, even though they were reviewed in a single batched Reviewer call.
+   - **Update the task file's `## Status` block** after each commit lands: tick the sub-task's `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add this dispatch's tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads to render live progress without needing a process-level watcher.
+5. After the full batch — synthesize learnings, check off the batch in the task file, run **Layer 5 quality gates** (lint / typecheck / tests on affected files) per [quality-gates.md](references/quality-gates.md). If gates fix anything, those become small additional commits on top (never amend per-sub-task commits). Print a one-line status update — *"Batch 1 done · 9/36 sub-tasks · next: B2 deps"* — but do **NOT** ask any question between batches in `auto` mode. Per DOCTRINE rule 8, "transparency checkpoints" / "midway sanity checks" / "scope re-confirmations" / "cost heads-ups" are banned — they are confirmations dressed as clarifications and they break the auto-mode contract. The only inter-batch gates are: (a) `chain-mode=manual` → pause and ask before the next batch fires; (b) `SECURITY_VIOLATION` from a reviewer → hard halt; (c) `ESCALATE: <reason>` crossing the irreversibility boundary → fire the escalation gate per [escalation.md](references/escalation.md) with the reason. If none of those apply, the next batch fires immediately.
 
 ### Step 3 — Final Integration Review
 
@@ -193,10 +197,11 @@ Writer — generating API documentation
 ## Iron Rules
 
 - Workers never review, never coordinate, never ask the user questions.
-- Every batch produces **one** thinking-tier batch reviewer dispatch.
-- Plus **one** thinking-tier final integration review at the end.
+- Every batch produces **one** thinking-tier Reviewer dispatch — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case.
+- Plus **one** thinking-tier final integration review at the end (Step 3).
 - Plus **one** thinking-tier wrap-up reviewer at Step 4 (DOCTRINE rule 12).
-- Therefore — `thinking agents in usage summary >= batches + 2`. If less, a per-step reviewer was skipped. The task was done wrong.
+- Therefore — `thinking agents in usage summary >= batches + 2`. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
+- Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
 
 ## Doctrine
 
@@ -224,7 +229,7 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
 
 1. Ask `chain-mode` (auto / manual) if invoked directly — structural gate.
 2. Load task file from `.hyperflow/tasks/`.
-3. Per batch: dispatch all sub-tasks in a single parallel `Agent` call; per sub-task fire an Opus reviewer; on PASS commit immediately and update the task file's Status block; after batch run Layer 5 gates.
+3. Per batch: dispatch all sub-tasks in a single parallel `Agent` call; when all workers return, fire **one** batched Opus Reviewer (P2) covering all sub-tasks — unless mixed level caps or `--thorough` (fall back to per-sub-task). Parse per-sub-task verdicts: on PASS commit immediately and update the task file's Status block; on NEEDS_FIX re-dispatch only the failing sub-task's Worker; on SECURITY_VIOLATION halt immediately. After batch run Layer 5 gates.
 4. Final integration review — separate Opus reviewer over the full diff.
 5. Wrap-up — Writer deletes task file + appends memory + makes `chore(memory):` commit; Reviewer sanity-checks.
 6. Two `AskUserQuestion` gates: run `/hyperflow:audit`? then run `/hyperflow:deploy`? — both default to recommended option per flow profile + gate state.
@@ -259,19 +264,24 @@ Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 
 ## Examples
 
-### Single-batch task
+### Single-batch task (P2 batched review)
 
 ```
 /hyperflow:dispatch add-version-command
 
 [chain-mode auto, propagated from scope]
 
-Batch 1 — add /version command + smoke test (2 parallel sub-tasks)
+Batch 1 — add /version command + smoke test (2 parallel sub-tasks, both L1-L2)
 Implementer — creating /version command
 Writer — adding smoke test
-**Reviewer** — reviewing /version command (L1-L2)
-**Reviewer** — reviewing smoke test (L1-L2)
-[both PASS, 2 per-sub-task commits]
+[both workers complete]
+**Reviewer** — batched review Batch 1 (L1-L2, 2 sub-tasks)
+── Batched Review ──────────────────────
+/version command:  PASS
+smoke test:        PASS
+────────────────────────────────────────
+GLOBAL VERDICT: APPROVED
+[2 per-sub-task commits]
 
 Layer 5 gates: lint pass · typecheck pass · tests pass
 **Reviewer** — final integration review (L1-L2)
@@ -281,7 +291,7 @@ Writer — finalizing dispatch artifacts (delete task, append memory, chore comm
 **Reviewer** — verifying wrap-up
 
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.7)     3 agents   42.0k tokens
+Thinking (Opus 4.7)     3 agents   42.0k tokens  (1 batch reviewer + 1 final + 1 wrap-up)
 Worker   (Sonnet 4.6)   3 agents   78.0k tokens
 Total                   6 agents  120.0k tokens
 ─────────────────────────────────────────
@@ -295,49 +305,97 @@ Total                   6 agents  120.0k tokens
    No                — keep local; push manually later
 ```
 
-### Multi-batch with learning injection
+### Multi-batch with learning injection (P2 batched review)
 
 ```
 /hyperflow:dispatch implement-auth
 
-Batch 1 — schema + types (2 parallel)
-... (workers + reviewers + commits) ...
+Batch 1 — schema + types (2 parallel, both L1-L3)
+Implementer — creating TokenClaims schema
+Implementer — creating auth type exports
+[both workers complete]
+**Reviewer** — batched review Batch 1 (L1-L3, 2 sub-tasks)
+── Batched Review ──────────────────────
+schema:  PASS
+types:   PASS
+────────────────────────────────────────
+GLOBAL VERDICT: APPROVED
+[2 per-sub-task commits]
 [Synthesize: "TokenClaims uses discriminated union; downstream batches should import from src/auth/types.ts"]
 
-Batch 2 — middleware + login route (3 parallel, learning injected)
-... 
+Batch 2 — middleware + login route (3 parallel, all L1-L3, learning injected)
+Implementer — creating auth middleware
+Implementer — creating login route
+Writer — creating route index
+[all workers complete]
+**Reviewer** — batched review Batch 2 (L1-L3, 3 sub-tasks)
+── Batched Review ──────────────────────
+auth middleware:  PASS
+login route:      NEEDS_FIX — missing TokenClaims import from src/auth/types.ts (cross-section note from B1)
+route index:      PASS
+────────────────────────────────────────
+GLOBAL VERDICT: NEEDS_FIX
+[Commit middleware + route index immediately (2 commits). Re-dispatch login route worker only.]
+Implementer — fixing login route (TokenClaims import)
+**Reviewer** — reviewing login route fix (L1-L3)
+[PASS — 1 additional commit]
 
-Batch 3 — tests (4 parallel)
+Batch 3 — tests (4 parallel, all L1-L2)
 ...
+**Reviewer** — batched review Batch 3 (L1-L2, 4 sub-tasks)
+[all PASS — 4 per-sub-task commits]
 
 Layer 5 gates
 **Reviewer** — final integration review (L1-L3)
 Wrap-up
 
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.7)     5 agents   89.2k tokens  (3 batch + 1 final + 1 wrap-up)
-Worker   (Sonnet 4.6)   9 agents  202.0k tokens
-Total                  14 agents  291.2k tokens
+Thinking (Opus 4.7)     5 agents   72.1k tokens  (3 batch reviewers + 1 final + 1 wrap-up)
+Worker   (Sonnet 4.6)  10 agents  202.0k tokens
+Total                  15 agents  274.1k tokens
 ─────────────────────────────────────────
 ```
 
-### Mid-batch SECURITY_VIOLATION
+### Mid-batch SECURITY_VIOLATION (batched review)
 
 ```
-Batch 2 — payment processor (3 parallel)
+Batch 2 — payment processor (3 parallel, all L1-L3)
 Implementer — wiring stripe webhook
-**Reviewer** — reviewing stripe webhook (L1-L3)
-SECURITY_VIOLATION: src/payments/webhook.ts:18 — webhook signature verified with == instead of crypto.timingSafeEqual
+Implementer — creating payment record writer
+Implementer — adding payment route
+[all workers complete]
+**Reviewer** — batched review Batch 2 (L1-L3, 3 sub-tasks)
+── Batched Review ──────────────────────
+stripe webhook:        SECURITY_VIOLATION — webhook signature verified with == instead of crypto.timingSafeEqual (src/payments/webhook.ts:18)
+payment record writer: PASS
+payment route:         PASS
+────────────────────────────────────────
+GLOBAL VERDICT: SECURITY_VIOLATION
 
-Halted chain. Per-sub-task commits from Batch 1 remain on branch. Do not push.
+Halted chain. No commits from Batch 2. Per-sub-task commits from Batch 1 remain on branch. Do not push.
 Resume with /hyperflow:dispatch --from-batch 2 after the timing-safe fix.
+```
+
+### Mixed level caps — per-sub-task fallback
+
+```
+Batch 2 — auth + analytics (mixed profile)
+[auth sub-task: L1-L5 (complex, new feature) — analytics sub-task: L1-L2 (simple, config change)]
+[Mixed level caps detected — falling back to per-sub-task reviewers]
+Implementer — creating auth flow
+Implementer — updating analytics config
+**Reviewer** — reviewing auth flow (L1-L5)
+**Reviewer** — reviewing analytics config (L1-L2)
+[both PASS — 2 per-sub-task commits]
 ```
 
 ## Resources
 
 - [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
 - [worker-prompt.md](references/worker-prompt.md) — Sonnet implementer/searcher/writer template.
-- [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template.
+- [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template (per-sub-task fallback).
+- [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) — Opus batched reviewer template (P2).
+- [latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
 - [review-levels.md](references/review-levels.md) — L1-L5 checklist.
 - [memory-system.md](references/memory-system.md) — wrap-up memory append format.
 - [quality-gates.md](references/quality-gates.md) — Layer 5 lint/typecheck/test policy.
