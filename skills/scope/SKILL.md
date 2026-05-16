@@ -69,10 +69,12 @@ Wait for the user's answer. Do not proceed without it. Save the chosen mode and 
 
 If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
-### Step 1 — Understand
+### Step 1 — Route
 
-- Ambiguous → `AskUserQuestion` (max 3)
-- Pure design question → suggest `/hyperflow:spec` instead and stop
+Pure routing decision — no clarification questions here. Clarification fires at Step 2.5, AFTER research has analyzed the requirement against the codebase.
+
+- Pure design question (the user is asking *should we?* not *how do we?*) → suggest `/hyperflow:spec` instead and stop
+- Anything else → proceed to Step 2 (research first, then ask only about what research couldn't resolve)
 
 ### Step 2 — Research (parallel · P1)
 
@@ -87,6 +89,16 @@ Agents — `Searcher` × 2 (Sonnet) ⇒ **Reviewer** (Opus).
 **P1 rationale:** the two Searchers do not depend on each other's output. Firing both in one message cuts the research phase wall-clock in half. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) §P1.
 
 Note: `--thorough` does NOT affect Step 2. The two parallel Searchers stay on under all flag configurations because they are independent reads with no quality tradeoff. `--thorough` only disables P1 internal parallelism in Step 4 (Writer-internal section parallelism).
+
+### Step 2.5 — Clarify (post-analysis · max 3)
+
+Only the ambiguities that Step 2 research did NOT resolve become questions. Per DOCTRINE rule 8 (post-analysis clarification clause), clarification stages fire AFTER the orchestrator has read the relevant code and analyzed the requirement — never before.
+
+- If research fully grounded every assumption → skip this step entirely. No question for question's sake.
+- If ≥1 ambiguity remains (target file unclear, two equally plausible interfaces, a config the codebase doesn't reveal a precedent for) → fire `AskUserQuestion`, max 3 questions, each tied to a specific finding the Searchers surfaced.
+- Frame every question by citing what research found: *"Searcher mapped both `src/auth/middleware.ts` and `src/api/auth/route.ts` — which is the intended target for the new guard?"* — never *"where should the new guard go?"* in the abstract.
+
+The 2-question floor from `/hyperflow:spec` does NOT apply to scope. Scope asks zero questions when research is conclusive; it asks 1-3 when genuine post-analysis ambiguity remains.
 
 ### Step 3 — Decompose
 
