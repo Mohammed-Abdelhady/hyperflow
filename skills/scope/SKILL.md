@@ -100,6 +100,42 @@ Only the ambiguities that Step 2 research did NOT resolve become questions. Per 
 
 The 2-question floor from `/hyperflow:spec` does NOT apply to scope. Scope asks zero questions when research is conclusive; it asks 1-3 when genuine post-analysis ambiguity remains.
 
+### Step 2.6 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires once per chain)
+
+This is the **last** time the orchestrator interrupts the user before dispatch runs end-to-end. In `chain-mode=auto`, every operational preference is collected here in a single batched `AskUserQuestion` block so dispatch can run silently from Step 3 onwards until the end-of-chain audit/deploy gates. Per DOCTRINE rule 8, this is a structural gate — it always fires when `chain-mode=auto`; it is exempt in `chain-mode=manual` because manual users already get to interject between every phase and batch.
+
+Skip this step when:
+- `chain-mode=manual` — manual users review every phase, so operational choices can be deferred to the existing gates
+- Operational args were already propagated from a prior chain-starter (`commit=…`, `branch=…`, `push=…`) — re-asking is an invented-gate violation
+
+Fire ONE `AskUserQuestion` call containing all three questions (the tool supports up to 4 questions per call). Order them as below, each with a `(Recommended)` first option:
+
+```
+Commit cadence?
+  Per-task (Recommended)  — one commit per sub-task; cleanest bisectable history
+  Per-batch               — one commit per batch; tidier branch graph, less granular
+  Single                  — one commit at end of chain; smallest log footprint
+  None                    — leave dirty working tree; you'll commit manually
+
+Branch behaviour?
+  Create feat/<slug> (Recommended on main/master) — new feature branch
+  Stay on <current>                                — direct commits on the current branch
+
+Push at end?
+  Ask at deploy gate (Recommended) — standard push confirmation after release.sh
+  Auto-push                        — push branch + tag without asking at end
+  Never                            — always hold local; user pushes manually
+```
+
+Recommended defaults adapt:
+- Commit: `Per-task` unless triage shows `complexity=low AND sub-tasks<=2` (then `Single` is recommended)
+- Branch: `Create` if currently on `main` or `master`; `Stay` otherwise (already on a feature branch)
+- Push: `Ask at deploy gate` always — bumping to auto-push without explicit user consent violates rule 8
+
+Save the chosen values and propagate via chain args: `commit=<per-task|per-batch|single|none> branch=<new|current> push=<ask|auto|never>`. Dispatch (Step 2) reads commit + branch; deploy (Step 6) reads push.
+
+If the user is invoking scope directly without going through spec (no prior `chain-mode=auto` propagation), Step 0 fires the chain-mode question and this step (Step 2.6) fires only if they pick auto.
+
 ### Step 3 — Decompose
 
 Agents — **Planner** (Opus, thinking-tier).

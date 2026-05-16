@@ -211,6 +211,26 @@ Writer — generating API documentation
 **Debugger** — investigating test failure in auth.test.ts
 ```
 
+## Operational Args (from Scope Step 2.6 · auto-mode pre-elections)
+
+When `chain-mode=auto`, scope batches three operational pre-elections at its Step 2.6 and propagates them as chain args. Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults.
+
+| Arg | Values | Default | Honored at |
+|---|---|---|---|
+| `commit` | `per-task` / `per-batch` / `single` / `none` | `per-task` | Step 2 (commit cadence after each PASS) |
+| `branch` | `new` / `current` | `new` if currently on `main` or `master`, else `current` | Step 2 (before first commit) |
+| `push` | `ask` / `auto` / `never` | `ask` | Forwarded to Deploy Step 6 via chain args |
+
+**`commit=per-task`** (default) — commit after every sub-task PASS as the existing flow.
+**`commit=per-batch`** — accumulate sub-task changes; commit once per batch after all sub-tasks PASS, with a message rolling up the batch (`feat(<scope>): batch <n> — <one-line summary>`). One per-batch commit per batch.
+**`commit=single`** — accumulate all changes; commit once at Step 4 wrap-up with a message rolling up the whole chain (`feat(<scope>): <feature name> · <n> sub-tasks`). One commit total.
+**`commit=none`** — never commit during dispatch; leave working tree dirty. Skip the per-sub-task commit step entirely. Print at Step 4: `Working tree intentionally left dirty (commit=none); review and commit manually before deploy.`
+
+**`branch=new`** — at Step 2 before the first commit, if currently on `main` / `master` / `develop`, create `feat/<task-slug>` and switch to it. If already on a feature branch, treat as `branch=current`.
+**`branch=current`** — never auto-create. All commits land on whatever branch the orchestrator was invoked on.
+
+**`push=…`** — dispatch does NOT push. It only propagates the chosen value to Deploy Step 6 in the chain args. Deploy honors it there.
+
 ## Iron Rules
 
 - Workers never review, never coordinate, never ask the user questions.
