@@ -60,7 +60,13 @@ if [ -n "$HF_DIR" ]; then
         file="${section##*:}"
         printf '## %s\n' "$label"
         if [ -f "$HF_DIR/$file" ]; then
-          cat "$HF_DIR/$file"
+          # Cap each section at 500 lines to bound session-context.md size and
+          # avoid blocking session-start on pathological multi-thousand-line sources.
+          head -n 500 "$HF_DIR/$file"
+          lines=$(wc -l < "$HF_DIR/$file")
+          if [ "$lines" -gt 500 ]; then
+            printf '<!-- truncated: %s has %s lines, showing first 500 -->\n' "$file" "$lines"
+          fi
         else
           printf '<!-- .hyperflow/%s not found — run /hyperflow:scaffold to populate -->\n' "$file"
           printf 'WARNING: session-context: .hyperflow/%s missing\n' "$file" >&2
