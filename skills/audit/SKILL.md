@@ -151,13 +151,15 @@ Two outputs per audit run:
 ```markdown
 # Audit — <scope description>
 
-╭─────────────────────────────────────────────────────────────────╮
-│ Verdict     <PASS | NEEDS_FIX | SECURITY_VIOLATION>             │
-│ Scope       <files / range / commit>                            │
-│ Level       L<n>                                                │
-│ Findings    N Critical · N Important · N Suggestions · N Praise │
-│ Date        <YYYY-MM-DD HH:mm>                                  │
-╰─────────────────────────────────────────────────────────────────╯
+## Status
+
+| Field    | Value                                                |
+|----------|------------------------------------------------------|
+| Verdict  | `<PASS \| NEEDS_FIX \| SECURITY_VIOLATION>`          |
+| Scope    | `<files / range / commit>`                           |
+| Level    | L<n>                                                 |
+| Findings | N Critical · N Important · N Suggestions · N Praise  |
+| Date     | <YYYY-MM-DD HH:mm>                                   |
 
 ## TL;DR
 

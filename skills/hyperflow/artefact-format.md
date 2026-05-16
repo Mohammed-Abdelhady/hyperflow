@@ -12,8 +12,8 @@ Applies to:
 ## Core conventions
 
 - **No decorative icons** in any file (`⚡ ✓ ✗ ▸ → • 🚀 📦 ⚠️ 🟢 🔴 *` banned as label prefix per [output-style.md](output-style.md)).
-- **Box-drawing characters allowed** for the status block at the top — they render in monospace editors and don't add semantic noise: `╭─╮╰─╯│`. Use sparingly; one box per file.
-- **Progress bars are text-only:** `████████░░░░░░░░░░░░` (8 filled + 12 empty for 8/20). No coloured emoji bars.
+- **Status blocks use markdown tables, not box-drawing characters.** Box-drawing (`╭─╮╰─╯│`) was used in earlier doctrine versions and broke alignment when Writers mis-counted characters (real failure pattern, 2026-05-16). Tables auto-align in every renderer and degrade gracefully in raw text view.
+- **Progress bars are text-only:** ``` `████████░░░░░░░░░░░░` ``` wrapped in backticks so the half-blocks render as inline code (8 filled + 12 empty for 8/20). No coloured emoji bars.
 - **Section headers** use plain `##` (H2) — never decorated with brackets or hashes for visual weight. The H2 itself is the weight.
 - **Tables for any structured list of 3+ items** — file lists, batches, costs, severity counts. Easier to scan than bullet trees.
 - **Inline file paths** stay in backticks (`` `path/to/file` ``) and end with a one-line role hint: `` `path/to/file` — what it does ``.
@@ -21,28 +21,31 @@ Applies to:
 
 ## The status block (mandatory at top of every artefact)
 
-A single bordered block that summarises the artefact's current state. The user reads this first; everything below it is detail.
+A markdown table that summarises the artefact's current state. The user reads this first; everything below it is detail. **Use a table, not box-drawing characters** — tables auto-align in every markdown renderer (GitHub, VS Code preview, Obsidian, etc.) and degrade gracefully in raw text. Box-drawing breaks the moment a Writer mis-counts characters (real failure pattern, 2026-05-16).
 
-```
-╭─────────────────────────────────────────────────────────────────╮
-│ Status      <in_progress | approved | completed>                │
-│ Progress    ████████░░░░░░░░  7 / 15 sub-tasks (47%)            │
-│ Branch      feat/<slug>                                         │
-│ Commits     7 since main · per-task cadence                     │
-│ Wall-clock  12m elapsed · ETA ~8m                               │
-│ Tokens      thinking 145k · worker 220k · total 365k            │
-╰─────────────────────────────────────────────────────────────────╯
+```markdown
+## Status
+
+| Field      | Value                                            |
+|------------|--------------------------------------------------|
+| Status     | <pending \| in_progress \| approved \| completed> |
+| Progress   | `████████░░░░░░░░░░░░`  7 / 15 sub-tasks (47%)   |
+| Branch     | `feat/<slug>`                                    |
+| Commits    | 7 since main · per-task cadence                  |
+| Wall-clock | 12m elapsed · ETA ~8m                            |
+| Tokens     | thinking 145k · worker 220k · total 365k         |
 ```
 
 Field rules:
 
 - **Status** — one word from the artefact's lifecycle vocabulary
-- **Progress** — only on task files; spec files use `Section 4/5 approved` style; audit files use `Verdict: NEEDS_FIX`
-- **Branch / Commits** — only on task files
-- **Wall-clock / Tokens** — only when live (skip on completed-and-archived files)
-- Box width = 67 characters (fits most editor windows side-by-side)
+- **Progress** — only on task files; spec files use `Section 4 / 5 approved` style; audit files omit the row (use Verdict instead — see audit additions below)
+- **Branch / Commits** — only on task files (omit rows on spec/audit files)
+- **Wall-clock / Tokens** — only when live (omit rows on completed-and-archived files; or replace with totals + `· final`)
+- Progress-bar string goes in backticks so the box-drawing characters render as inline code and don't trigger markdown italics on `*` or emphasis on `_`
+- Always exactly two columns (Field / Value). Markdown auto-pads to the widest cell — no character counting required
 
-When the artefact is completed and frozen, replace live counters with final totals and append `· final`.
+When the artefact is completed and frozen, replace live counter rows (Progress / Wall-clock / Tokens) with their final values and append `· final` to each.
 
 ## Visual dependency diagram
 
@@ -132,15 +135,18 @@ Spec files add three extra sections beyond the task-file template:
 
 ## Audit file additions
 
-Audit files add a severity-counts block right under the status box:
+Audit files replace the status table with a verdict table (no Progress / Branch / Commits / Wall-clock / Tokens rows since audits aren't long-running tasks):
 
-```
-╭─────────────────────────────────────────────────────────────────╮
-│ Verdict     NEEDS_FIX                                           │
-│ Scope       main..HEAD (13 files · 284 insertions)              │
-│ Level       L3                                                  │
-│ Findings    0 Critical · 4 Important · 4 Suggestions · 5 Praise │
-╰─────────────────────────────────────────────────────────────────╯
+```markdown
+## Status
+
+| Field    | Value                                              |
+|----------|----------------------------------------------------|
+| Verdict  | `NEEDS_FIX`                                        |
+| Scope    | `main..HEAD` (13 files · 284 insertions)           |
+| Level    | L3                                                 |
+| Findings | 0 Critical · 4 Important · 4 Suggestions · 5 Praise |
+| Date     | 2026-05-16 17:30                                   |
 ```
 
 Then findings are grouped by severity in this order: **Critical → Important → Suggestion → Praise**. Each finding:

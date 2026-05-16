@@ -266,13 +266,15 @@ The draft already lives at `.hyperflow/specs/<slug>.draft.md` (written progressi
 ```markdown
 # <Feature name>
 
-╭─────────────────────────────────────────────────────────────────╮
-│ Status      approved                                            │
-│ Sections    5 / 5 approved                                      │
-│ Date        <YYYY-MM-DD>                                        │
-│ Trigger     <slash command or trigger phrase>                   │
-│ Approach    <one-line approach name from Step 6>                │
-╰─────────────────────────────────────────────────────────────────╯
+## Status
+
+| Field    | Value                                          |
+|----------|------------------------------------------------|
+| Status   | approved                                       |
+| Sections | 5 / 5 approved                                 |
+| Date     | <YYYY-MM-DD>                                   |
+| Trigger  | `<slash command or trigger phrase>`            |
+| Approach | <one-line approach name from Step 6>           |
 
 ## TL;DR
 
