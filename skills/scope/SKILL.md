@@ -33,7 +33,7 @@ Every substantive step dispatches at least one Agent.
 | 6 — Memory | Writer (Sonnet) appends to memory files (fires in parallel with Step 4 — P3) | **Reviewer** (Opus) checks for duplicates / contradictions | Both tiers; P3 applied |
 | 7 — Hand off | — | — | `Skill` tool invocation (exempt) |
 
-**Latency flags:** `--thorough` disables P1 (sequential sibling drafts in Step 4). P3 (Steps 4 + 6 concurrent) is always on — no quality tradeoff. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) for pattern definitions.
+**Latency flags:** `--thorough` disables P1 **in Step 4 only** (sequential Writer-internal section drafts instead of parallel). The Step 2 Searchers (also marked P1) are NOT affected — they stay parallel under all flag configurations because they are independent reads with no quality tradeoff. P3 (Steps 4 + 6 concurrent) is always on. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) for pattern definitions.
 
 ## Approval Gates
 
@@ -49,7 +49,7 @@ Every substantive step dispatches at least one Agent.
 
 This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the skill is invoked directly. "No clarifying questions" / "auto-pilot" / "always-on" / any other autonomy directive does NOT skip it. Defaulting to `auto` without asking is a doctrine violation.
 
-**Latency arg:** `--thorough` (or `depth=max`) disables P1 (sequential Writer drafts instead of internal-parallel sections in Step 4). P3 (Step 4 + Step 6 concurrent dispatch) stays on always. If the user passes `--thorough`, note it and apply to Step 4 dispatch only — all other steps are unaffected.
+**Latency arg:** `--thorough` (or `depth=max`) disables P1 **in Step 4 only** (sequential Writer-internal section drafts instead of parallel). The Step 2 parallel Searchers are NOT affected — they stay parallel under all flag configurations because they are independent reads with no quality tradeoff. P3 (Step 4 + Step 6 concurrent dispatch) stays on always. If the user passes `--thorough`, note it and apply to Step 4 dispatch only.
 
 If invoked with a `chain-mode=<auto|manual>` arg (from `/hyperflow:spec` or a prior skill), skip this step — the previous chain-starter already asked.
 
@@ -85,6 +85,8 @@ Agents — `Searcher` × 2 (Sonnet) ⇒ **Reviewer** (Opus).
 3. Dispatch `**Reviewer** — verifying research coverage` to confirm both Searchers hit the relevant subsystems. If gaps remain, redispatch a Searcher targeting the gap before moving on.
 
 **P1 rationale:** the two Searchers do not depend on each other's output. Firing both in one message cuts the research phase wall-clock in half. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) §P1.
+
+Note: `--thorough` does NOT affect Step 2. The two parallel Searchers stay on under all flag configurations because they are independent reads with no quality tradeoff. `--thorough` only disables P1 internal parallelism in Step 4 (Writer-internal section parallelism).
 
 ### Step 3 — Decompose
 
