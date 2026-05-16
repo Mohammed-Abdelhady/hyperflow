@@ -1,12 +1,11 @@
 ---
 name: spec
 description: |
-  Use when the user is exploring a design idea, weighing approaches, has an ambiguous
-  request, or says "should I", "how should we", "what's the best way to". Asks
-  structured questions, proposes 2–3 approaches, walks the design section-by-section.
-  On approval, auto-chains into /hyperflow:scope — no manual gate.
-allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
-version: 3.1.1
+  Use when the user is exploring a design idea, weighing approaches, or has an ambiguous request. Asks structured questions, proposes 2-3 approaches, walks the design section-by-section. On approval, auto-chains into /hyperflow:scope.
+  Trigger with /hyperflow:spec, "should I", "how should we", "what's the best way to", "design this", "explore the approach".
+allowed-tools: Write, AskUserQuestion
+argument-hint: "<design question or feature idea> [chain-mode=auto|manual]"
+version: 3.1.2
 author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
@@ -74,14 +73,14 @@ If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should p
 
 Agents — **Classifier** (Opus, thinking-tier).
 
-Dispatch a thinking-tier triage call per [task-triage.md](../hyperflow/task-triage.md). The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives:
+Dispatch a thinking-tier triage call per [task-triage.md](references/task-triage.md). The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives:
 
 - **Spec depth** at Step 4 — **floor: 2 questions always**.
   - `ambiguity 0.0–0.5` → light: **2 questions**
   - `0.5–0.8` → standard: **3 questions**
   - `0.8–1.0` → deep: **4–5 questions**
-- **Flow profile** for the downstream `dispatch` phase — `fast`, `standard`, `deep`, `research`, `creative`, or `scientific` (see [flow-profiles.md](../hyperflow/flow-profiles.md))
-- **Persona stitching** for worker prompts later (see [personas-A.md](../hyperflow/personas-A.md), [personas-B.md](../hyperflow/personas-B.md))
+- **Flow profile** for the downstream `dispatch` phase — `fast`, `standard`, `deep`, `research`, `creative`, or `scientific` (see [flow-profiles.md](references/flow-profiles.md))
+- **Persona stitching** for worker prompts later (full personas defined in DOCTRINE)
 
 Persist the triage output and propagate it forward through `chain-mode=<mode> triage=<base64-json>` args. Print:
 
@@ -228,9 +227,134 @@ After design approval:
 - Persist key decisions to `.hyperflow/memory/decisions.md` with tags
 - Pitfalls discovered → `.hyperflow/memory/pitfalls.md`
 
-## References
+## Overview
 
-- [brainstorming-advanced.md](../hyperflow/brainstorming-advanced.md) — deeper question framework
-- [memory-system.md](../hyperflow/memory-system.md) — persistence format
-- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — shared rules
-- [output-style.md](../hyperflow/output-style.md) — elegant label format
+`/hyperflow:spec` is the design phase — thinking, not building. No code lands until the user approves the design section-by-section.
+
+Opus Classifier triages the request; Sonnet Searcher maps relevant context; Opus Analyst produces 6-dimension analysis; the orchestrator asks 2-5 `AskUserQuestion` calls (one at a time) to resolve ambiguities.
+
+Writer + Reviewer pairs draft and validate each design section (Architecture, Data flow, Key decisions, Edge cases, File structure) with user approval after each. On final approval, auto-chains into `/hyperflow:scope` → `/hyperflow:dispatch`.
+
+## Prerequisites
+
+- Project initialized via `/hyperflow:scaffold` (recommended — analyst uses `.hyperflow/profile.md` and friends).
+- An idea, feature request, or design question — anything ambiguous enough to need exploration. Clear-cut decompositions should skip straight to `/hyperflow:scope`.
+- `AskUserQuestion` available — required for the 2-5 spec questions + per-section approval gates. Headless / non-interactive mode is rejected at Step 0.
+
+## Instructions
+
+The 10 numbered steps live in [Step 0 — Choose chain mode](#step-0--choose-chain-mode-first-tool-call--structural-gate) through [Step 9 — Hand off to /hyperflow:scope](#step-9--hand-off-to-hyperflowscope) above. Summary:
+
+1. Ask `chain-mode` (auto / manual) — structural gate, fires every direct invocation.
+2. Opus Classifier triages (types, complexity, risk, ambiguity, flow, personas).
+3. Sonnet Searcher gathers context; Opus Reviewer verifies coverage.
+4. Opus Analyst produces 6-dimension analysis (intent, fit, scope, constraints, risks, alternatives).
+5. Ask 2-5 `AskUserQuestion` calls, one at a time, with `(Recommended)` markers — floor of 2 always.
+6. Writer drafts requirement synthesis; Reviewer verifies fidelity; user confirms.
+7. Writer drafts 2-3 approaches with trade-offs; Reviewer probes for missing alternatives; user picks.
+8. Per design section (Architecture → Data flow → Key decisions → Edge cases → File structure): Writer drafts, Reviewer reviews, user approves before next section.
+9. Writer composes spec file at `.hyperflow/specs/<slug>.md` (or inline summary for trivial designs); Reviewer final sanity check.
+10. Hand off to `/hyperflow:scope` (auto or with confirmation gate per chain mode).
+
+## Output
+
+Two outputs:
+
+1. The approved design — either inline in the conversation (trivial features) or saved to `.hyperflow/specs/<slug>.md` (3+ file features). Format: Architecture, Data flow, Key decisions, Edge cases, File structure — each as its own H2 section.
+2. The hand-off line:
+   ```
+   Spec complete — design approved
+   Auto-chaining to /hyperflow:scope...        (chain-mode=auto)
+   Awaiting your go-ahead for /hyperflow:scope...   (chain-mode=manual)
+   ```
+
+## Error Handling
+
+| Failure | Behavior |
+|---|---|
+| `AskUserQuestion` unavailable (headless) | Refuse at Step 0; print error and exit. Spec requires interactive design exploration. |
+| Triage classifier rejects request (off-topic, abuse) | Stop. Print neutral reason. |
+| User picks "revise" on a design section | Loop back to Writer for that section with the user's feedback. Max 3 revise cycles per section before suggesting a different approach. |
+| Searcher returns no relevant context | Reviewer flags; redispatch Searcher with broader query. After 2 retries, surface to user: design proceeds with caveat about thin context. |
+| User picks none of the 2-3 proposed approaches | Writer drafts a 4th approach incorporating user's stated objection. |
+| User answers an `AskUserQuestion` with "Other" + free-form text | Treat as a new constraint; integrate into the next section's draft. |
+
+## Examples
+
+### Standard exploration
+
+```
+/hyperflow:spec add a token-bucket rate-limit middleware for this app
+
+?  How should I advance through the chain after each phase?
+   Auto (Recommended) — chain forward through spec → scope → dispatch with no gates
+   Manual              — pause between phases and ask before advancing
+
+[user picks Auto]
+
+**Classifier** — triaging request
+Triage — types: [feature, middleware] · flow: standard · ambiguity: 0.6
+
+Searcher — mapping context relevant to rate-limit middleware
+**Reviewer** — verifying context coverage
+**Analyst** — 6-dimension exploration
+
+?  Where should the bucket state live?
+   In-memory per-instance (Recommended) — fits this single-node deploy; no Redis dep
+   Redis-backed                          — survives restarts; needed if you horizontally scale
+
+?  What's the right limit for /login specifically?
+   5 req/min (Recommended) — common anti-bruteforce threshold
+   10 req/min              — more lenient; rely on captcha for hard cases
+   30 req/min              — very lenient; depends on captcha + lockout
+
+Writer — drafting requirement synthesis
+**Reviewer** — verifying requirement fidelity
+[user confirms synthesis]
+
+Writer — drafting 2-3 approaches
+**Reviewer** — probing for missing alternatives
+[user picks "Token bucket with Redis fallback"]
+
+Writer — drafting section: Architecture
+**Reviewer** — reviewing section: Architecture
+[user approves]
+... (4 more sections) ...
+
+Writer — writing spec to .hyperflow/specs/rate-limit-middleware.md
+**Reviewer** — final spec sanity check
+
+Spec complete — design approved
+Auto-chaining to /hyperflow:scope...
+```
+
+### Concise request — only 2 questions fire
+
+```
+/hyperflow:spec rename "Cart" to "Bag" across the codebase
+
+[triage ambiguity 0.2 → light depth → exactly 2 questions]
+
+? Should I rename only user-visible text (UI strings, docs) or also internal symbols (types, variables, file names)?
+? Are there integrations (analytics events, API contracts) that depend on the "Cart" name?
+
+[user answers; spec proceeds with full 5-section walk-through, scope handles the actual rename]
+```
+
+### Bounces back to scope when clear
+
+```
+/hyperflow:spec add a /health endpoint that returns {status: "ok"}
+
+That's clear enough to skip the design phase. Try /hyperflow:scope directly —
+it'll decompose into the right batches without the question flow.
+```
+
+## Resources
+
+- [brainstorming-advanced.md](references/brainstorming-advanced.md) — deeper question framework.
+- [memory-system.md](references/memory-system.md) — persistence format for decisions / pitfalls.
+- [DOCTRINE.md](references/DOCTRINE.md) — shared rules (especially #8 structural gates).
+- [output-style.md](references/output-style.md) — elegant label format.
+- [task-triage.md](references/task-triage.md) — Classifier output schema.
+- [flow-profiles.md](references/flow-profiles.md) — fast/standard/deep/research/creative/scientific profiles.

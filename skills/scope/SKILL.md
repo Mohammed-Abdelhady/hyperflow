@@ -1,11 +1,11 @@
 ---
 name: scope
 description: |
-  Use when the user says "plan this", "decompose this task", "break this down", or
-  wants the task file before any code changes. Writes .hyperflow/tasks/[slug].md
-  with batched sub-tasks, then auto-chains into /hyperflow:dispatch — no manual gate.
+  Use when the user has a clear-enough task and wants it decomposed into batched worker sub-tasks before any code is written. Writes a task file under .hyperflow/tasks/ and auto-chains into /hyperflow:dispatch.
+  Trigger with /hyperflow:scope, "plan this", "decompose this task", "break this down", "write the task file".
 allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep
-version: 3.1.1
+argument-hint: "<task description> [chain-mode=auto|manual]"
+version: 3.1.2
 author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
@@ -84,7 +84,7 @@ Agents — `Searcher` × 2 (Sonnet) ⇒ **Reviewer** (Opus).
 
 Agents — **Planner** (Opus, thinking-tier).
 
-Dispatch `**Planner** — producing batch graph` with the research findings, triage classification, and applicable templates from [task-templates.md](../hyperflow/task-templates.md) (CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix — else bespoke).
+Dispatch `**Planner** — producing batch graph` with the research findings, triage classification, and applicable templates from [task-templates.md](references/task-templates.md) (CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix — else bespoke).
 
 The Planner produces, for each sub-task:
 - Worker role — Implementer / Searcher / Writer
@@ -162,7 +162,7 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 1. Dispatch `Writer — appending decisions to .hyperflow/memory/decisions.md`. Skip trivial ones. For complex features (3+ files, multiple subsystems) the Writer also produces `.hyperflow/specs/<feature-slug>.md` referenced from the task file.
 2. Dispatch `**Reviewer** — checking memory entries` to catch duplicates or contradictions with existing entries before they land in `.hyperflow/memory/`.
 
-See [task-tracking.md](../hyperflow/task-tracking.md) and [worker-prompt.md](../hyperflow/worker-prompt.md).
+See [task-tracking.md](references/task-tracking.md) and [worker-prompt.md](references/worker-prompt.md).
 
 ### Step 7 — Hand off to `/hyperflow:dispatch`
 
@@ -184,7 +184,100 @@ Auto-chaining to /hyperflow:dispatch…
 - Pausing for "should I execute?" when `chain-mode=auto` — that was already answered at Step 0
 - Asking the chain-mode question again when a `chain-mode=<…>` arg was passed in
 
-## References
+## Overview
 
-- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — shared rules
-- [output-style.md](../hyperflow/output-style.md) — elegant label format
+`/hyperflow:scope` decomposes a clear-enough task into a batched worker plan and writes it to `.hyperflow/tasks/<slug>.md`. Parallel Sonnet searchers map the affected surface, an Opus Planner produces the batch graph, and a Sonnet Writer emits the task file. Read-only with respect to source code — only `.hyperflow/tasks/`, `.hyperflow/memory/`, and `.hyperflow/specs/` are written. On completion, auto-chains into `/hyperflow:dispatch` (or asks first if `chain-mode=manual`).
+
+## Prerequisites
+
+- A clear-enough description of what to build. If ambiguous, scope will redirect to `/hyperflow:spec` and stop.
+- `.hyperflow/` cache (recommended — improves planning context). Run `/hyperflow:scaffold` first if missing.
+- Optional: prior `/hyperflow:spec` output passed via `chain-mode` arg propagates triage classification and recommended flow profile.
+
+## Instructions
+
+The numbered steps live in [Step 0 — Choose chain mode](#step-0--choose-chain-mode-first-tool-call--structural-gate) through [Step 7 — Hand off to /hyperflow:dispatch](#step-7--hand-off-to-hyperflowdispatch) above. Summary:
+
+1. Ask `chain-mode` (auto / manual) if not propagated from a prior chain-starter.
+2. Confirm the task is buildable, not a design question (else hand off to `/hyperflow:spec`).
+3. Parallel Sonnet searchers map affected files + tests + conventions.
+4. Opus Planner produces batch graph (parallel vs sequential dependencies, role assignment, complexity estimate).
+5. Sonnet Writer emits `.hyperflow/tasks/<slug>.md`; Opus Reviewer verifies plan vs design.
+6. Append decisions to `.hyperflow/memory/decisions.md`.
+7. Hand off to `/hyperflow:dispatch` (auto or via confirmation gate).
+
+## Output
+
+Single output line plus the task file path:
+
+```
+Plan ready — .hyperflow/tasks/<slug>.md (N batches, M sub-tasks)
+Auto-chaining to /hyperflow:dispatch...
+```
+
+The written task file follows the template in [Step 4](#step-4--write-task-file) — Goal, Context, Affected files, Batches (with `[ ]` checkboxes), Open questions, Verification plan, Estimated cost, Status block.
+
+## Error Handling
+
+| Failure | Behavior |
+|---|---|
+| Ambiguous request (would need design exploration) | Stop and suggest `/hyperflow:spec`. Print: `This needs design exploration first. Try /hyperflow:spec` and exit. |
+| Searcher returns empty (no affected files found) | Reviewer flags missing scope; redispatch with broader query. Max 2 retries. |
+| Planner produces single-batch plan for multi-file work | Reviewer rejects; redispatch Planner with feedback to split into parallel + sequential batches. |
+| Task file write fails (path locked, disk full) | Abort with explicit error; do not auto-chain. User retries after fix. |
+| `chain-mode` arg malformed | Refuse and re-ask via `AskUserQuestion`. Never silently default. |
+| `AskUserQuestion` unavailable (headless) | Print error stating chain-mode gate cannot fire; exit. |
+
+## Examples
+
+### Direct invocation (asks chain-mode first)
+
+```
+/hyperflow:scope add a rate-limit middleware: token bucket, per-IP, env-configurable
+
+?  How should I advance through the chain after this phase?
+   Auto (Recommended)  — chain forward through scope → dispatch with no gate.
+   Manual              — pause between phases and ask before advancing.
+
+[user picks Auto]
+
+Searcher — mapping affected files and existing patterns
+Searcher — finding related tests and conventions
+**Reviewer** — verifying research coverage
+**Planner** — producing batch graph
+Writer — emitting task file
+**Reviewer** — verifying task file vs design
+Writer — appending decisions to .hyperflow/memory/decisions.md
+**Reviewer** — checking memory entries
+
+Plan ready — .hyperflow/tasks/rate-limit-middleware.md (3 batches, 7 sub-tasks)
+Auto-chaining to /hyperflow:dispatch...
+```
+
+### Propagated from spec (no chain-mode prompt)
+
+```
+[Invoked from /hyperflow:spec with args: chain-mode=auto triage=<base64>]
+
+Searcher — mapping affected files
+...
+Plan ready — .hyperflow/tasks/<slug>.md (2 batches, 4 sub-tasks)
+Auto-chaining to /hyperflow:dispatch...
+```
+
+### Bounce back to spec on ambiguity
+
+```
+/hyperflow:scope should we switch to event sourcing?
+
+This needs design exploration first. Try /hyperflow:spec — it'll ask the
+right questions before any decomposition happens.
+```
+
+## Resources
+
+- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (Layer 7 task templates, rule 8 structural gates).
+- [task-templates.md](references/task-templates.md) — CRUD, API, UI, migration, refactor, bug-fix templates.
+- [task-tracking.md](references/task-tracking.md) — task file format and lifecycle.
+- [worker-prompt.md](references/worker-prompt.md) — what dispatch will inject into each Sonnet worker.
+- [output-style.md](references/output-style.md) — agent label format.
