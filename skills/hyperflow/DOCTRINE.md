@@ -208,7 +208,7 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    - `Searcher — finding related test files`
    - `Writer — generating API documentation`
    Thinking-tier roles (`Reviewer`, `Debugger`) wrap the role in `**bold**`. Worker-tier roles (`Implementer`, `Searcher`, `Writer`) stay plain. The bold gives visual hierarchy between "brain" and "execution" without using icons. Never use `⚡`, `→`, `*`, `[]`, `✓`, `✗`, or any decorative character. See [output-style.md](output-style.md) for parallel dispatch format.
-10. **Usage tracking.** Track every agent dispatch and token usage (from `<usage>total_tokens: N</usage>` in agent results). After the task completes, print a usage summary. Triage, spec depth, and profile lines surface up-front when a flow profile is in play. See [escalation.md](escalation.md) for the canonical format and [output-style.md](output-style.md) for visual rules.
+10. **Usage tracking.** Track every agent dispatch and token usage (from `<usage>total_tokens: N</usage>` in agent results). Track **wall-clock** (elapsed real time from first `Agent()` call to last `⎿ Done`) and **cumulative** (sum of individual durations from each `⎿ Done (... · Ym Zs)`) separately — the ratio between them proves whether `parallel:N` dispatches actually ran parallel. After the task completes, print a usage summary. Triage, spec depth, and profile lines surface up-front when a flow profile is in play. See [escalation.md](escalation.md) for the canonical format and [output-style.md](output-style.md) for visual rules.
 
    ```
    ── Hyperflow Usage ─────────────────────────────────────────
@@ -217,10 +217,14 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    Profile: deep                   —           —
    Thinking  (Opus 4.7  )          4 agents   52.1k tokens  (3 batch · 1 final)
    Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
+   Wall-clock                      3m 47s
+   Cumulative                     14m 22s    (ratio 0.26 — parallel)
    Escalations                     0
    Total                          14 agents  243.1k tokens
    ────────────────────────────────────────────────────────────
    ```
+
+   `ratio = wall-clock / cumulative`. Annotation: `parallel` (≤ 0.5), `mixed` (0.5–0.8), `serial` (≥ 0.8). For a multi-batch task where labels say `parallel:N` but the ratio comes out ≥ 0.8, see Red Flags — the orchestrator broke rule 2 by dispatching across separate messages instead of one.
 
     **What counts as a thinking agent:**
     - Every batch review MUST be a dispatched `Agent` call with `model: "<resolved-thinking>"` — reading files yourself and saying "looks good" is NOT a review and does NOT count.
@@ -367,6 +371,8 @@ Hand-off pattern:
 - Skip the final integration review (separate from batch reviews) in `deep`/`scientific` profiles
 - Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles
 - Dispatch workers sequentially when they could run in parallel
+- Label a batch `parallel:N` but dispatch the calls across separate messages — that's serial, not parallel. The wall-clock / cumulative ratio will land ≥ 0.8 and expose it. Investigate and re-dispatch with all N `Agent()` calls in a single message.
+- Print a usage summary for a multi-batch task without the `Wall-clock` and `Cumulative` rows — auditability of parallelism is mandatory once 2+ batches or 2+ parallel-eligible workers are in play
 - Include "Co-Authored-By: Claude" in any git operation, or reference the LLM as an actor in any artefact (commits, PRs, docs, code comments, skill prose) — see rule 9
 - Summarize what you just did
 - Describe code instead of writing it
