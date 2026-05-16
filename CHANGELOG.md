@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] — 2026-05-16
+
+### Added
+- Add fix-gate — ask user to apply findings after NEEDS_FIX
+- Drop Cursor, Codex, Antigravity, Gemini CLI, Copilot — Claude Code + OpenCode only
+
+### Changed
+- Bump version badge to v2.7.0
+
+
 ## [2.7.0] — 2026-05-16
 
 ### Added
@@ -365,7 +375,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.2...v2.7.0
 [2.6.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.0...v2.6.1
