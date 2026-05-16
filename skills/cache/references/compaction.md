@@ -14,17 +14,16 @@ At session start, the Session-start lineCount checker reads `.hyperflow/memory/.
 
 ### User-invoked compact
 
-Triggered by `/hyperflow:cache compact`. Nine-step flow:
+Triggered by `/hyperflow:cache compact`. Eight-step flow:
 
-1. User runs `/hyperflow:cache compact`.
-2. Compact subcommand handler reads the target memory file.
-3. Date/tag parser splits entries into hot (≤ 7 days) and eligible (> 7 days).
-4. Compaction Writer is dispatched in a single batch with all eligible entries.
-5. Stub formatter renders the replacement line for each entry.
-6. Dedup Reviewer runs source-side stub-line match and archive-side header match.
-7. Archive-sidecar writer appends accepted entries to `archive/YYYY-MM.md`.
-8. Source file is rewritten with stubs replacing eligible entries.
-9. Compact subcommand handler updates `.hyperflow/memory/.checksums` and exits with a summary.
+1. Compact subcommand handler reads the target memory file.
+2. Date/tag parser splits entries into hot (≤ 7 days) and eligible (> 7 days).
+3. Compaction Writer is dispatched in a single batch with all eligible entries.
+4. Stub formatter renders the replacement line for each entry.
+5. Dedup Reviewer runs source-side stub-line match and archive-side header match.
+6. Archive-sidecar writer appends accepted entries to `archive/YYYY-MM.md`.
+7. Source file is rewritten with stubs replacing eligible entries.
+8. Compact subcommand handler updates `.hyperflow/memory/.checksums` and exits with a summary.
 
 ## Stub format
 
