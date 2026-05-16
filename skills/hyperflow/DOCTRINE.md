@@ -97,12 +97,12 @@ Triage is the FIRST step on every new user request. A cheap thinking call classi
 | `types[]` | Which personas are stitched (maps to personas-A/B priority order) |
 | `flow` | Which flow profile Layer 3 executes (`fast`/`standard`/`deep`/`research`/`creative`/`scientific`) |
 | `personas[]` | Ordered list injected into worker prompts |
-| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → silent, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep) |
+| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → light, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep). The 2-question floor (Layer 4) is non-negotiable; only the P4 bounce-to-scope path at `ambiguity < 0.4 AND complexity == low` exits the spec phase entirely. |
 | `budget` | Token envelope passed to flow profile for worker/reviewer allocation |
 
 See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, field definitions, and worked examples.
 
-**Classifier tier:** Classifier defaults to Haiku 4.5 — triage is structured classification, not deep reasoning. Falls back to Sonnet on malformed JSON output (NOT Opus — keep cost low even on fallback).
+**Classifier tier:** Classifier defaults to Haiku 4.5 — triage is structured classification, not deep reasoning. Fallback chain on malformed JSON output: retry once at Haiku → fall back to Sonnet → use safe defaults. NEVER escalate to Opus on fallback — keep cost low on this critical-path call.
 
 **Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
 
@@ -214,7 +214,7 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas (from triage `personas[]`) are stitched under a `## Persona` section in the worker prompt — see [personas-A.md](personas-A.md) and [personas-B.md](personas-B.md).
 6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1–2, medium: L1–3, complex: L1–5). See [reviewer-prompt.md](reviewer-prompt.md) for the template and [review-levels.md](review-levels.md) for the full checklist.
 7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
-8. **Minimum thinking agents = profile-dependent.** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration). A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped.
+8. **Minimum thinking agents = profile-dependent (asymmetric under D7).** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration) when integration review runs; = batches (per-batch reviewers only) when D7 conditional-skip fires (all batches first-try PASS + no escalations + no security/integration flags). A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped. See `skills/dispatch/SKILL.md` Step 3 for D7 skip conditions.
 9. **Agent labels.** Before every Agent dispatch, print a single elegant line. No icons, no brackets, no emoji. Format: `Role — short description` (em-dash separator, description lowercase, under 80 chars).
    - `**Reviewer** — reviewing auth middleware output`
    - `**Debugger** — investigating test failure in auth.test.ts`
@@ -256,7 +256,7 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 12.1. **Trivial steps may be performed inline by the orchestrator without an Agent dispatch wrapper.** A step qualifies as trivial AND inline-allowed IF AND ONLY IF all of:
    1. The step's entire body is reducible to ≤ 2 tool calls (e.g., one Edit + one Bash commit)
    2. No content generation required (no Writer producing prose; just file moves, deletions, commits)
-   3. No decision-making required (no branching logic the orchestrator wouldn't itself make)
+   3. No semantic decision-making required — branching is limited to mechanical state checks (file existence, git status, commit hash). NOT eligible: content evaluation, scoping choices, prioritization, or any judgment that varies by context.
    4. No review needed (the step is mechanically verifiable — git status clean, file exists/absent, commit hash)
    5. The orchestrator is the natural executor
 
@@ -406,7 +406,7 @@ Hand-off pattern:
 - Finish a task with `Thinking: 0 agents` in the usage summary
 - Show `0.0k tokens` for thinking agents (means you reviewed inline instead of dispatching)
 - Skip the final integration review (separate from batch reviews) in `deep`/`scientific` profiles
-- Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles
+- Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles — UNLESS D7 conditional-skip fired (all batches first-try PASS + no escalations + no security/integration flags), in which case `= batches` is the correct floor
 - Dispatch workers sequentially when they could run in parallel
 - Label a batch `parallel:N` but dispatch the calls across separate messages — that's serial, not parallel. The wall-clock / cumulative ratio will land ≥ 0.8 and expose it. Investigate and re-dispatch with all N `Agent()` calls in a single message.
 - Fire an `AskUserQuestion` between batches in `auto` mode — "transparency checkpoint", "midway sanity check", "scope re-confirmation", "cost heads-up", or any rephrasing of *"should I keep going?"*. Per rule 8, auto means finish the chain. The only gates between batches are the structural ones (`SECURITY_VIOLATION` halt, escalation crossing the irreversibility boundary, inter-batch advance in *manual* mode). Status prints are fine; status *questions* are banned.
