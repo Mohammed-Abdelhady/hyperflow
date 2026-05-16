@@ -156,20 +156,24 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 | Role | Default Model | Tier | Use for |
 |------|--------------|------|---------|
 | Orchestrator | **Opus 4.7** | thinking | Decompose tasks, coordinate, synthesize learnings |
-| Reviewer | **Opus 4.7** | thinking | Review every worker output (spec + quality) |
+| **Final integration Reviewer** | **Opus 4.7** | thinking | End-of-chain cross-cutting review (dispatch Step 3, audit Step 3, deploy security sweep, spec Step 8 sanity check) |
+| **Per-batch / per-sub-task Reviewer** | **Sonnet 4.6** | worker | In-flight reviews anchored to a single batch's diff (dispatch Step 2, spec Step 7 section batch, scope Step 4 task-file check) |
 | Debugger | **Opus 4.7** | thinking | Root cause analysis, fix strategy |
 | Decision-maker | **Opus 4.7** | thinking | Architecture, approach selection, trade-offs |
-| Brainstormer | **Opus 4.7** | thinking | Design exploration, alternative proposals |
+| Brainstormer / Analyst / Planner | **Opus 4.7** | thinking | Design exploration, multi-dim analysis, decomposition |
 | Implementer | **Sonnet 4.6** | worker | Write code, edit files, create components |
 | Searcher | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
 | Writer | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
 
-**Iron rule — the thinking model is ALWAYS the brain:**
-- The thinking-tier model orchestrates, reviews, debugs, and decides. It is NEVER idle during a task.
-- Every worker output gets a thinking-tier review before it is considered done.
-- Worker-tier models only EXECUTE — they never review, coordinate, or make architectural decisions.
-- If the usage summary shows `Thinking: 0 agents`, the task was done wrong. Period.
-- **Triage call (Layer 0.5) uses the thinking-tier model with a tight 2k-token prompt — never delegate triage to a worker.**
+**Iron rules — tiered review (split per scope of evidence):**
+
+- **Per-batch / per-sub-task Reviewer = Sonnet (worker tier).** Anchored to a single batch's diff (a few files at most). The Reviewer sees only the work product of one batch and the relevant context; the diff is small enough that Sonnet handles L1 (syntax/format) + L2 (spec/naming/edges) reliably. Fast and ~5× cheaper than Opus per call. Fires every batch in `standard` and above.
+- **Final integration Reviewer = Opus (thinking tier).** End-of-chain pass that sees the cumulative diff across all batches. This is where cross-batch contradictions, architectural drift, and L3+ integration risks surface — exactly the work Opus is paid for. Fires once per multi-batch chain (skippable under D7 conditions).
+- **Standalone reviewers = Opus.** Any reviewer dispatched outside a chain context — audit Step 3, trace Debugger, deploy security sweep, spec Step 8 final sanity check — is itself the "buck stops here" pass, so it gets Opus regardless of diff size.
+- **The thinking model is NEVER idle.** Even when batch reviewers are Sonnet, Opus is still orchestrating (decomposing, dispatching, synthesizing learnings between batches, and running the final integration pass). Triage (Layer 0.5) stays on the thinking tier — never delegate triage to a worker.
+- **Worker tier never coordinates.** Sonnet doing a batch review is reviewing one batch's diff against one fix list — not deciding which batch fires next, not picking models, not opening gates. Coordination stays on Opus.
+- **`--thorough` flag elevates per-batch Reviewer to Opus.** Users on high-risk surfaces (financial calc, crypto, regulatory) opt in to Opus per-batch via `--thorough`; the default remains Sonnet to keep cost predictable.
+- **If the usage summary shows `Thinking: 0 agents` on a multi-batch chain**, the task was done wrong — Opus must at minimum orchestrate and run the final integration pass.
 
 ### Config loading (session start)
 
@@ -182,8 +186,12 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 ### Dispatching subagents
 
 Use the resolved model for each role:
-- Workers (implementer/searcher/writer): `model: "<resolved-worker>"`
-- Reviewers (reviewer/debugger): `model: "<resolved-thinking>"`
+- Workers (implementer / searcher / writer): `model: "<resolved-worker>"`
+- **Per-batch / per-sub-task Reviewer** (dispatch Step 2, spec Step 7 batched section review, scope Step 4 task-file check): `model: "<resolved-worker>"` (Sonnet by default — anchored to a small in-flight diff)
+- **Final integration Reviewer** (dispatch Step 3): `model: "<resolved-thinking>"` (Opus — sees the cumulative diff)
+- **Standalone Reviewer** (audit Step 3, deploy Step 3 security sweep, spec Step 8 final sanity check): `model: "<resolved-thinking>"` (Opus — itself the buck-stops-here pass)
+- **Debugger / Analyst / Planner / Brainstormer** (trace Step 2, spec Step 3, scope Step 3, spec Step 1): `model: "<resolved-thinking>"` (Opus — pure thinking work, no in-flight anchor)
+- `--thorough` flag override: per-batch Reviewers escalate to `model: "<resolved-thinking>"`
 
 ### Runtime switching
 
@@ -221,7 +229,7 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 3. **Learning injection.** After each batch, extract patterns/gotchas from worker outputs. Inject synthesized learnings into subsequent worker prompts.
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas (from triage `personas[]`) are stitched under a `## Persona` section in the worker prompt — see [personas-A.md](personas-A.md) and [personas-B.md](personas-B.md).
-6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1–2, medium: L1–3, complex: L1–5). See [reviewer-prompt.md](reviewer-prompt.md) for the template and [review-levels.md](review-levels.md) for the full checklist.
+6. **Multi-level review (tiered: per-batch Sonnet, final integration Opus).** After each batch, dispatch a per-batch Reviewer with `model: "<resolved-worker>"` (Sonnet by default) — anchored to that batch's diff at L1-L<n>. After all batches complete, dispatch the final integration Reviewer with `model: "<resolved-thinking>"` (Opus) — sees the cumulative diff and catches cross-batch contradictions. `--thorough` flag escalates per-batch to Opus for high-risk surfaces. Scale levels by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) and [reviewer-prompt-batched.md](reviewer-prompt-batched.md) for templates and [review-levels.md](review-levels.md) for the full checklist.
 7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
 8. **Minimum thinking agents = profile-dependent (asymmetric under D7).** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration) when integration review runs; = batches (per-batch reviewers only) when D7 conditional-skip fires (all batches first-try PASS + no escalations + no security/integration flags). A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped. See `skills/dispatch/SKILL.md` Step 3 for D7 skip conditions.
 9. **Agent labels.** Before every Agent dispatch, print a single elegant line. No icons, no brackets, no emoji. Format: `Role — short description` (em-dash separator, description lowercase, under 80 chars).
