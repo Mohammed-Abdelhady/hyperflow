@@ -88,6 +88,10 @@ Done. Next: /hyperflow:deploy (gates + commit + push) — user-explicit, not aut
 - **Multi-tool** — one config, auto-detected across Claude Code and OpenCode.
 - **Project memory** — conventions, gotchas, and architectural decisions persist across conversations in `.hyperflow/memory/`, fully local and version-controllable.
 
+### Latency optimization (new)
+
+Parallel sibling drafts (P1) + batched same-level reviews (P2) cut wall-clock time on a median spec run from ~16 sequential round-trips to ~6 — roughly **60% latency reduction** — without changing the reviewer tier (Opus stays Opus). Triage-driven step skipping (P4) bypasses spec ceremony when ambiguity is low; lean worker prompts (P5) cut time-to-first-token by ~30% by shipping memory references instead of inlining full doctrine. Pass `--thorough` to disable P1/P2/P4 for high-risk runs. Full spec: [`.hyperflow/specs/latency-optimization.md`](.hyperflow/specs/latency-optimization.md).
+
 ---
 
 ## Inside a chain
