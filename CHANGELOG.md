@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] — 2026-05-16
+
+### Added
+- Marketplace-tier rewrite — references/, full body sections, A grades
+
+
 ## [3.1.2] — 2026-05-16
 
 ### Fixed
@@ -396,7 +402,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.2...v4.0.0
 [3.1.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.1...v3.1.2
 [3.1.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.0.0...v3.1.0
