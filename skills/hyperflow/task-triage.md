@@ -36,7 +36,7 @@ You are a task classifier for a multi-agent orchestrator. Analyze the request be
   "risk": string,             // reversible | irreversible
   "scope": string,            // single-file | multi-file | cross-cutting | system-wide
   "ambiguity": number,        // 0.0–1.0
-  "brainstormDepth": string,  // silent | light | standard | deep
+  "brainstormDepth": string,  // light | standard | deep (silent removed per DOCTRINE 2-question floor)
   "flow": string,             // fast | standard | deep | research | creative | scientific
   "personas": string[],       // subset of types — persona template names to compose
   "estimatedWorkers": number,
@@ -104,8 +104,8 @@ Return only valid JSON. No explanation before or after.
 
 | `ambiguity` range | `brainstormDepth` | Behavior |
 |-------------------|-------------------|---------|
-| 0.0–0.2 | `silent` | Recap intent in one sentence; no questions |
-| 0.2–0.5 | `light` | Ask at most one AskUserQuestion if genuinely needed |
+| 0.0–0.2 | `light` | **Always 2 questions** (DOCTRINE 2-question floor) — usually scope-confirm + 1 constraint check |
+| 0.2–0.5 | `light` | **Always 2 questions** — intent clarify + constraint discovery |
 | 0.5–0.8 | `standard` | 2–3 clarifying questions |
 | 0.8–1.0 | `deep` | Full 6-dimension exploration (see brainstorming-advanced.md) |
 
@@ -179,7 +179,7 @@ When multiple types are present:
   "risk": "reversible",
   "scope": "single-file",
   "ambiguity": 0.0,
-  "brainstormDepth": "silent",
+  "brainstormDepth": "light",
   "flow": "fast",
   "personas": ["refactor"],
   "estimatedWorkers": 1,
@@ -334,7 +334,7 @@ If the Haiku 4.5 Classifier returns malformed output (invalid JSON, missing requ
    ```
 3. **Surface the issue** — print a single warning line before continuing:
    ```
-   ⚠ Triage malformed (attempt 2/2) — falling back to standard defaults.
+   WARNING: Triage malformed (Haiku retry + Sonnet failed) — falling back to safe defaults.
    ```
 
 Never block the pipeline over a failed triage. Proceed with fallback values.
