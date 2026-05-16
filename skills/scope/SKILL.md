@@ -19,7 +19,7 @@ This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Proj
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
-Every substantive step dispatches at least one Agent.
+Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivial steps per §12.1 may be performed inline by the orchestrator.
 
 | Step | Worker tier | Thinking tier | Notes |
 |---|---|---|---|
@@ -31,7 +31,7 @@ Every substantive step dispatches at least one Agent.
 | 4+6 — parallel | Writer (Step 4) ∥ Writer (Step 6) fire after Step 3 (P3) | — | Concurrent dispatch; both wait on Planner output |
 | 5 — Output | — | — | Print only (exempt) |
 | 6 — Memory | Writer (Sonnet) appends to memory files (fires in parallel with Step 4 — P3) | **Reviewer** (Opus) checks for duplicates / contradictions | Both tiers; P3 applied |
-| 7 — Hand off | — | — | `Skill` tool invocation (exempt) |
+| 7 — Hand off | — | — | `Skill` tool invocation — trivial inline per §12.1 (one tool call, no generation, no review) |
 
 **Latency flags:** `--thorough` disables P1 **in Step 4 only** (sequential Writer-internal section drafts instead of parallel). The Step 2 Searchers (also marked P1) are NOT affected — they stay parallel under all flag configurations because they are independent reads with no quality tradeoff. P3 (Steps 4 + 6 concurrent) is always on. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) for pattern definitions.
 
@@ -181,6 +181,8 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 See [task-tracking.md](references/task-tracking.md) and [worker-prompt.md](references/worker-prompt.md).
 
 ### Step 7 — Hand off to `/hyperflow:dispatch`
+
+This step is trivial-inline per §12.1: one Skill tool invocation, no generation, no review needed. The orchestrator invokes the dispatch skill directly without an Agent dispatch wrapper.
 
 **If `chain-mode=auto`** — immediately invoke `Skill` with `skill: execute` and `args: "chain-mode=auto <task-slug>"`. Print:
 
