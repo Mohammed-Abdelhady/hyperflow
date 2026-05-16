@@ -216,12 +216,12 @@ There is no always-on activation. Each slash command runs its skill and (for cha
 | Setup | `/hyperflow:scaffold` | L0 | — | None |
 | Spec | `/hyperflow:spec` | L0.5, L4 | — | Chain-mode (Step 0) · Section approval (×5) · Phase advance (manual) |
 | Scope | `/hyperflow:scope` | L0, L6, L7 | — | Chain-mode (if direct) · Phase advance (manual) |
-| Dispatch | `/hyperflow:dispatch` | L2, L3, L5, L6, L8, L9 | L1–L5 per profile (fast=L1 · standard=L1–2 · deep/scientific=L1–5) | Inter-batch (manual) · `SECURITY_VIOLATION` halt |
-| Audit | `/hyperflow:audit` | L9 | L1–L5 explicit | None |
+| Dispatch | `/hyperflow:dispatch` | L2, L3, L5, L6, L8, L9 | L1–L5 per profile (fast=L1 · standard=L1–2 · deep/scientific=L1–5) | Inter-batch (manual) · `SECURITY_VIOLATION` halt · **Audit prompt + Deploy prompt at Step 5** |
+| Audit | `/hyperflow:audit` | L9 | L1–L5 explicit | **Fix gate (NEEDS_FIX → AskUserQuestion: Fix all / Crit+Imp / Crit only / No)** |
 | Trace | `/hyperflow:trace` | L3, L6, L9 | L1–L3 on fix | None |
-| Deploy | `/hyperflow:deploy` | L5, L8, L9 | — | Push confirmation (mandatory) |
+| Deploy | `/hyperflow:deploy` | L5, L8, L9 | — | Commit-inclusion (uncommitted user changes) · Push confirmation (mandatory) |
 | Cache | `/hyperflow:cache` | L6 | — | Confirm-on-clear |
-| Status | `/hyperflow:status` | — | — | None |
+| Status | `/hyperflow:status` | — | — | None — read-only, no dispatch |
 
 L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. Full checklist in [`skills/hyperflow/review-levels.md`](skills/hyperflow/review-levels.md).
 
@@ -289,7 +289,20 @@ You: /hyperflow:scope "Rename the Button component to PrimaryButton"
 ```
 </details>
 
-**What you'll notice:** No "should I proceed?" prompts within a phase. The only gates are (a) the Step 0 chain-mode question, (b) the Deploy step's push confirmation, and (c) optional inter-phase gates if you chose **manual** mode at Step 0.
+**What you'll notice:** No "should I proceed?" prompts within a phase. The only gates that fire are *structural* (rule 8):
+
+- (a) **Step 0** — auto-vs-manual chain mode, once per chain
+- (b) **Spec questions** — floor of 2 questions per spec run, scaled to triage ambiguity
+- (c) **Section approval** — once per design section in deep mode
+- (d) **Inter-phase advance** — only if you chose `manual` mode at Step 0
+- (e) **Inter-batch advance** — only in `manual` mode, after each batch's gates pass
+- (f) **Audit prompt** at end of dispatch — *"Run /hyperflow:audit?"*
+- (g) **Deploy prompt** at end of dispatch — *"Run /hyperflow:deploy?"*
+- (h) **Audit fix gate** — when audit finds issues, *"Apply fixes via /hyperflow:scope → /hyperflow:dispatch?"*
+- (i) **Push confirmation** in deploy — *"Push to origin/<branch>?"* — mandatory, never force-pushes to main
+- (j) **`SECURITY_VIOLATION`** — hard halt at any reviewer, no auto-continue
+
+Want a live look at what's running, what's done, and how long until it finishes? Run `/hyperflow:status` — shows a progress bar per task with tokens used and ETA, read straight from each task file's `## Status` block that dispatch keeps updated.
 
 ---
 
