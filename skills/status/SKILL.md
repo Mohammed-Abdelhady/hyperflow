@@ -1,12 +1,11 @@
 ---
 name: status
 description: |
-  Use when the user wants a one-screen view of current hyperflow project state —
-  version, profile freshness, memory entry count, and live progress on every
-  in-flight task (sub-tasks done vs pending, tokens used, wall-clock, ETA).
-  Read-only; never modifies state. Invoked manually via /hyperflow:status.
+  Use when the user wants a one-screen view of current hyperflow project state — version, profile freshness, memory count, and live progress on every in-flight task. Read-only; never modifies state, never dispatches workers.
+  Trigger with /hyperflow:status, "what is hyperflow doing", "show task progress", "where are we".
 allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Glob, Grep
-version: 3.1.1
+argument-hint: ""
+version: 3.1.2
 author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
@@ -202,4 +201,96 @@ Never error out. Never modify any file. Never dispatch an agent.
 
 ## Doctrine
 
-This skill has no Worker/Reviewer dispatch — it is a pure read. It does not count as a hyperflow run and does not append to memory. Output style follows [output-style.md](../hyperflow/output-style.md) — no decorative icons, em-dash separators, plain status words.
+This skill has no Worker/Reviewer dispatch — it is a pure read. It does not count as a hyperflow run and does not append to memory. Output style follows [output-style.md](references/output-style.md) — no decorative icons, em-dash separators, plain status words.
+
+## Overview
+
+`/hyperflow:status` prints a one-screen snapshot of the project's hyperflow state plus a live progress block for every in-flight task. Useful when picking up a session mid-flight, deciding whether to invoke `/hyperflow:dispatch`, or auditing whether a chain run is still healthy. Pure read — no agents, no writes, no chain side-effects.
+
+## Prerequisites
+
+- Git repository (for the version line — degrades to `(missing)` otherwise).
+- `.hyperflow/` directory (for profile/memory/tasks lines — each section degrades to `(missing)` or `(none)` if absent).
+- No prerequisites for invocation itself — runs anywhere.
+
+## Instructions
+
+See [What to read](#what-to-read) and [How to compute each field](#how-to-compute-each-field) above for the full operational spec. Summary:
+
+1. Read version from latest git tag matching `v*`.
+2. Stat `.hyperflow/profile.md` for freshness; bucket into fresh/stale/missing.
+3. Count entries in `.hyperflow/memory/index.md`.
+4. Glob `.hyperflow/tasks/*.md` and parse each Status block for live progress.
+5. Render the static snapshot block; render the In-flight block per task (if any).
+6. Stop. No prompts, no follow-ups.
+
+## Output
+
+See [Output format](#output-format) above for the exact block. Two sections — static snapshot and (if there are active tasks) In-flight work with per-task progress bar, last-done sub-task, currently-running sub-task, pending count, tokens, wall-clock, ETA.
+
+## Error Handling
+
+| Failure | Behavior |
+|---|---|
+| Not a git repo | `Version  (missing)`; everything else still renders if `.hyperflow/` exists. |
+| `.hyperflow/profile.md` missing | `Profile  (missing)` (no parenthetical). |
+| `.hyperflow/memory/index.md` missing | `Memory  (none)`. |
+| No task files | Omit the In-flight section entirely; just print the snapshot. |
+| Task file with malformed Status block | Fall back to counting `[x]` vs `[ ]` checkboxes; show `(not tracked yet)` for tokens/ETA. |
+| `stat` flag differs between BSD (macOS) and GNU (Linux) | Try `stat -f %m` then fall back to `stat -c %Y`. |
+
+Never errors out. Never modifies any file. Never dispatches an agent.
+
+## Examples
+
+### Healthy project, no active tasks
+
+```
+── Hyperflow Status ─────────────────────────────────────────
+Version       v3.1.2     (released 2026-05-16)
+Profile       fresh      (analyzed 2h ago)
+Memory        12 entries
+Active tasks  (none)
+─────────────────────────────────────────────────────────────
+```
+
+### Mid-dispatch with two active tasks
+
+```
+── Hyperflow Status ─────────────────────────────────────────
+Version       v3.1.2     (released 2026-05-16)
+Profile       fresh      (analyzed 2h ago)
+Memory        12 entries
+Active tasks  2
+
+── In-flight work ───────────────────────────────────────────
+Task:         implement-auth
+  Progress    [███████████░░░░░░░░░] 8/14  57%
+  Last done   T7: Reset email worker
+  Running     T8: Login UI (Implementer · 14s elapsed)
+  Pending     6 sub-tasks
+  Tokens      thinking 89.2k · worker 142.0k · total 231.2k
+  Wall-clock  4m 22s elapsed
+  ETA         ~3m 16s remaining   (avg 32s/sub-task · 6 left)
+
+Task:         fix-login-bug
+  Progress    [░░░░░░░░░░░░░░░░░░░░] 0/3   0%
+  Status      not started (created 8m ago, no dispatch run yet)
+─────────────────────────────────────────────────────────────
+```
+
+### Brand new install (no .hyperflow/ yet)
+
+```
+── Hyperflow Status ─────────────────────────────────────────
+Version       v3.1.2     (released 2026-05-16)
+Profile       (missing)
+Memory        (none)
+Active tasks  (none)
+─────────────────────────────────────────────────────────────
+```
+
+## Resources
+
+- [output-style.md](references/output-style.md) — em-dash style, no decorative chars, plain status words.
+- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (status is exempt from per-step agent dispatch).

@@ -1,12 +1,11 @@
 ---
 name: audit
 description: |
-  Use when the user asks for a code review, "review this change", "review my PR",
-  "review the diff", or wants quality/spec/security/perf feedback on recent changes.
-  Triggers a multi-level review with a thinking-tier reviewer agent. On NEEDS_FIX,
-  asks the user whether to apply the findings via /hyperflow:scope → /hyperflow:dispatch.
+  Use when the user wants a code review on recent changes — quality, spec, security, or performance feedback. Triggers a multi-level (L1-L5) review with a thinking-tier reviewer; on NEEDS_FIX, offers to apply findings via /hyperflow:scope.
+  Trigger with /hyperflow:audit, "review this change", "review my PR", "audit the diff", "code review".
 allowed-tools: Read, Bash(git:*), Glob, Grep, Agent
-version: 3.1.1
+argument-hint: "[target] [--level 1-5]"
+version: 3.1.2
 author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
@@ -45,7 +44,7 @@ This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. Afte
 
 ## Review Levels
 
-Adapted from [review-levels.md](../hyperflow/review-levels.md):
+Adapted from [review-levels.md](references/review-levels.md):
 
 | L | Name | Checks |
 |---|------|--------|
@@ -55,7 +54,7 @@ Adapted from [review-levels.md](../hyperflow/review-levels.md):
 | 4 | Deep | L3 + architecture, scalability, accessibility |
 | 5 | Exhaustive | L4 + adversarial probing, perf profiling, alternatives |
 
-Security scan (hardcoded secrets, injection, path traversal, XSS, missing validation) is mandatory at L3+. See [security.md](../hyperflow/security.md).
+Security scan (hardcoded secrets, injection, path traversal, XSS, missing validation) is mandatory at L3+. See [security.md](references/security.md).
 
 ## Flow
 
@@ -74,7 +73,7 @@ Agents — `Searcher` (Sonnet) ⇒ **Reviewer** (Opus).
 
 Agents — **Reviewer** (Opus, thinking-tier).
 
-Dispatch `**Reviewer** — reviewing <scope> at level L<n>`. The Reviewer uses the [reviewer-prompt.md](../hyperflow/reviewer-prompt.md) template with the diff, level definition, and any applicable spec. Produces structured `[Critical] / [Important] / [Suggestions] / [Praise]` findings.
+Dispatch `**Reviewer** — reviewing <scope> at level L<n>`. The Reviewer uses the [reviewer-prompt.md](references/reviewer-prompt.md) template with the diff, level definition, and any applicable spec. Produces structured `[Critical] / [Important] / [Suggestions] / [Praise]` findings.
 
 If any security issue is found at L3+ → emit `SECURITY_VIOLATION:` halt marker immediately. Skip the fix gate; user decides remediation.
 
@@ -82,7 +81,7 @@ If any security issue is found at L3+ → emit `SECURITY_VIOLATION:` halt marker
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-1. Dispatch `Writer — appending durable patterns to .hyperflow/memory/learnings.md` per [memory-system.md](../hyperflow/memory-system.md).
+1. Dispatch `Writer — appending durable patterns to .hyperflow/memory/learnings.md` per [memory-system.md](references/memory-system.md).
 2. Dispatch `**Reviewer** — memory dedup check` to ensure no duplicate entries land.
 
 ### Step 5 — Output
@@ -161,4 +160,101 @@ Agents: 1 searcher (sonnet) · 1 reviewer (opus)
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-style.md](../hyperflow/output-style.md). Per-step agent dispatching follows rule 12.
+Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-style.md](references/output-style.md). Per-step agent dispatching follows rule 12.
+
+## Overview
+
+`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. A Sonnet searcher gathers context; an Opus reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — `Yes` auto-chains to `/hyperflow:scope` → `/hyperflow:dispatch`; `No` leaves the diff alone.
+
+## Prerequisites
+
+- Git repository with the change(s) to review present in the working tree, staged, or in history.
+- `.hyperflow/` cache optional but recommended (Layer 0 analysis improves reviewer context). Run `/hyperflow:scaffold` first if missing.
+- Model routing config supports a thinking tier (default: Opus 4.7). Without it, the reviewer downgrades to the worker tier and emits a warning.
+
+## Instructions
+
+See [Flow](#flow) above — Steps 1-6 are the operational instructions. Summary:
+
+1. Resolve scope (target arg or `git diff HEAD`).
+2. Searcher gathers context; Reviewer verifies coverage.
+3. Reviewer produces L1-L<n> findings.
+4. Writer appends learnings to `.hyperflow/memory/`; Reviewer dedup-checks.
+5. Print structured output.
+6. Fix gate fires on `NEEDS_FIX` with critical/important findings.
+
+## Output
+
+See [Output Format](#output-format) above for the exact block. Single review block per invocation; agent count line at the bottom shows the model/role split.
+
+## Error Handling
+
+| Failure | Behavior |
+|---|---|
+| No diff to review (clean working tree, no target) | Print `Nothing to review — clean working tree. Pass an explicit target.` and stop. |
+| Searcher returns no context (file gone, bad path) | Reviewer flags `[Critical] — target unreachable` and halts at Step 3. |
+| Reviewer emits `SECURITY_VIOLATION` (L3+ only) | Skip Step 4 onward. Print finding. Do not fire fix gate. User decides remediation. |
+| `AskUserQuestion` unavailable (headless / non-interactive) | Print findings + an error line stating the fix gate could not fire. Never silently auto-fix or silently exit. |
+| Reviewer disagrees with worker context (NEEDS_FIX on Step 2 coverage check) | Re-dispatch Searcher with the reviewer's gap list. Max 2 retries before surfacing the gap to user. |
+
+## Examples
+
+### Default — review uncommitted changes at L2
+
+```
+/hyperflow:audit
+
+── Review Result ──────────────────────
+Scope: git diff HEAD + git diff --staged (3 files)
+Level: L2
+Verdict: NEEDS_FIX
+
+[Critical]
+- src/auth/middleware.ts:42 — token compared with == instead of timingSafeEqual; switch to crypto.timingSafeEqual.
+
+[Important]
+- src/auth/middleware.ts:18 — missing rate-limit on /login. Wire token-bucket from src/lib/limiter.ts.
+
+[Suggestions]
+- src/auth/types.ts:5 — TokenClaims interface could be a discriminated union for refresh vs access tokens.
+───────────────────────────────────────
+Agents: 1 searcher (sonnet) · 1 reviewer (opus)
+
+?  Audit found 3 issues — apply fixes?
+   Fix all (Recommended)   — Critical + Important + Suggestions
+   Critical + Important    — skip Suggestions
+   Critical only           — fix the must-haves
+   No, leave as-is         — stop; handle manually
+```
+
+### Explicit target + deep review
+
+```
+/hyperflow:audit src/payments --level 4
+
+── Review Result ──────────────────────
+Scope: src/payments/** (12 files)
+Level: L4
+Verdict: PASS
+[Praise]
+- src/payments/processor.ts:120 — idempotency key handling is correct under retries.
+───────────────────────────────────────
+Audit clean — no fixes needed.
+```
+
+### PR review
+
+```
+/hyperflow:audit --pr 145 --level 3
+
+(reviews the diff between the PR's base and head; same output format)
+```
+
+## Resources
+
+- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
+- [review-levels.md](references/review-levels.md) — full checklist for L1-L5.
+- [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template.
+- [security.md](references/security.md) — security scan policy (mandatory at L3+).
+- [memory-system.md](references/memory-system.md) — how patterns are persisted.
+- [output-style.md](references/output-style.md) — label and table conventions.
