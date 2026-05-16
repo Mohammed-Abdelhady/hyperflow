@@ -87,21 +87,44 @@ Searcher — finding related test files
 Writer — generating API documentation
 ```
 
-### Parallel dispatch (2+ agents in same batch)
+### Parallel / serial dispatch (2+ agents in same batch)
 
-Align with two-space padding so roles line up. No tree connectors. The "parallel" caption is one line under the block.
+Header line declares **intent** (`parallel:N` or `serial:N`). Footer line proves **execution** (wall-clock vs cumulative · ratio). The ratio is what catches a batch that *was supposed to* run parallel but actually ran serial.
+
+**Parallel batch** (all N dispatches in one message):
 
 ```
-Searcher       — analyze existing auth patterns
+Batch 1 — parallel:3 · standard profile · L1–L2
+
+Searcher       — analyse existing auth patterns
 Implementer    — write middleware + route guards
 Writer         — generate test suite for auth
-(parallel — single message, three Agent calls)
+  wall-clock: 47s · cumulative: 2m 18s · ratio 0.34 — parallel
 ```
+
+**Serial batch** (depends on a prior batch's output):
+
+```
+Batch 2 — serial:1 · depends on Batch 1
+
+Implementer    — wire routes (with batch 1 learnings)
+  wall-clock: 31s · cumulative: 31s · ratio 1.0 — serial (single agent)
+```
+
+**Ratio interpretation:**
+
+| Ratio | Meaning |
+|---|---|
+| `≤ 0.5` | True parallel — `max(t_i)` dominates `sum(t_i)` |
+| `0.5 – 0.8` | Mixed — partial overlap, some serial gates |
+| `≥ 0.8` | Effectively serial — if the label said `parallel:N` this is a doctrine violation (see DOCTRINE red flags) |
+| `1.0` | Pure serial — expected only when N = 1 or batch declared `serial:N` |
 
 Rules:
 - Role left-padded to the longest role in the block (typically 13 chars for `Implementer`).
 - Description starts after the em-dash, lowercased.
-- Single-agent dispatch — just one line, no caption.
+- Single-agent dispatch — header still printed (`serial:1`) but the footer is optional.
+- `wall-clock` is the elapsed real time from first `Agent()` call to last `⎿ Done`. `cumulative` is the sum of the individual agent durations reported in each `⎿ Done (... · Ym Zs)`.
 
 ## 5. Agent Progress
 
@@ -132,7 +155,27 @@ Use `pass` / `fail` / `skipped` as plain words. No `✓` / `✗` / `—`. Detail
 
 ## 7. Usage Summary
 
-Printed after every completed task. Exact format:
+Printed after every completed task. The summary now surfaces `Wall-clock` and `Cumulative` rows so parallelism is provable from the numbers alone — without trusting the dispatch labels.
+
+```
+── Hyperflow Usage ─────────────────────────────────────────
+Triage                          1 agent     1.8k tokens
+Spec depth: standard            1 agent     3.2k tokens
+Profile: deep                   —           —
+Thinking  (Opus 4.7  )          4 agents   52.1k tokens
+Worker    (Sonnet 4.6)          8 agents  186.0k tokens
+Wall-clock                      3m 47s
+Cumulative                      14m 22s    (ratio 0.26 — parallel)
+Escalations                     0
+Total                          14 agents  243.1k tokens
+────────────────────────────────────────────────────────────
+```
+
+`ratio = wall-clock / cumulative`. Lower is better for parallelism. The annotation after the ratio is one of `parallel` (≤ 0.5) / `mixed` (0.5–0.8) / `serial` (≥ 0.8) per the table in §4.
+
+Backwards-compat: the older shorter form (no Wall-clock / Cumulative rows) is still acceptable for tasks with a single batch or a single agent — there's nothing to parallelise. For tasks with 2+ batches OR 2+ parallel-eligible workers, the two rows MUST appear.
+
+Older example (single-batch task, single tier shown):
 
 ```
 ── Usage ─────────────────────────────────────────
