@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.6.1] — 2026-05-16
+
+### Fixed
+- Replace box-drawing status block with markdown table
+
+
 ## [4.6.0] — 2026-05-16
 
 ### Added
@@ -526,7 +532,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.6.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.6.1...HEAD
+[4.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.6.0...v4.6.1
 [4.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.5.0...v4.6.0
 [4.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.4.0...v4.5.0
 [4.4.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.3.1...v4.4.0
