@@ -97,10 +97,12 @@ Triage is the FIRST step on every new user request. A cheap thinking call classi
 | `types[]` | Which personas are stitched (maps to personas-A/B priority order) |
 | `flow` | Which flow profile Layer 3 executes (`fast`/`standard`/`deep`/`research`/`creative`/`scientific`) |
 | `personas[]` | Ordered list injected into worker prompts |
-| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → silent, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep) |
+| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → light, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep). The 2-question floor (Layer 4) is non-negotiable; only the P4 bounce-to-scope path at `ambiguity < 0.4 AND complexity == low` exits the spec phase entirely. |
 | `budget` | Token envelope passed to flow profile for worker/reviewer allocation |
 
 See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, field definitions, and worked examples.
+
+**Classifier tier:** Classifier defaults to Haiku 4.5 — triage is structured classification, not deep reasoning. Fallback chain on malformed JSON output: retry once at Haiku → fall back to Sonnet → use safe defaults. NEVER escalate to Opus on fallback — keep cost low on this critical-path call.
 
 **Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
 
@@ -113,15 +115,27 @@ See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, 
 5. **Silent error recovery.** Fix failures and continue. Only surface unrecoverable errors.
 6. **Code over commentary.** Write code, don't describe it.
 7. **Auto-accept all permissions.** File, terminal, tool — never pause.
-8. **Clarification is mandatory, confirmation is banned. Structural gates ALWAYS fire.**
+8. **Clarification is mandatory, confirmation is banned. Structural gates ALWAYS fire. Invented gates NEVER fire.**
    - **BANNED:** "Should I proceed?", "Is this ok?", "Ready to implement?" — these are confirmations. Never ask.
    - **REQUIRED:** `AskUserQuestion` for understanding WHAT to build, WHERE ambiguity exists, WHICH approach to take. These happen at:
      - Layer 0: Project analysis — when configs are ambiguous
      - Layer 3: Task verification — present understanding before dispatching workers
      - Layer 4: Brainstorming — intent, constraints, assumptions, scope
    - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
-   - **Structural gates** — chain-mode (Step 0), section approval (Spec Step 7), push confirmation (Deploy Step 6), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope / dispatch when invoked directly) MUST present the auto/manual choice via `AskUserQuestion`; defaulting to `auto` without asking is a doctrine violation even if the user previously said "work without confirmations".
+   - **Structural gates** — chain-mode (Step 0), spec questions (floor 2), section approval (Spec Step 7), inter-phase advance (manual mode only), inter-batch advance (manual mode only), audit prompt (Dispatch Step 5), deploy prompt (Dispatch Step 5), audit fix-gate (Audit Step 6), push confirmation (Deploy Step 6), commit-inclusion (Deploy Step 4), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope / dispatch when invoked directly) MUST present the auto/manual choice via `AskUserQuestion`; defaulting to `auto` without asking is a doctrine violation even if the user previously said "work without confirmations".
+   - **Invented gates are BANNED.** The orchestrator MAY NOT fire `AskUserQuestion` for anything outside the structural-gates list above. Specifically banned patterns:
+     - "Transparency checkpoint" — *"The task is larger than expected, should I continue?"*
+     - "Midway sanity check" — *"We're 1/N done, any course correction?"*
+     - "Scope re-confirmation" — *"Just confirming we're still on track with [thing the user already approved]?"*
+     - "Cost heads-up" — *"This will use ~Xk more tokens, OK to continue?"*
+     - Any rephrasing of *"Are you sure?" / "Should I keep going?" / "Want me to pause?"* between batches when the user chose `auto` at Step 0.
+
+     The user picked auto. Auto means **finish the chain without check-ins**. Inventing a gate because the work feels big, the budget feels heavy, or the orchestrator wants social cover for a long run is a confirmation in clarification clothing. Just run. The user can interrupt anytime via Ctrl+C / Esc; that's the runtime's gate, not the orchestrator's. If genuine ambiguity arises mid-batch (e.g., a worker returns `ESCALATE: crosses irreversibility boundary`), that's a structural escalation gate (see `escalation.md`), not an invented one — fire it explicitly with that reason.
+
+     Posting status updates is fine and encouraged ("Batch 1 done · 9/36 · next: B2 deps"). Posting status as a *question* with options is not.
    - **Every `AskUserQuestion` MUST mark a recommended option.** The recommended option goes **first** in the `options[]` array and its `label` ends with `(Recommended)`. The orchestrator picks the recommendation based on triage context, project conventions, prior memory entries, and the principle of least surprise. The user can still pick anything — the recommendation is guidance, not a default. Questions with no clear best answer (genuine 50/50) MAY skip the marker, but those should be rare.
+   - **Option labels are short.** Each option's `label` is ≤ 12 words, one clause, no justification narrative. The `description` field carries the *what* (one short sentence). Neither field contains the orchestrator's reasoning for picking the recommendation — that reasoning was an input to the choice, not output for the user to read. *Bad* (paragraph of reasoning): `"No (Recommended) — Keep the 27 commits local. Several pre-commit fixes were needed (commitlint subject-case, max-lines, _opts unused-vars, react-hooks deps) and the audit caught a real bug that landed as a fix commit — eyeballing the diff before push is prudent. Manual push when ready."` *Good* (short clause): `label: "No (Recommended)"`, `description: "Keep commits local · push manually later"`. The user already saw the reviewer verdicts, gate results, and audit findings in scrollback; the gate label doesn't need to recap them.
+   - **Never add a "Type something" / "Other" option manually.** `AskUserQuestion` auto-includes that affordance. Adding it as option 3 (or 4) is dead UI and pads the choice list.
 9. **Never reference the LLM as an actor in any artefact.** No "Co-Authored-By: Claude" (or any LLM) in commits. No "Claude / AI / assistant / LLM" as a subject performing an action in commit messages, PR descriptions, rebase notes, code comments, doc prose, skill bodies, memory entries, task files, or anything else written by the orchestrator. Describe what changed and why — never who/what made it. Use neutral phrasing: "The skill writes …", "The orchestrator dispatches …", "Step 4 commits …", "The cast script was rewritten." Product names used as a *named tool / file* are fine (`claude` CLI binary, `Claude Code` platform, `CLAUDE.md` filename); banned use is only as a *narrative subject*.
 
 ## Layer 2: Model Routing
@@ -200,7 +214,7 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas (from triage `personas[]`) are stitched under a `## Persona` section in the worker prompt — see [personas-A.md](personas-A.md) and [personas-B.md](personas-B.md).
 6. **Multi-level review (MUST use thinking-tier model).** After each batch, dispatch a reviewer with `model: "<resolved-thinking>"`. Never use the worker-tier model for reviews. Scale by complexity (simple: L1–2, medium: L1–3, complex: L1–5). See [reviewer-prompt.md](reviewer-prompt.md) for the template and [review-levels.md](review-levels.md) for the full checklist.
 7. **Thinking model stays active.** The thinking model never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the thinking model intervenes — breaks the task smaller, provides more context, or escalates to a thinking-tier worker.
-8. **Minimum thinking agents = profile-dependent.** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration). A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped.
+8. **Minimum thinking agents = profile-dependent (asymmetric under D7).** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration) when integration review runs; = batches (per-batch reviewers only) when D7 conditional-skip fires (all batches first-try PASS + no escalations + no security/integration flags). A task with `Thinking: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped. See `skills/dispatch/SKILL.md` Step 3 for D7 skip conditions.
 9. **Agent labels.** Before every Agent dispatch, print a single elegant line. No icons, no brackets, no emoji. Format: `Role — short description` (em-dash separator, description lowercase, under 80 chars).
    - `**Reviewer** — reviewing auth middleware output`
    - `**Debugger** — investigating test failure in auth.test.ts`
@@ -238,6 +252,29 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    - Both dispatches appear in the usage summary; both count toward the `thinking ≥ batches + 1` minimum.
    - If a step's worker output is trivial (e.g. one-line restate), the thinking-tier review may be merged into the next step's review — but never both skipped.
    Skills MUST declare per-step agents in their body so this is auditable: each Step block lists `Worker → <role>` and/or `Reviewer → <tier>` lines.
+
+12.1. **Trivial steps may be performed inline by the orchestrator without an Agent dispatch wrapper.** A step qualifies as trivial AND inline-allowed IF AND ONLY IF all of:
+   1. The step's entire body is reducible to ≤ 2 tool calls (e.g., one Edit + one Bash commit)
+   2. No content generation required (no Writer producing prose; just file moves, deletions, commits)
+   3. No semantic decision-making required — branching is limited to mechanical state checks (file existence, git status, commit hash). NOT eligible: content evaluation, scoping choices, prioritization, or any judgment that varies by context.
+   4. No review needed (the step is mechanically verifiable — git status clean, file exists/absent, commit hash)
+   5. The orchestrator is the natural executor
+
+   Explicitly NOT trivial: code/doc generation, multi-file change, cross-file consistency reasoning, research/Read of unfamiliar context, any output a Reviewer would meaningfully evaluate. Non-trivial steps remain Agent-dispatched per §12.
+
+   If the orchestrator discovers mid-step that the work requires generation or research, it MUST abort the inline path and dispatch an Agent. Trivial-eligibility is evaluated at step-start, not assumed throughout.
+
+13. **Latency discipline.** Reduce wall-clock time by restructuring *when* and *how* dispatches fire — never by cutting who reviews what or which tier is used.
+   - **P1 — Parallelize sibling workers.** Sub-tasks that share a common upstream input and have no inter-dependency MUST be dispatched in a single message with parallel `Agent` calls. Never sequentialize siblings.
+   - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Opus Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect. The batched Reviewer counts as **one** Reviewer per batch toward the `thinking agents ≥ batches + 1` floor, regardless of sub-task count. Floor lowered from +2 to +1: wrap-up Reviewer dropped per §12.1 (wrap-up is mechanical, trivial-eligible).
+   - **P3 — Concurrent independent pre-conditions.** Steps whose outputs do not depend on each other are dispatched in the same message regardless of `--thorough`. Always on.
+   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.6 AND complexity != high`, optional design-exploration steps (spec §3, §6) may be skipped. When `ambiguity < 0.4 AND complexity == low`, spec bounces directly to scope. The 2-question floor (rule 8) is never skipped — it is non-negotiable; only the bounce path exits the spec phase. Thresholds and borderline rounding rules are in `skills/spec/references/latency-patterns.md` §P4.
+   - **P5 — Lean worker prompts via memory references.** Prefer `skills/hyperflow/worker-prompt-lean.md` for default dispatches. Workers `Read` only the `.hyperflow/memory/` files they need. Smaller prompts reduce time-to-first-token; context access is on-demand, not absent.
+   - **Compatibility with §12.** §13 does NOT relax §12. Every substantive step still dispatches at least one Agent. §13 governs the structure of those dispatches (parallel vs sequential, batched vs per-sibling, lean vs full).
+   - **Quality floor preserved.** Opus reviewer tier is unchanged. Workers still face thinking-tier review. What changes is when calls fire and in what grouping, not who reviews what.
+   - **`--thorough` / `depth=max` disables P1, P2, P4.** P3 and P5 remain on — they carry no quality tradeoff. When the flag is active, restore sequential drafts, per-section reviews, and full step execution.
+
+   See [latency-patterns.md](../spec/references/latency-patterns.md) for the full P1–P5 pattern catalogue.
 
 ### Learning injection format
 
@@ -369,9 +406,12 @@ Hand-off pattern:
 - Finish a task with `Thinking: 0 agents` in the usage summary
 - Show `0.0k tokens` for thinking agents (means you reviewed inline instead of dispatching)
 - Skip the final integration review (separate from batch reviews) in `deep`/`scientific` profiles
-- Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles
+- Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles — UNLESS D7 conditional-skip fired (all batches first-try PASS + no escalations + no security/integration flags), in which case `= batches` is the correct floor
 - Dispatch workers sequentially when they could run in parallel
 - Label a batch `parallel:N` but dispatch the calls across separate messages — that's serial, not parallel. The wall-clock / cumulative ratio will land ≥ 0.8 and expose it. Investigate and re-dispatch with all N `Agent()` calls in a single message.
+- Fire an `AskUserQuestion` between batches in `auto` mode — "transparency checkpoint", "midway sanity check", "scope re-confirmation", "cost heads-up", or any rephrasing of *"should I keep going?"*. Per rule 8, auto means finish the chain. The only gates between batches are the structural ones (`SECURITY_VIOLATION` halt, escalation crossing the irreversibility boundary, inter-batch advance in *manual* mode). Status prints are fine; status *questions* are banned.
+- Justify the recommendation inside the option label/description — e.g. recommending `No` for the Deploy gate with a multi-sentence rationale about pre-commit fixes and audit findings the user already saw in scrollback. Labels stay ≤ 12 words; descriptions are one short sentence. The orchestrator's reasoning is an input to the recommendation, not output for the user to re-read.
+- Flip the Deploy-gate recommendation to `No` based on "soft" signals (pre-commit auto-fixes, audit caught and fixed a bug, many commits, volume of changes). Only the concrete signals listed in `dispatch/SKILL.md` Step 5 (`SECURITY_VIOLATION`, irreversible escalation, ≥2 same-sub-task retries, unresolved `[Critical]`, flaky test) flip the recommendation. Defaulting to `No` because the chain felt heavy is the same paternalism rule 8 bans for inter-batch questions.
 - Print a usage summary for a multi-batch task without the `Wall-clock` and `Cumulative` rows — auditability of parallelism is mandatory once 2+ batches or 2+ parallel-eligible workers are in play
 - Include "Co-Authored-By: Claude" in any git operation, or reference the LLM as an actor in any artefact (commits, PRs, docs, code comments, skill prose) — see rule 9
 - Summarize what you just did
@@ -384,3 +424,5 @@ Hand-off pattern:
 - Finish a task without printing the usage summary
 - Dispatch workers without creating task files in `.hyperflow/tasks/` first
 - Complete a task without deleting its task file
+- Sequentialize sibling workers that share a common input and have no inter-dependency, or dispatch per-sibling reviewers when a single batched reviewer covers the same review-level cap
+- Wrap every trivial mechanical step in an Agent dispatch when §12.1 inline path applies — adds latency without value
