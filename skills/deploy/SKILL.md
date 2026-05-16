@@ -1,6 +1,15 @@
 ---
 name: deploy
-description: Use when the user says "ship it", "ready to push", "release", "deploy", or wants pre-push gates (lint, typecheck, build, tests) plus commit/release/push in one flow. Standalone — never auto-invoked; push always requires explicit confirmation.
+description: |
+  Use when the user says "ship it", "ready to push", "release", "deploy", or wants
+  pre-push gates (lint, typecheck, build, tests) plus commit/release/push in one flow.
+  Standalone — never auto-invoked; push always requires explicit confirmation.
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(./scripts/*:*), Glob, Grep
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [release, ci, automation, push-gates]
 ---
 
 # Deploy

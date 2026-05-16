@@ -1,6 +1,15 @@
 ---
 name: scope
-description: Use when the user says "plan this", "decompose this task", "break this down", or wants the task file before any code changes. Writes `.hyperflow/tasks/<slug>.md` with batched sub-tasks, then **auto-chains into `/hyperflow:dispatch`** — no manual gate.
+description: |
+  Use when the user says "plan this", "decompose this task", "break this down", or
+  wants the task file before any code changes. Writes .hyperflow/tasks/[slug].md
+  with batched sub-tasks, then auto-chains into /hyperflow:dispatch — no manual gate.
+allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [planning, decomposition, task-graph, multi-agent]
 ---
 
 # Scope

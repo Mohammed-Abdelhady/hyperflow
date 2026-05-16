@@ -1,6 +1,16 @@
 ---
 name: trace
-description: Use when encountering bugs, test failures, runtime errors, unexpected behavior, broken builds, or "this doesn't work" reports. Systematic root-cause analysis before any patch — never blind-patches symptoms. Standalone (off the spec → scope → dispatch chain). Ends with a thinking-tier review of the fix.
+description: |
+  Use when encountering bugs, test failures, runtime errors, unexpected behavior,
+  broken builds, or "this doesn't work" reports. Systematic root-cause analysis
+  before any patch — never blind-patches symptoms. Standalone (off the
+  spec → scope → dispatch chain). Ends with a thinking-tier review of the fix.
+allowed-tools: Read, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Glob, Grep, Agent
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [debugging, root-cause, systematic, multi-agent]
 ---
 
 # Trace
