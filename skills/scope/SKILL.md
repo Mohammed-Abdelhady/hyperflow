@@ -25,12 +25,15 @@ Every substantive step dispatches at least one Agent.
 |---|---|---|---|
 | 0 — Chain mode | — | — | `AskUserQuestion` only (exempt) |
 | 1 — Understand | — | — | `AskUserQuestion` if ambiguous (exempt) |
-| 2 — Research | Searcher × 2 (Sonnet) parallel | **Reviewer** (Opus) verifies coverage | Both tiers |
+| 2 — Research | Searcher × 2 (Sonnet) **parallel** (P1) | **Reviewer** (Opus) verifies coverage | Both tiers; P1 applied |
 | 3 — Decompose | — | **Planner** (Opus) produces the batch graph | Pure thinking |
-| 4 — Write task file | Writer (Sonnet) emits the markdown | **Reviewer** (Opus) verifies the plan vs the design | Both tiers |
+| 4 — Write task file | Writer (Sonnet) emits the markdown (P1 internal parallelism) | **Reviewer** (Opus) verifies the plan vs the design | Both tiers; P1 applied |
+| 4+6 — parallel | Writer (Step 4) ∥ Writer (Step 6) fire after Step 3 (P3) | — | Concurrent dispatch; both wait on Planner output |
 | 5 — Output | — | — | Print only (exempt) |
-| 6 — Memory | Writer (Sonnet) appends to memory files | **Reviewer** (Opus) checks for duplicates / contradictions | Both tiers |
+| 6 — Memory | Writer (Sonnet) appends to memory files (fires in parallel with Step 4 — P3) | **Reviewer** (Opus) checks for duplicates / contradictions | Both tiers; P3 applied |
 | 7 — Hand off | — | — | `Skill` tool invocation (exempt) |
+
+**Latency flags:** `--thorough` disables P1 (sequential sibling drafts in Step 4). P3 (Steps 4 + 6 concurrent) is always on — no quality tradeoff. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) for pattern definitions.
 
 ## Approval Gates
 
@@ -45,6 +48,8 @@ Every substantive step dispatches at least one Agent.
 ### Step 0 — Choose chain mode (FIRST tool call · STRUCTURAL GATE)
 
 This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the skill is invoked directly. "No clarifying questions" / "auto-pilot" / "always-on" / any other autonomy directive does NOT skip it. Defaulting to `auto` without asking is a doctrine violation.
+
+**Latency arg:** `--thorough` (or `depth=max`) disables P1 (sequential Writer drafts instead of internal-parallel sections in Step 4). P3 (Step 4 + Step 6 concurrent dispatch) stays on always. If the user passes `--thorough`, note it and apply to Step 4 dispatch only — all other steps are unaffected.
 
 If invoked with a `chain-mode=<auto|manual>` arg (from `/hyperflow:spec` or a prior skill), skip this step — the previous chain-starter already asked.
 
@@ -69,15 +74,17 @@ If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should p
 - Ambiguous → `AskUserQuestion` (max 3)
 - Pure design question → suggest `/hyperflow:spec` instead and stop
 
-### Step 2 — Research (parallel)
+### Step 2 — Research (parallel · P1)
 
 Agents — `Searcher` × 2 (Sonnet) ⇒ **Reviewer** (Opus).
 
-1. Dispatch in a single message (parallel):
+1. Dispatch in a **single message** (parallel — P1 applied: both Searchers are independent siblings sharing the same upstream task description):
    - `Searcher — mapping affected files and existing patterns`
    - `Searcher — finding related tests and conventions`
 2. Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, and `.hyperflow/memory/index.md` to surface relevant past learnings.
 3. Dispatch `**Reviewer** — verifying research coverage` to confirm both Searchers hit the relevant subsystems. If gaps remain, redispatch a Searcher targeting the gap before moving on.
+
+**P1 rationale:** the two Searchers do not depend on each other's output. Firing both in one message cuts the research phase wall-clock in half. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) §P1.
 
 ### Step 3 — Decompose
 
@@ -91,11 +98,15 @@ The Planner produces, for each sub-task:
 - Dependencies — parallel vs sequential
 - Complexity estimate (drives review level cap downstream)
 
-### Step 4 — Write Task File
+### Step 4 — Write Task File (P1 internal parallelism · P3 concurrent with Step 6)
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-1. Dispatch `Writer — emitting task file` with the Planner's output. The Writer writes to `.hyperflow/tasks/<task-slug>.md` using the template below.
+**P3 — concurrent dispatch:** Step 4 (task file Writer) and Step 6 (memory Writer) are independent after the Planner completes. Dispatch both Writers in the same message immediately after Step 3 returns. Wait for both before advancing to Step 5. This collapses one sequential round-trip from the flow.
+
+**P1 — internal parallelism:** when the Planner produces a task file with multiple logically independent sections (Goal, Context, Affected files, Batches, Verification plan), instruct the Writer to draft those sections in parallel internally by structuring its prompt as parallel sub-tasks. The Writer is one agent, but prompt-level parallelism reduces sequential reasoning passes over independent content. Disable with `--thorough` (Writer drafts sections in one sequential pass instead).
+
+1. Dispatch `Writer — emitting task file` with the Planner's output (in parallel with Step 6 Writer — P3). The Writer writes to `.hyperflow/tasks/<task-slug>.md` using the template below.
 2. Dispatch `**Reviewer** — verifying task file vs design` to confirm every design requirement maps to at least one sub-task and no orphan sub-tasks exist.
 
 Task-file template —
@@ -154,12 +165,16 @@ Print the task file path and batch summary table:
 Plan ready — .hyperflow/tasks/<slug>.md (3 batches, 7 sub-tasks)
 ```
 
-### Step 6 — Memory
+### Step 6 — Memory (P3 concurrent with Step 4)
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
-1. Dispatch `Writer — appending decisions to .hyperflow/memory/decisions.md`. Skip trivial ones. For complex features (3+ files, multiple subsystems) the Writer also produces `.hyperflow/specs/<feature-slug>.md` referenced from the task file.
+**P3 — concurrent dispatch:** this step fires in parallel with Step 4 (see Step 4 above). Both Writers receive the Planner's output and are independent — the memory Writer does not need the task file to be written, and the task file Writer does not need memory to be updated. Both must complete before Step 5 output.
+
+1. Dispatch `Writer — appending decisions to .hyperflow/memory/decisions.md` (in parallel with Step 4 Writer — P3). Skip trivial ones. For complex features (3+ files, multiple subsystems) the Writer also produces `.hyperflow/specs/<feature-slug>.md` referenced from the task file.
 2. Dispatch `**Reviewer** — checking memory entries` to catch duplicates or contradictions with existing entries before they land in `.hyperflow/memory/`.
+
+**P3 rationale:** the task file and memory entries both derive from the Planner's batch graph but do not depend on each other. Running them concurrently cuts one sequential Writer round-trip from the flow. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) §P3.
 
 See [task-tracking.md](references/task-tracking.md) and [worker-prompt.md](references/worker-prompt.md).
 
@@ -280,3 +295,4 @@ right questions before any decomposition happens.
 - [task-tracking.md](references/task-tracking.md) — task file format and lifecycle.
 - [worker-prompt.md](references/worker-prompt.md) — what dispatch will inject into each Sonnet worker.
 - [output-style.md](references/output-style.md) — agent label format.
+- [../spec/references/latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency pattern definitions, wall-clock impact table, and `--thorough` disable rules.
