@@ -125,7 +125,7 @@
       "name": "cache",
       "command": "/hyperflow:cache",
       "tagline": "Memory CRUD",
-      "purpose": "Show, search, add, edit, prune, archive, clear, stats, migrate",
+      "purpose": "Show, search, add, edit, prune, archive, clear, stats, migrate, off, compact",
       "chain": "standalone"
     }
   ],
