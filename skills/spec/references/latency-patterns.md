@@ -149,20 +149,26 @@ For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single Opu
 **Pointer pattern (replaces inlined blocks):**
 
 ```
-You have access to .hyperflow/memory/ — read these files as needed:
-  - doctrine.md       — orchestration rules (read once if unfamiliar)
+You have access to project context — read these files as needed:
+
+.hyperflow/ root (project analysis from scaffold Step 1):
   - profile.md        — project conventions
-  - architecture.md
-  - conventions.md
+  - architecture.md   — system architecture
+  - conventions.md    — naming, patterns, standards
+
+.hyperflow/memory/ (orchestration + accumulated state from scaffold Step 2):
+  - doctrine.md       — orchestration rules (read once if unfamiliar)
   - learnings.md      — accumulated lessons from prior batches in this run
+  - decisions.md, pitfalls.md, patterns.md — memory stubs
+
 Your task: <inline task description here>
 ```
 
 Workers `Read` only the files relevant to their task. Doctrine is read once per session by the first worker that needs it, not re-inlined on every dispatch.
 
-**Prompt template:** See `skills/hyperflow/worker-prompt-lean.md` for the full lean-prompt template and field substitution rules.
+**Prompt template:** See `skills/hyperflow/worker-prompt-lean.md` for the full lean-prompt template — that file is the canonical source. This block is illustrative only.
 
-**Fallback when memory files don't exist (fresh project):** If a referenced file is absent, the worker falls back to a brief inline default for that file only. The gap is noted; suggest the user run `/hyperflow:scaffold` to populate `.hyperflow/memory/` before the next dispatch. Workers do not fail on a missing memory file — they degrade gracefully to inline defaults.
+**Fallback for absent or stub files:** If a referenced file is absent OR appears to be an unpopulated stub (matches a `<!-- to be populated -->` sentinel or has fewer than ~5 meaningful body lines), the worker falls back to a brief inline default for THAT file only — not a wholesale switch to the full prompt. Partial population is the expected failure mode (scaffold creates the directory with stubs); a wholly-missing `.hyperflow/` is the rare edge case.
 
 **P5 stays on always.** The `--thorough` flag does not disable P5 — there is no quality tradeoff in lean prompts. Workers still have access to the full context; they fetch it on demand.
 
