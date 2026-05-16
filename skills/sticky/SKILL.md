@@ -1,11 +1,11 @@
 ---
 name: sticky
 description: |
-  Use when the user wants to enable, disable, or check sticky-session mode. With sticky ON, every task-shaped user message in the current session routes through the appropriate hyperflow chain-starter (spec / scope / dispatch) without the user re-typing /hyperflow:*. Chat-shaped messages still pass through normally.
-  Trigger with /hyperflow:sticky, "make hyperflow sticky", "stop using hyperflow", "is hyperflow sticky", "auto-route to hyperflow".
+  Use when the user wants to set auto-routing mode: on (every task-shaped message routes), auto (intent-verb messages route — default), or off (no auto-routing). Intent-detection runs by default; use this skill to expand to full sticky or disable entirely.
+  Trigger with /hyperflow:sticky, "make hyperflow sticky", "stop using hyperflow", "is hyperflow sticky", "auto-route to hyperflow", "disable hyperflow auto-routing".
 allowed-tools: Read, Write, Edit, Bash(rm:*), Bash(ls:*)
-argument-hint: "<on|off|status>"
-version: 4.8.0
+argument-hint: "<on|auto|off|status>"
+version: 4.9.0
 license: MIT
 compatibility: Designed for Claude Code
 tags: [session, automation, routing]
@@ -13,17 +13,26 @@ tags: [session, automation, routing]
 
 # Sticky
 
-Toggle "sticky session" mode. With sticky ON, every task-shaped user message in the current session auto-routes through the appropriate hyperflow chain-starter (`/hyperflow:spec` for ambiguous designs, `/hyperflow:scope` for clear specs). Chat-shaped messages (questions, answers, acknowledgments, "yes"/"no") still pass through normally.
+Set per-project auto-routing mode. Three states:
 
-Full doctrine: [DOCTRINE.md](../hyperflow/DOCTRINE.md) Layer 1 sticky-session clause.
+| State | Default? | Behavior |
+|---|---|---|
+| `auto` | yes (when `.sticky` absent) | **Intent-detection routing** — messages containing chain-starter verbs (`audit`, `debug`, `fix`, `brainstorm`, `scope`, `deploy`, `review`, …) auto-route. Pure conversation passes through. |
+| `on` | — | **Full sticky** — every task-shaped message routes, even without explicit intent verbs |
+| `off` | — | **All auto-routing disabled** — only explicit `/hyperflow:*` slash commands trigger chains |
+
+Intent-detection is the floor — the user gets it without any opt-in (the orchestrator scans every user message for chain-starter verbs and routes when matched). Sticky `on` raises the ceiling; sticky `off` lowers the floor.
+
+Full doctrine: [DOCTRINE.md](../hyperflow/DOCTRINE.md) Layer 1 auto-routing clause (intent verb taxonomy + routing contract + bypass patterns).
 
 ## Subcommands
 
 | Subcommand | Description |
 |---|---|
-| `on` | Enable sticky mode — auto-route task-shaped messages until disabled |
-| `off` | Disable sticky mode — back to explicit `/hyperflow:*` invocations |
-| `status` | Show current state (on / off / when toggled) |
+| `on` | Set state: on — full sticky routing on every task-shaped message |
+| `auto` | Set state: auto — intent-verb routing only (the default) |
+| `off` | Set state: off — disable ALL auto-routing including intent detection |
+| `status` | Show current state (on / auto / off / when toggled) |
 
 Default subcommand when none provided: `status`.
 
@@ -43,22 +52,32 @@ The session-start hook reads this file and prints a one-line advisory when stick
 
 ### `on`
 
-Write `.hyperflow/.sticky` with `state: on` + ISO-8601 timestamp + `trigger: explicit-toggle`. If the file already exists with `state: on`, refresh the timestamp + trigger but don't reset other state. Print:
+Write `.hyperflow/.sticky` with `state: on` + ISO-8601 timestamp + `trigger: explicit-toggle`. Print:
 
 ```
-Sticky mode: ON
-Task-shaped messages now auto-route through /hyperflow:spec (or /hyperflow:scope when the design is clear).
-Chat-shaped messages (questions, answers, acknowledgments) still pass through normally.
-Disable with /hyperflow:sticky off.
+Sticky mode: ON (full routing)
+Every task-shaped message now routes through hyperflow, even without intent verbs.
+Disable with /hyperflow:sticky off · or relax to verb-only routing with /hyperflow:sticky auto.
+```
+
+### `auto`
+
+Write `.hyperflow/.sticky` with `state: auto` + timestamp. This is the default state when no file exists; explicitly setting it is useful after `off` to re-enable intent-detection without going to full sticky. Print:
+
+```
+Sticky mode: AUTO (intent-detection routing, default)
+Messages containing chain-starter verbs (audit, debug, fix, brainstorm, scope, deploy, review, …) auto-route.
+Pure conversation passes through. Expand to full routing with /hyperflow:sticky on.
 ```
 
 ### `off`
 
-If `.hyperflow/.sticky` exists, replace its contents with `state: off` + timestamp. (Keep the file rather than delete so the session-start hook can show recent history.) Print:
+Replace `.hyperflow/.sticky` contents with `state: off` + timestamp. (Keep the file rather than delete so the session-start hook can show recent history.) Print:
 
 ```
 Sticky mode: OFF
-Task-shaped messages will no longer auto-route. Use explicit /hyperflow:* invocations.
+All auto-routing disabled — even intent verbs (audit, debug, fix, brainstorm, …) will no longer route.
+Use explicit /hyperflow:* invocations. Re-enable with /hyperflow:sticky auto or /hyperflow:sticky on.
 ```
 
 ### `status`
@@ -72,13 +91,19 @@ Sticky mode: ON since 2026-05-17 14:30 (trigger: user-mention)
 or:
 
 ```
+Sticky mode: AUTO since 2026-05-17 14:30 (trigger: default · intent-detection routing)
+```
+
+or:
+
+```
 Sticky mode: OFF (last changed: 2026-05-16 09:12)
 ```
 
 or, if file absent:
 
 ```
-Sticky mode: OFF (never configured for this project — use /hyperflow:sticky on to enable)
+Sticky mode: AUTO (default · file not yet written · intent-detection routing active)
 ```
 
 ## Behavioural contract
@@ -100,12 +125,17 @@ The routing decision is made silently — print one short line (`Routing to /hyp
 
 ## Activation triggers
 
-Sticky mode turns ON automatically when:
+Intent-detection routing (`state: auto`) is the **default** — active for every project without any user action. The orchestrator scans every user message for chain-starter verbs (per the DOCTRINE intent verb taxonomy) and routes when matched. No file write needed.
 
-1. The user runs `/hyperflow:sticky on` (explicit toggle).
-2. The user mentions the word "hyperflow" in any non-slash-command message during the session, AND `.hyperflow/.sticky` does not yet exist for this project (so first mention is the trigger; subsequent mentions are no-ops). The trigger field in the file is recorded as `user-mention`.
+Upgrades and downgrades:
 
-Sticky mode turns OFF only when the user runs `/hyperflow:sticky off`. It is never silently disabled.
+1. **Upgrade to full sticky (`on`):**
+   - Explicit: user runs `/hyperflow:sticky on`.
+   - Implicit: user mentions the word "hyperflow" in a non-slash-command message AND `.hyperflow/.sticky` does not exist OR is `auto`. Orchestrator writes `state: on · trigger: user-mention · since: <ISO-8601>` and prints `Sticky mode: ON (upgraded from auto, activated by mention). Disable with /hyperflow:sticky off.`
+2. **Downgrade to intent-only (`auto`):** user runs `/hyperflow:sticky auto`.
+3. **Disable entirely (`off`):** user runs `/hyperflow:sticky off`. Disables intent detection too — only explicit `/hyperflow:*` slash commands route after this.
+
+State is never silently changed by the orchestrator. Only the user's explicit `/hyperflow:sticky <state>` invocation (or the one-time implicit `hyperflow`-mention upgrade) modifies `.hyperflow/.sticky`.
 
 ## Anti-patterns (when sticky is ON)
 
