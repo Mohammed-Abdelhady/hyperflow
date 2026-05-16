@@ -147,28 +147,25 @@ Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **bo
 ?  End-of-chain gates
 
    [1] Run /hyperflow:audit on the cumulative diff?
-       Yes (Recommended)   — outside-eye L3 review, independent of per-batch reviewers
-       No                  — skip; per-batch L1–L<n> reviews were enough
+       Yes — outside-eye L3 review, independent of per-batch reviewers
+       No  — skip; per-batch L1–L<n> reviews were enough
 
    [2] Run /hyperflow:deploy now? (lint + typecheck + build + tests + security sweep, then asks before push)
-       Yes (Recommended)   — gates pass · ready to ship
-       No                  — keep commits local · push manually later
+       Yes — gates pass · ready to ship
+       No  — keep commits local · push manually later
 ```
+
+Per DOCTRINE rule 8, both questions are binary action gates — no `(Recommended)` marker on either option. Two-outcome framing is symmetric; the orchestrator's analysis is reflected in the surrounding status output (gate results, retry counts, security verdict), not in pre-marking the choice.
 
 **Process answers in order:**
 
-First, process the audit answer: recommended option scales with the triage's flow profile:
-- `fast` / `standard` profile → `No (Recommended)` — per-batch L1–L2 reviewers already covered it
-- `deep` / `scientific` profile → `Yes (Recommended)` — L3 outside review is worth it on cross-cutting changes
-- `creative` → `Yes (Recommended)` if the change touches user-visible surfaces
-
 On audit `Yes` → invoke `Skill` with `skill: audit` and `args: "level=3"` (or `level=5` for scientific). Wait for it to finish. Then process the deploy answer.
 
-Then, process the deploy answer. Option labels MUST be one short clause each (≤ 12 words) — never paragraphs of reasoning. Per DOCTRINE rule 8, the orchestrator picks the recommendation; it does not justify the recommendation in the label.
+Then, process the deploy answer. Option labels MUST be one short clause each (≤ 12 words) — never paragraphs of reasoning.
 
-**Deploy recommendation logic — clarified to avoid false negatives:**
+**Internal recommendation signal (used for status framing, NOT for marker):**
 
-The default is **`Yes (Recommended)`**. The recommendation flips to `No (Recommended)` only when one of these *concrete* signals is present:
+The orchestrator still computes whether the chain is in a "green" or "marginal" state — this drives the status line the user reads above the gate, not a `(Recommended)` marker on the options. A chain is **marginal** (and the status line should say so) when one of these *concrete* signals is present:
 
 - A `SECURITY_VIOLATION` was raised (and resolved) during dispatch
 - A worker `ESCALATE:` crossed the irreversibility boundary
@@ -341,12 +338,12 @@ Total                   3 agents   52.2k tokens
 ? End-of-chain gates
 
   [1] Run /hyperflow:audit on the cumulative diff?
-      No (Recommended) — per-batch L1-L2 reviewers already covered it (standard profile)
-      Yes              — outside-eye L3 review
+      Yes — outside-eye L3 review
+      No  — per-batch L1-L2 reviewers already covered it (standard profile)
 
   [2] Run /hyperflow:deploy now?
-      Yes (Recommended) — all gates green, ready to ship
-      No               — keep local; push manually later
+      Yes — all gates green, ready to ship
+      No  — keep local; push manually later
 ```
 
 ### Multi-batch with learning injection (P2 batched review)

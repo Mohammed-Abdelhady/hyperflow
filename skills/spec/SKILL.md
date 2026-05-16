@@ -145,7 +145,7 @@ Question budget (when Step 4 runs):
 
 Never stack more than 2 questions per `AskUserQuestion` call.
 
-**Every option list MUST mark a recommended choice** (DOCTRINE rule 8). The Analyst's leading hypothesis from Step 3 (or the triage leading hypothesis if Step 3 was skipped) goes first with `(Recommended)`; alternatives follow. The user can pick anything — the marker is guidance, not a default.
+**Multi-option lists (3+ options) MUST mark a recommended choice; binary lists (2 options) MUST NOT** — per DOCTRINE rule 8 binary-gate clause. For multi-option questions, the Analyst's leading hypothesis from Step 3 (or the triage leading hypothesis if Step 3 was skipped) goes first with `(Recommended)`; alternatives follow. The user can pick anything — the marker is guidance, not a default. Per-section approval gates at Step 7 (`Approve / Revise`) are binary — no marker.
 
 Question categories (in order — pick the first N for depth N):
 
