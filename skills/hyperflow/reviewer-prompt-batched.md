@@ -19,6 +19,12 @@ Same scale as per-sub-task review — but applied to the batch as a whole. The r
 - **Medium** (levels 1-3): Any sibling modifies existing shared functionality
 - **Complex** (levels 1-5): Any sibling introduces a new feature, touches UI, or changes DB/API contracts
 
+## Honor the Level Cap
+
+Apply ONLY the levels specified in the dispatch's review-level cap (e.g., `L1-L2` means run L1 and L2; do NOT silently escalate to L3 unless the cap says so). The cap is set by upstream triage via the dispatch flow profile and the triage `security`/`integration_risk` flags. Workers cannot request escalation; only triage classification can elevate the cap.
+
+If you encounter something that would warrant escalation beyond the cap — for example, spotting a security concern during an L1-L2 review — surface it as an `[Important]` note in the relevant sibling's finding block for the orchestrator to consider, but do not fail the verdict on it. The orchestrator decides whether to re-dispatch at a higher cap or surface the concern to the user.
+
 ## Template
 
 ```
