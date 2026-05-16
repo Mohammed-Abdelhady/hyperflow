@@ -15,7 +15,7 @@
         "source": "url",
         "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
       },
-      "description": "Ten specialized slash commands turn one Claude session into a structured engineering pipeline. /hyperflow:spec asks the questions a senior engineer would. /hyperflow:scope decomposes into a batched task graph. /hyperflow:dispatch fans out persona-stitched workers under tiered review (Sonnet per-batch, Opus final integration). /hyperflow:background manages opt-in background agents for latency reduction and observers. Memory compounds across sessions — yesterday's decisions are tomorrow's starting point.",
+      "description": "Eleven specialized slash commands turn one Claude session into a structured engineering pipeline. /hyperflow:spec asks the questions a senior engineer would. /hyperflow:scope decomposes into a batched task graph. /hyperflow:dispatch fans out persona-stitched workers under tiered review (Sonnet per-batch, Opus final integration). /hyperflow:sticky enables session-wide auto-routing so every task message uses the chain without re-typing /hyperflow:*. /hyperflow:background manages opt-in background agents for latency reduction and observers. Memory compounds across sessions — yesterday's decisions are tomorrow's starting point.",
       "version": "4.8.0",
       "author": {
         "name": "Mohammed Abdelhady",

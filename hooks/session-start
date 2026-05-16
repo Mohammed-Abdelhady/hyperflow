@@ -132,6 +132,41 @@ $advisory"
     fi
   fi
 
+  # Sticky-session status (non-blocking, no LLM)
+  if [ -f "$HF_DIR/.sticky" ]; then
+    sticky_line="$(python3 - "$HF_DIR/.sticky" <<'PYEOF' 2>>"$HF_DIR/.session-start.log" || true
+import sys
+path = sys.argv[1]
+state, since, trigger = "off", "", ""
+try:
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("state:"):
+                state = line.split(":", 1)[1].strip()
+            elif line.startswith("since:"):
+                since = line.split(":", 1)[1].strip()
+            elif line.startswith("trigger:"):
+                trigger = line.split(":", 1)[1].strip()
+except OSError:
+    sys.exit(0)
+if state == "on":
+    bits = ["Sticky mode: ON"]
+    if since:
+        bits.append(f"since {since[:16].replace('T', ' ')}")
+    if trigger:
+        bits.append(f"trigger: {trigger}")
+    print(" · ".join(bits) + " — task-shaped messages auto-route through hyperflow chain-starters. Disable with /hyperflow:sticky off.")
+PYEOF
+)"
+    if [ -n "$sticky_line" ]; then
+      CONTENT="$CONTENT
+
+## Sticky-session status
+$sticky_line"
+    fi
+  fi
+
   # Active Tasks
   if [ -d "$HF_DIR/tasks" ]; then
     tlist=""

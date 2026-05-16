@@ -108,6 +108,47 @@ See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, 
 
 ## Layer 1: Autonomy
 
+### Sticky-session routing (auto-route when sticky is ON)
+
+When `.hyperflow/.sticky` contains `state: on`, OR the user has mentioned the word "hyperflow" in any non-slash-command message during the current session, the orchestrator MUST auto-route every subsequent task-shaped user message through the appropriate chain-starter. Full skill: [`/hyperflow:sticky`](../sticky/SKILL.md).
+
+**Activation:**
+
+1. Explicit toggle — user runs `/hyperflow:sticky on`.
+2. Implicit trigger — user mentions "hyperflow" in any non-slash-command message AND `.hyperflow/.sticky` does not yet exist for this project. The orchestrator writes `state: on · trigger: user-mention · since: <ISO-8601>` to `.hyperflow/.sticky` and prints `Sticky mode: ON (activated by mention). Disable with /hyperflow:sticky off.`
+
+Sticky mode persists across sessions (the file survives) and is per-project (each `.hyperflow/` has its own). Never silently disabled — only `/hyperflow:sticky off` turns it off.
+
+**Routing contract — when sticky is ON, on every new user message:**
+
+| Message shape | Heuristic | Route to |
+|---|---|---|
+| Chat-shaped | Questions about prior output, "yes"/"no"/"ok"/"thanks", short clarifications, gate answers | No routing — respond directly |
+| Slash command | Message starts with `/` | Honor the slash command as-is — no routing |
+| Bypass keyword | Message contains "without hyperflow" / "skip hyperflow" / "don't route" | No routing for this message |
+| Task-shaped, ambiguous design | Verb-led ("add X", "build Y", "design Z") AND scope/intent is unclear | `/hyperflow:spec` |
+| Task-shaped, clear spec | Verb-led AND user names concrete files / functions / interfaces | `/hyperflow:scope` |
+| Resume reference | Names an existing `.hyperflow/tasks/<slug>.md` | `/hyperflow:dispatch <slug>` |
+| Bug report | "X is broken", "Y test fails", "Z throws", stack-trace pasted | `/hyperflow:trace` |
+| Review request | "review", "audit", "any issues?", "check the diff" | `/hyperflow:audit` |
+| Ship intent | "ship it", "push", "release", "deploy" | `/hyperflow:deploy` |
+
+**Routing announcement:** print ONE short line before invoking the routed skill — `Routing to /hyperflow:<skill> (sticky mode) …`. Do NOT ask the user to confirm the routing (that would be an invented gate per rule 8). The Step 0 chain-mode question still fires inside the routed skill.
+
+**Banned patterns when sticky is ON:**
+
+- Asking "should I route this to hyperflow?" — invented gate
+- Routing chat-shaped messages — answering a question doesn't fire a chain
+- Routing messages that start with `/` — those are explicit commands, honor them
+- Skipping Step 0 chain-mode inside the routed skill — sticky controls routing, not gates
+- Echoing the routing decision as a paragraph — one short line is enough
+
+**Disable:** only `/hyperflow:sticky off`. Never silently degrade because "this message felt different".
+
+The numbered autonomy rules that follow continue to apply both when sticky is ON and when it is OFF.
+
+
+
 1. **Zero confirmations.** No "should I?", "shall I proceed?". Execute. (But clarification questions via `AskUserQuestion` are REQUIRED — see rule 8.)
 2. **Minimal output.** One-line status updates only. No rationale, no summaries.
 3. **No hedging.** No "I think", "maybe", "perhaps". Decide and act.
