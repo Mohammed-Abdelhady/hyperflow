@@ -164,14 +164,16 @@ Task-file template — follows [`artefact-format.md`](../hyperflow/artefact-form
 ```markdown
 # <Name>
 
-╭─────────────────────────────────────────────────────────────────╮
-│ Status      pending                                             │
-│ Progress    ░░░░░░░░░░░░░░░░░░░░  0 / <total> sub-tasks (0%)    │
-│ Branch      <feat/slug or current branch>                       │
-│ Commits     0 since main · per-task cadence                     │
-│ Wall-clock  not started                                         │
-│ Tokens      thinking 0k · worker 0k · total 0k                  │
-╰─────────────────────────────────────────────────────────────────╯
+## Status
+
+| Field      | Value                                                 |
+|------------|-------------------------------------------------------|
+| Status     | pending                                               |
+| Progress   | `░░░░░░░░░░░░░░░░░░░░`  0 / <total> sub-tasks (0%)    |
+| Branch     | `<feat/slug or current branch>`                       |
+| Commits    | 0 since main · per-task cadence                       |
+| Wall-clock | not started                                           |
+| Tokens     | thinking 0k · worker 0k · total 0k                    |
 
 ## Goal
 
