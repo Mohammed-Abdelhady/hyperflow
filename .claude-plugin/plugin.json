@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "description": "Nine specialized slash commands turn one Claude session into a structured engineering pipeline. /hyperflow:spec asks the questions a senior engineer would. /hyperflow:scope decomposes into a batched task graph. /hyperflow:dispatch fans out persona-stitched workers under thinking-tier review. Memory compounds across sessions — yesterday's decisions are tomorrow's starting point.",
   "author": {
     "name": "Mohammed Abdelhady",
