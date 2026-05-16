@@ -101,6 +101,19 @@
         }
       },
       "additionalProperties": false
+    },
+    "memory": {
+      "description": "Memory compaction settings.",
+      "type": "object",
+      "properties": {
+        "compactionThreshold": {
+          "type": "integer",
+          "description": "Line count at or above which /hyperflow:cache compact warns and is recommended.",
+          "default": 300,
+          "minimum": 50
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["defaults"],
