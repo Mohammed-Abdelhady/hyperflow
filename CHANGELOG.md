@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.2.0] — 2026-05-16
+
+### Added
+- Mark Step 7 hand-off as trivial-inline per section 12.1
+- Prefer session-context.md as single-read entry
+- Generate .hyperflow/memory/session-context.md at session start
+- Add Honor the Level Cap instruction
+- Classifier on Haiku 4.5 + security/integration_risk schema
+- Combined audit+deploy gate + conditional integration review + L1-L2 default + 12.1 wrap-up
+- Drop Step 2 coverage Reviewer + aggressive P4 + 12.1 inline
+- Add section 12.1 trivial-inline + round 2 updates
+
+### Fixed
+- Tighten D7 skip + inline wrap-up dedup + question count note
+- Remove dead silent brainstormDepth + replace warning icon
+- Repair Step 7 hand-off skill name (execute -> dispatch)
+- Tighten round 2 wording from audit findings
+
+### Changed
+- Soften round 2 latency claims to modeled estimates
+- Cap session-context.md sections at 500 lines
+- Sync 9 per-skill DOCTRINE.md copies from canonical
+- Note round 2 latency optimization release
+- Clarify session-context.md is hook-populated
+- Add Round 2 levers L1-L9 to latency-patterns reference
+
+
 ## [4.1.1] — 2026-05-16
 
 ### Fixed
@@ -463,7 +490,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.1.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.2.0...HEAD
+[4.2.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.0.1...v4.1.0
 [4.0.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.0.0...v4.0.1
