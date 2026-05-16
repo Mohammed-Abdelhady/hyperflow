@@ -32,6 +32,7 @@ This page documents exactly what the plugin reads, writes, and exposes on your m
 | `.hyperflow/tasks/<slug>.md` | Decomposed task graph for an in-flight chain | `/hyperflow:scope` |
 | `.hyperflow/specs/<slug>.md` | Approved design specs | `/hyperflow:spec` |
 | `.hyperflow/memory/{learnings,decisions,pitfalls,patterns,conventions,index}.md` | Project-scoped learnings that accumulate across sessions | `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:cache` |
+| `.hyperflow/memory/archive/YYYY-MM.md` | Append-only cold-tier archive of compacted memory entries; one file per calendar month | `/hyperflow:cache compact` |
 | `.gitignore` (one-line append) | Adds `.hyperflow/` if not already present | `/hyperflow:scaffold` |
 | `~/.hyperflow/config.json` | Optional model + security configuration | The installer wizard, if you run it |
 | `CLAUDE.md`, `AGENTS.md` | Provider auto-detection shims pointing at the installed plugin | `/hyperflow:scaffold` if you opt in |
