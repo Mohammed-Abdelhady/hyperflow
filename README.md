@@ -125,7 +125,7 @@ You: /hyperflow:spec "Build user auth with login page, middleware, and password 
 
 ## Skills
 
-Hyperflow ships **9 specialized skills**. There is no always-on orchestrator — you pick the entry point, and chain-starters auto-advance forward.
+Hyperflow ships **10 specialized skills**. There is no always-on orchestrator — you pick the entry point, and chain-starters auto-advance forward.
 
 ### Chain-starting skills
 
@@ -145,6 +145,7 @@ Hyperflow ships **9 specialized skills**. There is no always-on orchestrator —
 | **Deploy** | `/hyperflow:deploy` | Lint + typecheck + build + tests + security sweep + commit + release.sh + push |
 | **Cache** | `/hyperflow:cache` | Memory CRUD: `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off`, `compact` |
 | **Status** | `/hyperflow:status` | Read-only one-screen view: version · profile freshness · memory count + live per-task progress (sub-tasks done/pending, tokens, wall-clock, ETA) |
+| **Background** | `/hyperflow:background` | List · show · cancel · prune background agents fired by other skills (quality gates · CI watcher · scaffold refresh · cache compact). Read-only by default; see [`skills/hyperflow/background-agents.md`](skills/hyperflow/background-agents.md) for the full doctrine |
 
 **Reuse architecture:** every skill is 80–200 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
 
@@ -227,6 +228,7 @@ There is no always-on activation. Each slash command runs its skill and (for cha
 | Deploy | `/hyperflow:deploy` | L5, L8, L9 | — | Commit-inclusion (binary) · Push (honors scope `push=ask/auto/never` pre-election) |
 | Cache | `/hyperflow:cache` | L6 | — | Confirm-on-clear |
 | Status | `/hyperflow:status` | — | — | None — read-only, no dispatch |
+| Background | `/hyperflow:background` | L3 (registry only) | — | None — read-only by default · `cancel` writes registry only |
 
 L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. Full checklist in [`skills/hyperflow/review-levels.md`](skills/hyperflow/review-levels.md).
 
