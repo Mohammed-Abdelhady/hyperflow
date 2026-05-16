@@ -75,9 +75,15 @@ Per [security.md](references/security.md), scan for hardcoded secrets, API keys,
 - "Nothing to release" or no releasable commits → skip.
 - Otherwise → skip (user releases manually).
 
-## Step 6 — Push (confirmation required · STRUCTURAL GATE)
+## Step 6 — Push (honors `push` pre-election from Scope Step 2.6 · STRUCTURAL GATE when `push=ask`)
 
-Use `AskUserQuestion`. Per DOCTRINE rule 8, mark a recommended option — but the recommendation depends on gate state. If all gates passed and the diff looks clean, recommend `Push`; if anything was marginal (test flakiness, large diff, etc.), recommend `Hold`.
+Read the `push` arg from chain args (propagated from Scope Step 2.6 when `chain-mode=auto`). Three paths:
+
+**`push=auto`** — push immediately without asking. Print `Push: pre-elected (auto) — pushing branch + tags…`. Run `git push`, then `git push --tags` if release created tags. Skip the `AskUserQuestion` call. Per DOCTRINE rule 8, this is NOT an invented skip — the user already gave consent at Scope Step 2.6.
+
+**`push=never`** — skip the push step entirely. Print `Push: pre-elected (never) — branch held local. Run \`git push\` manually when ready.` Do not call `git push`.
+
+**`push=ask`** (default; also fires when no operational pre-election was made — e.g. deploy invoked standalone) — fire the structural-gate `AskUserQuestion`. Per DOCTRINE rule 8, mark a recommended option — if all gates passed and the diff looks clean, recommend `Push`; if anything was marginal (test flakiness, large diff, etc.), recommend `Hold`.
 
 ```
 Push to origin/<branch>?
@@ -85,8 +91,8 @@ Push to origin/<branch>?
   Hold                — keep local; you can push later
 ```
 
-- **Never force-push to main or master.**
-- On yes — `git push`, then `git push --tags` if release created tags.
+- **Never force-push to main or master**, regardless of `push` value. `push=auto` is a plain `git push`; if the remote rejects it (non-fast-forward), surface the error and stop — do NOT add `--force`.
+- On yes (or `push=auto`) — `git push`, then `git push --tags` if release created tags.
 
 ## Step 7 — Output
 
