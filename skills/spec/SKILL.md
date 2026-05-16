@@ -4,7 +4,7 @@ description: |
   Use when the user is exploring a design idea, weighing approaches, or has an ambiguous request. Asks structured questions, proposes 2-3 approaches, walks the design section-by-section. On approval, auto-chains into /hyperflow:scope.
   Trigger with /hyperflow:spec, "should I", "how should we", "what's the best way to", "design this", "explore the approach".
 allowed-tools: Write, AskUserQuestion
-argument-hint: "<design question or feature idea> [chain-mode=auto|manual] [depth=max]"
+argument-hint: "<design question or feature idea> [chain-mode=auto|manual] [--thorough | depth=max]"
 version: 3.1.2
 license: MIT
 compatibility: Designed for Claude Code
@@ -27,7 +27,7 @@ Every substantive step dispatches at least one Agent. The orchestrator never doe
 | 1+2 — Triage + Context | Searcher (Sonnet) [P3 concurrent] | **Classifier** (Opus) [P3 concurrent] · **Reviewer** (Opus) after Searcher returns | P3: dispatched in same message |
 | 3 — Multi-dim analysis | — | **Analyst** (Opus) produces 6-dim brief | P4-skippable: ambiguity < 0.4 AND complexity != high |
 | 4 — Smart questions | — | — | `AskUserQuestion` only (exempt) · floor: 2 always |
-| 5+6 — Synthesis + Approaches | Writer ×2 (Sonnet) [P3 concurrent] | **Reviewer** (Opus) batched over both drafts [P2] | P3: dispatched together · P6 is P4-skippable |
+| 5+6 — Synthesis + Approaches | Writer ×2 (Sonnet) [P3 concurrent] | **Reviewer** (Opus) batched over both drafts [P2] | P3: dispatched together · Step 6 is P4-skippable |
 | 7 — Design sections | Writer ×5 (Sonnet) [P1 parallel] | **Reviewer** (Opus) batched over all 5 [P2] | One combined user gate after batch review |
 | 8 — Spec output | Writer (Sonnet) | **Reviewer** (Opus) final spec sanity check | Sequential — kept intentional |
 | 9 — Hand off | — | — | `Skill` tool invocation (exempt) |
@@ -436,3 +436,5 @@ That's clear enough to skip the design phase. Auto-chaining to /hyperflow:scope.
 - [task-triage.md](references/task-triage.md) — Classifier output schema.
 - [flow-profiles.md](references/flow-profiles.md) — fast/standard/deep/research/creative/scientific profiles.
 - [latency-patterns.md](references/latency-patterns.md) — P1–P5 latency-reduction patterns reference.
+- [worker-prompt-lean.md](../hyperflow/worker-prompt-lean.md) — P5 lean worker template.
+- [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — P2 batched reviewer template.
