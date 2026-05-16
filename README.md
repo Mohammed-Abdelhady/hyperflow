@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v3.0.0-blueviolet?style=flat-square" alt="version v3.0.0" />
+  <img src="https://img.shields.io/badge/version-v3.1.0-blueviolet?style=flat-square" alt="version v3.1.0" />
   &nbsp;
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
   &nbsp;
@@ -30,7 +30,7 @@
 </p>
 
 <p align="center">
-  <code>v3.0.0</code> · <a href="CHANGELOG.md">Changelog</a>
+  <code>v3.1.0</code> · <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
@@ -140,7 +140,7 @@ Each chain-starter asks at Step 0 whether to advance **auto** (no gates between 
 | **Audit** | `/hyperflow:audit` | Code review | Multi-level review (L1 quick → L5 exhaustive) on uncommitted changes, a file/range, or a PR |
 | **Deploy** | `/hyperflow:deploy` | Pre-push gates | Lint + typecheck + build + tests + security sweep + commit + release + push (push always asks) |
 | **Cache** | `/hyperflow:cache` | Memory CRUD | `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off` |
-| **Status** | `/hyperflow:status` | Project snapshot | Read-only one-screen view: active tasks, memory count, release version, Layer 0 cache freshness |
+| **Status** | `/hyperflow:status` | Live progress | Read-only one-screen view: static snapshot (version · profile freshness · memory count) **plus** live in-flight progress per task — sub-tasks done/pending, tokens used, wall-clock, ETA |
 
 **Reuse architecture:** every skill is ~80–150 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
 
