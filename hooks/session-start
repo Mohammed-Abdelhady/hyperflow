@@ -70,7 +70,7 @@ $(head -200 "$HF_DIR/memory/index.md")"
 
   # Memory Compaction Advisory (non-blocking, no LLM)
   if [ -f "$HF_DIR/memory/.checksums" ]; then
-    advisory="$(python3 - "$HF_DIR/memory/.checksums" "$HOME/.hyperflow/config.json" <<'PYEOF' || true
+    advisory="$(python3 - "$HF_DIR/memory/.checksums" "$HOME/.hyperflow/config.json" 2>>"$HF_DIR/.session-start.log" <<'PYEOF' || true
 import json, os, sys
 checksums_path, config_path = sys.argv[1], sys.argv[2]
 threshold = 300
