@@ -125,7 +125,7 @@ You: /hyperflow:spec "Build user auth with login page, middleware, and password 
 
 ## Skills
 
-Hyperflow ships **11 specialized skills**. There is no always-on orchestrator by default — you pick the entry point, and chain-starters auto-advance forward. Per-project opt-in: `/hyperflow:sticky on` makes every task-shaped message route through hyperflow automatically until you turn it off.
+Hyperflow ships **11 specialized skills**. **Auto-routing is on by default** — say "audit the diff", "debug this test", "brainstorm a notification system", or any chain-starter verb, and the orchestrator routes through the right skill automatically. No `/hyperflow:*` prefix needed. Disable with `/hyperflow:sticky off`, or upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`.
 
 ### Chain-starting skills
 
@@ -146,7 +146,7 @@ Hyperflow ships **11 specialized skills**. There is no always-on orchestrator by
 | **Cache** | `/hyperflow:cache` | Memory CRUD: `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off`, `compact` |
 | **Status** | `/hyperflow:status` | Read-only one-screen view: version · profile freshness · memory count + live per-task progress (sub-tasks done/pending, tokens, wall-clock, ETA) |
 | **Background** | `/hyperflow:background` | List · show · cancel · prune background agents fired by other skills (quality gates · CI watcher · scaffold refresh · cache compact). Read-only by default; see [`skills/hyperflow/background-agents.md`](skills/hyperflow/background-agents.md) for the full doctrine |
-| **Sticky** | `/hyperflow:sticky` | `on` / `off` / `status` — per-project sticky-session routing. With ON, every task-shaped message auto-routes through the right chain-starter (spec / scope / dispatch / trace / audit / deploy). Activates implicitly the first time you mention "hyperflow" in a session. Disable with `/hyperflow:sticky off` |
+| **Sticky** | `/hyperflow:sticky` | `on` / `auto` / `off` / `status` — per-project auto-routing mode. **Default is `auto`** — messages containing chain-starter verbs (`audit`, `debug`, `fix`, `brainstorm`, `scope`, `deploy`, `review`, …) auto-route to the right skill without `/hyperflow:*` prefix. `on` expands to full sticky (every task-shaped message routes). `off` disables all auto-routing |
 
 **Reuse architecture:** every skill is 80–200 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
 
