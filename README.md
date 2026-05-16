@@ -18,7 +18,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Claude%20Code-plugin-7C3AED?style=flat-square" alt="Claude Code plugin" />
   &nbsp;
-  <img src="https://img.shields.io/badge/works%20with-Cursor%20%7C%20OpenCode%20%7C%20Codex%20%7C%20Antigravity-2EA39F?style=flat-square" alt="works with Cursor, OpenCode, Codex, Antigravity" />
+  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20OpenCode-2EA39F?style=flat-square" alt="works with Claude Code and OpenCode" />
 </p>
 
 <p align="center">
@@ -85,7 +85,7 @@ Done. Next: /hyperflow:deploy (gates + commit + push) — user-explicit, not aut
 - **Higher quality** — every worker output gets a two-pass thinking-model review; workers in batch 2 benefit from batch 1 discoveries via automatic learning injection.
 - **Lower cost** — expensive thinking models orchestrate and review; cheap worker models write the code. Stop paying Opus prices for tasks Sonnet handles.
 - **Faster execution** — independent subtasks run in parallel; three files with no shared state means three workers, simultaneously.
-- **Multi-tool** — one config, auto-detected across Claude Code, Cursor, OpenCode, Codex, and Antigravity.
+- **Multi-tool** — one config, auto-detected across Claude Code and OpenCode.
 - **Project memory** — conventions, gotchas, and architectural decisions persist across conversations in `.hyperflow/memory/`, fully local and version-controllable.
 
 ---
@@ -135,7 +135,7 @@ Each chain-starter asks at Step 0 whether to advance **auto** (no gates between 
 
 | Skill | Command | Phase | Purpose |
 |-------|---------|-------|---------|
-| **Scaffold** | `/hyperflow:scaffold` | Project setup | Analyzes the project, creates `.hyperflow/` cache, installs multi-tool auto-detection shims |
+| **Scaffold** | `/hyperflow:scaffold` | Project setup | Analyzes the project, creates `.hyperflow/` cache, installs provider auto-detection shims |
 | **Trace** | `/hyperflow:trace` | Root-cause a bug | Systematic 5 Whys + hypothesis testing — never blind-patches symptoms |
 | **Audit** | `/hyperflow:audit` | Code review | Multi-level review (L1 quick → L5 exhaustive) on uncommitted changes, a file/range, or a PR |
 | **Deploy** | `/hyperflow:deploy` | Pre-push gates | Lint + typecheck + build + tests + security sweep + commit + release + push (push always asks) |
@@ -171,7 +171,7 @@ Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customi
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-### Cursor / OpenCode / Codex / Antigravity
+### OpenCode
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -330,10 +330,7 @@ Personas compose by priority. `security` is stitched first so its constraints fr
 | Provider | Thinking model | Worker model |
 |----------|---------------|--------------|
 | Claude Code | Opus 4.7 | Sonnet 4.6 |
-| Cursor | Claude Opus 4.7 | Sonnet 4.6 |
 | OpenCode | Claude Opus 4.7 | Sonnet 4.6 |
-| Codex | o3 | o4-mini |
-| Antigravity | Gemini 3.1 Pro | 3 Flash |
 
 Provider is auto-detected at session start. Override any model in `~/.hyperflow/config.json` or switch mid-session with `hyperflow: thinking <model>`. See [Provider Setup](docs/providers.md).
 
@@ -518,7 +515,7 @@ For full transparency — what this plugin does at runtime, so reviewers and use
 | **Session memory** | Reads and appends to `.hyperflow/memory/` (project-scoped) to persist learnings across conversations. No data leaves your machine. | [`skills/hyperflow/session-memory.md`](skills/hyperflow/session-memory.md) |
 | **Config** | Optional `~/.hyperflow/config.json` for model selection and security overrides. Created only if you run the installer wizard; not required. | [`config/schema.json`](config/schema.json) |
 | **Network access** | None at runtime. The plugin does not make outbound network calls. The optional `install.sh` setup wizard clones the repo and writes config locally. | — |
-| **File writes** | `.hyperflow/memory/` (project-scoped session memory) and, if you run the installer, `~/.hyperflow/config.json` and tool shim files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules/hyperflow.mdc`). The skill instructs the orchestrator to follow project conventions for everything else. | — |
+| **File writes** | `.hyperflow/memory/` (project-scoped session memory) and, if you run the installer, `~/.hyperflow/config.json` and tool shim files (`CLAUDE.md`, `AGENTS.md`). The skill instructs the orchestrator to follow project conventions for everything else. | — |
 | **Worker containment** | Workers are constrained by prompt-injected blocklists for sensitive files (`.env`, `*.pem`, `*.key`, `~/.ssh/*`, cloud creds) and destructive commands (`rm -rf`, `git push --force` to main, `sudo`, `chmod 777`). See Layer 9 above. | [`skills/hyperflow/security.md`](skills/hyperflow/security.md) |
 | **Dependencies** | The hook script requires `bash`, `python3`, and standard POSIX tools — all available by default on macOS and Linux. No Node, no package installs. | — |
 

@@ -1,6 +1,6 @@
 ---
 name: scaffold
-description: Use when starting hyperflow in a new project, re-initializing analysis, refreshing `.hyperflow/` cache, or installing multi-tool auto-detection shims (AGENTS.md, Cursor rules, GEMINI.md, CLAUDE.md). Trigger phrases — "init hyperflow", "set up hyperflow", "refresh hyperflow", "install hyperflow shims". Standalone setup; does **not** auto-chain into the feature flow.
+description: Use when starting hyperflow in a new project, re-initializing analysis, refreshing `.hyperflow/` cache, or installing auto-detection shims (AGENTS.md, CLAUDE.md). Trigger phrases — "init hyperflow", "set up hyperflow", "refresh hyperflow", "install hyperflow shims". Standalone setup; does **not** auto-chain into the feature flow.
 ---
 
 # Scaffold
@@ -48,11 +48,13 @@ Create `.hyperflow/memory/` if absent:
 
 **Migration:** If `~/.claude/hyperflow-memory.md` exists, migrate entries matching the current project path into the appropriate memory files. Tag migrated entries `[migrated]`.
 
-## Step 3 — Multi-Tool Shims
+## Step 3 — Detection Shims
 
-Offer to run `scripts/setup-detection.sh --tools all` to generate AGENTS.md, Cursor rules, GEMINI.md, and CLAUDE.md.
+Offer to run `scripts/setup-detection.sh --tools all` to generate AGENTS.md and CLAUDE.md.
 
-Flags — `--tools <all|agents|cursor|gemini|claude>`, `--force`, `--dry-run`.
+Supported tools: `claude-code` (writes CLAUDE.md), `opencode` / `agents` (writes AGENTS.md), `all` (both).
+
+Flags — `--tools <all|claude-code|opencode|agents>`, `--force`, `--dry-run`.
 
 Default — `--tools all`. Ask once via `AskUserQuestion` if the user wants to skip any tool.
 
@@ -67,7 +69,7 @@ Hyperflow init complete
   Created   .hyperflow/memory/{index,learnings,decisions,pitfalls,patterns,conventions}.md
   Skipped   .gitignore entry — already present
   Migrated  3 entries from ~/.claude/hyperflow-memory.md
-  Shims     AGENTS.md, .cursor/rules, GEMINI.md, CLAUDE.md
+  Shims     AGENTS.md, CLAUDE.md
 ```
 
 ## Hand-off

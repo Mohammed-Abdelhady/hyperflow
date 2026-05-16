@@ -20,7 +20,7 @@ FORCE=false
 DRY_RUN=false
 
 # ── Valid tool names ───────────────────────────────────────────────────────────
-VALID_TOOLS="claude-code cursor codex opencode antigravity gemini copilot all"
+VALID_TOOLS="claude-code opencode agents all"
 
 # ── Usage ─────────────────────────────────────────────────────────────────────
 usage() {
@@ -32,15 +32,18 @@ tools can discover and load hyperflow conventions automatically.
 
 OPTIONS:
   --tools <list>   Comma-separated tools to set up (default: all)
-                   Valid values: claude-code, cursor, codex, opencode,
-                                 antigravity, gemini, copilot, all
+                   Valid values: claude-code, opencode, agents, all
+                     claude-code  — writes CLAUDE.md (append mode)
+                     opencode     — writes AGENTS.md
+                     agents       — writes AGENTS.md (alias for opencode)
+                     all          — claude-code + opencode + agents
   --force          Overwrite existing files (default: skip with warning)
   --dry-run        Print what would be created without writing files
   --help           Show this help message
 
 EXAMPLES:
   $(basename "$0")
-  $(basename "$0") --tools cursor,codex
+  $(basename "$0") --tools opencode
   $(basename "$0") --tools all --force
   $(basename "$0") --dry-run
 EOF
@@ -99,17 +102,10 @@ wants_tool() {
 
 # ── Derived flags per file ────────────────────────────────────────────────────
 need_agents_md=false
-need_copilot_md=false
-need_cursor_mdc=false
-need_gemini_md=false
 need_claude_md=false
 
-wants_tool "codex"       && need_agents_md=true
 wants_tool "opencode"    && need_agents_md=true
-wants_tool "copilot"     && need_agents_md=true && need_copilot_md=true
-wants_tool "cursor"      && need_cursor_mdc=true
-wants_tool "antigravity" && need_gemini_md=true
-wants_tool "gemini"      && need_gemini_md=true
+wants_tool "agents"      && need_agents_md=true
 wants_tool "claude-code" && need_claude_md=true
 
 # ── Template directory ────────────────────────────────────────────────────────
@@ -161,40 +157,6 @@ load_template() {
     render_template "$tpl_file"
   else
     _fallback_shim_body
-  fi
-}
-
-load_cursor_template() {
-  local tpl_file="$TEMPLATE_DIR/cursor-rule.mdc.template"
-  if [[ -f "$tpl_file" ]]; then
-    render_template "$tpl_file"
-  else
-    local version
-    version="${HYPERFLOW_VERSION:-$(cat "$SCRIPT_DIR/../skills/hyperflow/VERSION" 2>/dev/null || echo "unknown")}"
-    cat <<EOF
----
-description: Hyperflow multi-agent orchestration loader
-alwaysApply: true
----
-
-<!-- hyperflow-shim-start v${version} -->
-
-## Hyperflow
-
-This project uses hyperflow for autonomous multi-agent orchestration.
-
-On session start, invoke the \`hyperflow\` skill (or follow \`~/.hyperflow/config.json\` if present).
-
-### Context files
-
-- \`.hyperflow/profile.md\` — project profile
-- \`.hyperflow/architecture.md\` — folder structure
-- \`.hyperflow/conventions.md\` — coding conventions
-- \`.hyperflow/memory/index.md\` — persistent learnings index
-- \`.hyperflow/tasks/\` — in-progress task state
-
-<!-- hyperflow-shim-end -->
-EOF
   fi
 }
 
@@ -288,31 +250,13 @@ main() {
   [[ "$DRY_RUN" == true ]] && echo -e "    Mode:         dry-run"
   echo ""
 
-  # AGENTS.md — covers codex, opencode, copilot
+  # AGENTS.md — OpenCode
   if [[ "$need_agents_md" == true ]]; then
-    echo -e "${BLUE}==> AGENTS.md (Codex / OpenCode / Copilot)${RESET}"
+    echo -e "${BLUE}==> AGENTS.md (OpenCode)${RESET}"
     write_file "$ROOT/AGENTS.md" "$(load_template "AGENTS.md.template")"
   fi
 
-  # .github/copilot-instructions.md — copilot only
-  if [[ "$need_copilot_md" == true ]]; then
-    echo -e "${BLUE}==> .github/copilot-instructions.md (Copilot)${RESET}"
-    write_file "$ROOT/.github/copilot-instructions.md" "$(load_template "AGENTS.md.template")"
-  fi
-
-  # .cursor/rules/hyperflow.mdc — cursor
-  if [[ "$need_cursor_mdc" == true ]]; then
-    echo -e "${BLUE}==> .cursor/rules/hyperflow.mdc (Cursor)${RESET}"
-    write_file "$ROOT/.cursor/rules/hyperflow.mdc" "$(load_cursor_template)"
-  fi
-
-  # GEMINI.md — antigravity + gemini cli
-  if [[ "$need_gemini_md" == true ]]; then
-    echo -e "${BLUE}==> GEMINI.md (Antigravity / Gemini CLI)${RESET}"
-    write_file "$ROOT/GEMINI.md" "$(load_template "GEMINI.md.template")"
-  fi
-
-  # CLAUDE.md — claude code (append mode)
+  # CLAUDE.md — Claude Code (append mode)
   if [[ "$need_claude_md" == true ]]; then
     echo -e "${BLUE}==> CLAUDE.md (Claude Code)${RESET}"
     write_claude_md

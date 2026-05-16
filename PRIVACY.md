@@ -1,6 +1,6 @@
 # Privacy
 
-Hyperflow is a local-only Claude Code / multi-tool plugin. It makes no outbound network calls at runtime, has no analytics, has no telemetry, and never proxies or intercepts the data that flows between your editor and your configured LLM provider.
+Hyperflow is a local-only Claude Code / OpenCode plugin. It makes no outbound network calls at runtime, has no analytics, has no telemetry, and never proxies or intercepts the data that flows between your editor and your configured LLM provider.
 
 This page documents exactly what the plugin reads, writes, and exposes on your machine. If anything below is inaccurate, please open an issue: <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
 
@@ -34,7 +34,7 @@ This page documents exactly what the plugin reads, writes, and exposes on your m
 | `.hyperflow/memory/{learnings,decisions,pitfalls,patterns,conventions,index}.md` | Project-scoped learnings that accumulate across sessions | `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:cache` |
 | `.gitignore` (one-line append) | Adds `.hyperflow/` if not already present | `/hyperflow:scaffold` |
 | `~/.hyperflow/config.json` | Optional model + security configuration | The installer wizard, if you run it |
-| `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules/hyperflow.mdc` | Multi-tool auto-detection shims pointing at the installed plugin | `/hyperflow:scaffold` if you opt in |
+| `CLAUDE.md`, `AGENTS.md` | Provider auto-detection shims pointing at the installed plugin | `/hyperflow:scaffold` if you opt in |
 
 Everything in `.hyperflow/` is **project-local** and **gitignored by default** — it never leaves your machine via git unless you explicitly remove it from `.gitignore`.
 
@@ -73,7 +73,7 @@ You can extend or override these in `~/.hyperflow/config.json`. See `skills/hype
 
 ## LLM provider traffic
 
-The plugin runs **inside your editor's existing LLM session**. Your editor (Claude Code, Cursor, OpenCode, Codex, Antigravity) sends prompts to its configured provider; the plugin influences the *content* of those prompts (system-prompt injection, worker prompt templates, persona stitching) but does not act as a proxy.
+The plugin runs **inside your editor's existing LLM session**. Your editor (Claude Code or OpenCode) sends prompts to its configured provider; the plugin influences the *content* of those prompts (system-prompt injection, worker prompt templates, persona stitching) but does not act as a proxy.
 
 **Concretely:**
 

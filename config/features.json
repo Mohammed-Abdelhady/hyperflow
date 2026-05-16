@@ -137,28 +137,10 @@
       "key": "claude-code"
     },
     {
-      "name": "Cursor",
-      "thinking": "Claude Opus 4.7",
-      "worker": "Sonnet 4.6",
-      "key": "cursor"
-    },
-    {
       "name": "OpenCode",
       "thinking": "Claude Opus 4.7",
       "worker": "Sonnet 4.6",
       "key": "opencode"
-    },
-    {
-      "name": "Codex",
-      "thinking": "o3",
-      "worker": "o4-mini",
-      "key": "codex"
-    },
-    {
-      "name": "Antigravity",
-      "thinking": "Gemini 3.1 Pro",
-      "worker": "3 Flash",
-      "key": "antigravity"
     }
   ],
   "capabilities": [
@@ -169,8 +151,8 @@
     "Project-scoped persistent memory with tag taxonomy",
     "Hot/warm/cold memory tiering with automatic compression",
     "Lazy memory injection (only tag-matched entries per task)",
-    "Multi-tool auto-detection (AGENTS.md, Cursor rules, GEMINI.md, CLAUDE.md)",
-    "5 provider support (Claude Code, Cursor, OpenCode, Codex, Antigravity)",
+    "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
+    "2 provider support (Claude Code, OpenCode)",
     "Auto-detect provider via env vars or folder presence",
     "Configurable model routing per role",
     "Quality gates (lint, typecheck, build, tests)",
@@ -181,16 +163,8 @@
   "detection": {
     "shims": [
       {
-        "tool": "Codex / OpenCode / Copilot",
+        "tool": "OpenCode",
         "file": "AGENTS.md"
-      },
-      {
-        "tool": "Cursor",
-        "file": ".cursor/rules/hyperflow.mdc"
-      },
-      {
-        "tool": "Antigravity / Gemini CLI",
-        "file": "GEMINI.md"
       },
       {
         "tool": "Claude Code",
