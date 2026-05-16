@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] — 2026-05-16
+
+### Added
+- Generate .hyperflow/memory/doctrine.md at scaffold time
+- Add rule 13 (latency discipline)
+- Apply P2 batched per-batch reviewer
+- Apply P1/P3 latency patterns
+- Apply P1/P2/P3/P4 latency patterns
+- Add batched reviewer prompt template (P2)
+- Add lean worker prompt template (P5)
+- Add non-blocking memory compaction advisory
+- Add compact subcommand for memory compaction
+- Add memory.compactionThreshold schema property
+- Document compaction protocol in memory-system reference
+- Document compaction protocol in memory-system reference
+- Document compaction protocol in memory-system reference
+- Document compaction protocol in memory-system reference
+- Document compaction protocol in memory-system reference
+- Document compaction protocol in memory-system reference
+- Describe user-invoked compaction in capabilities
+- Add memory-compaction protocol reference
+
+### Fixed
+- Show per-file lineCount in compaction advisory
+- Clamp invalid compactionThreshold to default at runtime
+- Include compact and off in cache skill purpose
+- No paragraph-rationale in option labels · concrete-only signals for Deploy-gate No
+
+### Changed
+- Log session-start python errors for debuggability
+- Cap .checksums entry count for defensive memory bound
+- Cap memory/index.md read at 200 lines per memory-system spec
+- Note latency optimization release
+- Align step numbering with cache SKILL.md (8 steps)
+- Add latency-patterns reference doc (P1-P5)
+- Document archive sidecar in plugin-writes table
+- Add compact to cache subcommand list
+- Remove email address from public plugin metadata
+- Bump version badge to v4.0.1
+
+
 ## [4.0.1] — 2026-05-16
 
 ### Fixed
@@ -408,7 +449,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.0.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.0.1...v4.1.0
 [4.0.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.2...v4.0.0
 [3.1.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.1...v3.1.2
