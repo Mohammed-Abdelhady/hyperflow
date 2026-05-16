@@ -144,25 +144,77 @@ If `AskUserQuestion` cannot be presented (headless mode), print the findings and
 
 ## Output Format
 
+Two outputs per audit run:
+
+**1. The audit file** at `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope-slug>.md` — full structured review, formatted per [`../hyperflow/artefact-format.md`](../hyperflow/artefact-format.md):
+
+```markdown
+# Audit — <scope description>
+
+╭─────────────────────────────────────────────────────────────────╮
+│ Verdict     <PASS | NEEDS_FIX | SECURITY_VIOLATION>             │
+│ Scope       <files / range / commit>                            │
+│ Level       L<n>                                                │
+│ Findings    N Critical · N Important · N Suggestions · N Praise │
+│ Date        <YYYY-MM-DD HH:mm>                                  │
+╰─────────────────────────────────────────────────────────────────╯
+
+## TL;DR
+
+<2–3 sentences: the most important takeaway + the most important fix
+to apply. The user reads this and decides whether to dig into the
+findings list.>
+
+## Findings
+
+### [Critical] `<file>:<line>` — <one-line issue title>
+
+**Issue:** <one paragraph: what's broken and why it's blocking>
+
+**Fix:** <one paragraph: the recommended change, with the file:line
+anchor and the suggested replacement>
+
+**Why it matters:** <one sentence: the user-visible or system-level
+consequence if shipped as-is>
+
+### [Important] `<file>:<line>` — <one-line issue title>
+...
+
+### [Suggestion] `<file>:<line>` — <one-line improvement title>
+...
+
+### [Praise] `<file>:<line>` — <one-line note>
+...
+
+## Security scan (L3+ mandatory)
+
+| Category          | Result                |
+|-------------------|-----------------------|
+| secrets           | pass                  |
+| injection         | pass                  |
+| path traversal    | pass                  |
+| DoS               | pass | concerns       |
+| missing validation| pass | concerns       |
+
+## Cost
+
+| Tier      | Agents | Tokens   |
+|-----------|-------:|---------:|
+| Worker    |      1 |     ~Nk  |
+| Thinking  |      1 |     ~Nk  |
+| **Total** |  **2** | **~Nk**  |
 ```
-── Review Result ──────────────────────
-Scope: <files / range / commit>
-Level: L<n>
-Verdict: PASS | NEEDS_FIX | SECURITY_VIOLATION
 
-[Critical]
-- file:line — issue + required fix
+**2. The chat summary** — one short box that points at the file, NEVER the findings themselves:
 
-[Important]
-- file:line — issue + recommended fix
-
-[Suggestions]
-- file:line — optional improvement
-
-[Praise]
-- file:line — what's done well
-───────────────────────────────────────
-Agents: 1 searcher (sonnet) · 1 reviewer (opus)
+```
+── Audit Result ──────────────────────
+Scope:    <files / range>
+Level:    L<n>
+Verdict:  <PASS | NEEDS_FIX | SECURITY_VIOLATION>
+Findings: 0 Critical · 4 Important · 4 Suggestions · 5 Praise
+Written:  .hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md
+──────────────────────────────────────
 ```
 
 ## Hand-off

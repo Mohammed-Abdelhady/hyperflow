@@ -261,10 +261,76 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
 Kept sequential — this is the final sanity check before hand-off; no parallelism applies.
 
-The draft already lives at `.hyperflow/specs/<slug>.draft.md` (written progressively in Step 7). This step finalizes it:
+The draft already lives at `.hyperflow/specs/<slug>.draft.md` (written progressively in Step 7). This step finalizes it, formatting per [`artefact-format.md`](../hyperflow/artefact-format.md):
 
-1. Dispatch `Writer — adding frontmatter + overview to .hyperflow/specs/<slug>.draft.md` to prepend the spec header (Status: approved, Date, Trigger, brief Overview paragraph derived from the approved synthesis). Writer then renames the file: `git mv .hyperflow/specs/<slug>.draft.md .hyperflow/specs/<slug>.md` (or plain `mv` if the draft was never staged — `.hyperflow/` is gitignored, so plain rename is correct).
-2. Dispatch `**Reviewer** — final spec sanity check` to read the finalized file and verify every approved section is captured, the H2 ordering is right (1–5), and no contradiction exists between sections.
+```markdown
+# <Feature name>
+
+╭─────────────────────────────────────────────────────────────────╮
+│ Status      approved                                            │
+│ Sections    5 / 5 approved                                      │
+│ Date        <YYYY-MM-DD>                                        │
+│ Trigger     <slash command or trigger phrase>                   │
+│ Approach    <one-line approach name from Step 6>                │
+╰─────────────────────────────────────────────────────────────────╯
+
+## TL;DR
+
+<2–3 sentences in plain English: what the feature does + the single
+most important design decision. The user should be able to read this
+and decide if the design is on track without scrolling further.>
+
+## Components
+
+- **<name>** — <one-line role>
+- **<name>** — <one-line role>
+...
+
+## 1. Architecture
+
+<section content — written progressively by Step 7 Writers at this H2 anchor>
+
+## 2. Data flow
+
+<section content>
+
+## 3. Key decisions
+
+<numbered decisions with rationale>
+
+**Trade-offs accepted:**
+- <what the design says yes to and why>
+
+**Trade-offs rejected:**
+- <what the design said no to and why>
+
+## 4. Edge cases
+
+<numbered cases with Scenario / Behaviour / Fallback>
+
+## 5. File structure
+
+### 5.1 Files created
+| Path | Purpose | Created by |
+|---|---|---|
+| `<path>` | <one-line> | <agent or milestone> |
+
+### 5.2 Files modified
+| Path | Purpose | Created by |
+|---|---|---|
+
+### 5.3 Runtime artefacts (not committed)
+| Path | Purpose | Created by |
+|---|---|---|
+```
+
+Finalize procedure:
+
+1. Dispatch `Writer — finalizing spec at .hyperflow/specs/<slug>.draft.md` to:
+   - Prepend the status block + TL;DR + Components sections (TL;DR derived from the approved synthesis from Step 5; Components derived from Section 1 architecture names).
+   - Append `Trade-offs accepted/rejected` blocks at the end of Section 3 if not already there (the Writer extracts them from the Section 3 prose if Section-3 Writer didn't already separate them).
+   - Rename: `mv .hyperflow/specs/<slug>.draft.md .hyperflow/specs/<slug>.md` (plain `mv` — `.hyperflow/` is gitignored).
+2. Dispatch `**Reviewer** — final spec sanity check` to read the finalized file and verify: status block present and correct, TL;DR is 2–3 sentences in plain English (not a wall of text), every approved section is captured, the H2 ordering is right (1–5), Trade-offs blocks exist, no contradiction exists between sections.
 
 **No inline summary fallback.** Even for "simple" designs, the spec lives in a file. Chat-only summaries were a doctrine violation pattern from earlier versions; removed.
 
