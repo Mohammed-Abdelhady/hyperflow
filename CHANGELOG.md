@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.2] — 2026-05-16
+
+### Fixed
+- Marketplace validator compliance — quote YAML, add frontmatter fields, scope Bash
+
+
 ## [3.1.1] — 2026-05-16
 
 ### Changed
@@ -390,7 +396,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.2...HEAD
+[3.1.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.1...v3.1.2
 [3.1.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.7.0...v3.0.0

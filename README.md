@@ -30,7 +30,7 @@
 </p>
 
 <p align="center">
-  <code>v3.1.1</code> · <a href="CHANGELOG.md">Changelog</a>
+  <code>v3.1.2</code> · <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
