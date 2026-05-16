@@ -45,15 +45,21 @@ Create `.hyperflow/memory/` if absent:
 
 ```
 .hyperflow/memory/
-├── doctrine.md     ← copied from skills/hyperflow/DOCTRINE.md
+├── doctrine.md          ← copied from skills/hyperflow/DOCTRINE.md
 ├── index.md
-├── learnings.md    ← empty stub (populated by /hyperflow:dispatch wrap-up)
+├── learnings.md         ← empty stub (populated by /hyperflow:dispatch wrap-up)
 ├── decisions.md
 ├── pitfalls.md
 ├── patterns.md
 ├── conventions.md
+├── session-context.md   ← [populated by session-start hook, NOT by scaffold]
 └── archive/.gitkeep
 ```
+
+**session-context.md — populated by the session-start hook, not scaffold:**
+Scaffold creates the empty `.hyperflow/memory/` directory; it does NOT write `session-context.md`. That file is generated at the start of each Claude Code session by `hooks/session-start`, which concatenates `.hyperflow/profile.md`, `architecture.md`, and `conventions.md` into a single bundled file. This enables Pattern L3 (session-cached context): lean workers read one bundled file instead of three separate source files.
+
+**Limit:** mid-session changes to `profile.md`, `architecture.md`, or `conventions.md` won't propagate to `session-context.md` until the next session-start. Workers can still `Read` the source files directly if they suspect staleness.
 
 **doctrine.md generation (idempotent):**
 - Source: `skills/hyperflow/DOCTRINE.md` (canonical orchestration rules)
@@ -91,6 +97,7 @@ Hyperflow init complete
   Created   .hyperflow/.checksums
   Created   .hyperflow/memory/doctrine.md — copied from skills/hyperflow/DOCTRINE.md
   Created   .hyperflow/memory/{index,learnings,decisions,pitfalls,patterns,conventions}.md
+  Created   .hyperflow/memory/session-context.md — populated by hooks/session-start (not scaffold)
   Skipped   .gitignore entry — already present
   Migrated  3 entries from ~/.claude/hyperflow-memory.md
   Shims     AGENTS.md, CLAUDE.md
@@ -139,6 +146,7 @@ Step 2 generates the following files under `.hyperflow/memory/`:
 | `doctrine.md` | Copied from `skills/hyperflow/DOCTRINE.md` | Re-copied if source is newer; skipped if checksum matches |
 | `learnings.md` | Empty stub (`# Learnings` heading) | Never overwritten if content exists — preserves accumulated learnings |
 | `index.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md` | Empty stubs | Created if absent; skipped if present |
+| `session-context.md` | Populated by `hooks/session-start` (NOT scaffold) | Scaffold does not create this file; the session-start hook generates it at session open by concatenating `profile.md`, `architecture.md`, and `conventions.md`. Lean workers reference this bundle (Pattern L3). |
 
 ## Error Handling
 
@@ -170,6 +178,7 @@ Hyperflow init complete
   Created   .hyperflow/.checksums
   Created   .hyperflow/memory/doctrine.md — copied from skills/hyperflow/DOCTRINE.md
   Created   .hyperflow/memory/{index,learnings,decisions,pitfalls,patterns,conventions}.md
+  Note      .hyperflow/memory/session-context.md — will be populated by hooks/session-start on next session
   Created   .gitignore entry — .hyperflow/
   Shims     CLAUDE.md, AGENTS.md
 
