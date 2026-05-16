@@ -102,6 +102,8 @@ Triage is the FIRST step on every new user request. A cheap thinking call classi
 
 See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, field definitions, and worked examples.
 
+**Classifier tier:** Classifier defaults to Haiku 4.5 — triage is structured classification, not deep reasoning. Falls back to Sonnet on malformed JSON output (NOT Opus — keep cost low even on fallback).
+
 **Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
 
 ## Layer 1: Autonomy
@@ -250,11 +252,23 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    - Both dispatches appear in the usage summary; both count toward the `thinking ≥ batches + 1` minimum.
    - If a step's worker output is trivial (e.g. one-line restate), the thinking-tier review may be merged into the next step's review — but never both skipped.
    Skills MUST declare per-step agents in their body so this is auditable: each Step block lists `Worker → <role>` and/or `Reviewer → <tier>` lines.
+
+12.1. **Trivial steps may be performed inline by the orchestrator without an Agent dispatch wrapper.** A step qualifies as trivial AND inline-allowed IF AND ONLY IF all of:
+   1. The step's entire body is reducible to ≤ 2 tool calls (e.g., one Edit + one Bash commit)
+   2. No content generation required (no Writer producing prose; just file moves, deletions, commits)
+   3. No decision-making required (no branching logic the orchestrator wouldn't itself make)
+   4. No review needed (the step is mechanically verifiable — git status clean, file exists/absent, commit hash)
+   5. The orchestrator is the natural executor
+
+   Explicitly NOT trivial: code/doc generation, multi-file change, cross-file consistency reasoning, research/Read of unfamiliar context, any output a Reviewer would meaningfully evaluate. Non-trivial steps remain Agent-dispatched per §12.
+
+   If the orchestrator discovers mid-step that the work requires generation or research, it MUST abort the inline path and dispatch an Agent. Trivial-eligibility is evaluated at step-start, not assumed throughout.
+
 13. **Latency discipline.** Reduce wall-clock time by restructuring *when* and *how* dispatches fire — never by cutting who reviews what or which tier is used.
    - **P1 — Parallelize sibling workers.** Sub-tasks that share a common upstream input and have no inter-dependency MUST be dispatched in a single message with parallel `Agent` calls. Never sequentialize siblings.
-   - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Opus Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect. The batched Reviewer counts as **one** Reviewer per batch toward the `thinking agents ≥ batches + 2` floor, regardless of sub-task count.
+   - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Opus Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect. The batched Reviewer counts as **one** Reviewer per batch toward the `thinking agents ≥ batches + 1` floor, regardless of sub-task count. Floor lowered from +2 to +1: wrap-up Reviewer dropped per §12.1 (wrap-up is mechanical, trivial-eligible).
    - **P3 — Concurrent independent pre-conditions.** Steps whose outputs do not depend on each other are dispatched in the same message regardless of `--thorough`. Always on.
-   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.4 AND complexity != high`, optional design-exploration steps (spec §3, §6) may be skipped. When `ambiguity < 0.2 AND complexity == low`, spec bounces directly to scope. The 2-question floor (rule 8) is never skipped. Thresholds and borderline rounding rules are in `skills/spec/references/latency-patterns.md` §P4.
+   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.6 AND complexity != high`, optional design-exploration steps (spec §3, §6) may be skipped. When `ambiguity < 0.4 AND complexity == low`, spec bounces directly to scope. The 2-question floor (rule 8) is never skipped — it is non-negotiable; only the bounce path exits the spec phase. Thresholds and borderline rounding rules are in `skills/spec/references/latency-patterns.md` §P4.
    - **P5 — Lean worker prompts via memory references.** Prefer `skills/hyperflow/worker-prompt-lean.md` for default dispatches. Workers `Read` only the `.hyperflow/memory/` files they need. Smaller prompts reduce time-to-first-token; context access is on-demand, not absent.
    - **Compatibility with §12.** §13 does NOT relax §12. Every substantive step still dispatches at least one Agent. §13 governs the structure of those dispatches (parallel vs sequential, batched vs per-sibling, lean vs full).
    - **Quality floor preserved.** Opus reviewer tier is unchanged. Workers still face thinking-tier review. What changes is when calls fire and in what grouping, not who reviews what.
@@ -411,3 +425,4 @@ Hand-off pattern:
 - Dispatch workers without creating task files in `.hyperflow/tasks/` first
 - Complete a task without deleting its task file
 - Sequentialize sibling workers that share a common input and have no inter-dependency, or dispatch per-sibling reviewers when a single batched reviewer covers the same review-level cap
+- Wrap every trivial mechanical step in an Agent dispatch when §12.1 inline path applies — adds latency without value
