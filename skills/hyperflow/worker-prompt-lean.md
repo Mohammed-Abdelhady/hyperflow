@@ -19,7 +19,10 @@ Lean variant of `worker-prompt.md`. Use this as the default template for paralle
 ## Memory references (read on demand)
 Read these files only if needed. Locations differ — check both groups:
 
-`.hyperflow/` root (written by scaffold Step 1):
+**Preferred single-read entry point:**
+  - `.hyperflow/memory/session-context.md` — bundled profile + architecture + conventions, populated by the `session-start` hook at the start of each Claude Code session. Read this ONE file instead of the three sources below to save file reads per worker.
+
+**Fallback (when session-context.md is absent or stale):** Read the source files individually from `.hyperflow/` root (written by scaffold Step 1):
   - profile.md        — project conventions
   - architecture.md   — system architecture
   - conventions.md    — naming, patterns, standards
@@ -82,7 +85,10 @@ All components need data-testid attributes.
 ## Memory references (read on demand)
 Read these files only if needed. Locations differ — check both groups:
 
-\`.hyperflow/\` root (written by scaffold Step 1):
+**Preferred single-read entry point:**
+  - \`.hyperflow/memory/session-context.md\` — bundled profile + architecture + conventions. Read this ONE file instead of the three root sources below to save file reads per worker.
+
+**Fallback (when session-context.md is absent or stale):** Read individually from \`.hyperflow/\` root (written by scaffold Step 1):
   - profile.md        — project conventions
   - architecture.md   — system architecture
   - conventions.md    — naming, patterns, standards
