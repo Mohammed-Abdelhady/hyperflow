@@ -139,13 +139,33 @@ On `Yes` → invoke `Skill` with `skill: audit` and `args: "level=3"` (or `level
 
 ```
 ?  Run /hyperflow:deploy now? (lint + typecheck + build + tests + security sweep, then asks before push)
-   Yes (Recommended)   — green-light path: all dispatch gates passed, ready to ship
-   No                  — keep the per-sub-task commits local; you'll push manually later
+   Yes (Recommended)   — gates pass · ready to ship
+   No                  — keep commits local · push manually later
 ```
 
-Recommended option toggles based on dispatch gate state:
-- All Step 4 gates were green AND no escalations occurred → `Yes (Recommended)`
-- Any gate fix required ≥2 retries, or an escalation triggered → `No (Recommended)` — let the user eyeball the diff first
+Option labels MUST be one short clause each (≤ 12 words) — never paragraphs of reasoning. Per DOCTRINE rule 8, the orchestrator picks the recommendation; it does not justify the recommendation in the label.
+
+**Recommendation logic — clarified to avoid false negatives:**
+
+The default is **`Yes (Recommended)`**. The recommendation flips to `No (Recommended)` only when one of these *concrete* signals is present:
+
+- A `SECURITY_VIOLATION` was raised (and resolved) during dispatch
+- A worker `ESCALATE:` crossed the irreversibility boundary
+- ≥ 2 Hyperflow batch-reviewer retries (`NEEDS_FIX` → re-dispatch) for the *same* sub-task — true repeated failure of the Layer 5 quality gates
+- A flaky test failure that wasn't conclusively root-caused
+- Any reviewer left a `[Critical]` finding unresolved
+
+The following are **NOT** "marginal" signals and MUST NOT flip the recommendation to `No`:
+
+| Signal | Why it's fine |
+|---|---|
+| Pre-commit hook auto-fixed style (commitlint subject-case, prettier, eslint --fix) | These are commit-time linters at the editor layer, not Hyperflow quality gates. Hooks fixing themselves is normal. |
+| `/hyperflow:audit` was run and applied fixes through `/hyperflow:scope → :dispatch` | This is the audit fix-gate working as designed. The code is now *better* than before audit. Strong positive signal. |
+| Quality gates passed on first try (or after one auto-fix retry) | First-pass green is the happy path. |
+| Single-batch dispatch with no escalations | Simpler runs trend cleaner, not more suspect. |
+| Many sub-tasks (e.g. 27 commits) without any of the concrete-signal failures above | Volume is not a risk signal on its own. |
+
+The orchestrator is not the user's risk advisor. The user already saw every reviewer verdict, every gate result, and the audit findings in scrollback. Inventing risk narratives in the recommendation label ("eyeballing the diff before push is prudent") is paternalism, not guidance.
 
 On `Yes` → invoke `Skill` with `skill: deploy`. Deploy has its own push-confirmation gate at its Step 6.
 
