@@ -1,6 +1,16 @@
 ---
 name: dispatch
-description: Use when a task file exists in `.hyperflow/tasks/` and workers need dispatching — `/hyperflow:dispatch`, "run the plan", "execute the task", "build it". Dispatches parallel workers, runs thinking-tier batch reviews, finishes with a final integration review. Endpoint of the auto-chain (no auto-deploy — user opts in to push).
+description: |
+  Use when a task file exists in .hyperflow/tasks/ and workers need dispatching —
+  /hyperflow:dispatch, "run the plan", "execute the task", "build it". Dispatches
+  parallel workers, runs thinking-tier batch reviews, finishes with a final
+  integration review. Endpoint of the auto-chain (no auto-deploy — user opts in to push).
+allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, Agent
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [execution, parallel, review, multi-agent, orchestration]
 ---
 
 # Dispatch

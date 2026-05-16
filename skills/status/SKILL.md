@@ -1,6 +1,16 @@
 ---
 name: status
-description: Use when the user wants a one-screen view of current hyperflow project state — version, profile freshness, memory entry count, and **live progress on every in-flight task** (sub-tasks done vs pending, tokens used, wall-clock, ETA). Read-only; never modifies state. Invoked manually via /hyperflow:status.
+description: |
+  Use when the user wants a one-screen view of current hyperflow project state —
+  version, profile freshness, memory entry count, and live progress on every
+  in-flight task (sub-tasks done vs pending, tokens used, wall-clock, ETA).
+  Read-only; never modifies state. Invoked manually via /hyperflow:status.
+allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Glob, Grep
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [introspection, read-only, project-state]
 ---
 
 # Status

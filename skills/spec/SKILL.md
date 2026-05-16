@@ -1,6 +1,16 @@
 ---
 name: spec
-description: Use when the user is exploring a design idea, weighing approaches, has an ambiguous request, or says "should I", "how should we", "what's the best way to". Asks structured questions, proposes 2–3 approaches, walks the design section-by-section. On approval, **auto-chains into `/hyperflow:scope`** — no manual gate.
+description: |
+  Use when the user is exploring a design idea, weighing approaches, has an ambiguous
+  request, or says "should I", "how should we", "what's the best way to". Asks
+  structured questions, proposes 2–3 approaches, walks the design section-by-section.
+  On approval, auto-chains into /hyperflow:scope — no manual gate.
+allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [design, brainstorming, planning, multi-agent]
 ---
 
 # Spec

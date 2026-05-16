@@ -1,6 +1,16 @@
 ---
 name: cache
-description: Use when the user wants to view, search, add, edit, prune, archive, or clear hyperflow memory entries — phrases like "show memory", "search memory for X", "clear memory", "what does hyperflow remember about Y", or any `hyperflow: memory *` invocation.
+description: |
+  Use when the user wants to view, search, add, edit, prune, archive, or clear
+  hyperflow memory entries — phrases like "show memory", "search memory for X",
+  "clear memory", "what does hyperflow remember about Y", or any
+  hyperflow: memory invocation.
+allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mv:*), Bash(rm:*), Glob, Grep
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [memory, persistence, project-state]
 ---
 
 # Cache

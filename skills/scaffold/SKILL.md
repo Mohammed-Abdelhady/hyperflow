@@ -1,6 +1,16 @@
 ---
 name: scaffold
-description: Use when starting hyperflow in a new project, re-initializing analysis, refreshing `.hyperflow/` cache, or installing auto-detection shims (AGENTS.md, CLAUDE.md). Trigger phrases — "init hyperflow", "set up hyperflow", "refresh hyperflow", "install hyperflow shims". Standalone setup; does **not** auto-chain into the feature flow.
+description: |
+  Use when starting hyperflow in a new project, re-initializing analysis, refreshing
+  .hyperflow/ cache, or installing auto-detection shims (AGENTS.md, CLAUDE.md).
+  Trigger phrases — "init hyperflow", "set up hyperflow", "refresh hyperflow",
+  "install hyperflow shims". Standalone setup; does not auto-chain into the feature flow.
+allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep
+version: 3.1.1
+author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
+license: MIT
+compatibility: Designed for Claude Code
+tags: [setup, initialization, project-analysis]
 ---
 
 # Scaffold
