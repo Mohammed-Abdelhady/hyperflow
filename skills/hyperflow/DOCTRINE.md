@@ -322,6 +322,10 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 
 Only include learnings relevant to upcoming tasks — don't accumulate noise.
 
+### Layer 3 extension: Background agents
+
+Background agents are an opt-in extension of Layer 3 dispatch. They run with `run_in_background: true`, the chain does not wait, results are integrated later. Three legitimate patterns: **latency reduction** (Layer 5 gates fired while next batch runs), **observers** (CI watcher after push), **speculative prefetch** (refresh `.hyperflow/<analysis>.md` while user picks the next skill). Full doctrine: [`background-agents.md`](background-agents.md). Management surface: `/hyperflow:background list|show|cancel|prune`. Hard rules (apply alongside rule 8): no AskUserQuestion from background, no independent commits, no background Reviewers (reviewers gate decisions), no background-of-background, mandatory cancellation on chain abort, max 30-min runtime cap, OFF by default per skill.
+
 ## Layer 4: Adaptive Brainstorming
 
 Brainstorming runs on EVERY task — never skipped. Depth is scaled to the triage `ambiguity` score, **with a hard floor of 2 questions per spec run**. Skipping questions entirely (`silent` mode) is no longer allowed — even trivial tasks get two structural questions so the user always has a chance to redirect.
