@@ -8,7 +8,7 @@ Five orthogonal latency-reduction patterns applied across `spec`, `scope`, and `
 
 | Pattern | Applies to | Wall-clock win |
 |---|---|---|
-| P1 — Parallel sibling drafts | spec §7, scope decomposition | ~5x on section work |
+| P1 — Parallel sibling drafts | spec §7, scope Step 2 (research Searchers) + Step 4 (Writer-internal section parallelism) | ~5x on section work |
 | P2 — Batched single-pass review | spec §7, scope, dispatch | ~5x reviewer calls collapsed |
 | P3 — Concurrent independent pre-conditions | spec §1+§2, §5+§6, all skills | ~2x on independent steps |
 | P4 — Triage-driven step skipping | spec §3, §6 | up to 100% on low-ambiguity |
@@ -45,7 +45,20 @@ Five orthogonal latency-reduction patterns applied across `spec`, `scope`, and `
 
 **Why quality is preserved:** The Reviewer still reviews every section. Parallelizing the draft phase does not touch the review phase.
 
-**When to disable:** `--thorough` / `depth=max` flag. Sequential drafts are safer when a prior section's content meaningfully shapes a later section's approach (rare in spec, common in narrative prose). If in doubt, keep P1 on — the Reviewer catches cross-section conflicts.
+**When to disable:** `--thorough` / `depth=max` flag disables P1 for steps where a prior section's output could meaningfully shape a later section's approach (rare in spec §7, common in narrative prose).
+
+**Scope-specific carve-out (critical):** `--thorough` does NOT disable P1 for scope Step 2's parallel Searchers. Those two Searchers are independent reads — neither's output is an input to the other — so sequencing them provides no quality benefit regardless of flag. `--thorough` only disables P1 where section-order dependency is plausible:
+- Step 4 Writer-internal section parallelism (spec §7 and scope's Writer step)
+- Anywhere else sibling content could cross-influence
+
+**Scope P1 surface under `--thorough`:**
+
+| Scope step | P1 under default | P1 under `--thorough` |
+|---|---|---|
+| Step 2 — parallel research Searchers | On | **On** (independent reads, no tradeoff) |
+| Step 4 — Writer-internal section parallelism | On | **Off** (serialized for section coherence) |
+
+If in doubt about whether siblings are truly independent, keep P1 on — the Reviewer catches cross-section conflicts.
 
 ---
 
@@ -163,6 +176,8 @@ Workers `Read` only the files relevant to their task. Doctrine is read once per 
 | (none) | — | All five on |
 
 P3 and P5 are always on because they carry no quality tradeoff. P1, P2, and P4 restructure dispatch shape and skip steps; `--thorough` restores sequential drafts, per-section reviews, and full step execution.
+
+**Exception within P1:** scope Step 2's parallel Searchers stay on even under `--thorough`. They are independent reads with no ordering dependency, so serializing them yields no quality gain. Only P1 surfaces with plausible section-order coupling are serialized by `--thorough` (spec §7 Writer sections, scope Step 4 Writer-internal sections).
 
 ---
 
