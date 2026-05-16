@@ -8,9 +8,17 @@ Triage is invoked once per user request — before research, before brainstormin
 
 Invoke on every user request that introduces new work — "build X", "fix Y", "research Z", "refactor W". Skip only when the orchestrator is already mid-flow (e.g., responding to a follow-up question about an in-progress task, clarifying an AskUserQuestion answer, or the request is a pure meta-command like `hyperflow: memory show`).
 
+## Classifier dispatch
+
+The Classifier is dispatched at **Haiku 4.5** tier — not Opus, not Sonnet.
+
+**Rationale:** triage is structured classification, not deep reasoning. Haiku 4.5 handles this task shape at near-Opus quality at ~10x lower latency and ~15x lower cost. Opus tier was overkill for producing a JSON object from a fixed schema against a short input.
+
+**Fallback path:** if Haiku returns malformed JSON output (failed schema validation), retry once at Haiku with the strict-JSON suffix (see Fallback rules). If the second attempt also fails, fall back to **Sonnet** — NOT Opus. Keep cost low even on the fallback path. Triage is on the chain critical path; graceful degradation matters more than peak quality on this single classification call.
+
 ## Triage prompt template
 
-Send verbatim to the thinking model. Budget: 2k tokens. Do not add prose around it.
+Send verbatim to Haiku 4.5. Budget: 2k tokens. Do not add prose around it.
 
 ```text
 You are a task classifier for a multi-agent orchestrator. Analyze the request below and return STRICT JSON ONLY — no prose, no markdown, no code fences.
@@ -34,6 +42,8 @@ You are a task classifier for a multi-agent orchestrator. Analyze the request be
   "estimatedWorkers": number,
   "estimatedBatches": number,
   "budget": number,           // token budget integer
+  "security": boolean,        // true if auth, crypto, secrets, payment, PII, or any security-sensitive code path
+  "integration_risk": boolean, // true if task crosses system boundaries: multiple services, API contracts, shared state, DB migrations
   "rationale": string         // one sentence
 }
 
@@ -55,6 +65,8 @@ Return only valid JSON. No explanation before or after.
   "estimatedWorkers": 2,
   "estimatedBatches": 1,
   "budget": 100000,
+  "security": false,
+  "integration_risk": false,
   "rationale": "Two-layer feature touching UI and a new REST endpoint with moderate design choices."
 }
 ```
@@ -74,6 +86,8 @@ Return only valid JSON. No explanation before or after.
 | `estimatedWorkers` | `number` | Expected total parallel worker count across all batches. |
 | `estimatedBatches` | `number` | Expected number of dispatch batches. |
 | `budget` | `number` | Soft token budget for the full task. Used in usage summary to flag overruns. |
+| `security` | `bool` | `true` when the task involves auth, crypto, secrets, payment, PII, or any code path where security implications are present. Elevates dispatch review cap from L1-L2 to L1-L3 (D6). |
+| `integration_risk` | `bool` | `true` when the task touches cross-system boundaries: multiple services, API contracts, shared state, or database migrations. Elevates dispatch review cap from L1-L2 to L1-L3 (D6). |
 | `rationale` | `string` | One sentence echoed back to the user in the orchestrator's opening line. |
 
 ### Complexity tiers
@@ -171,6 +185,8 @@ When multiple types are present:
   "estimatedWorkers": 1,
   "estimatedBatches": 1,
   "budget": 30000,
+  "security": false,
+  "integration_risk": false,
   "rationale": "Trivial single-file rename with zero ambiguity — fast path."
 }
 ```
@@ -192,6 +208,8 @@ When multiple types are present:
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 150000,
+  "security": false,
+  "integration_risk": false,
   "rationale": "UI feature with minor ambiguity around persistence strategy — creative flow with a light clarification pass."
 }
 ```
@@ -212,6 +230,8 @@ When multiple types are present:
   "estimatedWorkers": 4,
   "estimatedBatches": 3,
   "budget": 300000,
+  "security": true,
+  "integration_risk": true,
   "rationale": "Multi-subsystem auth feature touching DB schema, JWT issuing, and password handling — deep flow required."
 }
 ```
@@ -232,6 +252,8 @@ When multiple types are present:
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 80000,
+  "security": false,
+  "integration_risk": false,
   "rationale": "Unknown root cause in CI — research flow to investigate before patching."
 }
 ```
@@ -253,6 +275,8 @@ When multiple types are present:
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 80000,
+  "security": false,
+  "integration_risk": true,
   "rationale": "Architectural decision with long-term irreversible implications — research flow with structured trade-off analysis."
 }
 ```
@@ -274,19 +298,22 @@ When multiple types are present:
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 150000,
+  "security": false,
+  "integration_risk": false,
   "rationale": "Open-ended creative UI task — creative flow with standard brainstorm to align on aesthetic direction first."
 }
 ```
 
 ## Fallback rules
 
-If the triage model returns malformed output (invalid JSON, missing required fields, invalid enum values):
+If the Haiku 4.5 Classifier returns malformed output (invalid JSON, missing required fields, invalid enum values):
 
-1. **Retry once** — resend the same prompt with this suffix appended:
+1. **Retry once at Haiku** — resend the same prompt with this suffix appended:
    ```text
-   STRICT JSON ONLY. No prose. No markdown fences. Required fields: types, complexity, risk, scope, ambiguity, brainstormDepth, flow, personas, estimatedWorkers, estimatedBatches, budget, rationale.
+   STRICT JSON ONLY. No prose. No markdown fences. Required fields: types, complexity, risk, scope, ambiguity, brainstormDepth, flow, personas, estimatedWorkers, estimatedBatches, budget, security, integration_risk, rationale.
    ```
-2. **If still malformed** — fall back to the safe default below and proceed:
+2. **If still malformed — fall back to Sonnet** (NOT Opus; keep cost low even on fallback). Resend at Sonnet tier. If Sonnet also returns malformed output, proceed with the safe default below:
+   
    ```json
    {
      "types": ["general"],
@@ -300,6 +327,8 @@ If the triage model returns malformed output (invalid JSON, missing required fie
      "estimatedWorkers": 1,
      "estimatedBatches": 1,
      "budget": 100000,
+     "security": false,
+     "integration_risk": false,
      "rationale": "Triage fallback — classification unavailable, proceeding with standard defaults."
    }
    ```
