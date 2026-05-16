@@ -98,6 +98,7 @@ Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope
    - **Also fall back to per-sub-task reviewers** when `--thorough` was passed.
    - **Batched reviewer dispatch:** Use the [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) template. Print `**Reviewer** — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. The batched Reviewer returns one verdict per sub-task.
    - **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** — reviewing <subtask> (L1–L<n>)`.
+   - _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention, pre-dating the cross-skill home. The asymmetric paths are intentional, not a typo.)_
 4. Parse the per-sub-task verdicts from the batched Reviewer (or individual verdicts in fallback mode):
    - If any verdict is `SECURITY_VIOLATION` — **halt the chain** immediately and surface the finding to the user (no auto-continue). Do not commit any sub-task in the batch.
    - For each sub-task whose verdict is `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. Do not re-dispatch passing sub-tasks. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before escalating to a thinking-tier worker).
