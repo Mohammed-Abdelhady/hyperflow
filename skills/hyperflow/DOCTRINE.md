@@ -250,6 +250,17 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    - Both dispatches appear in the usage summary; both count toward the `thinking ≥ batches + 1` minimum.
    - If a step's worker output is trivial (e.g. one-line restate), the thinking-tier review may be merged into the next step's review — but never both skipped.
    Skills MUST declare per-step agents in their body so this is auditable: each Step block lists `Worker → <role>` and/or `Reviewer → <tier>` lines.
+13. **Latency discipline.** Reduce wall-clock time by restructuring *when* and *how* dispatches fire — never by cutting who reviews what or which tier is used.
+   - **P1 — Parallelize sibling workers.** Sub-tasks that share a common upstream input and have no inter-dependency MUST be dispatched in a single message with parallel `Agent` calls. Never sequentialize siblings.
+   - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Opus Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect.
+   - **P3 — Concurrent independent pre-conditions.** Steps whose outputs do not depend on each other are dispatched in the same message regardless of `--thorough`. Always on.
+   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.4 AND complexity != high`, optional design-exploration steps (spec §3, §6) may be skipped. When `ambiguity < 0.2 AND complexity == low`, spec bounces directly to scope. The 2-question floor (rule 8) is never skipped. Thresholds and borderline rounding rules are in `skills/spec/references/latency-patterns.md` §P4.
+   - **P5 — Lean worker prompts via memory references.** Prefer `skills/hyperflow/worker-prompt-lean.md` for default dispatches. Workers `Read` only the `.hyperflow/memory/` files they need. Smaller prompts reduce time-to-first-token; context access is on-demand, not absent.
+   - **Compatibility with §12.** §13 does NOT relax §12. Every substantive step still dispatches at least one Agent. §13 governs the structure of those dispatches (parallel vs sequential, batched vs per-sibling, lean vs full).
+   - **Quality floor preserved.** Opus reviewer tier is unchanged. Workers still face thinking-tier review. What changes is when calls fire and in what grouping, not who reviews what.
+   - **`--thorough` / `depth=max` disables P1, P2, P4.** P3 and P5 remain on — they carry no quality tradeoff. When the flag is active, restore sequential drafts, per-section reviews, and full step execution.
+
+   See [latency-patterns.md](../spec/references/latency-patterns.md) for the full P1–P5 pattern catalogue.
 
 ### Learning injection format
 
@@ -399,3 +410,4 @@ Hand-off pattern:
 - Finish a task without printing the usage summary
 - Dispatch workers without creating task files in `.hyperflow/tasks/` first
 - Complete a task without deleting its task file
+- Sequentialize sibling workers that share a common input and have no inter-dependency, or dispatch per-sibling reviewers when a single batched reviewer covers the same review-level cap
