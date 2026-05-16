@@ -25,9 +25,9 @@ Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool 
 |---|---|---|---|
 | 0 — Mode confirm | — | — | `AskUserQuestion` only (exempt) |
 | 1 — Load task | — | — | File read only (exempt) |
-| 2 — Per batch | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Opus) batched per batch (or per sub-task if mixed level caps) | Both tiers · one Reviewer per batch |
-| 2b — Quality gates | Worker (Sonnet) runs lint/typecheck/tests | **Reviewer** (Opus) judges gate output | Both tiers |
-| 3 — Final integration | — | **Reviewer** (Opus) L1–L<n> over full diff | Conditional — see D7 skip condition below |
+| 2 — Per batch | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Sonnet · worker tier) batched per batch (or per sub-task if mixed level caps) | One Reviewer call per batch · Sonnet by default · escalates to Opus with `--thorough` |
+| 2b — Quality gates | Worker (Sonnet) runs lint/typecheck/tests | **Reviewer** (Sonnet · worker tier) judges gate output | Gate output is a small focused diff — Sonnet handles |
+| 3 — Final integration | — | **Reviewer** (Opus · thinking tier) L1–L<n> over full diff | Conditional — see D7 skip condition below · always Opus because it sees the cumulative diff |
 | 4 — Wrap up | Writer (Sonnet) — optional inline per §12.1 | — | Trivial-eligible: delete task file + memory append + chore commit is mechanical. Writer dispatch required only if memory prose generation is non-trivial. |
 | 5 — End of chain | — | — | ONE `AskUserQuestion` with both audit + deploy questions (exempt — gates only) |
 
@@ -95,11 +95,12 @@ Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope
 
 1. Print the batch header: `Batch <n> — <one-line description>`.
 2. Dispatch all sub-tasks in the batch in a **single message** with parallel `Agent` calls (one per sub-task). Use the [worker-prompt.md](references/worker-prompt.md) template. Inject `Project Context` (from `.hyperflow/profile.md`, `architecture.md`, `conventions.md`) plus accumulated `Learnings from prior batches`.
-3. When all workers in the batch have returned — dispatch **one** batched thinking-tier reviewer for the entire batch (P2 — batched single-pass review):
-   - **Check level-cap homogeneity first.** Inspect the flow-profile table to confirm every sub-task in this batch shares the same review-level cap (e.g., all L1–L3). If they all match → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers (old pattern).
-   - **Also fall back to per-sub-task reviewers** when `--thorough` was passed.
-   - **Batched reviewer dispatch:** Use the [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) template. Print `**Reviewer** — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. The batched Reviewer returns one verdict per sub-task.
-   - **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** — reviewing <subtask> (L1–L<n>)`.
+3. When all workers in the batch have returned — dispatch **one** batched per-batch Reviewer for the entire batch (P2 — batched single-pass review). **Model tier: Sonnet by default** (`model: "<resolved-worker>"`) — anchored to one batch's small diff, L1-L<n> work that Sonnet handles reliably and ~5× cheaper than Opus. Escalates to Opus (`model: "<resolved-thinking>"`) when `--thorough` is passed:
+   - **Check level-cap homogeneity first.** Inspect the flow-profile table to confirm every sub-task in this batch shares the same review-level cap (e.g., all L1–L3). If they all match → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers (old pattern, same Sonnet default).
+   - **Also fall back to per-sub-task reviewers** when `--thorough` was passed (and the reviewers ALSO escalate to Opus under `--thorough`).
+   - **Batched reviewer dispatch:** Use the [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) template with `model: "<resolved-worker>"` (or `"<resolved-thinking>"` under `--thorough`). Print `**Reviewer** (Sonnet) — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. The batched Reviewer returns one verdict per sub-task.
+   - **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md), same tier rules. Print `**Reviewer** (Sonnet) — reviewing <subtask> (L1–L<n>)`.
+   - **Why Sonnet by default:** per-batch reviewers see one batch's diff (typically 2–8 files). L1 (syntax/format) and L2 (spec/naming/edges) are pattern-matching work that Sonnet handles at near-Opus quality. The cross-cutting concerns Sonnet might miss (L3+ integration, architectural drift) are exactly what the Opus final integration Reviewer at Step 3 catches — it sees the cumulative diff across all batches and is paid for. Two-tier review covers more ground than two-Opus review at a fraction of the cost.
    - _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention, pre-dating the cross-skill home. The asymmetric paths are intentional, not a typo.)_
 4. Parse the per-sub-task verdicts from the batched Reviewer (or individual verdicts in fallback mode):
    - If any verdict is `SECURITY_VIOLATION` — **halt the chain** immediately and surface the finding to the user (no auto-continue). Do not commit any sub-task in the batch.
@@ -120,7 +121,7 @@ If ANY of these conditions fails, the final integration review runs as described
 
 > **Risk note:** the skip is the riskiest D-decision in round 2 — multi-batch cross-interaction bugs could slip. The guard conditions are deliberately strict (first-try PASS + no escalations + no security flags) to keep risk low. Pass `--thorough` to disable the skip and always run the integration review.
 
-When not skipped: **separate from batch reviews**. Dispatch a thinking-tier reviewer with the full set of changed files. Print `**Reviewer** — final integration review (L1–L<n>)` using the same level cap as the batch reviewers (per flow profile). Verdict required — `PASS` / `NEEDS_FIX` / `SECURITY_VIOLATION`.
+When not skipped: **separate from batch reviews**. Dispatch a thinking-tier Reviewer (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) with the full set of changed files across every batch. Print `**Reviewer** (Opus) — final integration review (L1–L<n>)` using the same level cap as the batch reviewers (per flow profile). Verdict required — `PASS` / `NEEDS_FIX` / `SECURITY_VIOLATION`. Opus tier is mandatory here because the Reviewer sees the cumulative diff and is the one pass that catches cross-batch contradictions Sonnet per-batch reviewers cannot.
 
 ### Step 4 — Wrap Up
 
@@ -231,8 +232,8 @@ When `chain-mode=auto`, scope batches three operational pre-elections at its Ste
 ## Iron Rules
 
 - Workers never review, never coordinate, never ask the user questions.
-- Every batch produces **one** thinking-tier Reviewer dispatch — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case.
-- Plus **one** thinking-tier final integration review at the end (Step 3) **when not skipped per D7**.
+- Every batch produces **one** per-batch Reviewer dispatch (Sonnet · worker tier) — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case. Escalates to Opus under `--thorough`.
+- Plus **one** final integration Reviewer at the end (Step 3 · Opus · thinking tier) **when not skipped per D7**. Always Opus regardless of flags — this is the one Reviewer that sees the cumulative diff across batches.
 - **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — delete task file + memory append + chore commit is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
 - Therefore — `thinking agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `thinking agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.

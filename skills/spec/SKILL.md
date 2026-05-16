@@ -27,9 +27,9 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 | 1+2 — Triage + Context | Searcher (Sonnet) [P3 concurrent] | **Classifier** (Opus) [P3 concurrent] | P3: dispatched in same message; no coverage Reviewer (D4) |
 | 3 — Multi-dim analysis | — | **Analyst** (Opus) produces 6-dim brief | P4-skippable: ambiguity < 0.6 AND complexity != high |
 | 4 — Smart questions | — | — | `AskUserQuestion` only (exempt) · floor: 2 always |
-| 5+6 — Synthesis + Approaches | Writer ×2 (Sonnet) [P3 concurrent] | **Reviewer** (Opus) batched over both drafts [P2] | P3: dispatched together · Step 6 is P4-skippable |
-| 7 — Design sections | Writer ×5 (Sonnet) [P1 parallel] | **Reviewer** (Opus) batched over all 5 [P2] | One combined user gate after batch review |
-| 8 — Spec output | Writer (Sonnet) | **Reviewer** (Opus) final spec sanity check | Sequential — kept intentional |
+| 5+6 — Synthesis + Approaches | Writer ×2 (Sonnet) [P3 concurrent] | **Reviewer** (Sonnet · per-batch tier) batched over both drafts [P2] | P3: dispatched together · Step 6 is P4-skippable · Sonnet because diff is small |
+| 7 — Design sections | Writer ×5 (Sonnet) [P1 parallel] | **Reviewer** (Sonnet · per-batch tier) batched over all 5 [P2] | One combined user gate after batch review · Sonnet handles per-section L1-L2 work |
+| 8 — Spec output | Writer (Sonnet) | **Reviewer** (Opus · final-pass tier) final spec sanity check | Sequential · Opus because this is the buck-stops-here pass over the full spec |
 | 9 — Hand off | — | — | Skill tool invocation — trivial inline per §12.1 (one tool call, no generation, no review) |
 
 Substantive steps = 1, 2, 3, 5, 6, 7, 8. Each appears in the usage summary.
@@ -195,7 +195,7 @@ If not skipped:
    - **Fit** — how well it matches the stated goal/constraints
 2. (Reviewed in the batched pass below.)
 
-**Batched Reviewer (P2):** After both the Step 5 Writer and Step 6 Writer have returned, dispatch one `**Reviewer** — batched review: synthesis + approaches` (Opus, `reviewer-prompt-batched.md`). The Reviewer returns:
+**Batched Reviewer (P2):** After both the Step 5 Writer and Step 6 Writer have returned, dispatch one `**Reviewer** (Sonnet · per-batch tier) — batched review: synthesis + approaches` (`reviewer-prompt-batched.md`, `model: "<resolved-worker>"`). Per the DOCTRINE tier split, per-batch reviewers default to Sonnet because the diff is small (one synthesis paragraph + 2–3 approach paragraphs). `--thorough` escalates to Opus. The Reviewer returns:
 
 ```
 §1 Synthesis:  PASS
@@ -212,7 +212,7 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 
 **P1 applies:** All 5 design sections share the same upstream input (the chosen approach) and have no inter-dependencies. Dispatch all 5 Writers in ONE parallel message — the same pattern `dispatch` uses for batch workers. Each Writer is instructed to `Write` its section into the file at a stable anchor (`## 1. Architecture`, `## 2. Data flow`, etc.) — the orchestrator pre-seeds the file with the 5 H2 headers before dispatching so Writers can use `Edit` with the heading as a unique anchor and avoid append-order races.
 
-**P2 applies:** After all 5 Writers return, dispatch ONE Opus Reviewer using `reviewer-prompt-batched.md` to read `.hyperflow/specs/<slug>.draft.md` and review all 5 sections in a single pass, returning per-section verdicts:
+**P2 applies:** After all 5 Writers return, dispatch ONE per-batch Reviewer (`model: "<resolved-worker>"` — Sonnet by default; Opus under `--thorough`) using `reviewer-prompt-batched.md` to read `.hyperflow/specs/<slug>.draft.md` and review all 5 sections in a single pass, returning per-section verdicts:
 
 ```
 §1 Architecture:   PASS
@@ -224,7 +224,7 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 
 **Cross-section coherence benefit:** the batched Reviewer sees all sections simultaneously and catches conflicts that per-section passes miss (e.g., a contradiction between §1 Architecture and §5 File structure).
 
-**On `NEEDS_FIX`:** re-dispatch only the failed section's Writer with the Reviewer's feedback; that Writer rewrites only its own H2-anchored block in the draft file. Single Opus re-review of just that section. Do not redraft passing siblings.
+**On `NEEDS_FIX`:** re-dispatch only the failed section's Writer with the Reviewer's feedback; that Writer rewrites only its own H2-anchored block in the draft file. Single per-batch tier re-review (Sonnet by default, same tier as the original batched review) of just that section. Do not redraft passing siblings.
 
 **Special case — 4+ sections NEEDS_FIX:** likely the chosen approach itself is wrong. Bounce back to Step 6 and re-pick an approach rather than redrafting 4 sections individually.
 
@@ -330,7 +330,7 @@ Finalize procedure:
    - Prepend the status block + TL;DR + Components sections (TL;DR derived from the approved synthesis from Step 5; Components derived from Section 1 architecture names).
    - Append `Trade-offs accepted/rejected` blocks at the end of Section 3 if not already there (the Writer extracts them from the Section 3 prose if Section-3 Writer didn't already separate them).
    - Rename: `mv .hyperflow/specs/<slug>.draft.md .hyperflow/specs/<slug>.md` (plain `mv` — `.hyperflow/` is gitignored).
-2. Dispatch `**Reviewer** — final spec sanity check` to read the finalized file and verify: status block present and correct, TL;DR is 2–3 sentences in plain English (not a wall of text), every approved section is captured, the H2 ordering is right (1–5), Trade-offs blocks exist, no contradiction exists between sections.
+2. Dispatch `**Reviewer** (Opus · final-pass tier) — final spec sanity check` (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) to read the finalized file and verify: status block present and correct, TL;DR is 2–3 sentences in plain English (not a wall of text), every approved section is captured, the H2 ordering is right (1–5), Trade-offs blocks exist, no contradiction exists between sections. Opus tier is mandatory because this is the one Reviewer that sees the full spec and is the buck-stops-here pass before the spec leaves the design phase.
 
 **No inline summary fallback.** Even for "simple" designs, the spec lives in a file. Chat-only summaries were a doctrine violation pattern from earlier versions; removed.
 

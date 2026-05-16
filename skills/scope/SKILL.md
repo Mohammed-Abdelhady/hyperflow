@@ -25,12 +25,12 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 |---|---|---|---|
 | 0 — Chain mode | — | — | `AskUserQuestion` only (exempt) |
 | 1 — Understand | — | — | `AskUserQuestion` if ambiguous (exempt) |
-| 2 — Research | Searcher × 2 (Sonnet) **parallel** (P1) | **Reviewer** (Opus) verifies coverage | Both tiers; P1 applied |
-| 3 — Decompose | — | **Planner** (Opus) produces the batch graph | Pure thinking |
-| 4 — Write task file | Writer (Sonnet) emits the markdown (P1 internal parallelism) | **Reviewer** (Opus) verifies the plan vs the design | Both tiers; P1 applied |
+| 2 — Research | Searcher × 2 (Sonnet) **parallel** (P1) | **Reviewer** (Sonnet · per-batch tier) verifies coverage | Both tiers; P1 applied; Sonnet because coverage check is anchored to the Searcher outputs |
+| 3 — Decompose | — | **Planner** (Opus · pure thinking) produces the batch graph | Opus — decomposition is the orchestration brain |
+| 4 — Write task file | Writer (Sonnet) emits the markdown (P1 internal parallelism) | **Reviewer** (Sonnet · per-batch tier) verifies the plan vs the design | Both tiers; P1 applied; Sonnet because the check is plan-vs-spec, not architectural |
 | 4+6 — parallel | Writer (Step 4) ∥ Writer (Step 6) fire after Step 3 (P3) | — | Concurrent dispatch; both wait on Planner output |
 | 5 — Output | — | — | Print only (exempt) |
-| 6 — Memory | Writer (Sonnet) appends to memory files (fires in parallel with Step 4 — P3) | **Reviewer** (Opus) checks for duplicates / contradictions | Both tiers; P3 applied |
+| 6 — Memory | Writer (Sonnet) appends to memory files (fires in parallel with Step 4 — P3) | **Reviewer** (Sonnet · per-batch tier) checks for duplicates / contradictions | Both tiers; P3 applied; Sonnet because dedup check is line-level pattern matching |
 | 7 — Hand off | — | — | `Skill` tool invocation — trivial inline per §12.1 (one tool call, no generation, no review) |
 
 **Latency flags:** `--thorough` disables P1 **in Step 4 only** (sequential Writer-internal section drafts instead of parallel). The Step 2 Searchers (also marked P1) are NOT affected — they stay parallel under all flag configurations because they are independent reads with no quality tradeoff. P3 (Steps 4 + 6 concurrent) is always on. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) for pattern definitions.
