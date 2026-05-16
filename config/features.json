@@ -149,7 +149,7 @@
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
     "Project-scoped persistent memory with tag taxonomy",
-    "Hot/warm/cold memory tiering with automatic compression",
+    "Hot/warm/cold memory tiering with user-invoked compaction (`/hyperflow:cache compact`) and automatic cold archiving",
     "Lazy memory injection (only tag-matched entries per task)",
     "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
     "2 provider support (Claude Code, OpenCode)",
