@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] — 2026-05-16
+
+### Changed
+- Sync orchestration.md + README gates to v3.x reality
+
+
 ## [3.1.0] — 2026-05-16
 
 ### Added
@@ -384,7 +390,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v2.6.2...v2.7.0
