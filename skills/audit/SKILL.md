@@ -83,22 +83,37 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 1. Dispatch `Writer — appending durable patterns to .hyperflow/memory/learnings.md` per [memory-system.md](references/memory-system.md).
 2. Dispatch `**Reviewer** — memory dedup check` to ensure no duplicate entries land.
 
-### Step 5 — Output
+### Step 5 — Output (file-first · DOCTRINE rule 8 file-first clause)
 
-Print the structured review (see Output Format below).
+The Reviewer's full structured review is **written to a file**, not pasted into chat. Inline review blocks longer than ~10 lines are a doctrine violation — they bury the conversation in unscrollable noise and the user has no editable artefact to point at when planning fixes.
+
+1. Write the review to `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope-slug>.md` using the structured format below (see Output Format). The Reviewer agent does this directly via `Write` — the orchestrator does NOT print the review and then save a copy.
+2. After the file is written, the orchestrator prints a **short one-block summary** containing only: scope, level, verdict, counts per severity, file path. Example:
+
+```
+── Audit Result ──────────────────────
+Scope:    main..HEAD (13 files)
+Level:    L3
+Verdict:  NEEDS_FIX
+Findings: 0 Critical · 4 Important · 4 Suggestions · 5 Praise
+Written:  .hyperflow/audits/2026-05-16-1730-memory-compaction.md
+─────────────────────────────────────
+```
+
+No `[Critical]` / `[Important]` body lines in chat. The user opens the file (or the chat host previews it). For `PASS`-clean runs (no Critical/Important), print just the one-line `Audit clean — no fixes needed.` and still write the file with the praise + suggestions list (so the audit history is preserved). Skip the file write only on `SECURITY_VIOLATION` — those need immediate eye-level surfacing; print the finding inline and halt.
 
 ### Step 6 — Fix gate (STRUCTURAL GATE · DOCTRINE rule 8)
 
-After the output prints, the audit skill **MUST** ask the user via `AskUserQuestion` whether to apply the findings. Per DOCTRINE rule 8, this gate always fires when findings exist — autonomy directives do NOT skip it. Defaulting silently is a doctrine violation.
+After the summary prints, the audit skill **MUST** ask the user via `AskUserQuestion` whether to apply the findings. Per DOCTRINE rule 8, this gate always fires when findings exist — autonomy directives do NOT skip it. Defaulting silently is a doctrine violation.
 
-**Skip the gate only when:** verdict is `PASS` with no `[Critical]` or `[Important]` entries (Suggestions-only or Praise-only). In that case print one-line: `Audit clean — no fixes needed.` and stop.
+**Skip the gate only when:** verdict is `PASS` with no `[Critical]` or `[Important]` entries (Suggestions-only or Praise-only). Stop after the one-line `Audit clean — no fixes needed.` summary.
 
 **Skip the gate also when:** verdict is `SECURITY_VIOLATION`. Halt and let the user decide.
 
 **Otherwise**, ask:
 
 ```
-?  Audit found N issues — apply fixes?
+?  Audit findings written to .hyperflow/audits/<timestamp>-<slug>.md — apply fixes?
 
    Fix all (Recommended)   — Critical + Important + Suggestions via /hyperflow:scope → /hyperflow:dispatch
    Critical + Important    — skip Suggestions, fix the rest
@@ -113,10 +128,9 @@ Recommended option scales with finding mix:
 
 **On any "Fix …" choice:**
 
-1. Build a spec block from the chosen findings. Each finding becomes a line with: file:line, the issue, and the reviewer's suggested fix (or "design needed" if no Fix: was provided).
-2. Save the spec to `.hyperflow/specs/audit-<timestamp>.md` for traceability.
-3. Invoke `Skill` with `skill: scope` and `args: "chain-mode=auto spec=.hyperflow/specs/audit-<timestamp>.md"`.
-4. `/hyperflow:scope` will decompose into batches; `/hyperflow:dispatch` will execute them — same per-sub-task commit cadence and per-batch L1–L<n> review as any other chain run.
+1. Build a spec file from the chosen findings at `.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md`. Each finding becomes a numbered fix section with: file:line, the issue, the reviewer's suggested fix (or "design needed" if no Fix: was provided), and the commit message stub. The spec file is the chain-driving artefact; do NOT paste fix bullets into chat.
+2. Invoke `Skill` with `skill: scope` and `args: "chain-mode=auto spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md"`.
+3. `/hyperflow:scope` will decompose into batches; `/hyperflow:dispatch` will execute them — same per-sub-task commit cadence and per-batch L1–L<n> review as any other chain run.
 
 **On "No":**
 

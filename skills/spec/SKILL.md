@@ -206,11 +206,13 @@ On `NEEDS_FIX` for either draft: re-dispatch only that Writer; single Opus re-re
 
 After the batched Reviewer approves: present the synthesis and approaches to the user. Recommend one approach, but the choice is the user's. Ask via `AskUserQuestion`.
 
-### Step 7 — Section-by-Section Design (P1 + P2 · one combined gate)
+### Step 7 — Section-by-Section Design (P1 + P2 · file-first · one combined gate)
 
-**P1 applies:** All 5 design sections share the same upstream input (the chosen approach) and have no inter-dependencies. Dispatch all 5 Writers in ONE parallel message — the same pattern `dispatch` uses for batch workers.
+**File-first artefact rule (DOCTRINE rule 8 file-first clause):** every section Writer writes its draft directly to `.hyperflow/specs/<slug>.draft.md` — never returns the section content for the orchestrator to paste inline. The Reviewer reads sections from the file. The approval gate references the file path, not the content. Inline pasting of section text into chat is a doctrine violation — chat output is ephemeral and unscrollable; a file is reviewable, editable, and persistent across sessions.
 
-**P2 applies:** After all 5 Writers return, dispatch ONE Opus Reviewer using `reviewer-prompt-batched.md` to review all 5 sections in a single pass, returning per-section verdicts:
+**P1 applies:** All 5 design sections share the same upstream input (the chosen approach) and have no inter-dependencies. Dispatch all 5 Writers in ONE parallel message — the same pattern `dispatch` uses for batch workers. Each Writer is instructed to `Write` its section into the file at a stable anchor (`## 1. Architecture`, `## 2. Data flow`, etc.) — the orchestrator pre-seeds the file with the 5 H2 headers before dispatching so Writers can use `Edit` with the heading as a unique anchor and avoid append-order races.
+
+**P2 applies:** After all 5 Writers return, dispatch ONE Opus Reviewer using `reviewer-prompt-batched.md` to read `.hyperflow/specs/<slug>.draft.md` and review all 5 sections in a single pass, returning per-section verdicts:
 
 ```
 §1 Architecture:   PASS
@@ -222,15 +224,28 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 
 **Cross-section coherence benefit:** the batched Reviewer sees all sections simultaneously and catches conflicts that per-section passes miss (e.g., a contradiction between §1 Architecture and §5 File structure).
 
-**On `NEEDS_FIX`:** re-dispatch only the failed section's Writer; single Opus re-review of just that section. Do not redraft passing siblings.
+**On `NEEDS_FIX`:** re-dispatch only the failed section's Writer with the Reviewer's feedback; that Writer rewrites only its own H2-anchored block in the draft file. Single Opus re-review of just that section. Do not redraft passing siblings.
 
 **Special case — 4+ sections NEEDS_FIX:** likely the chosen approach itself is wrong. Bounce back to Step 6 and re-pick an approach rather than redrafting 4 sections individually.
 
-**Eligibility guard:** this P1+P2 structure applies because all 5 sections share the same review-level cap. If a future flow assigns different review-level caps per section (e.g., one section requires L5 security review while others are L3), fall back to per-section reviewers for those sections. Document this as the exception in the spec header.
+**Eligibility guard:** this P1+P2 structure applies because all 5 sections share the same review-level cap. If a future flow assigns different review-level caps per section (e.g., one section requires L5 security review while others are L3), fall back to per-section reviewers for those sections.
 
-**If `--thorough` / `depth=max`:** for each section sequentially — (1) dispatch Writer, (2) dispatch Reviewer, (3) present to user for approve / revise before moving to the next section.
+**If `--thorough` / `depth=max`:** for each section sequentially — (1) dispatch Writer (still writes to file at the H2 anchor), (2) dispatch Reviewer (reads the file), (3) print one-line `Section <N> ready — review at .hyperflow/specs/<slug>.draft.md` + `AskUserQuestion` approve / revise, before moving to the next section.
 
-After the batched Reviewer approves (or NEEDS_FIX sections are resolved), present **all 5 reviewed sections** to the user in ONE combined `AskUserQuestion`. Per-section revise is allowed — the user may mark individual sections for revision. Only the revised section's Writer loops back (not all 5).
+**Worker rate-limit handling — inline fallback BANNED:** if a Writer fails (rate limit, timeout, runtime error), the orchestrator MUST retry the Writer (max 2 retries), then if still failing surface `ESCALATE: section-<N> writer failed after 2 retries — chain paused, run /hyperflow:status to inspect`. Drafting the section inline in chat as a "fallback" violates the file-first rule and produces an ungrounded section that downstream Writers/Reviewers will not see in the draft file.
+
+After the batched Reviewer approves (or `NEEDS_FIX` sections are resolved), the orchestrator fires ONE combined `AskUserQuestion`. The gate body is a one-line section roster + the file path — NOT the section content:
+
+```
+?  Design draft ready at .hyperflow/specs/<slug>.draft.md
+   §1 Architecture · §2 Data flow · §3 Key decisions · §4 Edge cases · §5 File structure
+   Review the file, then choose:
+
+   Approve all   — finalize and chain to /hyperflow:scope
+   Revise §<N>   — send the named section back to the Writer with your feedback (free-form)
+```
+
+Per-section revise is allowed — the user may mark individual sections for revision. Only the revised section's Writer loops back; the rest of the draft file is untouched.
 
 Sections (always in this order):
 
@@ -240,14 +255,18 @@ Sections (always in this order):
 4. **Edge cases** — what could go wrong
 5. **File structure** — what gets created/modified
 
-### Step 8 — Spec Output
+### Step 8 — Spec Finalize
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
 Kept sequential — this is the final sanity check before hand-off; no parallelism applies.
 
-1. Dispatch `Writer — writing spec to .hyperflow/specs/<slug>.md` for non-trivial features (3+ files / multiple subsystems). For simpler designs, the Writer composes an inline summary instead.
-2. Dispatch `**Reviewer** — final spec sanity check` to verify every approved section is captured and no contradiction exists between sections.
+The draft already lives at `.hyperflow/specs/<slug>.draft.md` (written progressively in Step 7). This step finalizes it:
+
+1. Dispatch `Writer — adding frontmatter + overview to .hyperflow/specs/<slug>.draft.md` to prepend the spec header (Status: approved, Date, Trigger, brief Overview paragraph derived from the approved synthesis). Writer then renames the file: `git mv .hyperflow/specs/<slug>.draft.md .hyperflow/specs/<slug>.md` (or plain `mv` if the draft was never staged — `.hyperflow/` is gitignored, so plain rename is correct).
+2. Dispatch `**Reviewer** — final spec sanity check` to read the finalized file and verify every approved section is captured, the H2 ordering is right (1–5), and no contradiction exists between sections.
+
+**No inline summary fallback.** Even for "simple" designs, the spec lives in a file. Chat-only summaries were a doctrine violation pattern from earlier versions; removed.
 
 ### Step 9 — Hand off to `/hyperflow:scope`
 
