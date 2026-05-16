@@ -87,6 +87,8 @@ try:
         checksums = json.load(f)
 except (OSError, ValueError):
     sys.exit(0)
+if not isinstance(checksums, dict) or len(checksums) > 10000:
+    sys.exit(0)
 over = [(path, meta["lineCount"]) for path, meta in checksums.items()
         if isinstance(meta, dict) and isinstance(meta.get("lineCount"), int)
         and meta["lineCount"] >= threshold]
