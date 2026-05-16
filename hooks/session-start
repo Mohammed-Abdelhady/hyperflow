@@ -80,6 +80,8 @@ try:
     threshold = int(cfg.get("memory", {}).get("compactionThreshold", 300))
 except (OSError, ValueError, TypeError):
     pass
+if threshold < 50:
+    threshold = 300
 try:
     with open(checksums_path) as f:
         checksums = json.load(f)
