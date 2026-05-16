@@ -159,53 +159,94 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 1. Dispatch `Writer — emitting task file` with the Planner's output (in parallel with Step 6 Writer — P3). The Writer writes to `.hyperflow/tasks/<task-slug>.md` using the template below.
 2. Dispatch `**Reviewer** — verifying task file vs design` to confirm every design requirement maps to at least one sub-task and no orphan sub-tasks exist.
 
-Task-file template —
+Task-file template — follows [`artefact-format.md`](../hyperflow/artefact-format.md). The Writer applies the full template by default; reduces to the `fast` variant only when triage classifies `complexity=low AND sub-tasks<=2`.
 
 ```markdown
-# Task: <Name>
+# <Name>
+
+╭─────────────────────────────────────────────────────────────────╮
+│ Status      pending                                             │
+│ Progress    ░░░░░░░░░░░░░░░░░░░░  0 / <total> sub-tasks (0%)    │
+│ Branch      <feat/slug or current branch>                       │
+│ Commits     0 since main · per-task cadence                     │
+│ Wall-clock  not started                                         │
+│ Tokens      thinking 0k · worker 0k · total 0k                  │
+╰─────────────────────────────────────────────────────────────────╯
 
 ## Goal
-<one-line>
 
-## Context
-<background, why this matters, research findings>
+<one-line plain-English statement of what shipping this changes>
+
+## Why
+
+<one paragraph: what the user / system sees after this lands; the
+single most important constraint the design honors>
+
+## Scope at a glance
+
+| Surface       | Files | Created | Modified | Risk   |
+|---------------|------:|--------:|---------:|--------|
+| <surface>     |     N |       N |        N | low    |
+| **Total**     |  **N**|    **N**|     **N**|        |
 
 ## Affected files
-- Read: <list>
-- Modify: <list>
-- Create: <list>
+
+**Created (N)**
+- `<path>` — <one-line purpose>
+
+**Modified (N)**
+- `<path>` — <one-line change>
+
+**Skipped (confirmed N)** *(omit section if N=0)*
+- `<path>` — <reason it's not touched>
+
+## Execution plan
+
+```
+Batch 1 — <theme>                       (<N> parallel)
+  T1 · T2 · T3 · T4
+       ↓
+Batch 2 — <theme>                       (<N> parallel · depends on Batch 1)
+  T5 · T6 · T7
+       ↓
+Batch 3 — <theme>                       (<N> sequential)
+  T8
+       ↓
+Batch N — Final integration review      (1 sequential)
+  T<N>
+```
 
 ## Batches
 
-### Batch 1 (parallel)
-- [ ] T1: [Role] <description>
-- [ ] T2: [Role] <description>
+### Batch 1 — <theme> (<parallel|sequential>)
 
-### Batch 2 (sequential — depends on Batch 1)
-- [ ] T3: [Role] <description>
+- [ ] T1 — <Role> · <one-line task>
+       Read: `<file>` · Modify: `<file>` · Complexity: <low|medium|high>
+- [ ] T2 — <Role> · <one-line task>
+       Create: `<file>` · Complexity: <low|medium|high>
 
-### Batch 3
-- [ ] T4: Final integration review
+### Batch 2 — <theme> (depends on Batch 1)
+...
 
 ## Open questions
-<anything needing user input before execution>
+
+None. *(or numbered list if any remain)*
 
 ## Verification plan
-<how to test end-to-end>
+
+1. <concrete test or smoke step>
+2. <concrete test or smoke step>
 
 ## Estimated cost
-- Thinking: ~N agents, ~Xk tokens
-- Worker: ~N agents, ~Yk tokens
 
-## Status
-Created:        <ISO-8601 timestamp · written by scope>
-Started:        <ISO-8601 timestamp · written by dispatch at first batch>
-Last update:    <ISO-8601 timestamp · written by dispatch after each sub-task>
-Sub-tasks:      <done> / <total>   (e.g. "5 / 14")
-Tokens used:    thinking <Xk> · worker <Yk> · total <Zk>
-Wall-clock:     <Hm Ms> elapsed
-ETA:            <Hm Ms> remaining   (or "computing" before 3 sub-tasks done)
+| Tier      | Agents | Tokens   |
+|-----------|-------:|---------:|
+| Thinking  |      N |     ~Nk  |
+| Worker    |      N |     ~Nk  |
+| **Total** |  **N** | **~Nk**  |
 ```
+
+The Status block is updated by dispatch after every sub-task PASS — see dispatch/SKILL.md Step 2. Progress bar uses 20 cells: `█` for completed, `░` for pending; percentage rounded to whole number. Wall-clock starts on first worker dispatch; ETA computes once ≥ 3 sub-tasks are done (linear extrapolation from completed mean).
 
 ### Step 5 — Output
 
