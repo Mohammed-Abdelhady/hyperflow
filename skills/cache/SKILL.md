@@ -4,7 +4,7 @@ description: |
   Use when the user wants to view, search, add, edit, prune, archive, or clear hyperflow memory entries. CRUD interface for `.hyperflow/memory/` — never modifies source code, only memory files.
   Trigger with /hyperflow:cache, "show memory", "search memory for X", "clear memory", "what does hyperflow remember about Y".
 allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mv:*), Bash(rm:*), Glob, Grep
-argument-hint: "<show|search|add|edit|prune|archive|clear|stats|migrate|off> [args]"
+argument-hint: "<show|search|add|edit|prune|archive|clear|stats|migrate|off|compact> [args]"
 version: 3.1.2
 license: MIT
 compatibility: Designed for Claude Code
@@ -33,6 +33,7 @@ All operations target `.hyperflow/memory/` at the project root. Never modify sou
 | `stats` | Counts, tier breakdown, tag frequency, oldest/newest |
 | `migrate` | Import entries from legacy `~/.claude/hyperflow-memory.md` |
 | `off` | Disable memory writes for this session |
+| `compact` | Summarise aged memory entries into stubs + monthly archive sidecars |
 
 ## Subcommand Details
 
@@ -84,6 +85,21 @@ Print count of migrated entries.
 
 ### `off`
 Print: "Memory writes disabled for this session." No files modified.
+
+### `compact`
+User-invoked memory compaction. Summarises entries older than 7 days into stub lines and preserves the full text in monthly archive sidecars at `.hyperflow/memory/archive/YYYY-MM.md`.
+
+Flow:
+1. The compact subcommand handler reads the target memory file (default: `learnings.md`; pass a path to target another).
+2. The Date/tag parser splits entries into hot (≤7 days, preserved) and eligible (>7 days). Both `[domain, type]` and legacy backticked `` `[domain, type]` `` tag forms are accepted.
+3. The Compaction Writer is dispatched in a single batch with all eligible entries.
+4. The Stub formatter renders each replacement line as `### [YYYY-MM-DD] Short title  [domain, type] — summarized, see archive/YYYY-MM.md`.
+5. The Dedup Reviewer performs source-side stub-line match and archive-side header match (date + title + tags on both sides) to prevent duplicates.
+6. The Archive-sidecar writer appends accepted entries to `archive/YYYY-MM.md`, grouped by each entry's calendar month.
+7. The source file is rewritten with stubs replacing the original entries.
+8. The compact subcommand handler refreshes `.hyperflow/memory/.checksums` (a memory-scoped sidecar — distinct from `.hyperflow/.checksums` which the scaffold staleness check owns) and exits with a summary.
+
+Output: `N entries compacted into archive/YYYY-MM.md · M stubs rejected as duplicates · source N→M lines`. Full protocol in [compaction.md](references/compaction.md).
 
 ## Flow
 
@@ -185,5 +201,6 @@ Oldest: 2026-02-14   Newest: 2026-05-16
 ## Resources
 
 - [memory-system.md](references/memory-system.md) — full protocol: files, tiers, tagging, pruning rules.
+- [compaction.md](references/compaction.md) — `/hyperflow:cache compact` protocol: stub format, archive sidecar, idempotency.
 - [output-style.md](references/output-style.md) — label and table conventions.
 - [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules.
