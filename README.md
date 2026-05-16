@@ -88,9 +88,13 @@ Done. Next: /hyperflow:deploy (gates + commit + push) — user-explicit, not aut
 - **Multi-tool** — one config, auto-detected across Claude Code and OpenCode.
 - **Project memory** — conventions, gotchas, and architectural decisions persist across conversations in `.hyperflow/memory/`, fully local and version-controllable.
 
-### Latency optimization (new)
+### Latency optimization (round 1)
 
 Parallel sibling drafts (P1) + batched same-level reviews (P2) cut wall-clock time on a median spec run from ~16 sequential round-trips to ~6 — roughly **60% latency reduction** — without changing the reviewer tier (Opus stays Opus). Triage-driven step skipping (P4) bypasses spec ceremony when ambiguity is low; lean worker prompts (P5) cut time-to-first-token by ~30% by shipping memory references instead of inlining full doctrine. Pass `--thorough` to disable P1/P2/P4 for high-risk runs. Full spec: [`.hyperflow/specs/latency-optimization.md`](.hyperflow/specs/latency-optimization.md).
+
+### Latency optimization (round 2)
+
+Round 2 trims orchestration ceremony: Haiku Classifier (was Opus), combined audit+deploy gate (was 2 round-trips), session-cached context bundle, dropped wrap-up Reviewer, default L1-L2 review cap (elevates only on triage flags), conditional final integration review skip when all batches pass first try, aggressive P4 ambiguity thresholds, and DOCTRINE §12.1 inline-allowed for trivial mechanical steps. Quality floor preserved: per-batch Opus Reviewer, per-sub-task commit cadence, `SECURITY_VIOLATION` halt, and 2-question spec floor are all unchanged. Net: **~35-40% additional wall-clock cut** on top of round 1; **~70-75% faster** than the pre-round-1 baseline. Full spec: [`.hyperflow/specs/latency-optimization-round2.md`](.hyperflow/specs/latency-optimization-round2.md) · L1-L9 pattern catalogue: [`skills/spec/references/latency-patterns.md`](skills/spec/references/latency-patterns.md).
 
 ---
 
