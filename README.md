@@ -139,7 +139,7 @@ Each chain-starter asks at Step 0 whether to advance **auto** (no gates between 
 | **Trace** | `/hyperflow:trace` | Root-cause a bug | Systematic 5 Whys + hypothesis testing — never blind-patches symptoms |
 | **Audit** | `/hyperflow:audit` | Code review | Multi-level review (L1 quick → L5 exhaustive) on uncommitted changes, a file/range, or a PR |
 | **Deploy** | `/hyperflow:deploy` | Pre-push gates | Lint + typecheck + build + tests + security sweep + commit + release + push (push always asks) |
-| **Cache** | `/hyperflow:cache` | Memory CRUD | `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off` |
+| **Cache** | `/hyperflow:cache` | Memory CRUD | `show`, `search`, `add`, `edit`, `prune`, `archive`, `clear`, `stats`, `migrate`, `off`, `compact` |
 | **Status** | `/hyperflow:status` | Live progress | Read-only one-screen view: static snapshot (version · profile freshness · memory count) **plus** live in-flight progress per task — sub-tasks done/pending, tokens used, wall-clock, ETA |
 
 **Reuse architecture:** every skill is ~80–150 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
