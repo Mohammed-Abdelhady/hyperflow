@@ -184,13 +184,13 @@ See [task-tracking.md](references/task-tracking.md) and [worker-prompt.md](refer
 
 This step is trivial-inline per §12.1: one Skill tool invocation, no generation, no review needed. The orchestrator invokes the dispatch skill directly without an Agent dispatch wrapper.
 
-**If `chain-mode=auto`** — immediately invoke `Skill` with `skill: execute` and `args: "chain-mode=auto <task-slug>"`. Print:
+**If `chain-mode=auto`** — immediately invoke `Skill` with `skill: dispatch` and `args: "chain-mode=auto <task-slug>"`. Print:
 
 ```
 Auto-chaining to /hyperflow:dispatch…
 ```
 
-**If `chain-mode=manual`** — ask via `AskUserQuestion`: "Plan done. Continue to /hyperflow:dispatch?" → yes / no / stop. On yes, invoke `Skill` with `skill: execute` and `args: "chain-mode=manual <task-slug>"`.
+**If `chain-mode=manual`** — ask via `AskUserQuestion`: "Plan done. Continue to /hyperflow:dispatch?" → yes / no / stop. On yes, invoke `Skill` with `skill: dispatch` and `args: "chain-mode=manual <task-slug>"`.
 
 ## Anti-patterns
 
