@@ -17,14 +17,21 @@ Lean variant of `worker-prompt.md`. Use this as the default template for paralle
 [What this file/module does, relevant conventions or constraints specific to this task]
 
 ## Memory references (read on demand)
-You have access to `.hyperflow/memory/` — read these files only if needed:
-  - doctrine.md       — orchestration rules
+Read these files only if needed. Locations differ — check both groups:
+
+`.hyperflow/` root (written by scaffold Step 1):
   - profile.md        — project conventions
   - architecture.md   — system architecture
   - conventions.md    — naming, patterns, standards
-  - learnings.md      — accumulated lessons from prior batches in this run
 
-Read a memory file once if the task touches its domain. Do not re-read files already in your context window.
+`.hyperflow/memory/` (written by scaffold Step 2 / dispatch wrap-up):
+  - doctrine.md       — orchestration rules
+  - learnings.md      — accumulated lessons from prior batches
+  - decisions.md      — recorded architectural decisions
+  - pitfalls.md       — known failure modes
+  - patterns.md       — reusable solution patterns
+
+Read a file once if the task touches its domain. Do not re-read files already in your context window.
 
 ## Constraints
 - Only modify files listed in scope
@@ -50,10 +57,10 @@ Return:
 |---|---|
 | Parallel sibling sub-tasks in a normal dispatch run | **lean** (this file) |
 | `depth=max` or `--thorough` flag passed by user | full `worker-prompt.md` |
-| Fresh project with no `.hyperflow/memory/` populated | full `worker-prompt.md` (fallback until scaffold runs) |
+| Any referenced file is absent or is an unpopulated stub | lean — skip that file only; use inline defaults for that slot |
 | Single-worker run with no siblings | either — lean preferred |
 
-If `.hyperflow/memory/` does not exist (fresh project, scaffold not yet run), fall back to the full `worker-prompt.md` and note the gap so the user is prompted to run `/hyperflow:scaffold`.
+If a referenced memory file is absent **or** appears to be an unpopulated stub (contains a `<!-- to be populated -->` sentinel or has fewer than ~5 meaningful lines of body content), fall back to inline defaults **for that file only** — do not wholesale fall back to the full `worker-prompt.md`. Scaffold always creates the directory with stubs, so a wholly-missing `.hyperflow/memory/` is not the expected failure mode; partial population is.
 
 ## Dispatch Example
 
@@ -73,14 +80,21 @@ Project uses React 19, Tailwind v4, Shadcn Avatar primitive exists.
 All components need data-testid attributes.
 
 ## Memory references (read on demand)
-You have access to \`.hyperflow/memory/\` — read these files only if needed:
-  - doctrine.md       — orchestration rules
+Read these files only if needed. Locations differ — check both groups:
+
+\`.hyperflow/\` root (written by scaffold Step 1):
   - profile.md        — project conventions
   - architecture.md   — system architecture
   - conventions.md    — naming, patterns, standards
-  - learnings.md      — accumulated lessons from prior batches in this run
 
-Read a memory file once if the task touches its domain. Do not re-read files already in your context window.
+\`.hyperflow/memory/\` (written by scaffold Step 2 / dispatch wrap-up):
+  - doctrine.md       — orchestration rules
+  - learnings.md      — accumulated lessons from prior batches
+  - decisions.md      — recorded architectural decisions
+  - pitfalls.md       — known failure modes
+  - patterns.md       — reusable solution patterns
+
+Read a file once if the task touches its domain. Do not re-read files already in your context window.
 
 ## Constraints
 - Only modify files listed in scope
