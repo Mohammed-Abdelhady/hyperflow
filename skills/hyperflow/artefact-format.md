@@ -2,12 +2,19 @@
 
 How long-form artefacts written under `.hyperflow/` should be structured so the user can open the file in their editor and grasp it in under 10 seconds.
 
-Applies to:
+Applies to every planning artefact the orchestrator produces. **All artefacts live under `.hyperflow/`** — never at repo root, never in `docs/`, never in ad-hoc folders. See [DOCTRINE.md](DOCTRINE.md) rule 8 file-first clause for the canonical-location table and banned-location list.
 
-- Task files — `.hyperflow/tasks/<slug>.md` (written by `scope`)
-- Spec files — `.hyperflow/specs/<slug>.md` (written by `spec`)
-- Audit files — `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` (written by `audit`)
-- Audit-fix specs — `.hyperflow/specs/audit-<date>-<slug>.md` (written by `audit` fix gate)
+| Artefact | Path | Written by |
+|---|---|---|
+| Task decomposition | `.hyperflow/tasks/<slug>.md` | `scope` Step 4 |
+| Spec (final) | `.hyperflow/specs/<slug>.md` | `spec` Step 8 |
+| Spec (in-progress draft) | `.hyperflow/specs/<slug>.draft.md` | `spec` Step 7 progressive |
+| Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` | `audit` Step 5 |
+| Audit-fix spec | `.hyperflow/specs/audit-<YYYY-MM-DD>-<slug>.md` | `audit` Step 6 fix-gate |
+| Project memory | `.hyperflow/memory/<category>.md` | `scope` Step 6 · `cache` CRUD |
+| Layer-0 analysis | `.hyperflow/profile.md`, `architecture.md`, etc. | `scaffold` |
+
+The `docs/` folder is reserved for polished end-user / contributor documentation (installation guide, provider setup, model-routing reference). Never put a working spec or task plan there.
 
 ## Core conventions
 
