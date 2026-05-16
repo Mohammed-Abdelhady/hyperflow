@@ -66,7 +66,7 @@ $snap"
   [ -f "$HF_DIR/memory/index.md" ] && CONTENT="$CONTENT
 
 ## Project Memory Index
-$(cat "$HF_DIR/memory/index.md")"
+$(head -200 "$HF_DIR/memory/index.md")"
 
   # Memory Compaction Advisory (non-blocking, no LLM)
   if [ -f "$HF_DIR/memory/.checksums" ]; then
