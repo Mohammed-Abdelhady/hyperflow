@@ -87,12 +87,12 @@ try:
         checksums = json.load(f)
 except (OSError, ValueError):
     sys.exit(0)
-over = [path for path, meta in checksums.items()
+over = [(path, meta["lineCount"]) for path, meta in checksums.items()
         if isinstance(meta, dict) and isinstance(meta.get("lineCount"), int)
         and meta["lineCount"] >= threshold]
 if over:
-    names = ", ".join(os.path.basename(p) for p in over)
-    print(f"- {names} at or above {threshold} lines — run `/hyperflow:cache compact` when convenient")
+    names = ", ".join(f"{os.path.basename(p)} ({lc} lines)" for p, lc in over)
+    print(f"- {names} — at or above {threshold}, run `/hyperflow:cache compact` when convenient")
 PYEOF
 )"
     if [ -n "$advisory" ]; then
