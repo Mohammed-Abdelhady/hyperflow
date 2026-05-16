@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep
 argument-hint: "[--tools all|claude-code|opencode|agents] [--force] [--dry-run]"
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [setup, initialization, project-analysis]

@@ -109,7 +109,7 @@ Everything the plugin does is plain markdown + a single bash hook. There is no c
 
 ## Contact
 
-Privacy questions or audits: open an issue at <https://github.com/Mohammed-Abdelhady/hyperflow/issues> or email `abdelhadycongar@gmail.com`.
+Privacy questions or audits: open an issue at <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
 
 ## Changes to this policy
 

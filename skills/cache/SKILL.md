@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(mv:*), Bash(rm:*), Glob, Grep
 argument-hint: "<show|search|add|edit|prune|archive|clear|stats|migrate|off> [args]"
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [memory, persistence, project-state]

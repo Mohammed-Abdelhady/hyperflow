@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Glob, Grep, Agent
 argument-hint: "<bug description or failing test name>"
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [debugging, root-cause, systematic, multi-agent]

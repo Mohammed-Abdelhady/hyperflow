@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Glob, Grep
 argument-hint: ""
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [introspection, read-only, project-state]

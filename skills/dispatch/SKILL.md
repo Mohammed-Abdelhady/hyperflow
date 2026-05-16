@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Write, Edit, Bash(git:*), Agent
 argument-hint: "[task-file] [chain-mode=auto|manual] [--from-batch N] [--final-only]"
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [execution, parallel, review, multi-agent, orchestration]
