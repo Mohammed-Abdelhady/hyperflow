@@ -54,7 +54,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 | Gate | When | Format |
 |---|---|---|
 | Chain mode | Step 0, only if invoked directly | `AskUserQuestion` — auto / manual |
-| Inter-batch (manual mode only) | After each batch's gates pass | `AskUserQuestion` — continue / stop |
+| Inter-batch (manual mode only) | After each batch's gates pass | `AskUserQuestion` — continue / stop. **Auto mode fires NO inter-batch question** — see DOCTRINE rule 8 (invented gates banned). |
 | Hard halt | Any `SECURITY_VIOLATION` from a reviewer | Stop the chain, surface the finding |
 | **Audit prompt** | Step 5, after wrap-up | `AskUserQuestion` — run `/hyperflow:audit`? (yes/no, recommended toggles with flow profile) |
 | **Deploy prompt** | Step 5, after audit gate | `AskUserQuestion` — run `/hyperflow:deploy`? (yes/no, recommended toggles with gate state) |

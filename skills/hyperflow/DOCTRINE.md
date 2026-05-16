@@ -113,14 +113,24 @@ See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, 
 5. **Silent error recovery.** Fix failures and continue. Only surface unrecoverable errors.
 6. **Code over commentary.** Write code, don't describe it.
 7. **Auto-accept all permissions.** File, terminal, tool — never pause.
-8. **Clarification is mandatory, confirmation is banned. Structural gates ALWAYS fire.**
+8. **Clarification is mandatory, confirmation is banned. Structural gates ALWAYS fire. Invented gates NEVER fire.**
    - **BANNED:** "Should I proceed?", "Is this ok?", "Ready to implement?" — these are confirmations. Never ask.
    - **REQUIRED:** `AskUserQuestion` for understanding WHAT to build, WHERE ambiguity exists, WHICH approach to take. These happen at:
      - Layer 0: Project analysis — when configs are ambiguous
      - Layer 3: Task verification — present understanding before dispatching workers
      - Layer 4: Brainstorming — intent, constraints, assumptions, scope
    - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
-   - **Structural gates** — chain-mode (Step 0), section approval (Spec Step 7), push confirmation (Deploy Step 6), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope / dispatch when invoked directly) MUST present the auto/manual choice via `AskUserQuestion`; defaulting to `auto` without asking is a doctrine violation even if the user previously said "work without confirmations".
+   - **Structural gates** — chain-mode (Step 0), spec questions (floor 2), section approval (Spec Step 7), inter-phase advance (manual mode only), inter-batch advance (manual mode only), audit prompt (Dispatch Step 5), deploy prompt (Dispatch Step 5), audit fix-gate (Audit Step 6), push confirmation (Deploy Step 6), commit-inclusion (Deploy Step 4), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope / dispatch when invoked directly) MUST present the auto/manual choice via `AskUserQuestion`; defaulting to `auto` without asking is a doctrine violation even if the user previously said "work without confirmations".
+   - **Invented gates are BANNED.** The orchestrator MAY NOT fire `AskUserQuestion` for anything outside the structural-gates list above. Specifically banned patterns:
+     - "Transparency checkpoint" — *"The task is larger than expected, should I continue?"*
+     - "Midway sanity check" — *"We're 1/N done, any course correction?"*
+     - "Scope re-confirmation" — *"Just confirming we're still on track with [thing the user already approved]?"*
+     - "Cost heads-up" — *"This will use ~Xk more tokens, OK to continue?"*
+     - Any rephrasing of *"Are you sure?" / "Should I keep going?" / "Want me to pause?"* between batches when the user chose `auto` at Step 0.
+
+     The user picked auto. Auto means **finish the chain without check-ins**. Inventing a gate because the work feels big, the budget feels heavy, or the orchestrator wants social cover for a long run is a confirmation in clarification clothing. Just run. The user can interrupt anytime via Ctrl+C / Esc; that's the runtime's gate, not the orchestrator's. If genuine ambiguity arises mid-batch (e.g., a worker returns `ESCALATE: crosses irreversibility boundary`), that's a structural escalation gate (see `escalation.md`), not an invented one — fire it explicitly with that reason.
+
+     Posting status updates is fine and encouraged ("Batch 1 done · 9/36 · next: B2 deps"). Posting status as a *question* with options is not.
    - **Every `AskUserQuestion` MUST mark a recommended option.** The recommended option goes **first** in the `options[]` array and its `label` ends with `(Recommended)`. The orchestrator picks the recommendation based on triage context, project conventions, prior memory entries, and the principle of least surprise. The user can still pick anything — the recommendation is guidance, not a default. Questions with no clear best answer (genuine 50/50) MAY skip the marker, but those should be rare.
 9. **Never reference the LLM as an actor in any artefact.** No "Co-Authored-By: Claude" (or any LLM) in commits. No "Claude / AI / assistant / LLM" as a subject performing an action in commit messages, PR descriptions, rebase notes, code comments, doc prose, skill bodies, memory entries, task files, or anything else written by the orchestrator. Describe what changed and why — never who/what made it. Use neutral phrasing: "The skill writes …", "The orchestrator dispatches …", "Step 4 commits …", "The cast script was rewritten." Product names used as a *named tool / file* are fine (`claude` CLI binary, `Claude Code` platform, `CLAUDE.md` filename); banned use is only as a *narrative subject*.
 
@@ -372,6 +382,7 @@ Hand-off pattern:
 - Have fewer thinking agents than batches + 1 in `deep`/`scientific` profiles
 - Dispatch workers sequentially when they could run in parallel
 - Label a batch `parallel:N` but dispatch the calls across separate messages — that's serial, not parallel. The wall-clock / cumulative ratio will land ≥ 0.8 and expose it. Investigate and re-dispatch with all N `Agent()` calls in a single message.
+- Fire an `AskUserQuestion` between batches in `auto` mode — "transparency checkpoint", "midway sanity check", "scope re-confirmation", "cost heads-up", or any rephrasing of *"should I keep going?"*. Per rule 8, auto means finish the chain. The only gates between batches are the structural ones (`SECURITY_VIOLATION` halt, escalation crossing the irreversibility boundary, inter-batch advance in *manual* mode). Status prints are fine; status *questions* are banned.
 - Print a usage summary for a multi-batch task without the `Wall-clock` and `Cumulative` rows — auditability of parallelism is mandatory once 2+ batches or 2+ parallel-eligible workers are in play
 - Include "Co-Authored-By: Claude" in any git operation, or reference the LLM as an actor in any artefact (commits, PRs, docs, code comments, skill prose) — see rule 9
 - Summarize what you just did
