@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.7.0] — 2026-05-16
+
+### Added
+- All planning artefacts under .hyperflow/ — banned-location list
+
+
 ## [4.6.1] — 2026-05-16
 
 ### Fixed
@@ -532,7 +538,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.6.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.7.0...HEAD
+[4.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.6.1...v4.7.0
 [4.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.6.0...v4.6.1
 [4.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.5.0...v4.6.0
 [4.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.4.0...v4.5.0
