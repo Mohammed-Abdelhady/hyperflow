@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(./scripts/*:*), Glob, Grep
 argument-hint: ""
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [release, ci, automation, push-gates]

@@ -6,7 +6,6 @@ description: |
 allowed-tools: Write, AskUserQuestion
 argument-hint: "<design question or feature idea> [chain-mode=auto|manual]"
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [design, brainstorming, planning, multi-agent]

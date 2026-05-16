@@ -6,7 +6,6 @@ description: |
 allowed-tools: Read, Bash(git:*), Glob, Grep, Agent
 argument-hint: "[target] [--level 1-5]"
 version: 3.1.2
-author: Mohammed Abdelhady <abdelhadycongar@gmail.com>
 license: MIT
 compatibility: Designed for Claude Code
 tags: [code-review, quality, multi-level, multi-agent]

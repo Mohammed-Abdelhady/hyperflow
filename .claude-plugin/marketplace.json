@@ -2,7 +2,7 @@
   "name": "hyperflow-marketplace",
   "owner": {
     "name": "Mohammed Abdelhady",
-    "email": "abdelhadycongar@gmail.com"
+    "url": "https://github.com/Mohammed-Abdelhady"
   },
   "metadata": {
     "description": "Advanced multi-agent orchestration with persistent cross-session memory, per-step multi-level review, persona stitching, and adaptive flow profiles",
