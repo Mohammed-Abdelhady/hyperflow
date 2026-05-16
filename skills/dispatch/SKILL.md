@@ -114,6 +114,7 @@ Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope
 - Every per-batch Reviewer returned PASS on first try (no NEEDS_FIX retries)
 - No escalations fired (no `ESCALATE:` markers during Step 2)
 - No security flags raised (no triage `security: true` AND no Reviewer security warnings)
+- No per-batch Reviewer surfaced `[Important]` out-of-cap notes (via the `reviewer-prompt-batched.md` "Honor the Level Cap" escape hatch — these notes signal a concern the Reviewer wanted to flag but couldn't escalate within the cap; D7 must NOT swallow them)
 
 If ANY of these conditions fails, the final integration review runs as described below.
 
@@ -127,9 +128,10 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 
 **Nominal path (inline orchestrator):** perform the following directly without an Agent dispatch wrapper:
 1. Delete the completed task file from `.hyperflow/tasks/`.
-2. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
-3. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
-4. Print the usage summary per [output-style.md](references/output-style.md).
+2. Before appending: `grep -F` the proposed entry's first-line title against `.hyperflow/memory/*.md` files (inline dedup-check — replaces the dropped Reviewer dedup pass). If a match exists, edit the existing entry rather than append a duplicate.
+3. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
+4. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
+5. Print the usage summary per [output-style.md](references/output-style.md).
 
 **When the Writer dispatch IS required:** if memory append requires non-trivial prose generation (e.g., synthesizing learnings from a multi-batch run with cross-cutting patterns), dispatch `Writer — finalizing dispatch artifacts` for the memory write. At that point the step is no longer §12.1-trivial and the Writer Agent handles it. The chore commit still follows immediately; no Reviewer is dispatched for wrap-up.
 
@@ -137,7 +139,7 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 
 ### Step 5 — End of Auto-Chain · Audit + Deploy gates
 
-Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default.
+Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only.
 
 > **DOCTRINE rule 8 preserved:** both questions still fire; they just batch into one round-trip instead of two. Combined gate cuts human-in-the-loop latency by ~half at end-of-chain.
 
