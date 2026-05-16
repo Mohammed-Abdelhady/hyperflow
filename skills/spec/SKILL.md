@@ -19,18 +19,18 @@ This skill drives **Layer 0.5 (Task Triage)** and **Layer 4 (Brainstorming/Spec)
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
-Every substantive step dispatches at least one Agent. The orchestrator never does "real" work inline — it only coordinates dispatches and prints status.
+Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivial steps per §12.1 may be performed inline by the orchestrator.
 
 | Step | Worker tier | Thinking tier | Notes |
 |---|---|---|---|
 | 0 — Chain mode | — | — | `AskUserQuestion` only (exempt) |
-| 1+2 — Triage + Context | Searcher (Sonnet) [P3 concurrent] | **Classifier** (Opus) [P3 concurrent] · **Reviewer** (Opus) after Searcher returns | P3: dispatched in same message |
-| 3 — Multi-dim analysis | — | **Analyst** (Opus) produces 6-dim brief | P4-skippable: ambiguity < 0.4 AND complexity != high |
+| 1+2 — Triage + Context | Searcher (Sonnet) [P3 concurrent] | **Classifier** (Opus) [P3 concurrent] | P3: dispatched in same message; no coverage Reviewer (D4) |
+| 3 — Multi-dim analysis | — | **Analyst** (Opus) produces 6-dim brief | P4-skippable: ambiguity < 0.6 AND complexity != high |
 | 4 — Smart questions | — | — | `AskUserQuestion` only (exempt) · floor: 2 always |
 | 5+6 — Synthesis + Approaches | Writer ×2 (Sonnet) [P3 concurrent] | **Reviewer** (Opus) batched over both drafts [P2] | P3: dispatched together · Step 6 is P4-skippable |
 | 7 — Design sections | Writer ×5 (Sonnet) [P1 parallel] | **Reviewer** (Opus) batched over all 5 [P2] | One combined user gate after batch review |
 | 8 — Spec output | Writer (Sonnet) | **Reviewer** (Opus) final spec sanity check | Sequential — kept intentional |
-| 9 — Hand off | — | — | `Skill` tool invocation (exempt) |
+| 9 — Hand off | — | — | Skill tool invocation — trivial inline per §12.1 (one tool call, no generation, no review) |
 
 Substantive steps = 1, 2, 3, 5, 6, 7, 8. Each appears in the usage summary.
 
@@ -97,18 +97,18 @@ Triage — types: [<types>] · flow: <profile> · ambiguity: <score>
 
 #### Step 2 — Context Exploration
 
-Agents — `Searcher` (Sonnet) ⇒ **Reviewer** (Opus).
+Agents — `Searcher` (Sonnet).
 
 1. Dispatch `Searcher — mapping context relevant to <idea>` (concurrent with Classifier above). Find existing code, patterns, similar features. Do not ask the user what you can find in the code.
-2. Once both the Classifier and Searcher have returned, dispatch `**Reviewer** — verifying context coverage` (thinking-tier). Confirm the Searcher hit the relevant subsystems; if gaps remain, redispatch the Searcher with the missing scope before moving on.
+2. Trust the Searcher output and advance. No coverage Reviewer is dispatched — downstream Writers will flag `MISSING CONTEXT: <subsystem>` if anything was missed.
 
-**Race-case:** If the Searcher returns thin context before the Classifier finishes, allow the Classifier to complete; the Reviewer at this step redispatches the Searcher with a better-scoped query informed by the triage output. Do not re-run both — only the incomplete one.
+**Fallback:** If a downstream Writer flags `MISSING CONTEXT: <subsystem>`, the orchestrator redispatches the Searcher with the gap before continuing. This trades a small bad-case path penalty for a large good-case path win.
 
 ### Step 3 — Multi-Dimensional Analysis (P4-skippable)
 
 Agents — **Analyst** (Opus, thinking-tier).
 
-**P4 gate:** If `triage.ambiguity < 0.4 AND triage.complexity != high`, skip this step entirely — jump to Step 4. Nothing ambiguous to analyze; the 6-dimension brief adds no value. Border rounding rule: **round up** — if ambiguity is 0.39, treat as 0.4 and run this step. Favor running optional steps when on the fence.
+**P4 gate:** If `triage.ambiguity < 0.6 AND triage.complexity != high`, skip this step entirely — jump to Step 4. Nothing ambiguous to analyze; the 6-dimension brief adds no value. Border rounding rule: **round up** — if ambiguity is 0.59, treat as 0.6 and run this step. Favor running optional steps when on the fence.
 
 **If `--thorough` / `depth=max`:** always run this step regardless of triage scores.
 
@@ -129,7 +129,7 @@ Use the `AskUserQuestion` tool. Never plain text questions. Ask about unknowns f
 
 **Hard floor: every spec run asks at least 2 questions**, regardless of how confident the triage was. The two minimum questions give the user a structural place to redirect before any decomposition runs. This floor is non-negotiable — P4's bounce-to-scope path (below) is the ONLY way to skip Step 4, and that path exits the spec phase entirely. Never skip or reduce below 2 inside the spec phase.
 
-**P4 bounce gate:** If `triage.ambiguity < 0.2 AND triage.complexity == low`, do NOT run Step 4 — bounce directly to `/hyperflow:scope`. Print:
+**P4 bounce gate:** If `triage.ambiguity < 0.4 AND triage.complexity == low`, do NOT run Step 4 — bounce directly to `/hyperflow:scope`. Print:
 
 ```
 That's clear enough to skip the design phase. Auto-chaining to /hyperflow:scope...
@@ -181,7 +181,7 @@ Example structure (DON'T omit the recommendation marker):
 
 #### Step 6 — Propose 2–3 Approaches with Trade-offs (P4-skippable)
 
-**P4 gate:** If `triage.ambiguity < 0.4 AND triage.complexity != high`, skip Step 6 — proceed to Step 7 with a default approach implied by the synthesis. No approach-selection gate fires; the orchestrator annotates the spec with "Approach: derived from synthesis (ambiguity low, single approach)".
+**P4 gate:** If `triage.ambiguity < 0.6 AND triage.complexity != high`, skip Step 6 — proceed to Step 7 with a default approach implied by the synthesis. No approach-selection gate fires; the orchestrator annotates the spec with "Approach: derived from synthesis (ambiguity low, single approach)".
 
 **If `--thorough` / `depth=max`:** always run Step 6 regardless of triage scores.
 
@@ -281,6 +281,7 @@ In both modes, the `scope` skill decomposes the design into worker batches; `dis
 - Pausing for "should I proceed to plan?" when `chain-mode=auto` — that was already answered at Step 0
 - **Sequentializing siblings when they have no inter-dependency** — Steps 1+2, Steps 5+6, and Step 7's 5 sections are independent; dispatching them one-at-a-time when P3/P1 apply is a latency violation
 - **Using per-section reviewers when a single batched reviewer covers the same review-level cap** — collapsing N Opus calls into 1 improves cross-section coherence and reduces latency; only fall back to per-section reviewers when siblings have different level caps
+- **Wrapping a one-Skill-call hand-off (or any §12.1-trivial step) in an Agent dispatch** — trivial steps (≤ 2 tool calls, no generation, no decisions, mechanically verifiable, orchestrator-natural) run inline; adding an Agent wrapper adds latency with no quality benefit
 
 ## Memory Integration
 
@@ -292,7 +293,7 @@ After design approval:
 
 `/hyperflow:spec` is the design phase — thinking, not building. No code lands until the user approves the design section-by-section.
 
-Opus Classifier and Sonnet Searcher run concurrently (P3); Opus Reviewer verifies context coverage. Opus Analyst produces 6-dimension analysis (P4-skippable on low-ambiguity). The orchestrator asks 2–5 `AskUserQuestion` calls (one at a time) to resolve ambiguities.
+Opus Classifier and Sonnet Searcher run concurrently (P3); no coverage Reviewer — downstream Writers surface gaps via `MISSING CONTEXT`. Opus Analyst produces 6-dimension analysis (P4-skippable at ambiguity < 0.6 AND complexity != high). The orchestrator asks 2–5 `AskUserQuestion` calls (one at a time) to resolve ambiguities.
 
 Writer + Reviewer pairs (in parallel batches where independent — P1+P2+P3) draft and validate each design section. All 5 sections are drafted in parallel, reviewed in one batched Opus pass, and presented to the user in one combined approval gate. On final approval, auto-chains into `/hyperflow:scope` → `/hyperflow:dispatch`.
 
@@ -307,9 +308,9 @@ Writer + Reviewer pairs (in parallel batches where independent — P1+P2+P3) dra
 The 10 numbered steps live in [Step 0 — Choose chain mode](#step-0--choose-chain-mode-first-tool-call--structural-gate) through [Step 9 — Hand off to /hyperflow:scope](#step-9--hand-off-to-hyperflowscope) above. Summary:
 
 1. Ask `chain-mode` (auto / manual) — structural gate, fires every direct invocation. Record `--thorough` / `depth=max` flag if present.
-2. Dispatch Opus Classifier + Sonnet Searcher concurrently (P3); Opus Reviewer verifies coverage after both return.
-3. Opus Analyst produces 6-dimension analysis (intent, fit, scope, constraints, risks, alternatives) — P4-skipped if ambiguity < 0.4 AND complexity != high.
-4. If ambiguity < 0.2 AND complexity == low: bounce to scope directly. Otherwise: ask 2-5 `AskUserQuestion` calls, one at a time, with `(Recommended)` markers — floor of 2 always.
+2. Dispatch Opus Classifier + Sonnet Searcher concurrently (P3); trust Searcher output — no coverage Reviewer (downstream Writers surface gaps via `MISSING CONTEXT`).
+3. Opus Analyst produces 6-dimension analysis (intent, fit, scope, constraints, risks, alternatives) — P4-skipped if ambiguity < 0.6 AND complexity != high.
+4. If ambiguity < 0.4 AND complexity == low: bounce to scope directly. Otherwise: ask 2-5 `AskUserQuestion` calls, one at a time, with `(Recommended)` markers — floor of 2 always.
 5. Dispatch Synthesis Writer + Approaches Writer concurrently (P3); one batched Opus Reviewer covers both (P2); user confirms synthesis and picks approach.
 6. Dispatch all 5 section Writers in one parallel message (P1); one batched Opus Reviewer covers all 5 (P2); present all 5 to user in one combined approval gate.
 7. Writer composes spec file at `.hyperflow/specs/<slug>.md` (or inline summary for trivial designs); Reviewer final sanity check.
@@ -334,7 +335,7 @@ Two outputs:
 | `AskUserQuestion` unavailable (headless) | Refuse at Step 0; print error and exit. Spec requires interactive design exploration. |
 | Triage classifier rejects request (off-topic, abuse) | Stop. Print neutral reason. |
 | User picks "revise" on a design section | Loop back to Writer for that section with the user's feedback. Max 3 revise cycles per section before suggesting a different approach. |
-| Searcher returns no relevant context | Reviewer flags; redispatch Searcher with broader query. After 2 retries, surface to user: design proceeds with caveat about thin context. |
+| Searcher returns no relevant context | A downstream Writer flags `MISSING CONTEXT: <subsystem>`; orchestrator redispatches Searcher with the gap. After 2 retries, surface to user: design proceeds with caveat about thin context. |
 | User picks none of the 2-3 proposed approaches | Writer drafts a 4th approach incorporating user's stated objection. |
 | User answers an `AskUserQuestion` with "Other" + free-form text | Treat as a new constraint; integrate into the next section's draft. |
 | Batched Reviewer returns NEEDS_FIX on 4+ of 5 sections | Likely the chosen approach is wrong. Bounce back to Step 6 and re-pick an approach rather than redrafting 4 sections. |
@@ -356,7 +357,6 @@ Two outputs:
 **Classifier** — triaging request  [concurrent with Searcher]
 Searcher — mapping context relevant to rate-limit middleware
 [both complete]
-**Reviewer** — verifying context coverage
 Triage — types: [feature, middleware] · flow: standard · ambiguity: 0.6
 
 **Analyst** — 6-dimension exploration
@@ -412,7 +412,7 @@ Auto-chaining to /hyperflow:scope...
 ```
 /hyperflow:spec add a /health endpoint that returns {status: "ok"}
 
-[triage ambiguity 0.18 · complexity: low → P4 bounce threshold met]
+[triage ambiguity 0.25 · complexity: low → P4 bounce threshold met]
 
 That's clear enough to skip the design phase. Auto-chaining to /hyperflow:scope...
 ```
