@@ -50,6 +50,27 @@ Start from any skill — chain-starters auto-advance forward through the chain (
 Shared doctrine (autonomy rules, model routing, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
 
 if [ -n "$HF_DIR" ]; then
+  # D3: Session-cached context — generate .hyperflow/memory/session-context.md
+  # Skip if .hyperflow/memory/ doesn't exist (scaffold hasn't run yet).
+  # Non-blocking: errors go to stderr only; never fail the session.
+  if [ -d "$HF_DIR/memory" ]; then
+    {
+      for section in "Profile:profile.md" "Architecture:architecture.md" "Conventions:conventions.md"; do
+        label="${section%%:*}"
+        file="${section##*:}"
+        printf '## %s\n' "$label"
+        if [ -f "$HF_DIR/$file" ]; then
+          cat "$HF_DIR/$file"
+        else
+          printf '<!-- .hyperflow/%s not found — run /hyperflow:scaffold to populate -->\n' "$file"
+          printf 'WARNING: session-context: .hyperflow/%s missing\n' "$file" >&2
+        fi
+        printf '\n'
+      done
+    } > "$HF_DIR/memory/session-context.md" 2>>"$HF_DIR/.session-start.log" || \
+      printf 'WARNING: session-context: failed to write session-context.md\n' >&2
+  fi
+
   # Project Snapshot (first 20 lines of each profile file)
   snap=""
   for f in profile.md architecture.md conventions.md; do
