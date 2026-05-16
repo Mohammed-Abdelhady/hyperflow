@@ -58,12 +58,12 @@ Per [security.md](references/security.md), scan for hardcoded secrets, API keys,
 ## Step 4 — Commit
 
 - Worker-introduced fixes from Step 2 → commit automatically with a conventional commit message.
-- Pre-existing user-owned uncommitted changes → use `AskUserQuestion` to confirm inclusion. Per DOCTRINE rule 8, mark a recommended option:
+- Pre-existing user-owned uncommitted changes → use `AskUserQuestion` to confirm inclusion. Per DOCTRINE rule 8, this is a binary action gate — no recommendation marker:
 
   ```
   Include uncommitted user changes in this commit?
-    Include (Recommended) — your local work + the pre-push fixes ship together
-    Exclude               — commit only the worker fixes; user changes stay local
+    Include — your local work + the pre-push fixes ship together
+    Exclude — commit only the worker fixes; user changes stay local
   ```
 
 - **Never** add `Co-Authored-By: Claude` in commit messages — see [git-workflow.md](references/git-workflow.md).
@@ -83,12 +83,12 @@ Read the `push` arg from chain args (propagated from Scope Step 2.6 when `chain-
 
 **`push=never`** — skip the push step entirely. Print `Push: pre-elected (never) — branch held local. Run \`git push\` manually when ready.` Do not call `git push`.
 
-**`push=ask`** (default; also fires when no operational pre-election was made — e.g. deploy invoked standalone) — fire the structural-gate `AskUserQuestion`. Per DOCTRINE rule 8, mark a recommended option — if all gates passed and the diff looks clean, recommend `Push`; if anything was marginal (test flakiness, large diff, etc.), recommend `Hold`.
+**`push=ask`** (default; also fires when no operational pre-election was made — e.g. deploy invoked standalone) — fire the structural-gate `AskUserQuestion`. Per DOCTRINE rule 8, this is a binary action gate — no recommendation marker on either option.
 
 ```
 Push to origin/<branch>?
-  Push (Recommended)  — all gates pass · safe to ship
-  Hold                — keep local; you can push later
+  Push — all gates pass · safe to ship
+  Hold — keep local; you can push later
 ```
 
 - **Never force-push to main or master**, regardless of `push` value. `push=auto` is a plain `git push`; if the remote rejects it (non-fast-forward), surface the error and stop — do NOT add `--force`.
@@ -192,8 +192,8 @@ Gate D — Tests
 **Reviewer** — security sweep on staged + recent changes
 
 ? Push to origin/main?
-   Push (Recommended) — all gates pass · safe to ship
-   Hold               — keep local; you can push later
+   Push — all gates pass · safe to ship
+   Hold — keep local; you can push later
 
 [user picks Push]
 
