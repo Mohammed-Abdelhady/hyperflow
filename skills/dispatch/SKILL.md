@@ -17,9 +17,9 @@ Workhorse phase. Picks up a task file from `/hyperflow:scope` and runs it throug
 
 This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **Layer 6 (Project Memory)**, **Layer 8 (Git Workflow)**, and **Layer 9 (Security)** from the doctrine. Multi-level review (L1–L5) is applied per the triage's flow profile.
 
-## Per-Step Agent Map (DOCTRINE rule 12)
+## Per-Step Agent Map (DOCTRINE rule 12 — §12.1 inline-allowed for trivial steps)
 
-Every substantive step dispatches at least one Agent.
+Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool calls, no content generation, no decision-making, mechanically verifiable) MAY be performed inline by the orchestrator per §12.1.
 
 | Step | Worker tier | Thinking tier | Notes |
 |---|---|---|---|
@@ -27,11 +27,11 @@ Every substantive step dispatches at least one Agent.
 | 1 — Load task | — | — | File read only (exempt) |
 | 2 — Per batch | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Opus) batched per batch (or per sub-task if mixed level caps) | Both tiers · one Reviewer per batch |
 | 2b — Quality gates | Worker (Sonnet) runs lint/typecheck/tests | **Reviewer** (Opus) judges gate output | Both tiers |
-| 3 — Final integration | — | **Reviewer** (Opus) L1–L<n> over full diff | Mandatory |
-| 4 — Wrap up | Writer (Sonnet) deletes task, appends memory, auto-commits | **Reviewer** (Opus) sanity-checks the commit + memory entries | Both tiers |
-| 5 — End of chain | — | — | Two `AskUserQuestion` gates: audit? deploy? (exempt — gates only) |
+| 3 — Final integration | — | **Reviewer** (Opus) L1–L<n> over full diff | Conditional — see D7 skip condition below |
+| 4 — Wrap up | Writer (Sonnet) — optional inline per §12.1 | — | Trivial-eligible: delete task file + memory append + chore commit is mechanical. Writer dispatch required only if memory prose generation is non-trivial. |
+| 5 — End of chain | — | — | ONE `AskUserQuestion` with both audit + deploy questions (exempt — gates only) |
 
-Iron rule — `thinking agents ≥ batches + 2` (one batched Reviewer per batch + final integration + wrap-up). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
+Iron rule — `thinking agents ≥ batches + 1` (one batched Reviewer per batch + final integration when not skipped). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
 
 ## Review Levels (scale by flow profile)
 
@@ -40,13 +40,15 @@ Every batch reviewer and the final integration reviewer uses the level set below
 | Profile | Levels | Workers | Reviewers |
 |---|---|---|---|
 | `fast` | L1 | 1 | inline self-review only |
-| `standard` | L1–L2 | 1–2 | 1 per-batch reviewer |
+| `standard` | **L1–L2 default** | 1–2 | 1 per-batch reviewer |
 | `deep` | L1–L5 | 3+ | per-batch + final integration |
 | `research` | L1–L2 + synthesis | 3+ searchers | inline synthesis |
 | `creative` | L1–L3 + UX | 1–2 | 1 reviewer |
 | `scientific` | L1–L5 + TDD | 2–3 | per-batch + final |
 
 L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. See [review-levels.md](references/review-levels.md) for the full checklist.
+
+**Default cap is L1-L2.** Triage may flag `security: true` or `integration_risk: true` in its output; when either is set, the cap elevates to L1-L3 for both per-batch and final integration reviewers. Workers do NOT request elevation — only the upstream triage classification can elevate. See `reviewer-prompt-batched.md` — workers must honor the cap passed to them (cap enforcement lives on the reviewer-prompt side).
 
 ## Approval Gates
 
@@ -64,7 +66,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 - **`chain-mode=<auto|manual>`** — passed in by `/hyperflow:scope`. Controls whether to pause for confirmation after the final integration review. If absent, assume `auto`.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
-- **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch. Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on.
+- **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch. Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on. When `--thorough` is passed, BOTH D5 (wrap-up Reviewer drop) and D7 (integration review skip) are disabled — the full pre-round-2 ceremony runs. D2 combined gate stays (no quality tradeoff), D6 default L1-L2 stays (cap can still be elevated by triage flags).
 
 ## Flow
 
@@ -108,49 +110,61 @@ Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope
 
 ### Step 3 — Final Integration Review
 
-Mandatory and **separate from batch reviews**. Dispatch a thinking-tier reviewer with the full set of changed files. Print `**Reviewer** — final integration review (L1–L<n>)` using the same level cap as the batch reviewers (per flow profile). Verdict required — `PASS` / `NEEDS_FIX` / `SECURITY_VIOLATION`.
+**Skip condition (D7):** if ALL of the following hold, skip the final integration review and print `Final integration review skipped — all batches PASSed first try`:
+- Every per-batch Reviewer returned PASS on first try (no NEEDS_FIX retries)
+- No escalations fired (no `ESCALATE:` markers during Step 2)
+- No security flags raised (no triage `security: true` AND no Reviewer security warnings)
+
+If ANY of these conditions fails, the final integration review runs as described below.
+
+> **Risk note:** the skip is the riskiest D-decision in round 2 — multi-batch cross-interaction bugs could slip. The guard conditions are deliberately strict (first-try PASS + no escalations + no security flags) to keep risk low. Pass `--thorough` to disable the skip and always run the integration review.
+
+When not skipped: **separate from batch reviews**. Dispatch a thinking-tier reviewer with the full set of changed files. Print `**Reviewer** — final integration review (L1–L<n>)` using the same level cap as the batch reviewers (per flow profile). Verdict required — `PASS` / `NEEDS_FIX` / `SECURITY_VIOLATION`.
 
 ### Step 4 — Wrap Up
 
-Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task file + memory append + chore commit. The per-batch reviewers and final integration review (when not skipped per D7) already validated the substantive changes.
 
-1. Dispatch `Writer — finalizing dispatch artifacts` to:
-   - Delete the completed task file from `.hyperflow/tasks/`.
-   - Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
-   - Commit the memory + task-file-deletion as a `chore(memory):` commit (this is a *separate* commit from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
-2. Dispatch `**Reviewer** — verifying wrap-up` to confirm: memory entries are non-duplicate, commit messages match the changes, no half-written artifacts remain in `.hyperflow/`, per-sub-task commit cadence was respected (one commit per approved sub-task).
-3. Print the usage summary per [output-style.md](references/output-style.md).
+**Nominal path (inline orchestrator):** perform the following directly without an Agent dispatch wrapper:
+1. Delete the completed task file from `.hyperflow/tasks/`.
+2. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
+3. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
+4. Print the usage summary per [output-style.md](references/output-style.md).
+
+**When the Writer dispatch IS required:** if memory append requires non-trivial prose generation (e.g., synthesizing learnings from a multi-batch run with cross-cutting patterns), dispatch `Writer — finalizing dispatch artifacts` for the memory write. At that point the step is no longer §12.1-trivial and the Writer Agent handles it. The chore commit still follows immediately; no Reviewer is dispatched for wrap-up.
+
+> **No wrap-up Reviewer (D5):** the Reviewer that previously sanity-checked the chore commit and memory entries is dropped. Wrap-up is mechanically verifiable — `git status` clean, task file absent, memory file present. The orchestrator's direct observation is sufficient.
 
 ### Step 5 — End of Auto-Chain · Audit + Deploy gates
 
-Dispatch is the endpoint of the auto-chain. Two **separate** `AskUserQuestion` gates fire here (DOCTRINE rule 8 — structural gates always fire, never silently default):
+Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default.
 
-**Gate 1 — Run `/hyperflow:audit`?**
+> **DOCTRINE rule 8 preserved:** both questions still fire; they just batch into one round-trip instead of two. Combined gate cuts human-in-the-loop latency by ~half at end-of-chain.
 
 ```
-?  Run /hyperflow:audit on the cumulative diff?
-   Yes (Recommended)   — outside-eye L3 review, independent of per-batch reviewers
-   No                  — skip; per-batch L1–L<n> reviews were enough
+?  End-of-chain gates
+
+   [1] Run /hyperflow:audit on the cumulative diff?
+       Yes (Recommended)   — outside-eye L3 review, independent of per-batch reviewers
+       No                  — skip; per-batch L1–L<n> reviews were enough
+
+   [2] Run /hyperflow:deploy now? (lint + typecheck + build + tests + security sweep, then asks before push)
+       Yes (Recommended)   — gates pass · ready to ship
+       No                  — keep commits local · push manually later
 ```
 
-Recommended option scales with the triage's flow profile:
+**Process answers in order:**
+
+First, process the audit answer: recommended option scales with the triage's flow profile:
 - `fast` / `standard` profile → `No (Recommended)` — per-batch L1–L2 reviewers already covered it
 - `deep` / `scientific` profile → `Yes (Recommended)` — L3 outside review is worth it on cross-cutting changes
 - `creative` → `Yes (Recommended)` if the change touches user-visible surfaces
 
-On `Yes` → invoke `Skill` with `skill: audit` and `args: "level=3"` (or `level=5` for scientific). Wait for it to finish. Then proceed to Gate 2.
+On audit `Yes` → invoke `Skill` with `skill: audit` and `args: "level=3"` (or `level=5` for scientific). Wait for it to finish. Then process the deploy answer.
 
-**Gate 2 — Run `/hyperflow:deploy`?**
+Then, process the deploy answer. Option labels MUST be one short clause each (≤ 12 words) — never paragraphs of reasoning. Per DOCTRINE rule 8, the orchestrator picks the recommendation; it does not justify the recommendation in the label.
 
-```
-?  Run /hyperflow:deploy now? (lint + typecheck + build + tests + security sweep, then asks before push)
-   Yes (Recommended)   — gates pass · ready to ship
-   No                  — keep commits local · push manually later
-```
-
-Option labels MUST be one short clause each (≤ 12 words) — never paragraphs of reasoning. Per DOCTRINE rule 8, the orchestrator picks the recommendation; it does not justify the recommendation in the label.
-
-**Recommendation logic — clarified to avoid false negatives:**
+**Deploy recommendation logic — clarified to avoid false negatives:**
 
 The default is **`Yes (Recommended)`**. The recommendation flips to `No (Recommended)` only when one of these *concrete* signals is present:
 
@@ -172,7 +186,7 @@ The following are **NOT** "marginal" signals and MUST NOT flip the recommendatio
 
 The orchestrator is not the user's risk advisor. The user already saw every reviewer verdict, every gate result, and the audit findings in scrollback. Inventing risk narratives in the recommendation label ("eyeballing the diff before push is prudent") is paternalism, not guidance.
 
-On `Yes` → invoke `Skill` with `skill: deploy`. Deploy has its own push-confirmation gate at its Step 6.
+On deploy `Yes` → invoke `Skill` with `skill: deploy`. Deploy has its own push-confirmation gate at its Step 6.
 
 On `No` to both gates → stop cleanly. Print one line:
 
@@ -199,9 +213,9 @@ Writer — generating API documentation
 
 - Workers never review, never coordinate, never ask the user questions.
 - Every batch produces **one** thinking-tier Reviewer dispatch — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case.
-- Plus **one** thinking-tier final integration review at the end (Step 3).
-- Plus **one** thinking-tier wrap-up reviewer at Step 4 (DOCTRINE rule 12).
-- Therefore — `thinking agents in usage summary >= batches + 2`. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
+- Plus **one** thinking-tier final integration review at the end (Step 3) **when not skipped per D7**.
+- **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — delete task file + memory append + chore commit is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
+- Therefore — `thinking agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `thinking agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
 
 ## Doctrine
@@ -212,9 +226,9 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). This skill is the execute p
 
 `/hyperflow:dispatch` is the workhorse phase — it reads a task file from `/hyperflow:scope` and executes it through the orchestrator pattern.
 
-Parallel Sonnet workers dispatched in a single message, per-batch Opus reviewers that send work back with `NEEDS_FIX`, a separate final integration review, per-sub-task commits, and (at the end of the auto-chain) two `AskUserQuestion` gates asking whether to run `/hyperflow:audit` and `/hyperflow:deploy`.
+Parallel Sonnet workers dispatched in a single message, per-batch Opus reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with both audit and deploy questions.
 
-Doctrine floor: thinking agents ≥ batches + 2 (per-batch reviewer + final integration + wrap-up reviewer).
+Doctrine floor: thinking agents ≥ batches + 1 (per-batch reviewer + final integration when not skipped per D7; wrap-up Reviewer dropped per D5 / §12.1).
 
 ## Prerequisites
 
@@ -231,9 +245,9 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
 1. Ask `chain-mode` (auto / manual) if invoked directly — structural gate.
 2. Load task file from `.hyperflow/tasks/`.
 3. Per batch: dispatch all sub-tasks in a single parallel `Agent` call; when all workers return, fire **one** batched Opus Reviewer (P2) covering all sub-tasks — unless mixed level caps or `--thorough` (fall back to per-sub-task). Parse per-sub-task verdicts: on PASS commit immediately and update the task file's Status block; on NEEDS_FIX re-dispatch only the failing sub-task's Worker; on SECURITY_VIOLATION halt immediately. After batch run Layer 5 gates.
-4. Final integration review — separate Opus reviewer over the full diff.
-5. Wrap-up — Writer deletes task file + appends memory + makes `chore(memory):` commit; Reviewer sanity-checks.
-6. Two `AskUserQuestion` gates: run `/hyperflow:audit`? then run `/hyperflow:deploy`? — both default to recommended option per flow profile + gate state.
+4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise, separate Opus reviewer over the full diff.
+5. Wrap-up (§12.1 inline) — orchestrator deletes task file + appends memory + makes `chore(memory):` commit. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
+6. ONE combined `AskUserQuestion` gate with both audit and deploy questions — process answers in order.
 
 ## Output
 
@@ -241,11 +255,13 @@ Per-batch and per-sub-task agent labels print as they fire (`Implementer — cre
 
 ```
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.7)     5 agents   67.4k tokens  (3 batch reviewers + 1 final + 1 wrap-up)
+Thinking (Opus 4.7)     4 agents   52.3k tokens  (3 batch reviewers + 1 final)
 Worker   (Sonnet 4.6)   7 agents  154.1k tokens  (5 implementers + 1 writer + 1 searcher)
-Total                  12 agents  221.5k tokens
+Total                  11 agents  206.4k tokens
 ─────────────────────────────────────────
 ```
+
+(Wrap-up Reviewer no longer appears in the Thinking row per D5. If the integration review skipped per D7, the Thinking count equals the batch count exactly.)
 
 Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 
@@ -259,13 +275,13 @@ Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 | Reviewer returns `SECURITY_VIOLATION` | **Halt the chain immediately.** Print finding; do not commit, do not auto-continue. User decides remediation. |
 | Layer 5 gate failure (lint/typecheck/test) | Worker fix + re-run. Max 3 gate cycles before escalating. |
 | Per-sub-task commit fails (hook rejects, conflict) | Stop; surface the hook error. Do NOT use `--no-verify`. Do NOT amend per-sub-task commits. |
-| Wrap-up reviewer flags duplicate memory entries | Writer deduplicates; reviewer re-checks before final commit. |
+| Wrap-up memory append has duplicate entries (detected post-commit) | `git revert HEAD` reverts the chore(memory) commit; orchestrator rewrites and recommits. No Reviewer to catch this inline — `git log` and `git revert` are the recovery path. |
 | `AskUserQuestion` unavailable for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
-| Thinking-agent count < batches + 2 at end | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
+| Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
 
 ## Examples
 
-### Single-batch task (P2 batched review)
+### Single-batch task — D7 skip + §12.1 inline + D2 combined gate
 
 ```
 /hyperflow:dispatch add-version-command
@@ -285,25 +301,27 @@ GLOBAL VERDICT: APPROVED
 [2 per-sub-task commits]
 
 Layer 5 gates: lint pass · typecheck pass · tests pass
-**Reviewer** — final integration review (L1-L2)
-[PASS]
 
-Writer — finalizing dispatch artifacts (delete task, append memory, chore commit)
-**Reviewer** — verifying wrap-up
+Final integration review skipped — all batches PASSed first try
+[D7 skip conditions met: 1/1 batches first-try PASS · no escalations · no security flags]
+
+[Wrap-up inline — §12.1: delete task file · append memory · chore(memory): commit]
 
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.7)     3 agents   42.0k tokens  (1 batch reviewer + 1 final + 1 wrap-up)
-Worker   (Sonnet 4.6)   3 agents   78.0k tokens
-Total                   6 agents  120.0k tokens
+Thinking (Opus 4.7)     1 agent    14.2k tokens  (1 batch reviewer)
+Worker   (Sonnet 4.6)   2 agents   38.0k tokens  (1 implementer + 1 writer)
+Total                   3 agents   52.2k tokens
 ─────────────────────────────────────────
 
-? Run /hyperflow:audit on the cumulative diff?
-   No (Recommended) — per-batch L1-L2 reviewers already covered it (fast profile)
-   Yes              — outside-eye L3 review
+? End-of-chain gates
 
-? Run /hyperflow:deploy now?
-   Yes (Recommended) — all gates green, ready to ship
-   No                — keep local; push manually later
+  [1] Run /hyperflow:audit on the cumulative diff?
+      No (Recommended) — per-batch L1-L2 reviewers already covered it (standard profile)
+      Yes              — outside-eye L3 review
+
+  [2] Run /hyperflow:deploy now?
+      Yes (Recommended) — all gates green, ready to ship
+      No               — keep local; push manually later
 ```
 
 ### Multi-batch with learning injection (P2 batched review)
@@ -348,12 +366,14 @@ Batch 3 — tests (4 parallel, all L1-L2)
 
 Layer 5 gates
 **Reviewer** — final integration review (L1-L3)
-Wrap-up
+[D7 skip conditions NOT met: Batch 2 had a NEEDS_FIX retry — integration review runs]
+
+[Wrap-up inline — §12.1: delete task file · synthesize multi-batch learnings via Writer · chore(memory): commit]
 
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.7)     5 agents   72.1k tokens  (3 batch reviewers + 1 final + 1 wrap-up)
-Worker   (Sonnet 4.6)  10 agents  202.0k tokens
-Total                  15 agents  274.1k tokens
+Thinking (Opus 4.7)     4 agents   58.8k tokens  (3 batch reviewers + 1 final)
+Worker   (Sonnet 4.6)  11 agents  210.0k tokens  (includes re-dispatch + wrap-up Writer)
+Total                  15 agents  268.8k tokens
 ─────────────────────────────────────────
 ```
 
