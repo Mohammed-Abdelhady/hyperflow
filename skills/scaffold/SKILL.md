@@ -45,14 +45,29 @@ Create `.hyperflow/memory/` if absent:
 
 ```
 .hyperflow/memory/
+├── doctrine.md     ← copied from skills/hyperflow/DOCTRINE.md
 ├── index.md
-├── learnings.md
+├── learnings.md    ← empty stub (populated by /hyperflow:dispatch wrap-up)
 ├── decisions.md
 ├── pitfalls.md
 ├── patterns.md
 ├── conventions.md
 └── archive/.gitkeep
 ```
+
+**doctrine.md generation (idempotent):**
+- Source: `skills/hyperflow/DOCTRINE.md` (canonical orchestration rules)
+- If `.hyperflow/memory/doctrine.md` is absent — copy it.
+- If it already exists — compare modification timestamps (or SHA256) against the source. If the source is newer, re-copy. If up-to-date, skip and print `doctrine.md — checksum match`.
+- This enables Pattern P5 (lean worker prompts): workers `Read` doctrine on demand instead of receiving it inlined in every prompt.
+
+**learnings.md (idempotent):**
+- If absent — create as an empty stub with a single heading `# Learnings` and the line `<!-- populated by /hyperflow:dispatch wrap-up -->`.
+- If it already exists with content — do NOT overwrite. Accumulated learnings from prior runs must be preserved across refreshes.
+
+**Other stubs** — if any of `index.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md` are absent, create them as an empty stub: one H1 matching the filename (title-cased) and the line `<!-- to be populated by future runs -->`.
+
+**Lean prompt note:** scaffold has now populated the memory skeleton. Run `/hyperflow:dispatch` and workers will use `skills/hyperflow/worker-prompt-lean.md` by default; pass `--thorough` to fall back to the full inlined template.
 
 **Migration:** If `~/.claude/hyperflow-memory.md` exists, migrate entries matching the current project path into the appropriate memory files. Tag migrated entries `[migrated]`.
 
@@ -74,10 +89,14 @@ Print what was created, skipped, and migrated (elegant style, no icons):
 Hyperflow init complete
   Created   .hyperflow/{profile,architecture,conventions,dependencies,testing,git-workflow}.md
   Created   .hyperflow/.checksums
+  Created   .hyperflow/memory/doctrine.md — copied from skills/hyperflow/DOCTRINE.md
   Created   .hyperflow/memory/{index,learnings,decisions,pitfalls,patterns,conventions}.md
   Skipped   .gitignore entry — already present
   Migrated  3 entries from ~/.claude/hyperflow-memory.md
   Shims     AGENTS.md, CLAUDE.md
+
+Memory skeleton populated — workers will use lean prompts (skills/hyperflow/worker-prompt-lean.md) by default.
+Pass --thorough to /hyperflow:dispatch to fall back to the full inlined template.
 ```
 
 ## Hand-off
@@ -104,7 +123,7 @@ Numbered steps are in [Step 1 — Analysis Cache](#step-1--analysis-cache) throu
 
 1. Check for `.hyperflow/` at project root; if absent, dispatch 6 parallel searchers (single message) to produce profile.md, architecture.md, conventions.md, dependencies.md, testing.md, git-workflow.md.
 2. If present, recompute SHA256 checksums and refresh only stale files.
-3. Create `.hyperflow/memory/` skeleton (index + 5 category files + archive/).
+3. Create `.hyperflow/memory/` skeleton: copy `skills/hyperflow/DOCTRINE.md` → `doctrine.md` (idempotent — re-copy only if source is newer); create `learnings.md` empty stub (skip if content exists); create `index.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md` stubs if absent.
 4. Migrate matching entries from legacy `~/.claude/hyperflow-memory.md` if found.
 5. Offer `scripts/setup-detection.sh --tools all` to write CLAUDE.md + AGENTS.md.
 6. Print summary of created / skipped / migrated artifacts.
@@ -112,6 +131,14 @@ Numbered steps are in [Step 1 — Analysis Cache](#step-1--analysis-cache) throu
 ## Output
 
 See the summary block under [Step 4 — Summary](#step-4--summary) above. Format: plain English, em-dash separator, sections for Created / Skipped / Migrated / Shims. No icons.
+
+Step 2 generates the following files under `.hyperflow/memory/`:
+
+| File | Source | Idempotence |
+|---|---|---|
+| `doctrine.md` | Copied from `skills/hyperflow/DOCTRINE.md` | Re-copied if source is newer; skipped if checksum matches |
+| `learnings.md` | Empty stub (`# Learnings` heading) | Never overwritten if content exists — preserves accumulated learnings |
+| `index.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md` | Empty stubs | Created if absent; skipped if present |
 
 ## Error Handling
 
@@ -141,9 +168,12 @@ Searcher — reading git workflow
 Hyperflow init complete
   Created   .hyperflow/{profile,architecture,conventions,dependencies,testing,git-workflow}.md
   Created   .hyperflow/.checksums
+  Created   .hyperflow/memory/doctrine.md — copied from skills/hyperflow/DOCTRINE.md
   Created   .hyperflow/memory/{index,learnings,decisions,pitfalls,patterns,conventions}.md
   Created   .gitignore entry — .hyperflow/
   Shims     CLAUDE.md, AGENTS.md
+
+Memory skeleton populated — workers will use lean prompts by default.
 ```
 
 ### Refresh after dependency bump
