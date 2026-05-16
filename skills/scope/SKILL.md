@@ -129,7 +129,13 @@ Task-file template —
 - Worker: ~N agents, ~Yk tokens
 
 ## Status
-Created: <date>
+Created:        <ISO-8601 timestamp · written by scope>
+Started:        <ISO-8601 timestamp · written by dispatch at first batch>
+Last update:    <ISO-8601 timestamp · written by dispatch after each sub-task>
+Sub-tasks:      <done> / <total>   (e.g. "5 / 14")
+Tokens used:    thinking <Xk> · worker <Yk> · total <Zk>
+Wall-clock:     <Hm Ms> elapsed
+ETA:            <Hm Ms> remaining   (or "computing" before 3 sub-tasks done)
 ```
 
 ### Step 5 — Output

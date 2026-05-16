@@ -1,13 +1,20 @@
 ---
 name: status
-description: Use when the user wants a one-screen view of current hyperflow project state — active tasks, memory entry count, current release version, Layer 0 cache freshness. Read-only; never modifies state.
+description: Use when the user wants a one-screen view of current hyperflow project state — version, profile freshness, memory entry count, and **live progress on every in-flight task** (sub-tasks done vs pending, tokens used, wall-clock, ETA). Read-only; never modifies state. Invoked manually via /hyperflow:status.
 ---
 
 # Status
 
-Read-only snapshot of the current hyperflow project. Standalone — does not auto-chain and is never invoked by other skills. Invoked manually via `/hyperflow:status`.
+Read-only snapshot of the current hyperflow project, with live progress on every active task file. Standalone — does not auto-chain and is never invoked by other skills. Invoked manually via `/hyperflow:status`.
+
+The skill has two sections:
+
+1. **Static snapshot** — version, profile freshness, memory count
+2. **In-flight work** — per-task live progress (sub-tasks done/total, tokens, wall-clock, ETA)
 
 ## What to read
+
+### Static snapshot
 
 | Field | Source | Fallback |
 |-------|--------|----------|
@@ -15,6 +22,21 @@ Read-only snapshot of the current hyperflow project. Standalone — does not aut
 | Profile | `.hyperflow/profile.md` file modification time | `(missing)` |
 | Memory | Line count of `.hyperflow/memory/index.md` minus header rows | `(none)` |
 | Active tasks | Files matching `.hyperflow/tasks/*.md` | `(none)` |
+
+### In-flight work (per task file)
+
+For every `.hyperflow/tasks/*.md`, parse its `## Status` block (written by `/hyperflow:scope` at creation and updated by `/hyperflow:dispatch` after each sub-task PASS — see scope/SKILL.md Step 4):
+
+| Field | Source | Behaviour |
+|-------|--------|----------|
+| Slug | basename of the task file minus `.md` | always present |
+| Done / total | `Sub-tasks: <done> / <total>` from Status block | falls back to counting `[x]` vs `[x]`+`[ ]` checkboxes if Status missing |
+| Done sub-task names | lines with `[x]` from the `## Batches` section | listed under the bar |
+| Running sub-task | the first `[~]` checkbox (dispatch marks `~` while a sub-task is mid-flight) | `(idle)` if none |
+| Pending sub-task count | count of `[ ]` checkboxes | shown as `N pending` |
+| Tokens used | `Tokens used:` line from Status block | `(not tracked yet)` if Status absent |
+| Wall-clock | `Wall-clock:` line from Status block | `(not started)` if no `Started:` |
+| ETA | `ETA:` line from Status block | `(computing)` if <3 sub-tasks done |
 
 ## How to compute each field
 
@@ -25,81 +47,135 @@ tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]' | head -1)
 released=$(git log -1 --format=%ci "$tag" 2>/dev/null | cut -d' ' -f1)
 ```
 
-If `$tag` is empty → print `(missing)` for the version line.
+If `$tag` is empty → print `(missing)`.
 
 ### Profile freshness
 
 ```bash
 profile=".hyperflow/profile.md"
-```
-
-- If the file does not exist → `(missing)`
-- If `mtime` is within the last 24 hours → `fresh`
-- If `mtime` is older than 24 hours → `stale`
-
-Compute elapsed time in hours using:
-
-```bash
 now=$(date +%s)
 mtime=$(stat -f %m "$profile" 2>/dev/null || stat -c %Y "$profile" 2>/dev/null)
 hours=$(( (now - mtime) / 3600 ))
 ```
 
-Display as `fresh   (analyzed Xh ago)` or `stale   (analyzed Xh ago)`.
+- File absent → `(missing)`
+- `hours <= 24` → `fresh   (analyzed Xh ago)`
+- `hours > 24`  → `stale   (analyzed Xh ago)`
 
 ### Memory entry count
 
-Count non-header, non-blank lines in `.hyperflow/memory/index.md`:
+Count table-body rows in `.hyperflow/memory/index.md` (lines starting with `|`, minus header + separator):
 
 ```bash
-index=".hyperflow/memory/index.md"
-```
-
-If file absent → `(none)`.
-
-Count table-body rows (lines starting with `|` and not the header or separator):
-
-```bash
-count=$(grep -c '^|' "$index" 2>/dev/null)
-# subtract 2 for header + separator rows
+count=$(grep -c '^|' .hyperflow/memory/index.md 2>/dev/null)
 entries=$(( count - 2 ))
 ```
 
-Display as `N entries`. If the file is absent or count resolves to 0 or below → `(none)`.
+If file absent or count ≤ 0 → `(none)`.
 
-### Active tasks
+### Active tasks list
 
 ```bash
 tasks=$(ls .hyperflow/tasks/*.md 2>/dev/null)
 ```
 
-If no files → show `(none)` on the Active tasks line and omit the indented list.
+If no files → show `(none)` and skip the In-flight section entirely.
 
-Otherwise count files and list each basename indented under the header line.
+### Per-task Status parsing
+
+For each `.hyperflow/tasks/<slug>.md`:
+
+```bash
+# Extract Status block fields
+sub_done=$(grep '^Sub-tasks:' "$file" | sed -E 's|.*: *([0-9]+) */ *([0-9]+).*|\1|')
+sub_total=$(grep '^Sub-tasks:' "$file" | sed -E 's|.*: *([0-9]+) */ *([0-9]+).*|\2|')
+tokens=$(grep '^Tokens used:' "$file" | sed 's|^Tokens used: *||')
+wall=$(grep '^Wall-clock:' "$file" | sed 's|^Wall-clock: *||')
+eta=$(grep '^ETA:' "$file" | sed 's|^ETA: *||')
+started=$(grep '^Started:' "$file" | sed 's|^Started: *||')
+```
+
+If the Status block is missing or malformed (old-style task file from before this format), fall back to counting checkboxes directly:
+
+```bash
+done=$(grep -c '^- \[x\]' "$file" 2>/dev/null)
+running=$(grep -c '^- \[~\]' "$file" 2>/dev/null)
+pending=$(grep -c '^- \[ \]' "$file" 2>/dev/null)
+total=$(( done + running + pending ))
+```
+
+### Done sub-task names (for the indented list)
+
+```bash
+grep '^- \[x\]' "$file" | sed -E 's|^- \[x\] *||' | head -5
+```
+
+Show up to the **last 3 completed** + the **currently running** sub-task. If there are more than 3 done, prefix the list with `… (N earlier done)`.
+
+### Running sub-task
+
+The dispatch skill marks the in-flight sub-task with `[~]` while the worker is running. After PASS + commit, dispatch flips `[~]` → `[x]`.
+
+```bash
+running=$(grep '^- \[~\]' "$file" | sed -E 's|^- \[~\] *||' | head -1)
+```
+
+If no `[~]` line exists → the dispatch is either between sub-tasks (idle for milliseconds) or has handed control back. Show `(idle — last update Xm Ys ago)` based on `Last update:` timestamp.
+
+### Progress bar
+
+20-char ASCII bar based on `done / total`:
+
+```
+[████████████░░░░░░░░] 12/20  60%
+```
+
+Use `█` (filled) and `░` (empty). No emoji or color icons.
 
 ## Output format
 
-Print the block below verbatim, substituting computed values. Use exactly this spacing (two spaces of padding inside the label column):
+Print the block below verbatim. If no in-flight tasks, omit the `── In-flight work ──` section.
 
 ```
-── Hyperflow Status ─────────────────────────────
-Version       <tag>   (released <YYYY-MM-DD>)
-Profile       <fresh|stale|(missing)>    (analyzed <N>h ago)
-Memory        <N entries|(none)>
-Active tasks  <count|(none)>
-  - <task-filename.md>
-  - <task-filename.md>
-─────────────────────────────────────────────────
-```
+── Hyperflow Status ─────────────────────────────────────────
+Version       v3.0.0     (released 2026-05-16)
+Profile       fresh      (analyzed 2h ago)
+Memory        12 entries
+Active tasks  2
 
-Omit the indented task list entirely when Active tasks is `(none)`.
+── In-flight work ───────────────────────────────────────────
+Task:         implement-auth
+  Progress    [███████████░░░░░░░░░] 8/14  57%
+  Last done   T7: Reset email worker
+  Running     T8: Login UI (Implementer · 14s elapsed)
+  Pending     6 sub-tasks
+  Tokens      thinking 89.2k · worker 142.0k · total 231.2k
+  Wall-clock  4m 22s elapsed
+  ETA         ~3m 16s remaining   (avg 32s/sub-task · 6 left)
+
+Task:         fix-login-bug
+  Progress    [░░░░░░░░░░░░░░░░░░░░] 0/3   0%
+  Status      not started (created 8m ago, no dispatch run yet)
+─────────────────────────────────────────────────────────────
+```
 
 When Profile is `(missing)`, omit the `(analyzed Xh ago)` parenthetical.
 
-When Version is `(missing)`, print:
+When Version is `(missing)`, print `Version       (missing)`.
+
+When no `.hyperflow/tasks/*.md` files exist, omit the `── In-flight work ──` section entirely; the snapshot block stands alone.
+
+## ETA computation
+
 ```
-Version       (missing)
+elapsed_seconds       = now - started_unix
+avg_per_subtask       = elapsed_seconds / done
+remaining_seconds     = avg_per_subtask * pending
 ```
+
+Format as `Xm Ys` or `Hh Mm` (skip zero leading units). Show `(computing)` when `done < 3` — too few data points for a useful average.
+
+If the task has multiple batches and the next batch is `sequential` per the planner output, multiply remaining by `1.1` to account for inter-batch synchronisation overhead.
 
 ## Failure modes
 
@@ -108,10 +184,12 @@ Every section degrades gracefully:
 - Missing git tags → `Version  (missing)`
 - Missing `.hyperflow/profile.md` → `Profile  (missing)`
 - Missing `.hyperflow/memory/index.md` → `Memory  (none)`
-- No `.hyperflow/tasks/*.md` files → `Active tasks  (none)` with no list
+- No `.hyperflow/tasks/*.md` files → `Active tasks  (none)`, no In-flight section
+- Task file present but Status block malformed/missing → fall back to checkbox count, show `(not tracked yet)` for tokens/ETA
+- `Started:` line absent → `Status  not started`, skip ETA
 
-Never error out. Never modify any file.
+Never error out. Never modify any file. Never dispatch an agent.
 
 ## Doctrine
 
-This skill has no Worker/Reviewer dispatch — it is a pure read. It does not count as a hyperflow run and does not append to memory. Full output style rules in [output-style.md](../hyperflow/output-style.md).
+This skill has no Worker/Reviewer dispatch — it is a pure read. It does not count as a hyperflow run and does not append to memory. Output style follows [output-style.md](../hyperflow/output-style.md) — no decorative icons, em-dash separators, plain status words.

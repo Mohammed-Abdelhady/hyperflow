@@ -90,6 +90,7 @@ Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope
    - If verdict is `NEEDS_FIX` — re-dispatch worker with the fix list. Repeat until `PASS` (max 3 retries before escalating to a thinking-tier worker).
    - If verdict is `SECURITY_VIOLATION` — **halt the chain** immediately and surface the finding to the user (no auto-continue).
    - On `PASS` — **commit this sub-task immediately** per [git-workflow.md](../hyperflow/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files this sub-task touched, write a conventional commit (`feat(<scope>): <title>` derived from the task file), commit. One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits.
+   - **Update the task file's `## Status` block** after the commit lands: tick the sub-task's `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add this dispatch's tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads to render live progress without needing a process-level watcher.
 4. After the full batch — synthesize learnings, check off the batch in the task file, run **Layer 5 quality gates** (lint / typecheck / tests on affected files) per [quality-gates.md](../hyperflow/quality-gates.md). If gates fix anything, those become small additional commits on top (never amend per-sub-task commits). If `chain-mode=manual`, pause and ask before starting the next batch.
 
 ### Step 3 — Final Integration Review
