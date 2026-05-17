@@ -15,7 +15,19 @@ Use this template when dispatching Sonnet workers via the Agent tool.
 [What this file/module does, relevant project conventions, constraints]
 
 ## Project Context
-[Injected from .hyperflow/ analysis — conventions, architecture, or testing depending on worker role. Omit section if no project analysis exists.]
+[Default mode: inline the relevant excerpts from `.hyperflow/profile.md`, `.hyperflow/architecture.md`, `.hyperflow/conventions.md` for this worker's role. Omit section if no project analysis exists.]
+
+[**Under `mode=lean`** (S3 lazy refs + S5 session-context bundle): replace inlined content with a path block. The worker reads only what its task actually needs.
+```
+Project Context (load on demand):
+  - `.hyperflow/memory/session-context.md` — pre-bundled snapshot: profile + architecture + conventions + memory index (written once per session by the session-start hook)
+  - `.hyperflow/profile.md`                — tech stack, language versions, build/test scripts
+  - `.hyperflow/architecture.md`           — module layout, dependency graph, boundaries
+  - `.hyperflow/conventions.md`            — naming, file layout, formatting, project-specific patterns
+  - `.hyperflow/testing.md`                — test framework, where tests live, conventions
+  - `.hyperflow/memory/index.md`           — tag-keyed memory index pointing at hot/warm entries
+```
+Workers in lean mode read these files via the `Read` tool when (and only when) their task actually needs the information. No quality regression — same content, lazy access. Saves ~2k tokens × N parallel workers per batch because the bundle isn't re-injected into every worker prompt.]
 
 ## Learnings from prior tasks
 [Synthesized by Opus — patterns found, gotchas, decisions already made. Omit section if first task.]
