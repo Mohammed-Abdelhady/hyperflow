@@ -21,15 +21,24 @@ Use this template when dispatching Sonnet workers via the Agent tool. **Every se
 - **Create:** [path] — [purpose of the new file]
 
 ## Acceptance criteria
-[How the per-batch Reviewer (and the user) will know this PASSES.]
+[The high-level definition of PASS. Concrete shape-level checks the per-batch Reviewer (and the user) will use.]
 - [Concrete check 1, e.g. "new function exported and importable from src/auth/index.ts"]
-- [Concrete check 2, e.g. "existing tests in src/auth/login.test.ts still pass; no new test required this batch"]
+- [Concrete check 2, e.g. "existing tests in src/auth/login.test.ts still pass"]
 - [Output shape, e.g. "commit message stub: `feat(auth): add loginUser handler with error mapping`"]
 
-## Edge cases to handle
-[List the edge cases this sub-task must address with its expected behavior. Omit only when genuinely none apply.]
-- [Edge case 1]: [expected behavior]
-- [Edge case 2]: [expected behavior]
+## Test cases
+[Concrete input → expected output scenarios the Worker MUST satisfy. The Worker implements against these and (when the task is code) writes the verifying test code as part of the deliverable. The per-batch Reviewer runs / verifies each case to confirm PASS. Test cases beat acceptance criteria alone because they're executable, not narrative.]
+
+[Use this format for each case:]
+
+| # | Name / scenario | Input or setup | Expected output / behavior | Notes |
+|---|---|---|---|---|
+| 1 | `<short name>` | `<input or pre-state>` | `<expected result>` | `<why this case matters>` |
+| 2 | `<short name>` | `<input or pre-state>` | `<expected result>` | `<why this case matters>` |
+
+[For non-code tasks (docs/configs/refactors), test cases become verification commands with expected results, e.g. `grep -c '<pattern>' <file>` → expect 3; `python3 -m json.tool < <file>` → exit 0; `grep -r '<old-API>' src/` → no results.]
+
+[Minimum: 3 test cases covering happy-path + 1 edge case + 1 error/empty case. More when the surface is wide. Omit ONLY when the task is genuinely test-impossible (e.g. a one-line README typo fix) — and in that case explicitly state `Test cases: N/A — <why>` so the Reviewer knows the omission was deliberate.]
 
 ## Related context (orientation, not scope)
 [Pointers the worker should look at IF the brief becomes ambiguous — not files to modify. Includes prior patterns, design docs, related sub-tasks in the same batch.]
@@ -123,18 +132,24 @@ The new dashboard sidebar (T1 owns the layout) needs an avatar primitive that wo
 
 ## Acceptance criteria
 - UserAvatar exported and importable as \`import { UserAvatar } from '@/components'\`
-- Renders initials when name="John Doe" → "JD"; single-word names render first letter only
-- Same userId yields same background color across renders (test asserts color stability)
 - Size prop accepts 'sm' | 'md' | 'lg'; default 'md'
 - data-testid="user-avatar" on the root element (project convention from .hyperflow/conventions.md)
-- All existing tests pass; new test file PASSES
+- All existing tests pass; new test file PASSES (covers all test cases below)
 - Commit message stub: \`feat(components): add UserAvatar with deterministic color fallback\`
 
-## Edge cases to handle
-- name="" or undefined → render "?" character, neutral gray background
-- name with leading/trailing whitespace → trim before initial extraction
-- name with > 2 words ("Mary Jane Smith") → first + last initials only ("MS")
-- userId="" → use neutral gray (don't crash on empty hash input)
+## Test cases
+| # | Name | Input | Expected | Notes |
+|---|---|---|---|---|
+| 1 | happy path two words | \`<UserAvatar name="John Doe" userId="u1" />\` | renders "JD"; consistent background color across renders for u1 | core flow |
+| 2 | single-word name | \`name="Cher"\` | renders "C"; not "CH" or "CC" | docs §2.3 says first letter only when one word |
+| 3 | leading/trailing whitespace | \`name="  Mary Smith  "\` | renders "MS"; whitespace trimmed before initial extraction | input from API may include whitespace |
+| 4 | three-word name | \`name="Mary Jane Smith"\` | renders "MS" (first + last initials) | not "MJS" or "MJ" |
+| 5 | empty name | \`name=""\` | renders "?" with neutral gray bg | API may return empty string |
+| 6 | undefined name | \`name={undefined}\` | renders "?" with neutral gray bg; no crash | TypeScript optional prop |
+| 7 | color stability | render twice for same userId="u1" | identical background color both renders | required for visual consistency |
+| 8 | color distribution | userId="u1" vs userId="u2" | different background colors | hash should distribute across palette |
+| 9 | empty userId | \`userId=""\` | renders with neutral gray bg; no crash on empty hash | edge case of new user before id assigned |
+| 10 | size variants | size="sm" / "md" / "lg" | 24px / 32px / 48px squares respectively | spec §2.3 sizes |
 
 ## Related context (orientation, not scope)
 - src/components/UserChip.tsx:14-22 — existing per-user color logic to mirror; do NOT duplicate
