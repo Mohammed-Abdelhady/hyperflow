@@ -24,15 +24,30 @@ Usage:
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
 import os
 import re
 import sys
 from pathlib import Path
 
 START_MARKER_RE = re.compile(
-    r"<!--\s*hyperflow:doctrine:start(?:\s+version=([^\s>]+))?(?:\s+generated=([^\s>]+))?[^>]*-->",
+    r"<!--\s*hyperflow:doctrine:start"
+    r"(?:\s+version=(?P<version>[^\s>]+))?"
+    r"(?:\s+generated=(?P<generated>[^\s>]+))?"
+    r"(?:\s+body-sha=(?P<body_sha>[0-9a-f]+))?"
+    r"[^>]*-->",
 )
 END_MARKER = "<!-- hyperflow:doctrine:end -->"
+
+
+def _body_hash(template: str) -> str:
+    """Hash the template body (without per-render substitutions).
+
+    Strips the start-marker line entirely from the hashed content so per-render
+    version/timestamp/body-sha values never influence the hash itself.
+    """
+    body = START_MARKER_RE.sub("", template, count=1)
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()[:12]
 
 
 def _read_version(plugin_root: Path) -> str:
@@ -65,32 +80,43 @@ def _read_mode(project_root: Path) -> str:
     return "auto"
 
 
-def _find_existing_block(content: str) -> tuple[int, int, str | None] | None:
-    """Return (start_idx, end_idx_exclusive, embedded_version) or None.
+def _find_existing_block(
+    content: str,
+) -> tuple[int, int, str | None, str | None] | None:
+    """Return (start_idx, end_idx_exclusive, version, body_sha) or None.
 
-    Searches the file content for the doctrine markers. If found, returns the
-    character positions covering the entire block (start marker line through
-    end marker line inclusive) plus the version captured from the start marker.
+    Searches the file content for the doctrine markers. Returns character
+    positions covering the entire block (start marker line through end marker
+    line inclusive), the captured version, and the captured body-sha (if any).
     """
     match = START_MARKER_RE.search(content)
     if not match:
         return None
-    # Expand to start of the marker's line.
     start = content.rfind("\n", 0, match.start()) + 1
     end_marker_idx = content.find(END_MARKER, match.end())
     if end_marker_idx == -1:
         return None
-    # Include the end marker line.
     line_end = content.find("\n", end_marker_idx)
     end = line_end + 1 if line_end != -1 else len(content)
-    return start, end, match.group(1)
+    return start, end, match.group("version"), match.group("body_sha")
 
 
-def _render_block(template: str, version: str, generated_at: str) -> str:
-    """Substitute placeholders in the template."""
-    return template.replace("__HYPERFLOW_VERSION__", version).replace(
+def _render_block(template: str, version: str, generated_at: str, body_sha: str) -> str:
+    """Substitute placeholders + add body-sha to the start marker."""
+    rendered = template.replace("__HYPERFLOW_VERSION__", version).replace(
         "__GENERATED_AT__", generated_at
     )
+    # Add or replace body-sha=<hash> attribute in the start marker.
+    def _patch_marker(m: re.Match) -> str:
+        # Always emit a marker that includes version, generated, and body-sha.
+        v = m.group("version") or version
+        g = m.group("generated") or generated_at
+        return (
+            f"<!-- hyperflow:doctrine:start version={v} generated={g} "
+            f"body-sha={body_sha} source=https://github.com/Mohammed-Abdelhady/hyperflow -->"
+        )
+
+    return START_MARKER_RE.sub(_patch_marker, rendered, count=1)
 
 
 def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
@@ -163,18 +189,27 @@ def main(argv: list[str]) -> int:
         return 0
 
     generated_at = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    new_block = _render_block(template, version, generated_at)
+    body_sha = _body_hash(template)
+    new_block = _render_block(template, version, generated_at, body_sha)
 
-    # Quick freshness check: if an existing block matches the current version,
-    # nothing to do.
+    # Freshness check (S7 — content-hash invalidation):
+    #   1. If the existing block's body-sha matches the new template body, skip
+    #      the write entirely — content is unchanged across this plugin version,
+    #      no need to touch the file even if the version label differs.
+    #   2. Fall back to version-string matching when no body-sha is present in
+    #      the marker (older blocks generated before S7 landed).
     claude_md = project_root / "CLAUDE.md"
     if claude_md.exists():
         try:
             existing = _find_existing_block(
                 claude_md.read_text(encoding="utf-8")
             )
-            if existing and existing[2] == version:
-                return 0  # already current
+            if existing:
+                _, _, existing_version, existing_body_sha = existing
+                if existing_body_sha and existing_body_sha == body_sha:
+                    return 0  # content unchanged → no-op
+                if existing_body_sha is None and existing_version == version:
+                    return 0  # legacy block, version matches → no-op
         except OSError:
             pass
 
