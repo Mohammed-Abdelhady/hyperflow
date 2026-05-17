@@ -112,10 +112,13 @@ Fire ONE `AskUserQuestion` call containing all three questions (the tool support
 
 ```
 Commit cadence?
-  Per-task (Recommended)  — one commit per sub-task; cleanest bisectable history
-  Per-batch               — one commit per batch; tidier branch graph, less granular
-  Single                  — one commit at end of chain; smallest log footprint
-  None                    — leave dirty working tree; you'll commit manually
+  Per-task (Recommended)   — one commit per sub-task; cleanest bisectable history
+  Per-batch                — one commit per batch; tidier branch graph, less granular
+  Per-task (deferred)      — queue per-task commits on hyperflow/staging-<id> during chain;
+                             flush all onto user's branch at end (faster mid-chain; useful
+                             for runs with many sub-tasks where you don't want N hooks firing)
+  Single                   — one commit at end of chain; smallest log footprint
+  None                     — leave dirty working tree; you'll commit manually
 
 Branch behaviour?
   Create feat/<slug> (Recommended on main/master) — new feature branch
@@ -132,7 +135,9 @@ Recommended defaults adapt:
 - Branch: `Create` if currently on `main` or `master`; `Stay` otherwise (already on a feature branch)
 - Push: `Ask at deploy gate` always — bumping to auto-push without explicit user consent violates rule 8
 
-Save the chosen values and propagate via chain args: `commit=<per-task|per-batch|single|none> branch=<new|current> push=<ask|auto|never>`. Dispatch (Step 2) reads commit + branch; deploy (Step 6) reads push.
+Save the chosen values and propagate via chain args: `commit=<per-task|per-batch|per-task-deferred|single|none> branch=<new|current> push=<ask|auto|never>`. Dispatch (Step 2) reads commit + branch; deploy (Step 6) reads push.
+
+When the user picks **Per-task (deferred)**, dispatch routes through `scripts/queue-commit.sh` after each sub-task PASS instead of `git commit` directly. Commits land on a private `hyperflow/staging-<chain-id>` branch with original messages + per-task file scope. At Step 4 wrap-up, dispatch runs `scripts/flush-commits.sh` which fast-forward-merges the staging branch onto the user's working branch — every queued commit lands in order with original SHAs preserved. Same N commits as Per-task immediate, just produced atomically at the end. See [`skills/flush/SKILL.md`](../flush/SKILL.md) for crash-recovery (`/hyperflow:flush` if dispatch was interrupted).
 
 If the user is invoking scope directly without going through spec (no prior `chain-mode=auto` propagation), Step 0 fires the chain-mode question and this step (Step 2.6) fires only if they pick auto.
 
