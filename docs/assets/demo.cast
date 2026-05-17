@@ -7,7 +7,7 @@
 [0.6,"o","d"]
 [0.66,"o","e"]
 [0.92,"o","\r\n"]
-[1.22,"o","\u001b[35mHyperflow v4.12.1\u001b[0m\r\n"]
+[1.22,"o","\u001b[35mHyperflow v4.12.2\u001b[0m\r\n"]
 [1.34,"o","\u001b[90mThinking: \u001b[0m\u001b[35mOpus 4.7\u001b[0m\u001b[90m  ·  Worker: \u001b[0m\u001b[36mSonnet 4.6\u001b[0m\r\n"]
 [1.64,"o","\u001b[90mAnalyzing project — 4 searchers in parallel\u001b[0m\r\n"]
 [2.44,"o","\u001b[32mCached\u001b[0m\u001b[90m — .hyperflow/ ready · no incomplete tasks\u001b[0m\r\n"]
