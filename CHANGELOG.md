@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.12.2] — 2026-05-17
+
+### Changed
+- S3 + S5 worker-side contract for --lean mode
+- S7 body-hash invalidation + revise --lean spec to preserve quality
+
+
 ## [4.12.1] — 2026-05-17
 
 ### Changed
@@ -580,7 +587,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.2...HEAD
+[4.12.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.1...v4.12.2
 [4.12.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.0...v4.12.1
 [4.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.11.0...v4.12.0
 [4.11.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.10.1...v4.11.0
