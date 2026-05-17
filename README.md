@@ -165,7 +165,9 @@ Hyperflow ships **11 specialized skills**. **Auto-routing is on by default** —
 
 ## Quick start
 
-### Claude Code
+> **Supported environment: Claude Code CLI (terminal) and OpenCode CLI.** Hyperflow does NOT run inside Claude Code Desktop (the GUI app) — Desktop does not load terminal-installed plugins. If you see `/hyperflow:spec isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop; open a terminal in the same project and run `claude` there instead. See [Where it runs](#where-it-runs) below.
+
+### Claude Code (terminal)
 
 ```bash
 claude plugin marketplace add Mohammed-Abdelhady/hyperflow
@@ -178,13 +180,28 @@ Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customi
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-### OpenCode
+### OpenCode (terminal)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
 The installer auto-detects your tool, symlinks the skill, and walks you through model and security configuration.
+
+### Where it runs
+
+| Environment | Hyperflow works? | Why |
+|---|---|---|
+| **Claude Code CLI** (terminal `claude` command) | yes (primary target) | Loads the plugin from `~/.claude/plugins/cache/`; slash commands + auto-routing + skills all active |
+| **OpenCode CLI** (terminal `opencode` command) | yes | Same plugin loader convention |
+| **Claude Code Desktop** (Mac/Windows app) | **no — platform limitation** | Desktop does not load terminal-installed plugins. `/hyperflow:*` returns "isn't a recognized command here. Some commands only work in the Claude Code terminal." Auto-routing and intent detection are also inert because the DOCTRINE/skills aren't loaded. Open a terminal in the same project and run `claude` there to use hyperflow |
+| **claude.ai web app** | no | Same reason — no plugin loader; this repo's skills are terminal-CLI artefacts |
+| **IDE extensions** (VS Code, JetBrains) | depends | If the extension shells out to the `claude` CLI under the hood, plugins work; if it talks directly to the API without the CLI, they don't. Check the extension's docs |
+
+If you primarily use Desktop / web and want the hyperflow doctrine to influence your sessions, you have two options:
+
+1. **Switch to the CLI for hyperflow work.** Open Terminal / iTerm in the same project directory and run `claude`. Hyperflow + your project memory at `.hyperflow/memory/` are shared between CLI and any other surface that reads from disk.
+2. **Use `CLAUDE.md` for portable rules.** Hyperflow's doctrine is too rich to fit a `CLAUDE.md`, but you can hand-write the parts you want to apply in Desktop / web into a project-root `CLAUDE.md` — those rules ARE loaded by all surfaces. This is a lossy fallback (no auto-routing, no skill dispatch, no per-step Worker→Reviewer pattern) but useful for the autonomy + commit-cadence + no-AI-attribution rules.
 
 **Invoke a skill:**
 
