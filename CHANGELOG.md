@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.14.0] — 2026-05-17
+
+### Added
+- Thinking Lead splits oversized tasks — pre-dispatch + mid-flight escape hatch
+
+
 ## [4.13.3] — 2026-05-17
 
 ### Changed
@@ -635,7 +641,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.3...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.14.0...HEAD
+[4.14.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.3...v4.14.0
 [4.13.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.2...v4.13.3
 [4.13.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.1...v4.13.2
 [4.13.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.0...v4.13.1
