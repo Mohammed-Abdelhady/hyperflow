@@ -66,6 +66,14 @@ How should I advance through the chain after each phase?
 
 If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
+### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
+
+When the user picks `Auto` at Step 0 AND operational args (`commit=`, `branch=`, `push=`) were NOT already propagated, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision the chain needs. After this batch, the chain runs silently until the end-of-chain audit + deploy gates — user is interrupted exactly twice at startup (chain-mode in Step 0, ops in Step 0.5), never again until done.
+
+Skip when `chain-mode=manual` (per-phase pauses cover ops decisions) OR when operational args are already propagated (re-asking is an invented-gate violation).
+
+The 3-question batch is identical to scope Step 0.5 — see [scope/SKILL.md § Step 0.5](../scope/SKILL.md#step-05--operational-choices-auto-mode-only--structural-gate--fires-immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Spec, scope, dispatch share one canonical definition; whoever fires first (typically spec when it's the chain entry point) owns the batch, the others see the args propagated and skip.
+
 **`--thorough` / `depth=max` flag:** When passed, patterns P1, P2, and P4 are disabled and the original sequential flow runs (one Writer at a time, one Reviewer per section, all steps always run). P3 and P5 stay on — they carry no quality tradeoff. Record the flag at Step 0 and propagate it; every step below that references P1, P2, or P4 should check for this flag before applying the pattern.
 
 ### Steps 1+2 — Triage and Context Exploration (P3 — concurrent dispatch)
