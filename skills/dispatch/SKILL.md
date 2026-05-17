@@ -219,12 +219,13 @@ When `chain-mode=auto`, scope batches three operational pre-elections at its Ste
 
 | Arg | Values | Default | Honored at |
 |---|---|---|---|
-| `commit` | `per-task` / `per-batch` / `single` / `none` | `per-task` | Step 2 (commit cadence after each PASS) |
+| `commit` | `per-task` / `per-batch` / `per-task-deferred` / `single` / `none` | `per-task` | Step 2 (commit cadence after each PASS) |
 | `branch` | `new` / `current` | `new` if currently on `main` or `master`, else `current` | Step 2 (before first commit) |
 | `push` | `ask` / `auto` / `never` | `ask` | Forwarded to Deploy Step 6 via chain args |
 
-**`commit=per-task`** (default) — commit after every sub-task PASS as the existing flow.
+**`commit=per-task`** (default) — commit after every sub-task PASS as the existing flow. Commits land directly on the user's working branch as they happen.
 **`commit=per-batch`** — accumulate sub-task changes; commit once per batch after all sub-tasks PASS, with a message rolling up the batch (`feat(<scope>): batch <n> — <one-line summary>`). One per-batch commit per batch.
+**`commit=per-task-deferred`** — produce N per-task commits like `per-task`, but **queue them on a private `hyperflow/staging-<chain-id>` branch during the chain** and flush all onto the user's working branch at Step 4 wrap-up. Useful for runs with many sub-tasks (10+) where per-task pre-commit hooks would slow the mid-chain loop. After each sub-task PASS, call `bash $PLUGIN_ROOT/scripts/queue-commit.sh $PROJECT_ROOT $CHAIN_ID "<msg>" <file>...` instead of `git add` + `git commit`. The script auto-creates the staging branch + manifest at first call, commits with `--no-verify` (hooks would run on partial intermediate state), and appends to `.hyperflow/commits-queue/manifest.json`. At Step 4 wrap-up, dispatch runs `bash $PLUGIN_ROOT/scripts/flush-commits.sh $PROJECT_ROOT` which fast-forward-merges the staging branch onto the user's branch (every queued commit lands in order, original SHAs preserved, original messages preserved). If the user's branch diverged (manual commits mid-chain on same branch), flush surfaces the error + recovery suggestions (`git rebase` / `git cherry-pick`); staging branch + manifest preserved for manual handling. Crash recovery: `/hyperflow:flush` re-runs the same script against the persisted manifest.
 **`commit=single`** — accumulate all changes; commit once at Step 4 wrap-up with a message rolling up the whole chain (`feat(<scope>): <feature name> · <n> sub-tasks`). One commit total.
 **`commit=none`** — never commit during dispatch; leave working tree dirty. Skip the per-sub-task commit step entirely. Print at Step 4: `Working tree intentionally left dirty (commit=none); review and commit manually before deploy.`
 

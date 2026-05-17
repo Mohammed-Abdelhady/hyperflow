@@ -125,7 +125,7 @@ You: /hyperflow:spec "Build user auth with login page, middleware, and password 
 
 ## Skills
 
-Hyperflow ships **12 specialized skills**. **Auto-routing is on by default** — say "audit the diff", "debug this test", "brainstorm a notification system", or any chain-starter verb, and the orchestrator routes through the right skill automatically. No `/hyperflow:*` prefix needed. Disable with `/hyperflow:sticky off`, or upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`. Outside the terminal CLI (Desktop, claude.ai web, IDE extensions that don't shell out to the `claude` binary) the slash-command plugin doesn't load — run `/hyperflow:bridge generate` from the CLI once to embed the portable doctrine subset into your project's `CLAUDE.md` so the rules apply everywhere `CLAUDE.md` is loaded.
+Hyperflow ships **13 specialized skills**. **Auto-routing is on by default** — say "audit the diff", "debug this test", "brainstorm a notification system", or any chain-starter verb, and the orchestrator routes through the right skill automatically. No `/hyperflow:*` prefix needed. Disable with `/hyperflow:sticky off`, or upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`. Outside the terminal CLI (Desktop, claude.ai web, IDE extensions that don't shell out to the `claude` binary) the slash-command plugin doesn't load — run `/hyperflow:bridge generate` from the CLI once to embed the portable doctrine subset into your project's `CLAUDE.md` so the rules apply everywhere `CLAUDE.md` is loaded.
 
 ### Chain-starting skills
 
@@ -147,6 +147,7 @@ Hyperflow ships **12 specialized skills**. **Auto-routing is on by default** —
 | **Status** | `/hyperflow:status` | Read-only one-screen view: version · profile freshness · memory count + live per-task progress (sub-tasks done/pending, tokens, wall-clock, ETA) |
 | **Background** | `/hyperflow:background` | List · show · cancel · prune background agents fired by other skills (quality gates · CI watcher · scaffold refresh · cache compact). Read-only by default; see [`skills/hyperflow/background-agents.md`](skills/hyperflow/background-agents.md) for the full doctrine |
 | **Sticky** | `/hyperflow:sticky` | `on` / `auto` / `off` / `status` — per-project auto-routing mode. **Default is `auto`** — messages containing chain-starter verbs (`audit`, `debug`, `fix`, `brainstorm`, `scope`, `deploy`, `review`, …) auto-route to the right skill without `/hyperflow:*` prefix. `on` expands to full sticky (every task-shaped message routes). `off` disables all auto-routing |
+| **Flush** | `/hyperflow:flush` | Manually flush a deferred-commit queue from a prior or crashed chain that ran with `commit=per-task-deferred`. Fast-forwards `hyperflow/staging-<id>` onto user's branch, deletes staging, clears `.hyperflow/commits-queue/`. Useful for crash recovery; `/hyperflow:dispatch` Step 4 wrap-up runs the same flush automatically |
 | **Bridge** | `/hyperflow:bridge` | `generate` / `refresh` / `remove` / `mode` / `status` — embed the portable doctrine subset into the project's `CLAUDE.md` so autonomy + intent-routing + commit cadence + tier split + file-first rules apply in Claude Code Desktop, claude.ai web, and IDE extensions (surfaces that don't load CLI plugins). **Auto-bridge is ON by default** — the CLI session-start hook silently maintains the `CLAUDE.md` doctrine block on every session (including on plugin updates). Disable with `/hyperflow:bridge mode off`. Commit `CLAUDE.md` to share with teammates on mixed surfaces |
 
 **Reuse architecture:** every skill is 80–200 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
@@ -250,6 +251,7 @@ There is no always-on activation. Each slash command runs its skill and (for cha
 | Background | `/hyperflow:background` | L3 (registry only) | — | None — read-only by default · `cancel` writes registry only |
 | Sticky | `/hyperflow:sticky` | L1 (autonomy contract) | — | None — toggle skill writes `.hyperflow/.sticky`; routing contract lives in DOCTRINE |
 | Bridge | `/hyperflow:bridge` | L1 (portable doctrine subset) | — | None — writes `./CLAUDE.md` doctrine block |
+| Flush | `/hyperflow:flush` | L8 (deferred-commit recovery) | — | None — runs `git merge --ff-only` against the user's branch |
 
 L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. Full checklist in [`skills/hyperflow/review-levels.md`](skills/hyperflow/review-levels.md).
 
