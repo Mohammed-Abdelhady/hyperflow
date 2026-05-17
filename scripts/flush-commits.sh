@@ -15,12 +15,12 @@
 # If fast-forward isn't possible (user diverged mid-chain), surface the error
 # and leave staging branch in place — user resolves manually.
 #
-# Pre-commit hooks: queue-commit.sh used --no-verify on the staging branch (those
-# commits are private staging, hooks would fire spuriously on partial state). At
-# flush time, the commits already exist with messages + content frozen, so hooks
-# wouldn't add value either. If a user wants hooks to gate the final state, they
-# run them manually after flush (lint + typecheck + tests already covered by
-# dispatch Step 2b quality gates).
+# Pre-commit hooks: queue-commit.sh runs hooks per sub-task on the staging
+# branch (no --no-verify, ever). At flush time the commits already exist with
+# messages + content frozen, so git merge --ff-only does not re-run hooks. If a
+# user wants hooks to gate the final flushed state on the user's branch, they
+# run them manually after flush; lint + typecheck + tests are already covered
+# by dispatch Step 2b quality gates per sub-task.
 #
 # Usage:
 #   flush-commits.sh <project-root> [--dry-run]
