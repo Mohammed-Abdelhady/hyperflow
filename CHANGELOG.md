@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.16.0] — 2026-05-17
+
+### Added
+- Test cases promoted from optional to mandatory in every Worker brief
+
+
 ## [4.15.0] — 2026-05-17
 
 ### Added
@@ -647,7 +653,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.15.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.0...HEAD
+[4.16.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.15.0...v4.16.0
 [4.15.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.14.0...v4.15.0
 [4.14.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.3...v4.14.0
 [4.13.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.2...v4.13.3
