@@ -1,8 +1,10 @@
 # Installation
 
+> **Hyperflow runs in the Claude Code CLI (terminal) and OpenCode CLI only.** It does NOT run inside Claude Code Desktop (the Mac/Windows GUI app) or claude.ai web. If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop or web — open a terminal and run `claude` in the same project. See [Where it runs](#where-it-runs) for the full matrix and workarounds.
+
 ## Quick Install
 
-### Claude Code
+### Claude Code (terminal)
 
 ```bash
 claude plugin marketplace add Mohammed-Abdelhady/hyperflow
@@ -15,11 +17,26 @@ Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customi
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-### OpenCode
+### OpenCode (terminal)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
+
+## Where it runs
+
+| Environment | Hyperflow works? | Notes |
+|---|---|---|
+| **Claude Code CLI** (terminal `claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands + auto-routing + skills all active |
+| **OpenCode CLI** (terminal `opencode` binary) | yes | Same plugin loader convention |
+| **Claude Code Desktop** (Mac/Windows GUI app) | **no — platform limitation** | Desktop does not load terminal-installed plugins. `/hyperflow:*` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.` Auto-routing + intent detection are inert because the DOCTRINE/skills aren't loaded |
+| **claude.ai web app** | no | Same reason — no plugin loader; hyperflow's skills are terminal-CLI artefacts |
+| **IDE extensions** (VS Code, JetBrains, Cursor, Antigravity) | depends | If the extension shells out to the `claude` CLI under the hood, plugins work; if it talks directly to the API without the CLI, they don't. Check the extension docs |
+
+**Workarounds if you primarily use Desktop / web:**
+
+1. **Switch to the CLI for hyperflow work.** Open Terminal / iTerm in the same project directory and run `claude`. Your project memory at `.hyperflow/memory/` is shared between CLI and any other surface that reads from disk.
+2. **Use `CLAUDE.md` for portable rules.** Hyperflow's full doctrine is too rich to fit a `CLAUDE.md`, but you can hand-write the autonomy rules + commit-cadence rule + no-AI-attribution rule into the project's root `CLAUDE.md` — those rules ARE loaded by Desktop / web / API. This is a lossy fallback (no auto-routing, no skill dispatch, no per-step Worker→Reviewer pattern) but useful for the simpler behavioral constraints.
 
 The install script walks you through the full setup:
 
