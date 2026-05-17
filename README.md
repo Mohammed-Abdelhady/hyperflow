@@ -125,7 +125,7 @@ You: /hyperflow:spec "Build user auth with login page, middleware, and password 
 
 ## Skills
 
-Hyperflow ships **11 specialized skills**. **Auto-routing is on by default** — say "audit the diff", "debug this test", "brainstorm a notification system", or any chain-starter verb, and the orchestrator routes through the right skill automatically. No `/hyperflow:*` prefix needed. Disable with `/hyperflow:sticky off`, or upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`.
+Hyperflow ships **12 specialized skills**. **Auto-routing is on by default** — say "audit the diff", "debug this test", "brainstorm a notification system", or any chain-starter verb, and the orchestrator routes through the right skill automatically. No `/hyperflow:*` prefix needed. Disable with `/hyperflow:sticky off`, or upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`. Outside the terminal CLI (Desktop, claude.ai web, IDE extensions that don't shell out to the `claude` binary) the slash-command plugin doesn't load — run `/hyperflow:bridge generate` from the CLI once to embed the portable doctrine subset into your project's `CLAUDE.md` so the rules apply everywhere `CLAUDE.md` is loaded.
 
 ### Chain-starting skills
 
@@ -147,6 +147,7 @@ Hyperflow ships **11 specialized skills**. **Auto-routing is on by default** —
 | **Status** | `/hyperflow:status` | Read-only one-screen view: version · profile freshness · memory count + live per-task progress (sub-tasks done/pending, tokens, wall-clock, ETA) |
 | **Background** | `/hyperflow:background` | List · show · cancel · prune background agents fired by other skills (quality gates · CI watcher · scaffold refresh · cache compact). Read-only by default; see [`skills/hyperflow/background-agents.md`](skills/hyperflow/background-agents.md) for the full doctrine |
 | **Sticky** | `/hyperflow:sticky` | `on` / `auto` / `off` / `status` — per-project auto-routing mode. **Default is `auto`** — messages containing chain-starter verbs (`audit`, `debug`, `fix`, `brainstorm`, `scope`, `deploy`, `review`, …) auto-route to the right skill without `/hyperflow:*` prefix. `on` expands to full sticky (every task-shaped message routes). `off` disables all auto-routing |
+| **Bridge** | `/hyperflow:bridge` | `generate` / `refresh` / `remove` / `status` — embed the portable doctrine subset into the project's `CLAUDE.md` so autonomy + intent-routing + commit cadence + tier split + file-first rules apply in Claude Code Desktop, claude.ai web, and IDE extensions (surfaces that don't load CLI plugins). Run once from the CLI; commit `CLAUDE.md` to share with teammates |
 
 **Reuse architecture:** every skill is 80–200 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
 
@@ -201,7 +202,7 @@ The installer auto-detects your tool, symlinks the skill, and walks you through 
 If you primarily use Desktop / web and want the hyperflow doctrine to influence your sessions, you have two options:
 
 1. **Switch to the CLI for hyperflow work.** Open Terminal / iTerm in the same project directory and run `claude`. Hyperflow + your project memory at `.hyperflow/memory/` are shared between CLI and any other surface that reads from disk.
-2. **Use `CLAUDE.md` for portable rules.** Hyperflow's doctrine is too rich to fit a `CLAUDE.md`, but you can hand-write the parts you want to apply in Desktop / web into a project-root `CLAUDE.md` — those rules ARE loaded by all surfaces. This is a lossy fallback (no auto-routing, no skill dispatch, no per-step Worker→Reviewer pattern) but useful for the autonomy + commit-cadence + no-AI-attribution rules.
+2. **Use the bridge** — run `/hyperflow:bridge generate` once from the CLI to embed the portable doctrine subset into the project's `CLAUDE.md`. This carries autonomy + intent-routing + commit cadence + tier split + file-first artefacts + binary gates + no-AI-attribution + security blocklists to every surface that loads `CLAUDE.md` (Desktop, claude.ai web, API-backed IDE extensions). Lossy — you lose the `/hyperflow:*` slash commands and the chain-mode Step-0 question — but you keep ~70% of hyperflow's behavioral value without needing the plugin loader. Re-run `/hyperflow:bridge refresh` after plugin updates. See [`skills/bridge/SKILL.md`](skills/bridge/SKILL.md).
 
 **Invoke a skill:**
 
@@ -248,6 +249,7 @@ There is no always-on activation. Each slash command runs its skill and (for cha
 | Status | `/hyperflow:status` | — | — | None — read-only, no dispatch |
 | Background | `/hyperflow:background` | L3 (registry only) | — | None — read-only by default · `cancel` writes registry only |
 | Sticky | `/hyperflow:sticky` | L1 (autonomy contract) | — | None — toggle skill writes `.hyperflow/.sticky`; routing contract lives in DOCTRINE |
+| Bridge | `/hyperflow:bridge` | L1 (portable doctrine subset) | — | None — writes `./CLAUDE.md` doctrine block |
 
 L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/scale · L5 a11y/UX. Full checklist in [`skills/hyperflow/review-levels.md`](skills/hyperflow/review-levels.md).
 
