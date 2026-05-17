@@ -261,6 +261,40 @@ Workers receive persona-typed prompts based on triage `personas[]`. Personas com
 
 If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow profile per [escalation.md](escalation.md) rules. If risk becomes irreversible mid-flight, the orchestrator HALTS and calls `AskUserQuestion` for explicit consent. See [escalation.md](escalation.md) for paths and token accounting.
 
+### Worker brief detail floor (Team Lead contract to Workers)
+
+Every Worker dispatch must hit a mandatory detail floor in the brief. Sparse briefs are a doctrine violation — the Worker fills gaps with assumptions; the per-batch Reviewer can only check what was asked for; the resulting commit is plausibly-right rather than actually-right. Detail isn't padding; it's the Worker's only signal about scope.
+
+**Mandatory sections in every brief (no exceptions):**
+
+| Section | What it contains |
+|---|---|
+| **Task** | One verb-led sentence stating the objective |
+| **Why** | 1-3 sentences on motivation. What changes for user/system after this lands? Quote spec/ticket if known |
+| **Scope** | Explicit `IN:` list (what this brief owns) AND `OUT:` list (related work owned by other sub-tasks; don't touch even if noticed nearby) |
+| **Files in scope** | Per-file lines tagged `Read:` / `Modify:` / `Create:` with the reason or change description |
+| **Acceptance criteria** | Concrete checks the per-batch Reviewer will use to verify PASS — importable from X, test Y passes, output shape Z, commit message stub |
+| **Edge cases to handle** | Numbered list of edge cases with expected behavior; omit only when genuinely none apply |
+| **Related context** | Pointers (file:line, sibling sub-task IDs, spec sections) the Worker reads ONLY if the brief becomes ambiguous — orientation, not scope |
+| **Context** | Module-level explanation + project conventions + constraints. Examples with file:line citations beat abstract rules |
+| **Project Context** | Inline excerpts (default mode) OR paths-only (lean mode) — see worker-prompt.md template |
+| **Constraints** | No Claude-as-actor anywhere; no `--no-verify` on git commits; only modify files listed in scope |
+| **Security Constraints** | Full blocklist as in worker-prompt.md template |
+| **Output format** | Completed / OVERSIZE / BLOCKED contract |
+
+**Relaxation under `mode=lean` AND `triage.complexity == low` AND 1-2 file / 1-function scope:** Why may be 1 sentence; Scope IN/OUT may be single lines; Edge cases / Related context may be omitted when truly none apply. Task, Files in scope, Acceptance criteria, Output format, Security Constraints remain mandatory in all modes — they're the contractual minimum.
+
+**Why this matters.** A Worker dispatched with `Task: add login` and nothing else will produce *a* login implementation that's plausibly-correct but probably wrong on scope, edge cases, or convention. A Worker dispatched with the full detail floor produces exactly what the Planner intended, with edge cases handled and the right sibling-coordination respected. The per-batch Reviewer's job is to verify the work matches the brief — if the brief was vague, the Reviewer has nothing to check against. Detail floor exists so the Reviewer has something concrete to PASS/NEEDS_FIX against.
+
+**Anti-patterns** (each is a doctrine violation):
+
+- "Task: add X" with no Why / Scope / Acceptance criteria — Worker guesses scope, Reviewer has no contract to verify against
+- Listing files as "Modify: src/auth/" (folder) — must be exact paths per file with per-file change description
+- Skipping `OUT:` because "the Worker should figure out what not to touch" — they won't; scope creep is the result
+- Skipping `Acceptance criteria` because "the test suite covers it" — Reviewer needs the explicit pass criteria, not inferred from tests
+- Inlining the security blocklist as a 1-line "follow security rules" — must be the full enumerated blocklist so workers can actually check
+- Using "Claude will" / "the AI will" anywhere in the brief — DOCTRINE rule 9 banned narrative subject
+
 ### Oversize task splitting (Thinking Lead — Planner mandate)
 
 **A single Worker dispatch must never own more than one reviewable unit of work.** The Thinking Lead splits oversized work into multiple parallel sub-tasks rather than handing one Worker a giant brief. Two enforcement points:
