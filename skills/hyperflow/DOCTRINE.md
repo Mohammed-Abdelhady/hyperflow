@@ -8,6 +8,7 @@ You operate as a thinking-model orchestrator coordinating worker-model agents. M
 
 | File | Purpose |
 |------|---------|
+| [doctrine-extensions.md](doctrine-extensions.md) | Full content for Layers 0, 0.5, 4, 5, 6, 7, 8 (this DOCTRINE keeps thin summaries + pointers — extensions hold the full flow/tables/rules) |
 | [task-triage.md](task-triage.md) | Layer 0.5 — triage prompt, JSON schema, worked examples |
 | [flow-profiles.md](flow-profiles.md) | 6 flow profiles — pipelines, skip/upgrade conditions, examples |
 | [adaptive-brainstorming.md](adaptive-brainstorming.md) | Depth modes, question framework, section-approval protocol |
@@ -31,80 +32,17 @@ You operate as a thinking-model orchestrator coordinating worker-model agents. M
 
 ## Layer 0: Project Analysis
 
-On session start, the **thinking model decides** whether analysis is needed. See [project-analysis.md](project-analysis.md) for file specs and staleness mapping.
+**Summary:** session-start version check + smart analysis decision (full / partial / skip based on `.hyperflow/.checksums` staleness mapping). Thinking model decides; never delegate staleness evaluation to a worker. Workers receive role-specific analysis under `## Project Context`. Incomplete tasks from prior sessions surfaced for resume/restart.
 
-### Session start flow
-
-1. **Version check** — fetch latest tag from GitHub (`gh api repos/Mohammed-Abdelhady/hyperflow/tags --jq '.[0].name'`). Compare against installed version. If newer exists, print: `Hyperflow update available — vX.Y.Z → vX.Y.Z (run: claude plugin update hyperflow@hyperflow-marketplace)`
-2. **Print active models** — read version from `VERSION` file (same directory as SKILL.md), then print:
-   ```
-   Hyperflow v<version>
-     Thinking: <resolved-thinking-model>  ·  Worker: <resolved-worker-model>
-   ```
-3. **Smart analysis decision** — the thinking model evaluates before dispatching anything:
-
-   ```
-   .hyperflow/ exists at project root?
-       │
-       NO → FULL ANALYSIS
-       │    Dispatch 6 parallel searcher agents (profile, architecture,
-       │    conventions, dependencies, testing, git-workflow)
-       │    Generate all analysis files + .checksums
-       │    Add .hyperflow/ to .gitignore if missing
-       │
-       YES → Read .hyperflow/.checksums
-             │
-             Compute current SHA256 of tracked config files (see project-analysis.md)
-             │
-             Compare each checksum
-             │
-             ├─ ALL FRESH → SKIP ANALYSIS
-             │  Print "Analysis cache fresh — skipping"
-             │  Load cached files directly (no agents dispatched)
-             │
-             ├─ SOME STALE → PARTIAL REFRESH
-             │  Use staleness mapping (project-analysis.md) to identify affected files
-             │  Dispatch searcher agents ONLY for stale analysis files
-             │  Print "Refreshing — <comma-separated list of stale files>"
-             │  Update .checksums with new hashes
-             │
-             └─ .checksums MISSING or CORRUPT → FULL ANALYSIS (same as NO path)
-   ```
-
-   **CRITICAL RULES:**
-   - Do NOT dispatch searcher agents if all checksums are fresh. Read cached `.hyperflow/` files directly.
-   - Do NOT regenerate analysis files that aren't affected by the stale config. Use the staleness mapping.
-   - The thinking model makes this decision — never delegate staleness evaluation to a worker.
-   - New config files appearing (not in `.checksums`) trigger refresh of their mapped analysis files only.
-   - Config files being deleted (in `.checksums` but missing on disk) trigger refresh of their mapped analysis files.
-
-4. **Incomplete tasks** — check `.hyperflow/tasks/` for files from previous sessions. If found, present summary and ask to continue or start fresh.
-
-### Worker injection
-
-Inject relevant analysis into worker prompts under `## Project Context`:
-- **Implementers** get conventions + architecture + relevant dependencies
-- **Test writers** get testing + conventions
-- **Searchers** get architecture
-- **Reviewers** get everything
+See [doctrine-extensions.md § Layer 0](doctrine-extensions.md#layer-0-project-analysis) for the full session-start flow, checksums decision tree, critical rules, and worker injection matrix. File specs in [project-analysis.md](project-analysis.md).
 
 ## Layer 0.5: Task Triage
 
-Triage is the FIRST step on every new user request. A cheap thinking call classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives every downstream decision — flow profile, brainstorm depth, persona stitching, token budget. Triage is mandatory on every new-work request; skip it only for mid-flow clarifications or follow-up replies.
-
-| Field | What it controls |
-|-------|-----------------|
-| `types[]` | Which personas are stitched (maps to personas-A/B priority order) |
-| `flow` | Which flow profile Layer 3 executes (`fast`/`standard`/`deep`/`research`/`creative`/`scientific`) |
-| `personas[]` | Ordered list injected into worker prompts |
-| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → light, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep). The 2-question floor (Layer 4) is non-negotiable; only the P4 bounce-to-scope path at `ambiguity < 0.4 AND complexity == low` exits the spec phase entirely. |
-| `budget` | Token envelope passed to flow profile for worker/reviewer allocation |
-
-See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, field definitions, and worked examples.
-
-**Classifier tier:** Classifier defaults to Haiku 4.5 — triage is structured classification, not deep reasoning. Fallback chain on malformed JSON output: retry once at Haiku → fall back to Sonnet → use safe defaults. NEVER escalate to Opus on fallback — keep cost low on this critical-path call.
+**Summary:** FIRST step on every new request. Haiku Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[], budget }` JSON. Drives all downstream choices: flow profile, brainstorm depth, persona stitching, token budget. Mandatory — skip only for mid-flow clarifications or follow-up replies. Fallback chain on malformed output: retry once Haiku → Sonnet → safe defaults. NEVER escalate to Opus.
 
 **Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
+
+See [doctrine-extensions.md § Layer 0.5](doctrine-extensions.md#layer-05-task-triage) for the full field-by-field table and classifier-tier specifics. Prompt template + JSON schema in [task-triage.md](task-triage.md).
 
 ## Layer 1: Autonomy
 
@@ -411,65 +349,33 @@ Background agents are an opt-in extension of Layer 3 dispatch. They run with `ru
 
 ## Layer 4: Adaptive Brainstorming
 
-Brainstorming runs on EVERY task — never skipped. Depth is scaled to the triage `ambiguity` score, **with a hard floor of 2 questions per spec run**. Skipping questions entirely (`silent` mode) is no longer allowed — even trivial tasks get two structural questions so the user always has a chance to redirect.
+**Summary:** runs on EVERY task — never skipped. Depth scales to triage `ambiguity` with a **hard floor of 2 questions per spec run** (the user always gets a structural place to course-correct). Light = 2Q · standard = 3Q + 2-3 alternatives · deep = 4-5Q + 6-dim analysis + section-by-section approval. `creative`/`architect`/`security`/`scientific` types force a minimum depth. `AskUserQuestion` is mandatory; "Should I proceed?" is banned.
 
-| Ambiguity (0.0–1.0) | Depth | Behavior |
-|---------------------|-------|----------|
-| 0.0–0.2 | `light` | **Always 2 questions** — usually scope-confirm + 1 constraint check |
-| 0.2–0.5 | `light` | **Always 2 questions** — intent clarify + constraint discovery |
-| 0.5–0.8 | `standard` | **3 questions** + propose 2–3 alternatives with trade-offs |
-| 0.8–1.0 | `deep` | **4–5 questions** + full 6-dimension analysis + section-by-section design approval |
-
-**Hard floor:** every spec run dispatches `AskUserQuestion` at least twice, regardless of how confident the triage was. The 2-question minimum gives the user a structural place to course-correct before workers run.
-
-Some types force a minimum depth: `creative` → `deep`; `architect`/`security`/`scientific` → `standard`. See [adaptive-brainstorming.md](adaptive-brainstorming.md) for depth overrides.
-
-`AskUserQuestion` is mandatory for all depths above `silent`. Banned: "Should I proceed?" Allowed: clarification of what to build, which approach, scope boundaries.
-
-See [adaptive-brainstorming.md](adaptive-brainstorming.md) for the full depth modes, question framework, and section-approval protocol.
-
-**Hard rules:**
-- Section-by-section approval required in `deep` mode
-- Never propose only one alternative in `standard` or `deep`
-- No code before design approval in `deep` mode
+See [doctrine-extensions.md § Layer 4](doctrine-extensions.md#layer-4-adaptive-brainstorming) for the depth table, hard rules (section approval / minimum alternatives / no-code-before-design), and type-based depth overrides. Full framework in [adaptive-brainstorming.md](adaptive-brainstorming.md).
 
 ## Layer 5: Quality Gates
 
-Automated checks after every worker review. See [quality-gates.md](quality-gates.md) for full details.
+**Summary:** lint + typecheck + tests after every worker review. Per-task gate runs on affected files; final gate runs the full suite. Gate fails → worker fixes → re-run. Max 3 retries before escalating to Opus worker.
 
-**Per-task:** lint + typecheck + tests (affected files only)
-**Final review:** full lint + typecheck + build + full test suite
-
-Gate fails → worker fixes → re-run. Max 3 retries before escalating to Opus worker.
+See [doctrine-extensions.md § Layer 5](doctrine-extensions.md#layer-5-quality-gates) and the full policy in [quality-gates.md](quality-gates.md).
 
 ## Layer 6: Project-Scoped Memory
 
-Persist reusable learnings in `.hyperflow/memory/` so future sessions in the same project benefit from past discoveries. See [memory-system.md](memory-system.md) for full protocols.
+**Summary:** `.hyperflow/memory/` holds project-scoped learnings (entries never leak across projects). Hot tier (≤7d) eagerly loaded; warm (8-30d) queried by task tags; cold (30+d) compressed and archived. Workers receive ONLY tag-matched subset.
 
-**Storage:** `.hyperflow/memory/` at project root — multiple files by category (learnings, decisions, pitfalls, patterns, conventions) plus an index. Project-scoped by design — entries never leak across projects.
-
-**Write:** After each batch, orchestrator extracts reusable patterns/gotchas/decisions, tags them, deduplicates against existing entries, and appends to the appropriate file. Apply the test: "Would a worker on this project benefit from knowing this in 2 weeks?"
-
-**Read:** At session start, orchestrator reads `.hyperflow/memory/index.md` (always). Hot entries (≤7 days) are eagerly loaded. Warm entries (8–30 days) are queried by current task's inferred tags. Cold entries (30+ days) are auto-compressed and archived. Worker prompts receive ONLY the subset matching their task's tags.
-
-**Prune:** Entries contradicted by newer ones marked `[SUPERSEDED]` and removed after 7 days. Entries referencing deleted files are removed immediately. Entries unreferenced for 90 days are archived to `.hyperflow/memory/archive/YYYY-MM.md`.
-
-Controls: `hyperflow: memory off` / `hyperflow: memory show <tag>` / `hyperflow: memory clear`
+See [doctrine-extensions.md § Layer 6](doctrine-extensions.md#layer-6-project-scoped-memory) for storage layout, write/read/prune rules, and runtime controls. Full protocols in [memory-system.md](memory-system.md).
 
 ## Layer 7: Task Templates
 
-Pre-built decomposition patterns. See [task-templates.md](task-templates.md) for all templates.
+**Summary:** pre-built decomposition patterns auto-selected by Opus from task type — CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix. Templates adapt to context; not rigid steps.
 
-Opus auto-selects: CRUD Feature, API Endpoint, UI Component, Database Migration, Refactor, Bug Fix. Templates are adapted to context — not rigid steps.
+See [doctrine-extensions.md § Layer 7](doctrine-extensions.md#layer-7-task-templates) and the catalogue in [task-templates.md](task-templates.md).
 
 ## Layer 8: Git Workflow
 
-Automated branching and commits. See [git-workflow.md](git-workflow.md) for full details.
+**Summary:** auto-commit on by default (per approved task, descriptive message); auto-creates feature branch on main/master; never auto-pushes. Disable per-session: `hyperflow: auto-commit off`.
 
-**Auto-commit:** On by default. Commits after each approved task with descriptive message.
-**Branching:** Auto-creates feature branch if on main/master.
-**No push:** Never pushes automatically — waits for user.
-**Disable auto-commit:** "hyperflow: auto-commit off"
+See [doctrine-extensions.md § Layer 8](doctrine-extensions.md#layer-8-git-workflow) and the full workflow in [git-workflow.md](git-workflow.md).
 
 ## Layer 9: Security
 
