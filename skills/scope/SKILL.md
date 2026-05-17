@@ -156,6 +156,8 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
 **P1 — internal parallelism:** when the Planner produces a task file with multiple logically independent sections (Goal, Context, Affected files, Batches, Verification plan), instruct the Writer to draft those sections in parallel internally by structuring its prompt as parallel sub-tasks. The Writer is one agent, but prompt-level parallelism reduces sequential reasoning passes over independent content. Disable with `--thorough` (Writer drafts sections in one sequential pass instead).
 
+**Mode resolution (one-time per chain).** Before dispatching, run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and propagate the result via chain args (`mode=<default|lean|thorough>`) to downstream skills. When `mode=lean`, the Writer renders the **artefact-format minimum template** for small tasks (`triage.complexity == low` AND projected sub-tasks ≤ 5) — status table + Goal + per-task lines + cost table only; no scope-at-a-glance, no ASCII dependency diagram. The full rich template auto-restores when the task graduates past 5 sub-tasks or any sub-task has `complexity != low`. Persona stitching, memory injection, reviewer model + template, clarification gates, and security blocklist remain unchanged regardless of mode.
+
 1. Dispatch `Writer — emitting task file` with the Planner's output (in parallel with Step 6 Writer — P3). The Writer writes to `.hyperflow/tasks/<task-slug>.md` using the template below.
 2. Dispatch `**Reviewer** — verifying task file vs design` to confirm every design requirement maps to at least one sub-task and no orphan sub-tasks exist.
 

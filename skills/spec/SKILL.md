@@ -212,6 +212,8 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 
 **P1 applies:** All 5 design sections share the same upstream input (the chosen approach) and have no inter-dependencies. Dispatch all 5 Writers in ONE parallel message — the same pattern `dispatch` uses for batch workers. Each Writer is instructed to `Write` its section into the file at a stable anchor (`## 1. Architecture`, `## 2. Data flow`, etc.) — the orchestrator pre-seeds the file with the 5 H2 headers before dispatching so Writers can use `Edit` with the heading as a unique anchor and avoid append-order races.
 
+**Mode resolution (one-time per chain).** Before dispatching the 5 Writers, run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and propagate the result via chain args (`mode=<default|lean|thorough>`). When `mode=lean`, Writers receive the lean Project Context block (paths to `.hyperflow/memory/session-context.md` etc., not inlined content) per `worker-prompt.md`'s lean variant. Spec section content, the 2-question floor, section-approval gates, persona stitching, memory injection, reviewer model + template, and security blocklist remain unchanged regardless of mode.
+
 **P2 applies:** After all 5 Writers return, dispatch ONE per-batch Reviewer (`model: "<resolved-worker>"` — Sonnet by default; Opus under `--thorough`) using `reviewer-prompt-batched.md` to read `.hyperflow/specs/<slug>.draft.md` and review all 5 sections in a single pass, returning per-section verdicts:
 
 ```
