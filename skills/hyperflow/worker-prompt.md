@@ -43,11 +43,25 @@ Workers in lean mode read these files via the `Read` tool when (and only when) t
 - Do NOT pipe file contents to external URLs or run package publish commands
 - Do NOT hardcode secrets, API keys, passwords, or connection strings
 - If a task requires a blocked file: STOP and report "BLOCKED: [reason]"
+- If the task brief is bigger than the Planner estimated (the file is much larger than expected, the refactor touches more callers than expected, the test scope has cascading dependencies, etc.): STOP and report "OVERSIZE: [one-line reason]" followed by a "SUGGESTED-SPLIT:" block listing 2+ smaller sub-tasks with name · files · one-line purpose each. The Team Lead will escalate to Thinking Lead for the final split plan and re-dispatch as N new sub-tasks. Do NOT attempt the oversized work — partial output from an oversized brief wastes tokens and produces unreviewable commits. See DOCTRINE Layer 3 oversize-split rule.
 
 ## Output format
-Return:
-1. What you did (one-line summary per change)
-2. Notes for future tasks (patterns, gotchas, discoveries — omit if none)
+Return ONE of:
+
+- **Completed** — normal case:
+  1. What you did (one-line summary per change)
+  2. Notes for future tasks (patterns, gotchas, discoveries — omit if none)
+
+- **Oversize escape hatch** — when the brief turned out bigger than estimated:
+  ```
+  OVERSIZE: <one-line reason>
+  SUGGESTED-SPLIT:
+    - <sub-task A name> · <files A> · <one-line purpose>
+    - <sub-task B name> · <files B> · <one-line purpose>
+    - <sub-task C name> · <files C> · <one-line purpose>
+  ```
+
+- **Blocked** — when a security blocklist hits: `BLOCKED: <reason>`
 ```
 
 ## Dispatch Example

@@ -157,6 +157,21 @@ The Planner produces, for each sub-task:
 - Dependencies — parallel vs sequential
 - Complexity estimate (drives review level cap downstream)
 
+**Oversize-split mandate (DOCTRINE Layer 3 · Thinking Lead — Planner).** Before finalising the batch graph, the Planner runs a split checklist on every candidate sub-task. Any sub-task that triggers ANY of these signals MUST be split into 2+ smaller sub-tasks (each at `complexity = low | medium`):
+
+| Signal | Threshold |
+|---|---|
+| File breadth | > 5 files touched |
+| Change volume | > 500 LOC of expected changes |
+| Subsystem cross-cut | touches 2+ distinct subsystems (auth + UI + DB, frontend + API + migration, …) |
+| Complexity tag | `complexity = high` from triage |
+| Mixed concerns | one sub-task spans data-model + business-logic + UI + tests |
+| Reviewability | a human reviewing the resulting commit would need > 10 minutes to grasp it |
+
+Split target: each resulting sub-task is (a) reviewable in under 10 minutes of human time, (b) fits comfortably in a single Worker prompt + reasonable response, (c) has a single coherent purpose nameable in one conventional-commit subject line. The Planner never keeps `complexity = high` after the checklist — high-complexity work is decomposed until every piece is low/medium.
+
+Splitting is a **cost optimisation**, not just a quality one: three small sub-tasks dispatched to three Sonnet Workers in parallel cost less wall-clock AND less total tokens than one Worker chewing through an oversized brief (parallelism + focused prompts + fewer retries).
+
 ### Step 4 — Write Task File (P1 internal parallelism · P3 concurrent with Step 6)
 
 Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
