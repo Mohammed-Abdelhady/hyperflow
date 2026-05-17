@@ -1,5 +1,24 @@
 # Background Agents
 
+Two distinct features both called "background agents" — task-level (this doctrine) and session-level (Claude Code native). They're orthogonal; this section is about hyperflow's task-level pattern.
+
+## Two layers, one name
+
+| Layer | What it is | Surface | Use when |
+|---|---|---|---|
+| **Task-level** (this doctrine) | Individual worker / observer agents dispatched with `Agent({ ..., run_in_background: true })` within one Claude Code session. Managed via `/hyperflow:background list / show / cancel / prune`. | hyperflow plugin | Latency reduction inside a single chain (Layer 5 gates fired while next batch runs); CI watcher after push; speculative prefetch refreshing `.hyperflow/<analysis>.md` |
+| **Session-level** (Claude Code v2.1.139+, May 2026) | An entire Claude Code session runs detached in its own process. Managed via `claude agents` dashboard, launched via `claude --bg`, `/bg`, or `←←` keyboard shortcut. Optional `/goal <condition>` sets an autonomous completion criterion. Idle sessions auto-retire after 5 min. | Claude Code CLI native | Forking a long-running hyperflow chain (`/bg /hyperflow:scope "build user auth"`) so the user keeps the main session free; running multiple parallel features simultaneously across separate background sessions |
+
+They compose: a user can run `/bg /hyperflow:dispatch <slug>` to fire a hyperflow chain in a backgrounded session; inside that session, dispatch can still fire `run_in_background: true` workers for its Layer 5 gates and CI watcher. The two layers cover different scales.
+
+Choose by the unit of work:
+- One agent on one task → `run_in_background: true` + `/hyperflow:background`
+- Whole interactive session → `/bg` + `claude agents`
+
+Docs: [Claude Code Agent View](https://code.claude.com/docs/en/agent-view) · [Changelog](https://code.claude.com/docs/en/changelog.md).
+
+## Task-level background agents (the rest of this file)
+
 Background agents are dispatched with `run_in_background: true`. The orchestrator does not wait — the chain progresses, and the agent's result is integrated later (or surfaced via notification). Use them for work that does not gate the next decision.
 
 ## When to use
