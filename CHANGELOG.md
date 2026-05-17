@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.12.5] — 2026-05-17
+
+### Changed
+- S4 — split DOCTRINE into core + extensions, summaries-in-place
+
+
 ## [4.12.4] — 2026-05-17
 
 ### Changed
@@ -599,7 +605,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.4...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.5...HEAD
+[4.12.5]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.4...v4.12.5
 [4.12.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.3...v4.12.4
 [4.12.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.2...v4.12.3
 [4.12.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.1...v4.12.2
