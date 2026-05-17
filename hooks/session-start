@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+VERSION_FILE="$PLUGIN_ROOT/skills/hyperflow/VERSION"
+HYPERFLOW_VERSION="$( [ -f "$VERSION_FILE" ] && cat "$VERSION_FILE" || echo "unknown" )"
+
+# Detect runtime via env-var prefix
+TOOL_NAME="unknown"
+for pair in "CLAUDE_CODE:claude-code" "CURSOR:cursor" "OPENCODE:opencode" "CODEX:codex" "ANTIGRAVITY:antigravity"; do
+  prefix="${pair%%:*}"; label="${pair##*:}"
+  env | grep -q "^${prefix}_" && { TOOL_NAME="$label"; break; }
+done
+
+# Walk up from PWD to find .hyperflow/ (stop at git root or /)
+find_hyperflow_dir() {
+  local d="$PWD"
+  while [ "$d" != "/" ]; do
+    [ -d "$d/.hyperflow" ] && { echo "$d/.hyperflow"; return; }
+    [ -d "$d/.git" ] && return
+    d="$(dirname "$d")"
+  done
+}
+HF_DIR="$(find_hyperflow_dir)"
+
+CONTENT="<!-- hyperflow-runtime: $TOOL_NAME -->
+# Hyperflow v$HYPERFLOW_VERSION
+
+Hyperflow is installed. It is **not** always-on — invoke a skill explicitly when you need it.
+
+## Canonical chain
+
+Start from any skill — chain-starters auto-advance forward through the chain (with one Step-0 question: auto or manual).
+
+\`scaffold\` → \`spec\` → \`scope\` → \`dispatch\` → \`audit\` → \`deploy\`
+
+## Direct entries
+
+| Command | When to use |
+|---|---|
+| \`/hyperflow:scaffold\` | First-time setup — analyze project, build \`.hyperflow/\` cache, install shims |
+| \`/hyperflow:spec\` | Design exploration before any code is written |
+| \`/hyperflow:scope\` | Decompose a task into a worker-friendly batch file in \`.hyperflow/tasks/\` |
+| \`/hyperflow:dispatch\` | Run a planned task: dispatch workers in parallel with thinking-tier reviews |
+| \`/hyperflow:trace\` | Systematic root-cause analysis for any bug or test failure |
+| \`/hyperflow:audit\` | Multi-level code review (L1–L5) on a diff, file, or PR |
+| \`/hyperflow:deploy\` | Pre-push gates + commit + release + push |
+| \`/hyperflow:cache\` | Read or curate \`.hyperflow/memory/\` |
+
+Shared doctrine (autonomy rules, model routing, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
+
+if [ -n "$HF_DIR" ]; then
+  # D3: Session-cached context — generate .hyperflow/memory/session-context.md
+  # Skip if .hyperflow/memory/ doesn't exist (scaffold hasn't run yet).
+  # Non-blocking: errors go to stderr only; never fail the session.
+  if [ -d "$HF_DIR/memory" ]; then
+    {
+      for section in "Profile:profile.md" "Architecture:architecture.md" "Conventions:conventions.md"; do
+        label="${section%%:*}"
+        file="${section##*:}"
+        printf '## %s\n' "$label"
+        if [ -f "$HF_DIR/$file" ]; then
+          # Cap each section at 500 lines to bound session-context.md size and
+          # avoid blocking session-start on pathological multi-thousand-line sources.
+          head -n 500 "$HF_DIR/$file"
+          lines=$(wc -l < "$HF_DIR/$file")
+          if [ "$lines" -gt 500 ]; then
+            printf '<!-- truncated: %s has %s lines, showing first 500 -->\n' "$file" "$lines"
+          fi
+        else
+          printf '<!-- .hyperflow/%s not found — run /hyperflow:scaffold to populate -->\n' "$file"
+          printf 'WARNING: session-context: .hyperflow/%s missing\n' "$file" >&2
+        fi
+        printf '\n'
+      done
+    } > "$HF_DIR/memory/session-context.md" 2>>"$HF_DIR/.session-start.log" || \
+      printf 'WARNING: session-context: failed to write session-context.md\n' >&2
+  fi
+
+  # Project Snapshot (first 20 lines of each profile file)
+  snap=""
+  for f in profile.md architecture.md conventions.md; do
+    [ -f "$HF_DIR/$f" ] && snap="${snap}### $f
+$(head -20 "$HF_DIR/$f")
+"
+  done
+  [ -n "$snap" ] && CONTENT="$CONTENT
+
+## Project Snapshot
+$snap"
+
+  # Memory Index
+  [ -f "$HF_DIR/memory/index.md" ] && CONTENT="$CONTENT
+
+## Project Memory Index
+$(head -200 "$HF_DIR/memory/index.md")"
+
+  # Memory Compaction Advisory (non-blocking, no LLM)
+  if [ -f "$HF_DIR/memory/.checksums" ]; then
+    advisory="$(python3 - "$HF_DIR/memory/.checksums" "$HOME/.hyperflow/config.json" 2>>"$HF_DIR/.session-start.log" <<'PYEOF' || true
+import json, os, sys
+checksums_path, config_path = sys.argv[1], sys.argv[2]
+threshold = 300
+try:
+    with open(config_path) as f:
+        cfg = json.load(f)
+    threshold = int(cfg.get("memory", {}).get("compactionThreshold", 300))
+except (OSError, ValueError, TypeError):
+    pass
+if threshold < 50:
+    threshold = 300
+try:
+    with open(checksums_path) as f:
+        checksums = json.load(f)
+except (OSError, ValueError):
+    sys.exit(0)
+if not isinstance(checksums, dict) or len(checksums) > 10000:
+    sys.exit(0)
+over = [(path, meta["lineCount"]) for path, meta in checksums.items()
+        if isinstance(meta, dict) and isinstance(meta.get("lineCount"), int)
+        and meta["lineCount"] >= threshold]
+if over:
+    names = ", ".join(f"{os.path.basename(p)} ({lc} lines)" for p, lc in over)
+    print(f"- {names} — at or above {threshold}, run `/hyperflow:cache compact` when convenient")
+PYEOF
+)"
+    if [ -n "$advisory" ]; then
+      CONTENT="$CONTENT
+
+## Memory Compaction Advisory
+$advisory"
+    fi
+  fi
+
+  # Auto-routing status (non-blocking, no LLM)
+  # Default is `auto` (intent-detection) when .sticky is absent.
+  sticky_line="$(python3 - "$HF_DIR/.sticky" <<'PYEOF' 2>>"$HF_DIR/.session-start.log" || true
+import os, sys
+path = sys.argv[1]
+state, since, trigger = "auto", "", "default"
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("state:"):
+                    state = line.split(":", 1)[1].strip()
+                elif line.startswith("since:"):
+                    since = line.split(":", 1)[1].strip()
+                elif line.startswith("trigger:"):
+                    trigger = line.split(":", 1)[1].strip()
+    except OSError:
+        sys.exit(0)
+labels = {
+    "on":   "Auto-routing: ON (full sticky) — every task-shaped message routes through hyperflow.",
+    "auto": "Auto-routing: AUTO (default) — messages containing chain-starter verbs (audit, debug, fix, brainstorm, scope, deploy, review, …) auto-route.",
+    "off":  "Auto-routing: OFF — only explicit /hyperflow:* slash commands route. Re-enable with /hyperflow:sticky auto.",
+}
+line_out = labels.get(state)
+if line_out:
+    suffix = []
+    if since:
+        suffix.append(f"since {since[:16].replace('T', ' ')}")
+    if trigger and trigger != "default":
+        suffix.append(f"trigger: {trigger}")
+    if suffix:
+        line_out += " · " + " · ".join(suffix)
+    print(line_out)
+PYEOF
+)"
+  if [ -n "$sticky_line" ]; then
+    CONTENT="$CONTENT
+
+## Auto-routing status
+$sticky_line"
+  fi
+
+  # Active Tasks
+  if [ -d "$HF_DIR/tasks" ]; then
+    tlist=""
+    for tf in "$HF_DIR/tasks/"*.md; do
+      [ -f "$tf" ] && tlist="${tlist}- $(basename "$tf")
+"
+    done
+    [ -n "$tlist" ] && CONTENT="$CONTENT
+
+## Active Tasks (incomplete from prior sessions)
+$tlist"
+  fi
+fi
+
+ESCAPED=$(printf '%s' "$CONTENT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
+cat <<JSONEOF
+{
+  "type": "system-prompt-inject",
+  "content": $ESCAPED
+}
+JSONEOF
