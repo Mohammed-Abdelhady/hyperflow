@@ -132,6 +132,21 @@ $advisory"
     fi
   fi
 
+  # Auto-bridge (non-blocking, no LLM)
+  # Writes ./CLAUDE.md doctrine block when missing/outdated so Desktop / web /
+  # IDE surfaces (which don't load the CLI plugin) honor hyperflow's portable
+  # subset. Mode (auto / manual / off) lives at .hyperflow/.bridge-mode.
+  if [ -d "$HF_DIR" ] && [ -x "$PLUGIN_ROOT/scripts/auto-bridge.py" ]; then
+    project_root="$(dirname "$HF_DIR")"
+    bridge_line="$(python3 "$PLUGIN_ROOT/scripts/auto-bridge.py" "$PLUGIN_ROOT" "$project_root" 2>>"$HF_DIR/.session-start.log" || true)"
+    if [ -n "$bridge_line" ]; then
+      CONTENT="$CONTENT
+
+## CLAUDE.md auto-bridge
+$bridge_line"
+    fi
+  fi
+
   # Auto-routing status (non-blocking, no LLM)
   # Default is `auto` (intent-detection) when .sticky is absent.
   sticky_line="$(python3 - "$HF_DIR/.sticky" <<'PYEOF' 2>>"$HF_DIR/.session-start.log" || true
