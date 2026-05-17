@@ -374,8 +374,18 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    - **Compatibility with §12.** §13 does NOT relax §12. Every substantive step still dispatches at least one Agent. §13 governs the structure of those dispatches (parallel vs sequential, batched vs per-sibling, lean vs full).
    - **Quality floor preserved.** Opus reviewer tier is unchanged. Workers still face thinking-tier review. What changes is when calls fire and in what grouping, not who reviews what.
    - **`--thorough` / `depth=max` disables P1, P2, P4.** P3 and P5 remain on — they carry no quality tradeoff. When the flag is active, restore sequential drafts, per-section reviews, and full step execution.
+   - **`--lean` / `mode=lean` enables ultra-low-token mode.** Opt-in cost reduction for routine work where the default rich context is overkill. When the flag is active:
+     - **Persona stitching:** top-1 persona only (not top-3). Saves ~1-3k tokens per worker.
+     - **Project context:** workers receive PATHS to `.hyperflow/profile.md` / `architecture.md` / `conventions.md` instead of the inlined content. They read on demand when their task needs it. Saves ~2k × N parallel workers per batch.
+     - **Artefact format:** minimal template — status table only (no scope-at-a-glance, no dependency diagram, no cost table). The full template returns on `--thorough` or when a task graduates past 5 sub-tasks.
+     - **Session-start hook output:** collapses Project Snapshot / Memory Index / Bridge notice / Sticky status into one summary line (e.g. `hyperflow v4.12 · profile fresh · 12 memory entries · auto-bridge OK · sticky=auto · 0 active tasks`). Full sections return when any are stale or attention-needed.
+     - **Memory injection:** requires ≥2 tag matches (not 1) for warm-tier entries. Hot tier still always injects.
+     - **Reviewer prompt template:** uses `reviewer-prompt-batched-lean.md` (a stripped variant that drops "review-level checklist examples" inlining; reviewer reads the checklist on demand). Saves ~1k per reviewer call.
+     - **Estimated combined effect** on a typical 5-batch dispatch: ~200k tokens → ~90k tokens (~55% reduction). Quality floor preserved: per-batch reviewer still fires (still Sonnet by default), final integration Opus reviewer still fires, security blocklist still enforced, SECURITY_VIOLATION halt unchanged.
+     - **Incompatible flags:** `--lean` and `--thorough` are mutually exclusive. If both passed, refuse with a clear error rather than silently picking one.
+     - **Persistent default:** set per-project via `.hyperflow/.mode` (`lean` / `default` / `thorough`); read at every chain start. `/hyperflow:sticky` (or future `/hyperflow:mode`) toggles it.
 
-   See [latency-patterns.md](../spec/references/latency-patterns.md) for the full P1–P5 pattern catalogue.
+   See [latency-patterns.md](../spec/references/latency-patterns.md) for the full P1–P5 pattern catalogue. `--lean` is orthogonal to the P1–P5 latency optimisations (which target wall-clock); `--lean` targets token cost specifically.
 
 ### Learning injection format
 
