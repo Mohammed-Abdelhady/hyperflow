@@ -177,27 +177,42 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 
 **Default routing (Claude Code):**
 
+### The three roles (Team Lead model)
+
+Hyperflow runs three roles internally:
+
+1. **Workers** (Sonnet) — execute mechanical work: write code, search, edit, run tests, generate boilerplate. Workers never decide what to build; they execute the brief they were dispatched with.
+2. **Orchestrator (Team Lead)** — the running Claude session. Coordinates workers, sequences dispatches, parses return values, handles file IO, manages chain state, presents as the single point of contact to workers (workers see the Team Lead, not the Thinking Lead behind it). Currently Opus 4.7 (same model as Thinking Lead), but the role is conceptually distinct.
+3. **Thinking Lead** (Opus, always) — takes every real decision: architecture choice, approach selection, multi-dim analysis, root-cause judgment, dispute resolution, quality verdict, escalation call. The orchestrator consults the Thinking Lead at each decision point via a dispatched Agent call; the Thinking Lead returns a one-shot decision and the orchestrator continues mechanical work.
+
+The named decision dispatches in this doctrine — Classifier (triage), Analyst (6-dim spec analysis), Planner (batch decomposition), final-integration Reviewer, standalone Reviewer (audit / deploy security sweep / spec Step 8), Debugger, Brainstormer — are all **Thinking Lead consultations**. The orchestrator dispatches them at the right moment with the right context; the Thinking Lead decides; the orchestrator carries the decision forward.
+
 | Role | Default Model | Tier | Use for |
 |------|--------------|------|---------|
-| Orchestrator | **Opus 4.7** | thinking | Decompose tasks, coordinate, synthesize learnings |
-| **Final integration Reviewer** | **Opus 4.7** | thinking | End-of-chain cross-cutting review (dispatch Step 3, audit Step 3, deploy security sweep, spec Step 8 sanity check) |
-| **Per-batch / per-sub-task Reviewer** | **Sonnet 4.6** | worker | In-flight reviews anchored to a single batch's diff (dispatch Step 2, spec Step 7 section batch, scope Step 4 task-file check) |
-| Debugger | **Opus 4.7** | thinking | Root cause analysis, fix strategy |
-| Decision-maker | **Opus 4.7** | thinking | Architecture, approach selection, trade-offs |
-| Brainstormer / Analyst / Planner | **Opus 4.7** | thinking | Design exploration, multi-dim analysis, decomposition |
-| Implementer | **Sonnet 4.6** | worker | Write code, edit files, create components |
-| Searcher | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
-| Writer | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
+| **Orchestrator (Team Lead)** | **Opus 4.7** | thinking | Coordinate workers, dispatch sequencing, parse return values, manage chain state, present to workers as the single contact |
+| **Thinking Lead — Classifier** | **Opus 4.7** | thinking | Layer 0.5 triage classification (`Haiku 4.5` for triage specifically per existing fallback chain; Opus on escalation) |
+| **Thinking Lead — Analyst** | **Opus 4.7** | thinking | Spec Step 3 multi-dimensional analysis |
+| **Thinking Lead — Planner** | **Opus 4.7** | thinking | Scope Step 3 batch graph decomposition |
+| **Thinking Lead — Decision-maker / Brainstormer** | **Opus 4.7** | thinking | Architecture, approach selection, trade-offs, design exploration |
+| **Thinking Lead — Debugger** | **Opus 4.7** | thinking | Root-cause analysis, fix strategy (trace skill) |
+| **Thinking Lead — Final integration Reviewer** | **Opus 4.7** | thinking | End-of-chain cross-cutting review (dispatch Step 3) |
+| **Thinking Lead — Standalone Reviewer** | **Opus 4.7** | thinking | Audit Step 3, deploy security sweep, spec Step 8 final sanity |
+| **Per-batch / per-sub-task Reviewer** | **Sonnet 4.6** | worker | In-flight reviews anchored to a single batch's diff (dispatch Step 2, spec Step 7 batched section review, scope Step 4 task-file check) — anchored, not architectural, so worker tier suffices |
+| **Worker — Implementer** | **Sonnet 4.6** | worker | Write code, edit files, create components |
+| **Worker — Searcher** | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
+| **Worker — Writer** | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
 
-**Iron rules — tiered review (split per scope of evidence):**
+**Iron rules — Team Lead model + tiered review:**
 
-- **Per-batch / per-sub-task Reviewer = Sonnet (worker tier).** Anchored to a single batch's diff (a few files at most). The Reviewer sees only the work product of one batch and the relevant context; the diff is small enough that Sonnet handles L1 (syntax/format) + L2 (spec/naming/edges) reliably. Fast and ~5× cheaper than Opus per call. Fires every batch in `standard` and above.
-- **Final integration Reviewer = Opus (thinking tier).** End-of-chain pass that sees the cumulative diff across all batches. This is where cross-batch contradictions, architectural drift, and L3+ integration risks surface — exactly the work Opus is paid for. Fires once per multi-batch chain (skippable under D7 conditions).
-- **Standalone reviewers = Opus.** Any reviewer dispatched outside a chain context — audit Step 3, trace Debugger, deploy security sweep, spec Step 8 final sanity check — is itself the "buck stops here" pass, so it gets Opus regardless of diff size.
-- **The thinking model is NEVER idle.** Even when batch reviewers are Sonnet, Opus is still orchestrating (decomposing, dispatching, synthesizing learnings between batches, and running the final integration pass). Triage (Layer 0.5) stays on the thinking tier — never delegate triage to a worker.
-- **Worker tier never coordinates.** Sonnet doing a batch review is reviewing one batch's diff against one fix list — not deciding which batch fires next, not picking models, not opening gates. Coordination stays on Opus.
-- **`--thorough` flag elevates per-batch Reviewer to Opus.** Users on high-risk surfaces (financial calc, crypto, regulatory) opt in to Opus per-batch via `--thorough`; the default remains Sonnet to keep cost predictable.
-- **If the usage summary shows `Thinking: 0 agents` on a multi-batch chain**, the task was done wrong — Opus must at minimum orchestrate and run the final integration pass.
+- **Team Lead (Orchestrator) coordinates; Thinking Lead decides; Workers execute.** Three distinct roles. The Team Lead is the running session — it parses results, sequences dispatches, and presents to workers. The Thinking Lead is dispatched as a fresh agent at every real decision point — design choice, architecture call, NEEDS_FIX-with-ambiguity, dispute between two workers, gate firing, security flag, root-cause judgment. Workers execute against a brief and never decide what to build. Each role stays in its lane.
+- **Per-batch / per-sub-task Reviewer = Sonnet (worker tier).** Anchored to a single batch's diff (a few files at most). The Reviewer sees only the work product of one batch; the diff is small enough that Sonnet handles L1 (syntax/format) + L2 (spec/naming/edges) reliably. Fast and ~5× cheaper than Opus per call. Fires every batch in `standard` and above. NOT a Thinking Lead consultation — its scope is mechanical pattern-matching, not architectural judgment.
+- **Final integration Reviewer = Opus (Thinking Lead).** End-of-chain pass that sees the cumulative diff across all batches. This is where cross-batch contradictions, architectural drift, and L3+ integration risks surface — Thinking Lead territory. Fires once per multi-batch chain (skippable under D7 conditions).
+- **Standalone reviewers = Opus (Thinking Lead).** Any reviewer dispatched outside a chain's batch context — audit Step 3, trace Debugger, deploy security sweep, spec Step 8 final sanity check — is itself a Thinking Lead consultation. Always Opus regardless of diff size.
+- **The Thinking Lead is consulted, not constantly busy.** Each consultation is a dispatched Agent call with focused context: "given this brief / verdict / conflict / candidate fix, decide X." It returns a one-shot decision. The Team Lead carries the decision forward. The Thinking Lead never coordinates dispatch — that's the Team Lead's job.
+- **Worker tier never coordinates.** Sonnet doing a batch review is reviewing one batch's diff against one fix list — not deciding which batch fires next, not picking models, not opening gates. Coordination stays at the Team Lead layer.
+- **`--thorough` flag elevates per-batch Reviewer to Opus** (effectively promoting it from anchored-review to Thinking Lead consultation). Users on high-risk surfaces (financial calc, crypto, regulatory) opt in. Default remains Sonnet to keep cost predictable.
+- **Triage (Layer 0.5) stays on Thinking Lead tier** — Haiku 4.5 by default for the structured classification, Opus on fallback. Never delegate triage to a Worker.
+- **If the usage summary shows `Thinking: 0 agents` on a multi-batch chain**, the task was done wrong — the Team Lead must at minimum consult the Thinking Lead at the final integration pass, plus whichever decision-laden steps the chain visited (triage, analyst, planner, etc.).
 
 ### Config loading (session start)
 
