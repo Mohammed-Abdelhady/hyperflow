@@ -29,16 +29,36 @@ Use this template when dispatching Sonnet workers via the Agent tool. **Every se
 ## Test cases
 [Concrete input → expected output scenarios the Worker MUST satisfy. The Worker implements against these and (when the task is code) writes the verifying test code as part of the deliverable. The per-batch Reviewer runs / verifies each case to confirm PASS. Test cases beat acceptance criteria alone because they're executable, not narrative.]
 
+**Quality bar — every test case must demonstrate real domain understanding of THIS task. Formulaic placeholders are a doctrine violation.**
+
+The Thinking Lead writes test cases by thinking through:
+
+1. **Domain logic** — what does this feature actually do in the user's world? What are the real inputs users provide (not toy examples)? What does success look like in production?
+2. **Domain edge cases** — boundary conditions specific to this surface. For a search bar: empty query, only-whitespace, single character, very long query (>1000 chars), special chars (`<`, `&`, `'`), Unicode (emoji, CJK, combining marks), RTL strings, no results, results truncated, debounce timing. For an auth flow: missing token, expired token, malformed token, token for deleted user, simultaneous logins from two devices, refresh during request. For a money calculation: zero, negative, rounding boundaries (.005 banker's rounding), currency-specific decimals (JPY has 0, KWD has 3), overflow at large values.
+3. **System edge cases** — failure modes the feature interacts with: concurrent updates / race conditions, partial network failure (request sent, response lost), stale cache, retry idempotency, timeout mid-operation, server returns malformed JSON, browser back/refresh mid-flow.
+4. **The integration surface** — what other code calls this? What can they pass that you didn't think to handle?
+
 [Use this format for each case:]
 
 | # | Name / scenario | Input or setup | Expected output / behavior | Notes |
 |---|---|---|---|---|
-| 1 | `<short name>` | `<input or pre-state>` | `<expected result>` | `<why this case matters>` |
+| 1 | `<short name>` | `<input or pre-state>` | `<expected result>` | `<why this case matters — domain or system reason>` |
 | 2 | `<short name>` | `<input or pre-state>` | `<expected result>` | `<why this case matters>` |
 
 [For non-code tasks (docs/configs/refactors), test cases become verification commands with expected results, e.g. `grep -c '<pattern>' <file>` → expect 3; `python3 -m json.tool < <file>` → exit 0; `grep -r '<old-API>' src/` → no results.]
 
-[Minimum: 3 test cases covering happy-path + 1 edge case + 1 error/empty case. More when the surface is wide. Omit ONLY when the task is genuinely test-impossible (e.g. a one-line README typo fix) — and in that case explicitly state `Test cases: N/A — <why>` so the Reviewer knows the omission was deliberate.]
+**Minimum coverage:** 3 test cases as a floor, but **3 is rarely enough for a non-trivial task**. Aim for the realistic set: every domain edge case the Worker should handle + the integration failure modes the feature can hit. The UserAvatar example in this template has 10 cases for a single component because that's what the actual surface needs; an auth-middleware brief would need 15+. Quality > arbitrary count.
+
+**Omit ONLY when the task is genuinely test-impossible** (a one-line README typo fix, a CI-config formatting change) — and explicitly state `Test cases: N/A — <why>` so the omission is deliberate, not sloppy.
+
+**Anti-patterns** (each makes the Reviewer's job impossible):
+
+- Three generic cases: "happy path / error / empty input" with no domain content — that's a template, not test cases
+- Cases that just restate Acceptance criteria in table form — Acceptance is shape (`exported as X`); test cases are behavioural input→output (`render("John Doe") → "JD"`)
+- Skipping domain edge cases ("Unicode is too obscure", "no one will pass empty string") — production data always exercises these; missing them produces real bugs
+- Vague Expected column ("works correctly", "returns the right thing") — must be a specific value or behavior the Reviewer can check
+- Copy-pasting test cases from a similar prior sub-task without rethinking the domain — every task has its own edges
+- Padding to hit the 3-case floor with near-duplicate cases ("happy path with name=John", "happy path with name=Jane") — duplicates aren't coverage
 
 ## Related context (orientation, not scope)
 [Pointers the worker should look at IF the brief becomes ambiguous — not files to modify. Includes prior patterns, design docs, related sub-tasks in the same batch.]
