@@ -25,8 +25,23 @@ Source template: [`templates/claude-md-doctrine.md`](../../templates/claude-md-d
 | `refresh` | Same as `generate` — alias for clarity when the block already exists |
 | `remove` | Remove the doctrine block from `CLAUDE.md` (preserves your own content; if the file becomes empty after removal, leave it as an empty file rather than delete) |
 | `status` | Show whether the doctrine block is present, its version, when it was generated |
+| `mode <auto\|manual\|off>` | Set the auto-bridge mode for this project. Writes `.hyperflow/.bridge-mode`. The session-start hook reads this and decides what to do |
 
 Default subcommand when none provided: `status`.
+
+## Auto-bridge (default ON)
+
+The CLI session-start hook (`hooks/session-start`) runs `scripts/auto-bridge.py` on every session start. Behavior depends on the mode stored in `.hyperflow/.bridge-mode`:
+
+| Mode | Behavior |
+|---|---|
+| `auto` (**default** when `.bridge-mode` is absent) | If `./CLAUDE.md` is missing the doctrine block OR has an outdated version, **silently writes/refreshes** the block and prints a one-line notice in session-start output. Zero user friction. |
+| `manual` | Never writes. Prints a one-line advisory when the block is missing or outdated: `./CLAUDE.md doctrine block would be refreshed (version 4.11.0) — run /hyperflow:bridge refresh to apply`. |
+| `off` | Does nothing. No writes, no advisories. |
+
+This means: open Claude Code CLI once in your project, and from then on every Desktop / web / IDE session in the same project automatically gets the up-to-date hyperflow doctrine via `CLAUDE.md`. Refresh on plugin update is automatic too.
+
+To opt out: `/hyperflow:bridge mode off`. To require explicit refresh: `/hyperflow:bridge mode manual`.
 
 ## What gets written
 
@@ -112,6 +127,18 @@ What's NOT in the bridge: /hyperflow:* slash commands, plugin-loaded skill files
 2. Find the `<!-- hyperflow:doctrine:start … -->` and `<!-- hyperflow:doctrine:end -->` markers; remove everything between them (inclusive of markers). Collapse adjacent blank lines so the file doesn't end up with a triple newline.
 3. If `CLAUDE.md` is now empty (or only whitespace), leave it as an empty file rather than delete — the user may have other tooling that expects the file to exist.
 4. Print `Removed hyperflow doctrine block from ./CLAUDE.md. Surfaces that loaded the doctrine block will revert to default behaviour.`
+
+### `mode <auto|manual|off>`
+
+Write the chosen mode to `.hyperflow/.bridge-mode`. The file holds one word: `auto`, `manual`, or `off`. The session-start hook reads it on every CLI session start. Print one of:
+
+```
+Auto-bridge: AUTO — ./CLAUDE.md doctrine block is silently maintained on every CLI session start.
+Auto-bridge: MANUAL — session start prints an advisory when the block is stale; you run /hyperflow:bridge refresh.
+Auto-bridge: OFF — no advisories, no writes. Use /hyperflow:bridge generate manually if you want the block.
+```
+
+Defaults to `auto` when `.bridge-mode` is absent (so first install of hyperflow auto-bridges with no user action). Setting `auto` explicitly is a no-op write that just records the intent.
 
 ### `status`
 
