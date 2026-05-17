@@ -50,6 +50,14 @@ Start from any skill — chain-starters auto-advance forward through the chain (
 Shared doctrine (autonomy rules, model routing, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
 
 if [ -n "$HF_DIR" ]; then
+  # Resolve active mode (default | lean | thorough) via the central helper.
+  # Used to decide whether to collapse session-start output into one summary line.
+  project_root="$(dirname "$HF_DIR")"
+  HF_MODE="default"
+  if [ -x "$PLUGIN_ROOT/scripts/resolve-mode.py" ]; then
+    HF_MODE="$(python3 "$PLUGIN_ROOT/scripts/resolve-mode.py" "$project_root" 2>>"$HF_DIR/.session-start.log" || echo "default")"
+  fi
+
   # D3: Session-cached context — generate .hyperflow/memory/session-context.md
   # Skip if .hyperflow/memory/ doesn't exist (scaffold hasn't run yet).
   # Non-blocking: errors go to stderr only; never fail the session.
@@ -201,6 +209,21 @@ $sticky_line"
 
 ## Active Tasks (incomplete from prior sessions)
 $tlist"
+  fi
+
+  # Lean-mode situational summary (one line consolidating all state).
+  # Emitted ONLY when mode=lean. Dedicated ## sections above continue to fire
+  # when they have attention-needed content (memory compaction advisory, sticky
+  # upgrade announcement, auto-bridge wrote/refreshed) — the summary is the
+  # always-present situational floor, not a replacement for the action signals.
+  if [ "$HF_MODE" = "lean" ] && [ -x "$PLUGIN_ROOT/scripts/lean-summary.py" ]; then
+    lean_line="$(python3 "$PLUGIN_ROOT/scripts/lean-summary.py" "$PLUGIN_ROOT" "$project_root" 2>>"$HF_DIR/.session-start.log" || true)"
+    if [ -n "$lean_line" ]; then
+      CONTENT="$CONTENT
+
+## Hyperflow status (lean mode)
+$lean_line"
+    fi
   fi
 fi
 
