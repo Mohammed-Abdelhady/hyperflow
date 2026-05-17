@@ -171,7 +171,7 @@ Hyperflow doctrine block: NOT PRESENT (no ./CLAUDE.md in project root)
 
 ## Overview
 
-`/hyperflow:bridge` is the user-facing interface for the CLAUDE.md doctrine bridge. It does NOT itself enforce the doctrine — it writes the rules into a file that surfaces outside the terminal CLI will load. Enforcement happens in those surfaces when Claude reads `CLAUDE.md` at session start.
+`/hyperflow:bridge` is the user-facing interface for the CLAUDE.md doctrine bridge. It does NOT itself enforce the doctrine — it writes the rules into a file that surfaces outside the terminal CLI will load. Enforcement happens in those surfaces when the host loads `CLAUDE.md` at session start.
 
 ## Prerequisites
 

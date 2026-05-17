@@ -80,8 +80,9 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-git commit -m "$MSG" --no-verify || {
-  echo "queue-commit: git commit failed — staging branch left as-is for inspection" >&2
+git commit -m "$MSG" || {
+  echo "queue-commit: git commit failed (hook rejection or other error) — staging branch left as-is for inspection" >&2
+  echo "queue-commit: fix the rejected files and re-run dispatch from the affected sub-task (the manifest tracks what was queued)" >&2
   exit 4
 }
 
