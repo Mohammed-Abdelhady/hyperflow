@@ -69,6 +69,45 @@ Wait for the user's answer. Do not proceed without it. Save the chosen mode and 
 
 If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
+### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
+
+When the user picks `Auto` at Step 0 AND operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision the chain needs. After this batch, the chain runs silently until the end-of-chain audit + deploy gates — the user is interrupted exactly twice at startup (chain-mode in Step 0, ops in Step 0.5) and then not again until done.
+
+Skip this step when:
+- `chain-mode=manual` — manual users review every phase, so operational choices defer to per-phase gates
+- Operational args already propagated (`commit=…`, `branch=…`, `push=…` in chain args) — re-asking is an invented-gate violation per DOCTRINE rule 8
+
+The 3-question batch:
+
+```
+Commit cadence?
+  Per-task (Recommended)   — one commit per sub-task; cleanest bisectable history
+  Per-batch                — one commit per batch; tidier branch graph, less granular
+  Per-task (deferred)      — queue per-task commits on hyperflow/staging-<id> during chain;
+                             flush all onto user's branch at end (atomic cumulative reveal;
+                             crash-safe via manifest at .hyperflow/commits-queue/)
+  Single                   — one commit at end of chain; smallest log footprint
+  None                     — leave dirty working tree; you'll commit manually
+
+Branch behaviour?
+  Create feat/<slug> (Recommended on main/master) — new feature branch
+  Stay on <current>                                — direct commits on the current branch
+
+Push at end?
+  Ask at deploy gate (Recommended) — standard push confirmation after release.sh
+  Auto-push                        — push branch + tag without asking at end
+  Never                            — always hold local; user pushes manually
+```
+
+Recommended defaults adapt:
+- Commit: `Per-task` unless triage shows `complexity=low AND sub-tasks<=2` (then `Single` is recommended)
+- Branch: `Create` if currently on `main` or `master`; `Stay` otherwise (already on a feature branch)
+- Push: `Ask at deploy gate` always — bumping to auto-push without explicit user consent violates DOCTRINE rule 8
+
+Save chosen values and propagate via chain args: `commit=<per-task|per-batch|per-task-deferred|single|none> branch=<new|current> push=<ask|auto|never>`. Dispatch (Step 2) reads commit + branch; deploy (Step 6) reads push.
+
+**On Per-task (deferred):** dispatch routes through `scripts/queue-commit.sh` after each sub-task PASS instead of `git commit` directly. Commits land on a private `hyperflow/staging-<chain-id>` branch with hooks enabled (no `--no-verify`, ever — per DOCTRINE rule 9) and original per-task file scope + messages preserved. At Step 4 wrap-up, `scripts/flush-commits.sh` fast-forward-merges staging onto the user's working branch — every queued commit lands in order with original SHAs preserved. Same N commits as Per-task immediate, just atomic at the end. Crash recovery: `/hyperflow:flush` re-runs the same flush against the persisted `.hyperflow/commits-queue/manifest.json`.
+
 ### Step 1 — Route
 
 Pure routing decision — no clarification questions here. Clarification fires at Step 2.5, AFTER research has analyzed the requirement against the codebase.
@@ -100,46 +139,11 @@ Only the ambiguities that Step 2 research did NOT resolve become questions. Per 
 
 The 2-question floor from `/hyperflow:spec` does NOT apply to scope. Scope asks zero questions when research is conclusive; it asks 1-3 when genuine post-analysis ambiguity remains.
 
-### Step 2.6 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires once per chain)
+### Step 2.6 — Operational Choices (MOVED to Step 0.5)
 
-This is the **last** time the orchestrator interrupts the user before dispatch runs end-to-end. In `chain-mode=auto`, every operational preference is collected here in a single batched `AskUserQuestion` block so dispatch can run silently from Step 3 onwards until the end-of-chain audit/deploy gates. Per DOCTRINE rule 8, this is a structural gate — it always fires when `chain-mode=auto`; it is exempt in `chain-mode=manual` because manual users already get to interject between every phase and batch.
+This step has been moved to Step 0.5 (immediately after Step 0 chain-mode) so operational decisions are batched with the only other startup question — the user is interrupted once at chain start, then the chain runs silently. Step 2.6 is preserved as a NUMBER for backward-reference only; it intentionally does nothing.
 
-Skip this step when:
-- `chain-mode=manual` — manual users review every phase, so operational choices can be deferred to the existing gates
-- Operational args were already propagated from a prior chain-starter (`commit=…`, `branch=…`, `push=…`) — re-asking is an invented-gate violation
-
-Fire ONE `AskUserQuestion` call containing all three questions (the tool supports up to 4 questions per call). Order them as below, each with a `(Recommended)` first option:
-
-```
-Commit cadence?
-  Per-task (Recommended)   — one commit per sub-task; cleanest bisectable history
-  Per-batch                — one commit per batch; tidier branch graph, less granular
-  Per-task (deferred)      — queue per-task commits on hyperflow/staging-<id> during chain;
-                             flush all onto user's branch at end (faster mid-chain; useful
-                             for runs with many sub-tasks where you don't want N hooks firing)
-  Single                   — one commit at end of chain; smallest log footprint
-  None                     — leave dirty working tree; you'll commit manually
-
-Branch behaviour?
-  Create feat/<slug> (Recommended on main/master) — new feature branch
-  Stay on <current>                                — direct commits on the current branch
-
-Push at end?
-  Ask at deploy gate (Recommended) — standard push confirmation after release.sh
-  Auto-push                        — push branch + tag without asking at end
-  Never                            — always hold local; user pushes manually
-```
-
-Recommended defaults adapt:
-- Commit: `Per-task` unless triage shows `complexity=low AND sub-tasks<=2` (then `Single` is recommended)
-- Branch: `Create` if currently on `main` or `master`; `Stay` otherwise (already on a feature branch)
-- Push: `Ask at deploy gate` always — bumping to auto-push without explicit user consent violates rule 8
-
-Save the chosen values and propagate via chain args: `commit=<per-task|per-batch|per-task-deferred|single|none> branch=<new|current> push=<ask|auto|never>`. Dispatch (Step 2) reads commit + branch; deploy (Step 6) reads push.
-
-When the user picks **Per-task (deferred)**, dispatch routes through `scripts/queue-commit.sh` after each sub-task PASS instead of `git commit` directly. Commits land on a private `hyperflow/staging-<chain-id>` branch with original messages + per-task file scope. At Step 4 wrap-up, dispatch runs `scripts/flush-commits.sh` which fast-forward-merges the staging branch onto the user's working branch — every queued commit lands in order with original SHAs preserved. Same N commits as Per-task immediate, just produced atomically at the end. See [`skills/flush/SKILL.md`](../flush/SKILL.md) for crash-recovery (`/hyperflow:flush` if dispatch was interrupted).
-
-If the user is invoking scope directly without going through spec (no prior `chain-mode=auto` propagation), Step 0 fires the chain-mode question and this step (Step 2.6) fires only if they pick auto.
+If propagation from a prior chain-starter failed and operational args are missing at this point in scope, fall through to Step 3 with default values (`commit=per-task branch=new push=ask`) rather than firing an invented mid-chain gate. The orchestrator MUST NOT fire `AskUserQuestion` here — Step 0.5 is the only correct location for this question batch.
 
 ### Step 3 — Decompose
 

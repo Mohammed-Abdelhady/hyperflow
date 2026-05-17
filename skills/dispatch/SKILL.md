@@ -87,6 +87,14 @@ How should I handle progress through the batches?
 
 Wait for the user's answer. Do not proceed without it. If `AskUserQuestion` cannot be presented, print an error and stop — never silently default.
 
+### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
+
+When the user picks `Auto` at Step 0 AND operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision dispatch needs. After this batch, dispatch runs silently until the end-of-chain audit + deploy gates.
+
+Skip when `chain-mode=manual` (per-batch pauses cover ops decisions) OR when operational args are already propagated (re-asking is an invented-gate violation).
+
+The 3-question batch is identical to scope Step 0.5 — see [scope/SKILL.md § Step 0.5](../scope/SKILL.md#step-05--operational-choices-auto-mode-only--structural-gate--fires-immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Spec, scope, dispatch share one canonical definition; whoever fires first owns the batch, the others see the args propagated and skip.
+
 ### Step 1 — Load the task
 
 Read `.hyperflow/tasks/<slug>.md`. If absent, stop and suggest `/hyperflow:scope` first.
