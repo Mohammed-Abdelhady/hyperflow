@@ -261,6 +261,45 @@ Workers receive persona-typed prompts based on triage `personas[]`. Personas com
 
 If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow profile per [escalation.md](escalation.md) rules. If risk becomes irreversible mid-flight, the orchestrator HALTS and calls `AskUserQuestion` for explicit consent. See [escalation.md](escalation.md) for paths and token accounting.
 
+### Oversize task splitting (Thinking Lead — Planner mandate)
+
+**A single Worker dispatch must never own more than one reviewable unit of work.** The Thinking Lead splits oversized work into multiple parallel sub-tasks rather than handing one Worker a giant brief. Two enforcement points:
+
+**1. At planning (scope Step 3 · pre-dispatch).** The Planner (Thinking Lead — Planner) MUST split any sub-task that meets ANY of these signals:
+
+| Signal | Threshold |
+|---|---|
+| File breadth | > 5 files touched |
+| Change volume | > 500 LOC of expected changes |
+| Subsystem cross-cut | touches 2+ distinct subsystems (auth + UI + DB, frontend + API + migration, …) |
+| Complexity tag | `complexity = high` from triage |
+| Mixed concerns | one sub-task spans data-model + business-logic + UI + tests |
+| Reviewability | a human reviewing the resulting commit would need > 10 minutes to grasp it |
+
+Split target: each resulting sub-task should be (a) reviewable in under 10 minutes of human time, (b) fit comfortably in a single Worker prompt + reasonable response, (c) have a single coherent purpose nameable in one conventional-commit subject line. Aim for sub-tasks at `complexity = low | medium` after the split; never keep `high`.
+
+**2. Mid-flight (Worker `OVERSIZE` escape hatch).** If a Worker discovers during execution that its brief is bigger than the Planner estimated (e.g., the file is 5k lines instead of 500, the refactor touches more callers than expected, the test scope has cascading dependencies), the Worker returns:
+
+```
+OVERSIZE: <one-line reason>
+SUGGESTED-SPLIT:
+  - <sub-task A name> · <files A> · <one-line purpose>
+  - <sub-task B name> · <files B> · <one-line purpose>
+  - <sub-task C name> · <files C> · <one-line purpose>
+```
+
+The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead it dispatches a Thinking Lead consultation: "given the Worker's `OVERSIZE` signal and `SUGGESTED-SPLIT`, produce the final split plan and updated batch graph." Thinking Lead returns the canonical split; the original sub-task is removed from the batch and N new sub-tasks are dispatched as a new sub-batch in the same dispatch cycle. The user is NOT asked — this is a mechanical reshape of a too-large brief, not a decision (Worker raised it, Thinking Lead decided it).
+
+**Anti-patterns** (any of these is a doctrine violation):
+
+- Letting a Worker run with an oversized brief because "it might still finish" — wastes tokens, produces unreviewable commits
+- Splitting the work inline in the Team Lead's main session — splits must come from a fresh Thinking Lead dispatch with full context
+- Firing `AskUserQuestion` to confirm the split — splitting is a mechanical reshape, not a decision the user should be paged for
+- Skipping the split signals at planning time because "the Planner thought it was fine" — the signals are non-negotiable; the Planner runs them as a checklist
+- Producing one giant commit at the end with all the split work merged together — splits exist precisely so each piece commits separately (per-task cadence preserved)
+
+**Cost rationale.** Three small sub-tasks dispatched to three Sonnet Workers in parallel cost less wall-clock time AND less total tokens than one Worker chewing through an oversized brief, because (a) parallelism cuts elapsed time, (b) each smaller prompt produces a focused response without context bloat, and (c) a focused Worker rarely needs retries. Splitting is a cost optimisation, not just a quality one.
+
 ### Rules
 
 1. **Always decompose first.** Even a single file edit: Sonnet worker edits → Opus verifies.
