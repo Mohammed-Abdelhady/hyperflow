@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.13.2] — 2026-05-17
+
+### Fixed
+- Move operational pre-elections to Step 0.5 — ask right after chain-mode
+
+
 ## [4.13.1] — 2026-05-17
 
 ### Fixed
@@ -623,7 +629,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.2...HEAD
+[4.13.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.1...v4.13.2
 [4.13.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.13.0...v4.13.1
 [4.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.6...v4.13.0
 [4.12.6]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.12.5...v4.12.6
