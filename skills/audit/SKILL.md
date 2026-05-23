@@ -17,6 +17,10 @@ Multi-level code review. Dispatcher — Opus 4.7 (thinking-tier). Workers — So
 
 This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. After the review prints, a **fix gate** asks the user whether to apply the findings — on `Yes`, audit auto-invokes `/hyperflow:scope` with the findings as the spec, which then chains to `/hyperflow:dispatch`.
 
+## Iron Rules
+
+**Failure recovery (DOCTRINE rule 14).** Worker errors, malformed output, NEEDS_REVISION verdicts, and gate failures in every Step follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Audit-specific exception: a failed Reviewer at L1/L2 escalates to an L3+ Reviewer at the same severity level rather than aborting — audit exists to catch issues, so a Reviewer failure is best resolved by a more thorough Reviewer, not by stopping the chain.
+
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
 | Step | Sub-phase | Worker tier | Thinking tier | Notes |
@@ -32,6 +36,7 @@ This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. Afte
 | 4 — Findings synthesis | 4a — Critical findings | Writer × 2 (evidence probe + impact analysis) | Sonnet Reviewer | Parallel |
 | 4 — Findings synthesis | 4b — Important findings | Writer × 2 (root-cause probe + fix-path analysis) | Sonnet Reviewer | Parallel |
 | 4 — Findings synthesis | 4c — Suggestions + observations | Writer × 2 (pattern analysis + praise identification) | Sonnet Reviewer | Parallel |
+| 4 — Findings synthesis | 4d — Memory feedback | Writer × 1 (anti-pattern curation) | Sonnet Reviewer (dedup validation) | Atomic Worker→Reviewer; runs after 4a/4b/4c complete |
 | 5 — Severity reconciliation | — | — | Sonnet Reviewer reconciles severity labels from Step 3 sub-phases | Atomic-exempt per DOCTRINE 12.2.8 — reads existing Step 3 labels; no Workers needed |
 | 6 — Fix gate | — | — | — | `AskUserQuestion` only (exempt — structural gate) |
 
@@ -158,6 +163,29 @@ Dispatch two Writer agents in parallel:
 - Writer — praise identification (flag genuinely well-done decisions; append durable patterns to `.hyperflow/memory/learnings.md` per [memory-system.md](references/memory-system.md))
 
 Then dispatch `Sonnet Reviewer — 4c suggestions + memory dedup check` to ensure no duplicate memory entries land and no Suggestions are mis-classified as Important. Verdict as above.
+
+#### Step 4d — Memory feedback (runs after 4a/4b/4c complete)
+
+After the audit file is written, curate recurring problem patterns into `.hyperflow/memory/anti-patterns.md` so future audit runs and workers benefit from accumulated findings. This is an atomic Worker→Reviewer pair.
+
+Dispatch one Writer agent:
+- Writer — anti-pattern curation (read `.hyperflow/memory/anti-patterns.md` if it exists; extract up to 3 new entries from the `[Critical]` and `[Important]` findings produced in 4a/4b; append or update the file)
+
+**Curation rules the Writer must follow:**
+- Only `[Critical]` and `[Important]` findings are eligible — Suggestions and Praise are excluded.
+- Before writing, read the existing `anti-patterns.md`. If a matching pattern already exists, increment its `frequency` counter and update `last seen`. Do not create a duplicate entry.
+- Limit: max 3 new pattern entries per audit run. When more than 3 eligible findings exist, prioritize by breadth — multi-file findings before single-file findings.
+- Append entries in this format:
+
+```markdown
+## <pattern category> (e.g. Error handling, Naming, Dead code)
+- <description> — first observed in audit <YYYY-MM-DD>, frequency: <count>, last seen: <YYYY-MM-DD>
+  Recommendation: <what workers should do to avoid this>
+```
+
+- Tag `anti-patterns.md` as `#hot` in the session memory index so workers load it at session start alongside other hot-tier files.
+
+Then dispatch `Sonnet Reviewer — 4d anti-pattern dedup check` to verify: no duplicate entries landed, frequency counters are accurate, only Critical/Important findings were promoted, and the entry count does not exceed 3 new additions. Verdict ∈ {`PASS`, `NEEDS_REVISION`}. On `NEEDS_REVISION`, the Writer re-reads the file and corrects the specific violation (max 1 retry before surfacing inline).
 
 ### Step 5 — Severity reconciliation (atomic-exempt per DOCTRINE 12.2.8)
 

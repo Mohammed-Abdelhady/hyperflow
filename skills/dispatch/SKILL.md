@@ -139,6 +139,8 @@ When all workers have returned, dispatch **one** batched per-batch **Reviewer** 
 
 _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention. The asymmetric paths are intentional.)_
 
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate tier → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
+
 Parse the per-sub-task verdicts:
 - `SECURITY_VIOLATION` — **halt the chain** immediately. Surface the finding; do not commit anything in the batch.
 - Worker returned `OVERSIZE: <reason>` with `SUGGESTED-SPLIT:` — do NOT proceed. Dispatch a Thinking Lead consultation: `**Thinking Lead — Planner (mid-flight split)** — split <sub-task-id> per Worker's OVERSIZE signal`. Pass the Worker's reason, suggested split, the original brief, and batch context. The Thinking Lead returns a final split plan (N new sub-tasks, each `complexity = low | medium`). Remove the original; dispatch the N new sub-tasks as a new sub-batch. The per-batch Reviewer fires after the new sub-batch completes. No user question — splitting an oversized brief is a mechanical reshape.
@@ -150,6 +152,8 @@ Parse the per-sub-task verdicts:
 After all sub-tasks in the batch have passed review, run **Layer 5 quality gates** (lint / typecheck / tests on affected files) per [quality-gates.md](references/quality-gates.md).
 
 Dispatch one Worker (Sonnet) to run the gate commands. Dispatch one **Reviewer** (Sonnet) to judge the gate output. Verdict: `PASS` / `NEEDS_FIX`. On NEEDS_FIX the Worker applies fixes (never amending per-sub-task commits — fixes land as small additional commits) and the gate re-runs. Max 3 gate cycles before escalating.
+
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). When the per-batch Reviewer returns NEEDS_REVISION, retry the Worker once with a `## Learnings from review` injection. A second NEEDS_REVISION surfaces the sub-task as partial; the chain continues with the latest output marked partial — no third Worker dispatch.
 
 #### Step 2d — Learnings + commit (P1 · sequential after 2c PASS)
 
@@ -176,6 +180,8 @@ If ANY of these conditions fails, the final integration review runs.
 > **Risk note:** the skip is the riskiest D-decision in round 2 — multi-batch cross-interaction bugs could slip. The guard conditions are deliberately strict (first-try PASS + no escalations + no security flags) to keep risk low. Pass `--thorough` to disable the skip and always run the integration review.
 
 > Atomic-exempt per §12.2.8 — this is a single Reviewer dispatch (Opus over the cumulative diff) with no parallel angles. No sub-phase decomposition warranted.
+
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). If the Opus integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context (no higher tier exists — escalation here means re-dispatching Opus with the error visible). Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
 
 Dispatch a thinking-tier **Reviewer** (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) over the full changed-file set across every batch (all sub-task commits from Step 2d). Use the same level cap as the batch reviewers (per flow profile).
 
@@ -299,6 +305,7 @@ When `chain-mode=auto`, scope batches three operational pre-elections at its Ste
 
 ## Iron Rules
 
+- **Failure recovery (rule 14).** Worker errors, malformed output, NEEDS_REVISION, and gate failures follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). Retry → escalate → abort. Chain budget: 3 cumulative aborts.
 - Workers never review, never coordinate, never ask the user questions.
 - Every batch produces **one** per-batch Reviewer dispatch (Sonnet · worker tier) — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case. Escalates to Opus under `--thorough`.
 - Plus **one** final integration Reviewer at the end (Step 3 · Opus · thinking tier) **when not skipped per D7**. Always Opus regardless of flags — this is the one Reviewer that sees the cumulative diff across batches.

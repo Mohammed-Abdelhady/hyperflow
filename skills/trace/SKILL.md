@@ -65,6 +65,8 @@ Then dispatch `**Reviewer** — verifying evidence coverage` (Opus) over all thr
 
 Reviewer confirms the three Searchers actually triangulate the failure surface. If gaps remain (e.g., no log found, code path incomplete), the Reviewer names specific missing angles — re-run the Searcher(s) for those gaps only, then re-run the Reviewer. Repeat until coverage is confirmed.
 
+**Failure recovery:** Searcher tool errors and NEEDS_REVISION verdicts follow DOCTRINE rule 14 (`skills/hyperflow/failure-recovery.md`). For trace specifically, a Searcher that aborts mid-evidence-gathering leaves the debugger with incomplete coverage — flag the gap explicitly in the Step 3 Reviewer output and carry it forward as a known uncertainty in the root-cause synthesis. Do not silently proceed as if evidence is complete.
+
 ## Step 3 — Hypothesize
 
 Atomic — single Debugger → Reviewer pair (DOCTRINE 12.2.8). 5 Whys and hypothesis ranking are a single sequential reasoning task; one Debugger call produces both in one pass.
@@ -106,11 +108,15 @@ If only one hypothesis exists — single Implementer is justified (no parallel a
 
 Reviewer: `Reviewer — checking verification results are deterministic` (Sonnet) over the Implementer outputs. Confirms each test run is deterministic and the result cleanly maps to a confirm/falsify verdict.
 
+**Failure recovery (4a):** Implementer tool errors and NEEDS_REVISION verdicts follow DOCTRINE rule 14 (`skills/hyperflow/failure-recovery.md`). An Implementer that aborts or cannot confirm/falsify its hypothesis marks that hypothesis `INCONCLUSIVE` — the chain does not abort. Other hypotheses proceed normally; the 4b Debugger receives the full set including any INCONCLUSIVE entries.
+
 ### Step 4b — Re-evaluation + loop gate
 
 Worker: `**Debugger** — re-evaluating hypotheses against verification results` (Opus). Substantive reasoning — the Debugger compares hypothesis predictions against actual test outcomes and decides the next branch. Not a pass/fail check: the Debugger may emit `CONFIRMED`, `FALSIFIED ALL`, or `PARTIALLY CONFIRMED` with new directions.
 
 Reviewer: `Reviewer — confirming re-evaluation verdict is sound` (Sonnet) over the Debugger's verdict.
+
+**Failure recovery (4b):** Debugger tool errors and NEEDS_REVISION verdicts follow DOCTRINE rule 14 (`skills/hyperflow/failure-recovery.md`). A failed 4b Debugger dispatch does not abort the chain; retry once, then escalate to thinking-tier. If all attempts fail, mark the entire verify step as `INCONCLUSIVE` and surface to the user — do not advance to Step 5 without a root-cause verdict.
 
 Debugger verdicts:
 - `CONFIRMED <hypothesis-N>` → proceed to Step 5 with that hypothesis as the confirmed root cause.
@@ -219,6 +225,8 @@ Debug is **off the auto-chain** — it's standalone. After Step 7 reviewer passe
 ## Doctrine
 
 Full rules in [DOCTRINE.md](references/DOCTRINE.md). See also [worker-prompt.md](references/worker-prompt.md) and [reviewer-prompt.md](references/reviewer-prompt.md).
+
+**Failure recovery (rule 14).** Worker errors and NEEDS_REVISION verdicts follow the canonical policy in `skills/hyperflow/failure-recovery.md`. For trace, a failed hypothesis test (Step 4) marks the hypothesis `INCONCLUSIVE` rather than aborting the chain — other hypotheses can still resolve the bug. A Searcher abort in Step 2 leaves incomplete evidence; flag the gap in the root-cause synthesis rather than proceeding as if coverage is full.
 
 ## Overview
 

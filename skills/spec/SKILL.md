@@ -25,7 +25,7 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 |---|---|---|---|---|
 | 0 — Chain mode | — (atomic) | — | — | `AskUserQuestion` only (exempt) |
 | 0.5 — Operational choices | — (atomic) | — | — | `AskUserQuestion` only (exempt) |
-| 1 — Triage | — (atomic) | — | **Classifier** (Opus) | Atomic: single Classifier, one output, no independent angles |
+| 1 — Triage | — (atomic) | — | **Classifier** (Opus) · **Triage Reviewer** (Sonnet) | Atomic per §12.2.8: single Worker → Reviewer pair, no independent angles. Reviewer verdicts: `PASS` / `RECLASSIFY` / `ESCALATE` (DOCTRINE rule 15) |
 | 2 — Context Exploration | 2a + 2b (P1 parallel) | Searcher ×2 per sub-phase [P3 concurrent with Step 1] | **Reviewer** (Sonnet) per sub-phase | P3: Steps 1+2 dispatched in same message; no coverage Reviewer at Step level (D4) |
 | | 2a — Codebase surface mapping | Searcher ×2 (glob discovery + dependency graph) | **Reviewer** (Sonnet) | Parallel with 2b |
 | | 2b — Convention and test pattern scan | Searcher ×2 (test pattern probe + lint/config scan) | **Reviewer** (Sonnet) | Parallel with 2a |
@@ -34,7 +34,7 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 | | 3b — Scope, constraints, and risks analysis | Writer ×2 (scope/constraints angle + risks angle) | **Reviewer** (Sonnet) | Parallel with 3a and 3c |
 | | 3c — Alternatives synthesis | Writer ×1 (single canonical aggregation — no parallel angle) | **Reviewer** (Sonnet) | Parallel with 3a and 3b; single-Worker justified: one alternatives set |
 | | 3d — Analyst synthesis | — | **Analyst** (Opus) consolidating 3a + 3b + 3c into unified 6-dim brief | Sequential — depends on 3a + 3b + 3c all PASS |
-| 4 — Smart questions | — (atomic) | — | — | `AskUserQuestion` only (exempt) · floor: 2 always |
+| 4 — Smart questions | — (atomic) | — | — | `AskUserQuestion` only (exempt) · floor: 2 always · pre-flight checks `.hyperflow/memory/project-decisions.md` to skip already-answered questions |
 | 5 — Requirement Synthesis | — (atomic) | Writer (Sonnet) | **Reviewer** (Sonnet · batched with Step 6) | Atomic: single canonical one-paragraph restatement; no independent angles |
 | 6 — Approach proposals | 6a + 6b (sequential; P3 concurrent with Step 5) | Writer ×2 per sub-phase | **Reviewer** (Sonnet · batched over both Steps 5+6) | P4-skippable; 6b depends on 6a |
 | | 6a — Approach candidate drafting | Writer ×2 (lightweight-approach angle + heavyweight-approach angle) | **Reviewer** (Sonnet) | Parallel with Step 5; sequential before 6b |
@@ -119,6 +119,28 @@ Persist the triage output and propagate it forward through `chain-mode=<mode> tr
 Triage — types: [<types>] · flow: <profile> · ambiguity: <score>
 ```
 
+##### Triage Reviewer (DOCTRINE rule 15)
+
+Immediately after the Classifier returns, dispatch `**Triage Reviewer** — validating classification against request and project profile` (Sonnet). The Reviewer reads:
+- The user's original request (does the classification reflect what they actually asked for?)
+- `.hyperflow/profile.md` (does the classification match the codebase's actual tech stack and conventions?)
+
+Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}:
+
+- **`PASS`** — consume the Classifier's output as-is, proceed to Step 2.
+- **`RECLASSIFY`** — Reviewer returns a corrected classification with reasoning; orchestrator uses the corrected version and prints one line:
+  ```
+  Triage reclassified: complexity high → medium · personas added: [security]
+  ```
+- **`ESCALATE`** — Reviewer can't decide; the ambiguity is added to the Smart Questions queue for Step 4 (surfaced as the first question in that set).
+
+On Reviewer error (tool failure, timeout): follow [failure-recovery.md](../hyperflow/failure-recovery.md) §5 — retry once, escalate tier, then abort with `REVIEWER_ABORT: triage-reviewer`. Do not consume unvalidated triage output.
+
+Print before dispatch:
+```
+**Triage Reviewer** — validating classification against request and project profile
+```
+
 #### Step 2 — Context Exploration
 
 **Sub-phases 2a and 2b are dispatched in parallel (P1).** Both sub-phases are independent and share no data dependency. Dispatch both in one message, wait for all Searchers to return, then run the per-sub-phase Reviewers, then advance.
@@ -191,6 +213,21 @@ After the Writer returns: `**Reviewer** — reviewing alternatives completeness 
 
 ### Step 4 — Smart Questions (`AskUserQuestion` — MANDATORY · floor 2)
 
+#### Pre-flight memoization check
+
+Before generating the question list, read `.hyperflow/memory/project-decisions.md` if it exists. This file holds structural answers recorded by prior chains in this project (e.g., `"database: Postgres + Drizzle"`, `"auth: session cookies, not JWT"`, `"test framework: vitest"`).
+
+For each candidate question from Step 3 (or triage + context if Step 3 was skipped):
+
+- If the answer is already in `project-decisions.md` **and** it does not conflict with the current task's requirements → skip the question and print one line:
+  ```
+  Skipping question '<question topic>' — already answered in project-decisions.md: <answer>
+  ```
+- If the cached answer **conflicts** with what the current task requires (e.g., the project decided "no SSR" but this task specifically needs SSR) → surface it as a Smart Question anyway. Frame it as: "project-decisions.md says X — does this task change that?"
+- If `project-decisions.md` does not exist or has no matching entry → include the question normally.
+
+The 2-question floor (below) still applies after skipping. If memoization eliminates all candidates above the floor, the floor questions still fire.
+
 Use the `AskUserQuestion` tool. Never plain text questions. Ask about unknowns from Step 3 (or from triage + context if Step 3 was skipped).
 
 **Hard floor: every spec run asks at least 2 questions**, regardless of how confident the triage was. The two minimum questions give the user a structural place to redirect before any decomposition runs. This floor is non-negotiable — P4's bounce-to-scope path (below) is the ONLY way to skip Step 4, and that path exits the spec phase entirely. Never skip or reduce below 2 inside the spec phase.
@@ -230,6 +267,20 @@ Example structure (DON'T omit the recommendation marker):
    Server sessions (Recommended)  — revocable, refreshable, fits this project's DB conventions
    JWT stateless                  — simpler, no DB, harder to revoke
 ```
+
+#### Post-collection memoization append
+
+After the user answers the Step 4 questions, scan answers for structural decisions — choices about database, auth, testing, deployment, framework patterns, or any project-level default that future chains should not re-ask. For each structural answer:
+
+1. Append it to `.hyperflow/memory/project-decisions.md` under the appropriate category heading. Create the file if it does not exist.
+2. Format:
+   ```markdown
+   ## <Category>
+   - <decision> (recorded <YYYY-MM-DD>, source chain: <task-slug>)
+   ```
+3. Do not append ephemeral or task-specific answers (e.g., "use a modal for this feature" is task-specific; "modal pattern via Radix Dialog" is structural if it establishes the project-wide modal approach).
+
+This write is inline (orchestrator tool call) — trivial per §12.1. No Agent dispatch needed.
 
 ### Steps 5+6 — Requirement Synthesis and Approach Proposals (P3 + P2)
 
