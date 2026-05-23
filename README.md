@@ -77,6 +77,7 @@ Done.
 | **Spec** | `/hyperflow:spec` | Design is ambiguous — auto-chains to `scope` → `dispatch` |
 | **Scope** | `/hyperflow:scope` | Spec is clear — auto-chains to `dispatch` |
 | **Dispatch** | `/hyperflow:dispatch` | Task file already in `.hyperflow/tasks/` |
+| **Amplify** | `/hyperflow:amplify` | Enhance a rough prompt before running it — standalone |
 | **Trace** | `/hyperflow:trace` | Root-cause a bug — standalone |
 | **Audit** | `/hyperflow:audit` | Code review — standalone |
 | **Deploy** | `/hyperflow:deploy` | Pre-push gates + ship — standalone |
@@ -223,7 +224,7 @@ You: /hyperflow:deploy                         # pre-push gates + commit + push
 
 ## Skills
 
-Hyperflow ships **13 specialized skills**. Auto-routing is on by default — say "audit the diff", "debug this test", or any chain-starter verb and the orchestrator routes to the right skill without a `/hyperflow:*` prefix. Disable with `/hyperflow:sticky off`; upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`.
+Hyperflow ships **14 specialized skills**. Auto-routing is on by default — say "audit the diff", "debug this test", or any chain-starter verb and the orchestrator routes to the right skill without a `/hyperflow:*` prefix. Disable with `/hyperflow:sticky off`; upgrade to full sticky (every task-shaped message routes, even without verbs) via `/hyperflow:sticky on`.
 
 Outside the terminal CLI (Desktop, claude.ai web, IDE extensions that don't shell out to the `claude` binary) the plugin doesn't load — run `/hyperflow:bridge generate` once to embed the portable doctrine into your project's `CLAUDE.md`.
 
@@ -240,6 +241,7 @@ Outside the terminal CLI (Desktop, claude.ai web, IDE extensions that don't shel
 | Skill | Command | Purpose |
 |-------|---------|---------|
 | **Scaffold** | `/hyperflow:scaffold` | Analyze project · build `.hyperflow/` cache · install provider auto-detection shims |
+| **Amplify** | `/hyperflow:amplify` | Rewrite a rough prompt into the single strongest version — domain-aware persona standards + project rules injected, scored against an 8-dimension rubric, then a handoff gate into the chain |
 | **Trace** | `/hyperflow:trace` | Systematic root-cause: 5 Whys + hypothesis testing — never blind-patches symptoms |
 | **Audit** | `/hyperflow:audit` | Multi-level review (L1 quick → L5 exhaustive) on uncommitted changes, a file/range, or a PR |
 | **Deploy** | `/hyperflow:deploy` | Lint + typecheck + build + tests + security sweep + commit + release.sh + push |
