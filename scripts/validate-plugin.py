@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""Validate hyperflow plugin manifests, skills, hooks, and README links.
-
-Runs in CI on every push/PR plus weekly. Catches schema drift, version
-mismatches, missing skill frontmatter, broken internal links, and dangling
-hook script references — the kind of thing that breaks `claude plugin install`
-silently in the wild.
-
-Exit codes:
-    0  all checks passed
-    1  one or more checks failed (see stderr)
-
-No external dependencies beyond the Python 3 stdlib so it can run on any
-default GitHub Actions ubuntu runner without `pip install`.
-"""
+"""Validate manifests, skill frontmatter, hooks, and README links. Used by CI."""
 
 from __future__ import annotations
 
@@ -45,9 +32,6 @@ def section(title: str, fn: Callable[[], None]) -> None:
         print(f"  OK    {title}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Check 1 — plugin.json
-# ─────────────────────────────────────────────────────────────────────────────
 PLUGIN_JSON_REQUIRED = ["name", "version", "description", "author", "homepage", "repository", "license"]
 
 
@@ -71,9 +55,6 @@ def check_plugin_json() -> None:
         fail(f".claude-plugin/plugin.json version '{version}' is not strict semver MAJOR.MINOR.PATCH")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Check 2 — marketplace.json
-# ─────────────────────────────────────────────────────────────────────────────
 def check_marketplace_json() -> None:
     path = ROOT / ".claude-plugin" / "marketplace.json"
     if not path.exists():
@@ -101,7 +82,6 @@ def check_marketplace_json() -> None:
         if required not in entry:
             fail(f"marketplace.json hyperflow entry missing required field: {required}")
 
-    # Cross-check version with plugin.json
     plugin_json = ROOT / ".claude-plugin" / "plugin.json"
     if plugin_json.exists():
         plugin_version = json.loads(plugin_json.read_text()).get("version")
@@ -111,7 +91,6 @@ def check_marketplace_json() -> None:
                 f"!= plugin.json version '{plugin_version}'"
             )
 
-    # Cross-check version with top-level metadata.version
     metadata_version = data.get("metadata", {}).get("version")
     if metadata_version and metadata_version != entry.get("version"):
         fail(
@@ -119,20 +98,16 @@ def check_marketplace_json() -> None:
             f"!= hyperflow entry version '{entry.get('version')}'"
         )
 
-    # Source must be {source: 'url', url: '<git url>'} or similar
     source = entry.get("source")
     if isinstance(source, dict):
         if source.get("source") == "url" and not source.get("url", "").startswith("https://"):
             fail(f"marketplace.json hyperflow source.url is not https://: {source.get('url')}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Check 3 — package.json version sync
-# ─────────────────────────────────────────────────────────────────────────────
 def check_package_json() -> None:
     path = ROOT / "package.json"
     if not path.exists():
-        return  # optional
+        return
     try:
         data = json.loads(path.read_text())
     except json.JSONDecodeError as e:
@@ -143,15 +118,11 @@ def check_package_json() -> None:
         fail(f"package.json version '{data.get('version')}' != plugin.json version '{plugin_version}'")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Check 4 — SKILL.md frontmatter
-# ─────────────────────────────────────────────────────────────────────────────
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
 
 def parse_simple_yaml(text: str) -> dict[str, str]:
-    """Tiny YAML subset parser — handles `key: value` pairs, nothing else.
-    Avoids a PyYAML dependency to keep CI dependency-free."""
+    # Tiny key:value parser. Avoids the PyYAML dep so CI needs no pip install.
     out: dict[str, str] = {}
     for line in text.splitlines():
         if not line.strip() or line.strip().startswith("#"):
@@ -185,19 +156,15 @@ def check_skills() -> None:
             fail(f"{rel} frontmatter missing 'name' field")
         if "description" not in fm:
             fail(f"{rel} frontmatter missing 'description' field")
-        # Per skills/<name>/SKILL.md convention: name should match the directory
         expected_name = skill.parent.name
         if fm.get("name") and fm["name"] != expected_name:
             warn(f"{rel} frontmatter name '{fm['name']}' != directory '{expected_name}'")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Check 5 — hooks.json references resolve
-# ─────────────────────────────────────────────────────────────────────────────
 def check_hooks() -> None:
     path = ROOT / "hooks" / "hooks.json"
     if not path.exists():
-        return  # hooks are optional
+        return
     try:
         data = json.loads(path.read_text())
     except json.JSONDecodeError as e:
@@ -208,7 +175,6 @@ def check_hooks() -> None:
         for block in event_blocks:
             for hook in block.get("hooks", []):
                 cmd = hook.get("command", "")
-                # Substitute the runtime placeholder with our repo root.
                 resolved = cmd.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT)).strip().strip('"')
                 script_path = Path(resolved.split()[0]) if resolved else None
                 if script_path and not script_path.exists():
@@ -217,9 +183,6 @@ def check_hooks() -> None:
                     fail(f"hooks.json {event_name} script is not a regular file: {script_path}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Check 6 — README internal links resolve
-# ─────────────────────────────────────────────────────────────────────────────
 RELATIVE_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)#]+?)(?:#[^)]+)?\)")
 
 
@@ -230,20 +193,13 @@ def check_readme_links() -> None:
         return
     content = readme.read_text()
     for href in RELATIVE_LINK_RE.findall(content):
-        # Skip absolute URLs, mailto, and anchor-only links
-        if href.startswith(("http://", "https://", "mailto:", "#")):
-            continue
-        # Skip pure query/fragment-only refs
-        if href.startswith("?"):
+        if href.startswith(("http://", "https://", "mailto:", "#", "?")):
             continue
         target = (ROOT / href).resolve()
         if not target.exists():
             fail(f"README.md broken link → {href}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────────────────────────────────────
 def main() -> int:
     print(f"Validating hyperflow plugin at {ROOT}")
     section("plugin.json", check_plugin_json)
