@@ -21,18 +21,34 @@ This skill drives **Layer 0.5 (Task Triage)** and **Layer 4 (Brainstorming/Spec)
 
 Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivial steps per §12.1 may be performed inline by the orchestrator.
 
-| Step | Worker tier | Thinking tier | Notes |
-|---|---|---|---|
-| 0 — Chain mode | — | — | `AskUserQuestion` only (exempt) |
-| 1+2 — Triage + Context | Searcher (Sonnet) [P3 concurrent] | **Classifier** (Opus) [P3 concurrent] | P3: dispatched in same message; no coverage Reviewer (D4) |
-| 3 — Multi-dim analysis | — | **Analyst** (Opus) produces 6-dim brief | P4-skippable: ambiguity < 0.6 AND complexity != high |
-| 4 — Smart questions | — | — | `AskUserQuestion` only (exempt) · floor: 2 always |
-| 5+6 — Synthesis + Approaches | Writer ×2 (Sonnet) [P3 concurrent] | **Reviewer** (Sonnet · per-batch tier) batched over both drafts [P2] | P3: dispatched together · Step 6 is P4-skippable · Sonnet because diff is small |
-| 7 — Design sections | Writer ×5 (Sonnet) [P1 parallel] | **Reviewer** (Sonnet · per-batch tier) batched over all 5 [P2] | One combined user gate after batch review · Sonnet handles per-section L1-L2 work |
-| 8 — Spec output | Writer (Sonnet) | **Reviewer** (Opus · final-pass tier) final spec sanity check | Sequential · Opus because this is the buck-stops-here pass over the full spec |
-| 9 — Hand off | — | — | Skill tool invocation — trivial inline per §12.1 (one tool call, no generation, no review) |
+| Step | Sub-phase | Worker tier | Thinking tier | Notes |
+|---|---|---|---|---|
+| 0 — Chain mode | — (atomic) | — | — | `AskUserQuestion` only (exempt) |
+| 0.5 — Operational choices | — (atomic) | — | — | `AskUserQuestion` only (exempt) |
+| 1 — Triage | — (atomic) | — | **Classifier** (Opus) | Atomic: single Classifier, one output, no independent angles |
+| 2 — Context Exploration | 2a + 2b (P1 parallel) | Searcher ×2 per sub-phase [P3 concurrent with Step 1] | **Reviewer** (Sonnet) per sub-phase | P3: Steps 1+2 dispatched in same message; no coverage Reviewer at Step level (D4) |
+| | 2a — Codebase surface mapping | Searcher ×2 (glob discovery + dependency graph) | **Reviewer** (Sonnet) | Parallel with 2b |
+| | 2b — Convention and test pattern scan | Searcher ×2 (test pattern probe + lint/config scan) | **Reviewer** (Sonnet) | Parallel with 2a |
+| 3 — Multi-dim analysis | 3a + 3b + 3c (P1 parallel) | Writer ×1–2 per sub-phase | **Reviewer** (Sonnet) per sub-phase + **Analyst** (Opus) final synthesis | P4-skippable; `--thorough` always runs |
+| | 3a — Intent and technical-fit analysis | Writer ×2 (user-intent angle + technical-fit angle) | **Reviewer** (Sonnet) | Parallel with 3b and 3c |
+| | 3b — Scope, constraints, and risks analysis | Writer ×2 (scope/constraints angle + risks angle) | **Reviewer** (Sonnet) | Parallel with 3a and 3c |
+| | 3c — Alternatives synthesis | Writer ×1 (single canonical aggregation — no parallel angle) | **Reviewer** (Sonnet) | Parallel with 3a and 3b; single-Worker justified: one alternatives set |
+| | 3d — Analyst synthesis | — | **Analyst** (Opus) consolidating 3a + 3b + 3c into unified 6-dim brief | Sequential — depends on 3a + 3b + 3c all PASS |
+| 4 — Smart questions | — (atomic) | — | — | `AskUserQuestion` only (exempt) · floor: 2 always |
+| 5 — Requirement Synthesis | — (atomic) | Writer (Sonnet) | **Reviewer** (Sonnet · batched with Step 6) | Atomic: single canonical one-paragraph restatement; no independent angles |
+| 6 — Approach proposals | 6a + 6b (sequential; P3 concurrent with Step 5) | Writer ×2 per sub-phase | **Reviewer** (Sonnet · batched over both Steps 5+6) | P4-skippable; 6b depends on 6a |
+| | 6a — Approach candidate drafting | Writer ×2 (lightweight-approach angle + heavyweight-approach angle) | **Reviewer** (Sonnet) | Parallel with Step 5; sequential before 6b |
+| | 6b — Trade-off and fit evaluation | Writer ×2 (fit-analysis angle + risk-analysis angle) | **Reviewer** (Sonnet) | Sequential after 6a; depends on 6a candidates as input |
+| 7 — Design sections | 7a + 7b + 7c (P1 parallel) | Writer ×1–2 per sub-phase [P1] | **Reviewer** (Sonnet · per-batch) batched over sub-phase aggregate [P2] | One combined user gate after full batch review |
+| | 7a — Structural sections (Architecture + Data flow) | Writer ×2 (Architecture Writer + Data flow Writer) | **Reviewer** (Sonnet) | Parallel with 7b and 7c |
+| | 7b — Decision sections (Key decisions + Edge cases) | Writer ×2 (Key decisions Writer + Edge cases Writer) | **Reviewer** (Sonnet) | Parallel with 7a and 7c |
+| | 7c — File structure section | Writer ×1 (single canonical section — no parallel angle) | **Reviewer** (Sonnet) | Parallel with 7a and 7b; single-Worker justified |
+| 8 — Spec finalize | — (atomic) | Writer (Sonnet) | **Reviewer** (Opus · final-pass tier) | Atomic: single canonical finalization; no independent angles |
+| 9 — Hand off | — (atomic) | — | — | Skill tool invocation — trivial inline per §12.1 (one tool call, no generation, no review) |
 
 Substantive steps = 1, 2, 3, 5, 6, 7, 8. Each appears in the usage summary.
+Steps decomposed into sub-phases (12.2): 2 (→ 2a, 2b), 3 (→ 3a, 3b, 3c), 6 (→ 6a, 6b), 7 (→ 7a, 7b, 7c).
+Atomic-exempt steps (12.2.8): 0, 0.5, 4, 9 (AskUserQuestion / single Skill call); 1 (single Classifier, no angles); 5 (single canonical synthesis); 8 (single canonical finalization).
 
 ## Approval Gates
 
@@ -105,31 +121,73 @@ Triage — types: [<types>] · flow: <profile> · ambiguity: <score>
 
 #### Step 2 — Context Exploration
 
-Agents — `Searcher` (Sonnet).
+**Sub-phases 2a and 2b are dispatched in parallel (P1).** Both sub-phases are independent and share no data dependency. Dispatch both in one message, wait for all Searchers to return, then run the per-sub-phase Reviewers, then advance.
 
-1. Dispatch `Searcher — mapping context relevant to <idea>` (concurrent with Classifier above). Find existing code, patterns, similar features. Do not ask the user what you can find in the code.
-2. Trust the Searcher output and advance. No coverage Reviewer is dispatched — downstream Writers will flag `MISSING CONTEXT: <subsystem>` if anything was missed.
+No Step-level coverage Reviewer — downstream Writers flag `MISSING CONTEXT: <subsystem>` if anything was missed.
 
 **Fallback:** If a downstream Writer flags `MISSING CONTEXT: <subsystem>`, the orchestrator redispatches the Searcher with the gap before continuing. This trades a small bad-case path penalty for a large good-case path win.
 
-### Step 3 — Multi-Dimensional Analysis (P4-skippable)
+##### Step 2a — Codebase surface mapping
 
-Agents — **Analyst** (Opus, thinking-tier).
+Agents — `Searcher` ×2 (Sonnet).
+
+Dispatch in parallel:
+- `Searcher — glob discovery: mapping file tree and entry points relevant to <idea>`
+- `Searcher — dependency graph traversal: tracing import paths and module dependencies`
+
+Do not ask the user what you can find in the code. Trust the Searchers' output.
+
+After both Searchers return: `**Reviewer** — reviewing surface mapping coverage (Step 2a)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only Step 2a Searchers with the gap identified.
+
+##### Step 2b — Convention and test pattern scan
+
+Agents — `Searcher` ×2 (Sonnet).
+
+Dispatch in parallel (concurrent with Step 2a):
+- `Searcher — test pattern probe: finding existing test conventions, helpers, and fixture patterns`
+- `Searcher — lint and config scan: reading project config, lint rules, naming conventions`
+
+After both Searchers return: `**Reviewer** — reviewing convention scan completeness (Step 2b)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only Step 2b Searchers.
+
+### Step 3 — Multi-Dimensional Analysis (P4-skippable)
 
 **P4 gate:** If `triage.ambiguity < 0.6 AND triage.complexity != high`, skip this step entirely — jump to Step 4. Nothing ambiguous to analyze; the 6-dimension brief adds no value. Border rounding rule: **round up** — if ambiguity is 0.59, treat as 0.6 and run this step. Favor running optional steps when on the fence.
 
 **If `--thorough` / `depth=max`:** always run this step regardless of triage scores.
 
-If not skipped: dispatch `**Analyst** — 6-dimension exploration` with the request + context from Step 2. The Analyst produces a brief covering:
+If not skipped: **sub-phases 3a, 3b, and 3c are dispatched in parallel (P1).** Each sub-phase fans out two Writer angles exploring different dimensions of the analysis. After all sub-phase Reviewers return, the Analyst (Opus) aggregates the dimension briefs into the unified 6-dim output that Step 4 consumes.
 
-1. **User intent** — what is the real underlying need?
-2. **Technical fit** — how does this fit existing architecture?
-3. **Scope** — minimum viable vs maximum scope
-4. **Constraints** — time, deps, perf, compatibility
-5. **Risks** — what could go wrong, what's irreversible
-6. **Alternatives** — at least 3 ways to solve this
+#### Step 3a — Intent and technical-fit analysis
 
-The Analyst flags which dimensions have unknowns the user must resolve. Those unknowns become the Step 4 question set.
+Agents — `Writer` ×2 (Sonnet).
+
+Dispatch in parallel:
+- `Writer — user-intent analysis: what is the real underlying need and what success looks like`
+- `Writer — technical-fit analysis: how this fits the existing architecture and patterns from Step 2 context`
+
+After both Writers return: `**Reviewer** — reviewing intent and fit analysis (Step 3a)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only Step 3a Writers.
+
+#### Step 3b — Scope, constraints, and risks analysis
+
+Agents — `Writer` ×2 (Sonnet). Dispatched in parallel with Steps 3a and 3c.
+
+Dispatch in parallel:
+- `Writer — scope and constraints analysis: minimum viable vs maximum scope, time/deps/perf/compatibility limits`
+- `Writer — risks analysis: what could go wrong, what is irreversible, failure modes`
+
+After both Writers return: `**Reviewer** — reviewing scope, constraints, and risks analysis (Step 3b)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only Step 3b Writers.
+
+#### Step 3c — Alternatives synthesis
+
+Agents — `Writer` ×1 (Sonnet). Dispatched in parallel with Steps 3a and 3b.
+
+`Writer — alternatives synthesis: at least 3 distinct ways to solve this, with brief notes on each` (sequential synthesis — no parallel angle: one canonical set of alternatives, not two independent perspectives)
+
+After the Writer returns: `**Reviewer** — reviewing alternatives completeness (Step 3c)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch Step 3c Writer.
+
+#### Step 3 aggregate — Analyst synthesis (sequential — depends on 3a + 3b + 3c all `PASS`)
+
+`**Analyst** — 6-dimension aggregation: consolidating sub-phase briefs into unified analysis` (Opus · thinking-tier). The Analyst reads the 3a, 3b, and 3c Writer outputs and produces the final 6-dimension brief, flagging which dimensions have unknowns the user must resolve. Those unknowns become the Step 4 question set.
 
 ### Step 4 — Smart Questions (`AskUserQuestion` — MANDATORY · floor 2)
 
@@ -175,11 +233,11 @@ Example structure (DON'T omit the recommendation marker):
 
 ### Steps 5+6 — Requirement Synthesis and Approach Proposals (P3 + P2)
 
-**P3 applies:** Step 5 (Synthesis Writer) and Step 6 (Approaches Writer) both depend on Step 4 answers but not on each other. Dispatch both Writers in a single message, then wait for both to return before dispatching the batched Reviewer.
+**P3 applies:** Step 5 (Synthesis Writer) and Step 6 (first sub-phase 6a Writers) both depend on Step 4 answers but not on each other. Dispatch Step 5 Writer and Step 6a Writers in a single message, then proceed through 6b (sequential on 6a output), then wait for everything to return before dispatching the batched Reviewer.
 
-**P2 applies:** After both Writers return, dispatch ONE Opus Reviewer using `reviewer-prompt-batched.md` to review both drafts in a single pass, returning per-draft verdicts.
+**P2 applies:** After Step 5 Writer and Step 6 sub-phases (6a + 6b) all return, dispatch ONE Reviewer using `reviewer-prompt-batched.md` to review both drafts in a single pass, returning per-draft verdicts.
 
-**If `--thorough` / `depth=max`:** run Step 5 (Writer → Reviewer) sequentially, then Step 6 (Writer → Reviewer) sequentially.
+**If `--thorough` / `depth=max`:** run Step 5 (Writer → Reviewer) sequentially, then Step 6 sub-phases sequentially (6a Writer → Reviewer, then 6b Writer → Reviewer).
 
 #### Step 5 — Requirement Synthesis
 
@@ -193,24 +251,38 @@ Example structure (DON'T omit the recommendation marker):
 
 **If `--thorough` / `depth=max`:** always run Step 6 regardless of triage scores.
 
-If not skipped:
+If not skipped: **sub-phases 6a and 6b run sequentially** — 6b depends on the candidate approaches produced by 6a. Step 6 as a whole runs concurrently with Step 5 (P3).
 
-1. Dispatch `Writer — drafting 2–3 approaches` (concurrent with Step 5 Writer above). The Writer produces, for each approach:
-   - **Name** — short label
-   - **What** — 1–2 sentence summary
-   - **Pros** — what this gets right
-   - **Cons** — what it sacrifices
-   - **Fit** — how well it matches the stated goal/constraints
-2. (Reviewed in the batched pass below.)
+##### Step 6a — Approach candidate drafting
 
-**Batched Reviewer (P2):** After both the Step 5 Writer and Step 6 Writer have returned, dispatch one `**Reviewer** (Sonnet · per-batch tier) — batched review: synthesis + approaches` (`reviewer-prompt-batched.md`, `model: "<resolved-worker>"`). Per the DOCTRINE tier split, per-batch reviewers default to Sonnet because the diff is small (one synthesis paragraph + 2–3 approach paragraphs). `--thorough` escalates to Opus. The Reviewer returns:
+Agents — `Writer` ×2 (Sonnet). Dispatched concurrently with Step 5 Writer (P3).
+
+Dispatch in parallel:
+- `Writer — lightweight-approach candidates: drafting 1–2 lower-complexity approaches for this problem`
+- `Writer — heavyweight-approach candidates: drafting 1–2 higher-complexity or more thorough approaches`
+
+Each Writer produces, for each approach: **Name** (short label) · **What** (1–2 sentence summary) · **Pros** · **Cons** · **Fit** (how well it matches goal/constraints).
+
+After both Writers return: `**Reviewer** — reviewing approach candidate coverage (Step 6a)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only Step 6a Writers.
+
+##### Step 6b — Trade-off and fit evaluation (depends on Step 6a output)
+
+Agents — `Writer` ×2 (Sonnet). Sequential after Step 6a `PASS`.
+
+Dispatch in parallel:
+- `Writer — fit analysis: scoring each 6a candidate against stated goals, constraints, and context from Step 2`
+- `Writer — risk analysis: surfacing failure modes and irreversible consequences per 6a candidate`
+
+After both Writers return: `**Reviewer** — reviewing trade-off evaluation completeness (Step 6b)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only Step 6b Writers.
+
+**Batched Reviewer (P2):** After Step 5 Writer AND Step 6 sub-phases (6a + 6b) have all returned, dispatch one `**Reviewer** (Sonnet · per-batch tier) — batched review: synthesis + approaches` (`reviewer-prompt-batched.md`, `model: "<resolved-worker>"`). Per the DOCTRINE tier split, per-batch reviewers default to Sonnet because the diff is small (one synthesis paragraph + 2–3 approach paragraphs). `--thorough` escalates to Opus. The Reviewer returns:
 
 ```
 §1 Synthesis:  PASS
 §2 Approaches: NEEDS_FIX — [specific feedback]
 ```
 
-On `NEEDS_FIX` for either draft: re-dispatch only that Writer; single Opus re-review of just that draft. The passing draft is accepted as-is.
+On `NEEDS_FIX` for either draft: re-dispatch only that Writer (or the failing Step 6 sub-phase); single Opus re-review of just that draft. The passing draft is accepted as-is.
 
 After the batched Reviewer approves: present the synthesis and approaches to the user. Recommend one approach, but the choice is the user's. Ask via `AskUserQuestion`.
 
@@ -218,11 +290,15 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 
 **File-first artefact rule (DOCTRINE rule 8 file-first clause):** every section Writer writes its draft directly to `.hyperflow/specs/<slug>.draft.md` — never returns the section content for the orchestrator to paste inline. The Reviewer reads sections from the file. The approval gate references the file path, not the content. Inline pasting of section text into chat is a doctrine violation — chat output is ephemeral and unscrollable; a file is reviewable, editable, and persistent across sessions.
 
-**P1 applies:** All 5 design sections share the same upstream input (the chosen approach) and have no inter-dependencies. Dispatch all 5 Writers in ONE parallel message — the same pattern `dispatch` uses for batch workers. Each Writer is instructed to `Write` its section into the file at a stable anchor (`## 1. Architecture`, `## 2. Data flow`, etc.) — the orchestrator pre-seeds the file with the 5 H2 headers before dispatching so Writers can use `Edit` with the heading as a unique anchor and avoid append-order races.
+**P1 applies at sub-phase level:** All 3 sub-phases share the same upstream input (the chosen approach) and have no inter-dependencies. Dispatch sub-phases 7a, 7b, and 7c in ONE parallel message. Each Writer writes its section into the file at a stable H2 anchor — the orchestrator pre-seeds the file with the 5 H2 headers before dispatching so Writers can use `Edit` with the heading as a unique anchor and avoid append-order races.
 
 **Mode resolution (one-time per chain).** Before dispatching the 5 Writers, run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and propagate the result via chain args (`mode=<default|lean|thorough>`). When `mode=lean`, Writers receive the lean Project Context block (paths to `.hyperflow/memory/session-context.md` etc., not inlined content) per `worker-prompt.md`'s lean variant. Spec section content, the 2-question floor, section-approval gates, persona stitching, memory injection, reviewer model + template, and security blocklist remain unchanged regardless of mode.
 
-**P2 applies:** After all 5 Writers return, dispatch ONE per-batch Reviewer (`model: "<resolved-worker>"` — Sonnet by default; Opus under `--thorough`) using `reviewer-prompt-batched.md` to read `.hyperflow/specs/<slug>.draft.md` and review all 5 sections in a single pass, returning per-section verdicts:
+**Sub-phases 7a, 7b, and 7c** group the 5 sections by concern — structural (architecture + data flow), decision (key decisions + edge cases), and file layout — so per-sub-phase Reviewers catch intra-group conflicts before the final batched pass.
+
+**Per-sub-phase Reviewers fire immediately after each sub-phase's Writers return** (not gated on the other sub-phases finishing). This lets early sub-phases' misses surface before the final batched pass.
+
+**P2 applies:** After all 3 sub-phases complete (all per-sub-phase Reviewers `PASS`), dispatch ONE final per-batch Reviewer (`model: "<resolved-worker>"` — Sonnet by default; Opus under `--thorough`) using `reviewer-prompt-batched.md` to read `.hyperflow/specs/<slug>.draft.md` and review all 5 sections in a single pass, returning per-section verdicts:
 
 ```
 §1 Architecture:   PASS
@@ -232,9 +308,37 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 §5 File structure: PASS
 ```
 
-**Cross-section coherence benefit:** the batched Reviewer sees all sections simultaneously and catches conflicts that per-section passes miss (e.g., a contradiction between §1 Architecture and §5 File structure).
+**Cross-section coherence benefit:** the batched Reviewer sees all sections simultaneously and catches conflicts that per-sub-phase passes miss (e.g., a contradiction between §1 Architecture and §5 File structure).
 
-**On `NEEDS_FIX`:** re-dispatch only the failed section's Writer with the Reviewer's feedback; that Writer rewrites only its own H2-anchored block in the draft file. Single per-batch tier re-review (Sonnet by default, same tier as the original batched review) of just that section. Do not redraft passing siblings.
+#### Step 7a — Structural sections (Architecture + Data flow)
+
+Agents — `Writer` ×2 (Sonnet). Dispatched in parallel with Steps 7b and 7c.
+
+Dispatch in parallel:
+- `Writer — architecture section: drafting §1 Architecture at H2 anchor in .hyperflow/specs/<slug>.draft.md`
+- `Writer — data flow section: drafting §2 Data flow at H2 anchor in .hyperflow/specs/<slug>.draft.md`
+
+After both Writers return: `**Reviewer** — reviewing architecture and data flow sections (Step 7a)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only the failing Writer within Step 7a.
+
+#### Step 7b — Decision sections (Key decisions + Edge cases)
+
+Agents — `Writer` ×2 (Sonnet). Dispatched in parallel with Steps 7a and 7c.
+
+Dispatch in parallel:
+- `Writer — key decisions section: drafting §3 Key decisions at H2 anchor in .hyperflow/specs/<slug>.draft.md`
+- `Writer — edge cases section: drafting §4 Edge cases at H2 anchor in .hyperflow/specs/<slug>.draft.md`
+
+After both Writers return: `**Reviewer** — reviewing key decisions and edge cases sections (Step 7b)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch only the failing Writer within Step 7b.
+
+#### Step 7c — File structure section
+
+Agents — `Writer` ×1 (Sonnet). Dispatched in parallel with Steps 7a and 7b (sequential synthesis — no parallel angle: single canonical file-layout section).
+
+`Writer — file structure section: drafting §5 File structure at H2 anchor in .hyperflow/specs/<slug>.draft.md`
+
+After the Writer returns: `**Reviewer** — reviewing file structure section (Step 7c)` (Sonnet · per-sub-phase). Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`: re-dispatch Step 7c Writer.
+
+**On `NEEDS_FIX` from the final batched Reviewer:** re-dispatch only the failed section's Writer with the Reviewer's feedback; that Writer rewrites only its own H2-anchored block in the draft file. Single per-batch tier re-review (Sonnet by default, same tier as the original batched review) of just that section. Do not redraft passing siblings.
 
 **Special case — 4+ sections NEEDS_FIX:** likely the chosen approach itself is wrong. Bounce back to Step 6 and re-pick an approach rather than redrafting 4 sections individually.
 
@@ -376,7 +480,7 @@ In both modes, the `scope` skill decomposes the design into worker batches; `dis
 - Asking what's discoverable from the codebase
 - Adding features the user didn't request (YAGNI ruthlessly)
 - Pausing for "should I proceed to plan?" when `chain-mode=auto` — that was already answered at Step 0
-- **Sequentializing siblings when they have no inter-dependency** — Steps 1+2, Steps 5+6, and Step 7's 5 sections are independent; dispatching them one-at-a-time when P3/P1 apply is a latency violation
+- **Sequentializing siblings when they have no inter-dependency** — Steps 1+2, Step 5 Writer + Step 6a Writers, Step 7 sub-phases 7a/7b/7c, and Step 3 sub-phases 3a/3b/3c are all independent within their groups; dispatching them one-at-a-time when P3/P1 apply is a latency violation
 - **Using per-section reviewers when a single batched reviewer covers the same review-level cap** — collapsing N Opus calls into 1 improves cross-section coherence and reduces latency; only fall back to per-section reviewers when siblings have different level caps
 - **Wrapping a one-Skill-call hand-off (or any §12.1-trivial step) in an Agent dispatch** — trivial steps (≤ 2 tool calls, no generation, no decisions, mechanically verifiable, orchestrator-natural) run inline; adding an Agent wrapper adds latency with no quality benefit
 
@@ -390,9 +494,9 @@ After design approval:
 
 `/hyperflow:spec` is the design phase — thinking, not building. No code lands until the user approves the design section-by-section.
 
-Opus Classifier and Sonnet Searcher run concurrently (P3); no coverage Reviewer — downstream Writers surface gaps via `MISSING CONTEXT`. Opus Analyst produces 6-dimension analysis (P4-skippable at ambiguity < 0.6 AND complexity != high). The orchestrator asks 2–5 `AskUserQuestion` calls (one at a time) to resolve ambiguities.
+Opus Classifier and Step 2 Searchers run concurrently (P3). Step 2 decomposes into sub-phases 2a (surface mapping, Searcher ×2) and 2b (Convention and test pattern scan, Searcher ×2), each with a per-sub-phase Sonnet Reviewer. No Step-level coverage Reviewer — downstream Writers surface gaps via `MISSING CONTEXT`. Opus Analyst produces 6-dimension analysis from Step 3 sub-phases 3a/3b/3c (P4-skippable at ambiguity < 0.6 AND complexity != high). The orchestrator asks 2–5 `AskUserQuestion` calls (one at a time) to resolve ambiguities.
 
-Writer + Reviewer pairs (in parallel batches where independent — P1+P2+P3) draft and validate each design section. All 5 sections are drafted in parallel, reviewed in one batched Opus pass, and presented to the user in one combined approval gate. On final approval, auto-chains into `/hyperflow:scope` → `/hyperflow:dispatch`.
+Step 6 approach proposals decompose into sub-phases 6a (approach candidates, Writer ×2) and 6b (trade-off evaluation, Writer ×2). Step 7 design sections decompose into sub-phases 7a (Architecture + Data flow), 7b (Key decisions + Edge cases), and 7c (File structure), all dispatched in parallel (P1), each with a per-sub-phase Sonnet Reviewer, then one final batched Reviewer (P2). On final approval, auto-chains into `/hyperflow:scope` → `/hyperflow:dispatch`.
 
 ## Prerequisites
 
@@ -405,12 +509,12 @@ Writer + Reviewer pairs (in parallel batches where independent — P1+P2+P3) dra
 The 10 numbered steps live in [Step 0 — Choose chain mode](#step-0--choose-chain-mode-first-tool-call--structural-gate) through [Step 9 — Hand off to /hyperflow:scope](#step-9--hand-off-to-hyperflowscope) above. Summary:
 
 1. Ask `chain-mode` (auto / manual) — structural gate, fires every direct invocation. Record `--thorough` / `depth=max` flag if present.
-2. Dispatch Opus Classifier + Sonnet Searcher concurrently (P3); trust Searcher output — no coverage Reviewer (downstream Writers surface gaps via `MISSING CONTEXT`).
-3. Opus Analyst produces 6-dimension analysis (intent, fit, scope, constraints, risks, alternatives) — P4-skipped if ambiguity < 0.6 AND complexity != high.
+2. Step 1 (Classifier) + Step 2 (Context, sub-phases 2a + 2b) concurrently (P3). Step 2 sub-phases each dispatch Searcher ×2 + per-sub-phase Sonnet Reviewer. Trust Searcher output — no Step-level coverage Reviewer.
+3. Step 3 sub-phases 3a + 3b + 3c in parallel (P4-skippable): dimension-pair Writers ×2 each + per-sub-phase Sonnet Reviewer. Analyst (Opus) aggregates into 6-dim brief.
 4. If ambiguity < 0.4 AND complexity == low: bounce to scope directly. Otherwise: ask 2-5 `AskUserQuestion` calls, one at a time, with `(Recommended)` markers — floor of 2 always.
-5. Dispatch Synthesis Writer + Approaches Writer concurrently (P3); one batched Opus Reviewer covers both (P2); user confirms synthesis and picks approach.
-6. Dispatch all 5 section Writers in one parallel message (P1); one batched Opus Reviewer covers all 5 (P2); present all 5 to user in one combined approval gate.
-7. Writer composes spec file at `.hyperflow/specs/<slug>.md` (or inline summary for trivial designs); Reviewer final sanity check.
+5. Step 5 Synthesis Writer (atomic) + Step 6 sub-phases 6a + 6b concurrently (P3). Step 6 sub-phases each dispatch Writer ×2 + per-sub-phase Sonnet Reviewer sequentially (6b depends on 6a). One final batched Reviewer covers Step 5 + Step 6 (P2). User confirms synthesis and picks approach.
+6. Step 7 sub-phases 7a + 7b + 7c in parallel (P1): section Writers + per-sub-phase Sonnet Reviewers. One final batched Reviewer covers all 5 sections (P2). Present all 5 to user in one combined approval gate.
+7. Step 8: Writer composes spec file at `.hyperflow/specs/<slug>.md`; Reviewer (Opus · final-pass tier) sanity check — atomic, no sub-phases.
 8. Hand off to `/hyperflow:scope` (auto or with confirmation gate per chain mode).
 
 ## Output
