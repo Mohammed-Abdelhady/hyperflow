@@ -454,6 +454,33 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 
    See [latency-patterns.md](../spec/references/latency-patterns.md) for the full P1–P5 pattern catalogue. `--lean` is orthogonal to the P1–P5 latency optimisations (which target wall-clock); `--lean` targets token cost specifically.
 
+14. **Failure recovery — explicit retry/escalate/abort policy.** When a Worker errors out (tool failure, OOM, 5xx from a service, timeout, malformed output) or when a Quality Gate (Layer 5: lint/typecheck/build/tests/security) fails, the orchestrator follows the canonical policy in [failure-recovery.md](failure-recovery.md). Summary:
+
+    - **Worker tool error** (crash / OOM / 5xx / timeout): retry once with the same prompt. If second attempt also errors, escalate to thinking-tier — dispatch the same role at thinking-tier with `Prior attempt failed: <error>` injected. If thinking-tier also errors, abort the batch and surface the error chain to the user with `WORKER_ABORT: <chain>` — never silently swallow.
+    - **Worker malformed output** (didn't follow the prompt schema, returned wrong artifact type): one retry with the violation included in the brief (`Prior attempt produced X; expected Y`). Second failure → escalate to thinking-tier. Third failure → abort.
+    - **Worker NEEDS_REVISION verdict from Reviewer** (different from error — Reviewer judged the output insufficient): one retry with the Reviewer findings injected as a `## Learnings from review` section. Second NEEDS_REVISION → escalate verdict to user via short status print (NOT AskUserQuestion mid-flight; just inform). Worker is not re-dispatched a third time.
+    - **Quality Gate failure** (lint/typecheck/build/tests/security): one retry of the gate (caches may be stale). If still failing, surface to user with the exact failing command + stderr; do not proceed to push. Never `--no-verify`, never auto-fix without explicit dispatch of an Implementer with the failure injected as the task.
+    - **Reviewer error**: same as Worker tool error (retry → thinking-tier → abort).
+    - **Cross-cutting:** every retry counts against the chain's wall-clock budget. After 3 cumulative aborts in a single chain, the chain itself aborts and prints the full failure trail.
+
+    **Why explicit:** before rule 14, each skill's failure path was implicit ("Reviewer intervenes") and skills handled it differently. Explicit policy means consistent recovery behavior, observable failure modes, and zero ambiguity about when to surface to the user.
+
+15. **Triage validation.** Triage (Layer 0.5) classifies each request into `{ types, complexity, risk, scope, ambiguity, flow, personas[] }` via a single Sonnet Classifier call. A bad triage cascades through every downstream decision — wrong flow profile, wrong personas, wrong batch decomposition — silently. Before any chain-starter consumes the triage output, dispatch one **Sonnet Triage Reviewer** that validates the classification against the user's request + the project profile. Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}.
+
+    - **PASS** → consume triage as-is, proceed to next Step.
+    - **RECLASSIFY** → Reviewer returns a corrected classification with reasoning; orchestrator uses the corrected version, prints a one-line note to the user (`Triage reclassified: complexity high → medium · personas added: [security]`).
+    - **ESCALATE** → Reviewer can't decide; fall through to the user via a Smart Question early in spec Step 4 asking about the ambiguity.
+
+    Triage Reviewer cost: ~2k tokens per chain. Catches mis-classifications that would otherwise waste 100k+ tokens on the wrong flow. Net win.
+
+### Sub-phase × flag interactions (clarification of §12.2)
+
+**`--thorough` × sub-phases.** Sub-phases are SEMANTIC decomposition (named units inside a Step), not execution mode. The default behavior is sub-phases run in parallel (P1) because they typically have no inter-dependency. `--thorough` disables P1 sibling Worker parallelism within a sub-phase — i.e., the ≥ 2 parallel Workers inside a single sub-phase serialize. But the sub-phases THEMSELVES still run in parallel under `--thorough` because they are not a P1 sibling-Worker construct; they are §12.2 structural decomposition. Skill bodies do NOT need to add `--thorough` clauses per sub-phase; the rule is: sub-phase boundaries always parallel, intra-sub-phase Workers serialize under `--thorough`.
+
+**`--lean` × sub-phase Reviewers.** Per-sub-phase Reviewers participate in the lean Project Context block per §13.P5 — they receive paths to project profile / architecture / conventions rather than inlined content. Saves ~2k tokens per sub-phase Reviewer dispatch (~30 sub-phase Reviewers across a deep chain → ~60k token savings under `--lean`).
+
+**Reviewer-only sub-phases (clarification of §12.2.3).** A sub-phase whose body contains ONLY a Reviewer dispatch with no Workers is FORBIDDEN. If you only need a Reviewer for a parent Step, the Step is atomic per §12.2.8 ("single Worker → Reviewer pair with no parallel angles"). Trace's first refactor pass had this pattern; it was corrected in the second pass and is now explicitly outlawed.
+
 ### Learning injection format
 
 ```
