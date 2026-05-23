@@ -51,32 +51,79 @@ if [[ -z "$COMMITS" ]]; then
   exit 0
 fi
 
-# ── Determine bump type ───────────────────────────────────────────────────────
-REQUESTED_TYPE="${1:-}"
+# ── Parse args: [--force] [major|minor|patch] ────────────────────────────────
+FORCE_RELEASE=false
+REQUESTED_TYPE=""
+for arg in "$@"; do
+  case "$arg" in
+    --force|-f) FORCE_RELEASE=true ;;
+    major|minor|patch) REQUESTED_TYPE="$arg" ;;
+    -h|--help)
+      cat <<'USAGE'
+Usage: ./scripts/release.sh [--force] [major|minor|patch]
 
+  major|minor|patch   force a specific bump type (otherwise auto-detected)
+  --force, -f         bump even when commits since last tag are only
+                      docs/chore/style/test/build/ci (no release-worthy changes)
+
+Auto-detection rules (strict Conventional Commits):
+  BREAKING CHANGE / type!:  → major
+  feat:                     → minor
+  fix: / perf: / refactor:  → patch
+  docs: / chore: / style:   → NO RELEASE (exit cleanly; use --force to override)
+  test: / build: / ci:      → NO RELEASE (exit cleanly; use --force to override)
+USAGE
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $arg" >&2
+      echo "Try '$0 --help'" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# ── Classify commits into release-worthy tiers ──────────────────────────────
+HAS_BREAKING=false
+HAS_FEAT=false
+HAS_FIX=false
+while IFS= read -r line; do
+  msg="${line#* }"
+  if echo "$msg" | grep -qiE '(BREAKING[[:space:]]CHANGE|^[a-z]+(\([^)]*\))?!:)'; then
+    HAS_BREAKING=true
+  elif echo "$msg" | grep -qE '^feat(\([^)]*\))?:'; then
+    HAS_FEAT=true
+  elif echo "$msg" | grep -qE '^(fix|perf|refactor|revert)(\([^)]*\))?:'; then
+    HAS_FIX=true
+  fi
+done <<< "$COMMITS"
+
+HAS_RELEASE_WORTHY=false
+if [[ "$HAS_BREAKING" == "true" || "$HAS_FEAT" == "true" || "$HAS_FIX" == "true" ]]; then
+  HAS_RELEASE_WORTHY=true
+fi
+
+# ── Refuse to bump on docs/chore-only commits unless --force ────────────────
+if [[ "$HAS_RELEASE_WORTHY" == "false" && "$FORCE_RELEASE" == "false" ]]; then
+  echo -e "${YELLOW}Nothing release-worthy — all commits since ${LAST_TAG:-beginning} are docs/chore/style/test/build/ci.${RESET}"
+  echo -e "${CYAN}Push without releasing:${RESET}   git push"
+  echo -e "${CYAN}Release anyway:${RESET}           $0 --force ${REQUESTED_TYPE:-patch}"
+  exit 0
+fi
+
+# ── Determine bump type ──────────────────────────────────────────────────────
 if [[ -n "$REQUESTED_TYPE" ]]; then
   BUMP_TYPE="$REQUESTED_TYPE"
-  if [[ "$BUMP_TYPE" != "major" && "$BUMP_TYPE" != "minor" && "$BUMP_TYPE" != "patch" ]]; then
-    echo "Usage: $0 [major|minor|patch]"
-    exit 1
-  fi
+elif [[ "$HAS_BREAKING" == "true" ]]; then
+  BUMP_TYPE="major"
+elif [[ "$HAS_FEAT" == "true" ]]; then
+  BUMP_TYPE="minor"
 else
-  # Auto-detect from commits
   BUMP_TYPE="patch"
-  while IFS= read -r line; do
-    # Strip leading hash + short SHA
-    msg="${line#* }"
-    # Check for breaking change marker
-    if echo "$msg" | grep -qiE '(BREAKING[[:space:]]CHANGE|^[a-z]+(\([^)]*\))?!:)'; then
-      BUMP_TYPE="major"
-      break
-    fi
-    # feat -> minor (only upgrade, never downgrade)
-    if [[ "$BUMP_TYPE" != "major" ]] && echo "$msg" | grep -qE '^feat(\([^)]*\))?:'; then
-      BUMP_TYPE="minor"
-    fi
-    # fix / refactor / perf / docs / chore / style / test -> patch (already default)
-  done <<< "$COMMITS"
+fi
+
+if [[ "$HAS_RELEASE_WORTHY" == "false" && "$FORCE_RELEASE" == "true" ]]; then
+  echo -e "${YELLOW}--force: bumping ${BUMP_TYPE} despite only docs/chore commits.${RESET}"
 fi
 
 # ── Calculate new version ─────────────────────────────────────────────────────
