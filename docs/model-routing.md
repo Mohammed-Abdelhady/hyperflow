@@ -30,6 +30,7 @@ Hyperflow works across two platforms. Each has its own default models:
 |----------|-----------------|----------------|
 | **Claude Code** | Opus 4.7 | Sonnet 4.6 |
 | **OpenCode** | anthropic/claude-opus-4-7 | anthropic/claude-sonnet-4-6 |
+| **Antigravity** | gemini-3-pro | gemini-3.5-flash |
 
 See [providers.md](providers.md) for the full model list per platform.
 

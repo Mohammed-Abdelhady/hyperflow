@@ -1,6 +1,6 @@
 # Provider Setup Guides
 
-Hyperflow supports two platforms. Each has its own model naming, detection method, and quirks.
+Hyperflow supports three platforms. Each has its own model naming, detection method, and quirks.
 
 ## Claude Code
 
@@ -60,3 +60,29 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 **Dynamic detection:** Hyperflow runs `opencode models list --json` (2s timeout) to get the full list of available models. This captures BYOK and custom provider models.
 
 **OpenCode config:** Models can also be set in `opencode.json` via `"model"` and `"small_model"` fields.
+
+---
+
+## Antigravity
+
+Antigravity is Google's agentic IDE. It uses Gemini models natively and also supports Claude models via Anthropic's API.
+
+**Detection:** `ANTIGRAVITY_*` environment variables or `antigravity` binary in PATH.
+
+**Default models:**
+- Thinking: `gemini-3-pro` (Gemini 3 Pro)
+- Worker: `gemini-3.5-flash` (Gemini 3.5 Flash)
+
+**Available models:**
+
+| Model ID | Name | Provider | Type | Notes |
+|---|---|---|---|---|
+| `gemini-3-pro` | Gemini 3 Pro | Google | Thinking | Antigravity default |
+| `gemini-3.1-pro` | Gemini 3.1 Pro | Google | Thinking | 2M context window |
+| `claude-opus-4-7` | Claude Opus 4.7 | Anthropic | Thinking | Antigravity also supports Claude |
+| `gemini-3.5-flash` | Gemini 3.5 Flash | Google | Worker | Antigravity default |
+| `gemini-3-flash` | Gemini 3 Flash | Google | Worker | Previous Flash |
+
+**Model format:** Antigravity uses bare model IDs (e.g., `gemini-3-pro`), not provider-prefixed.
+
+**Dynamic detection:** Hyperflow reads `~/.antigravity/settings.json` to detect the configured model.
