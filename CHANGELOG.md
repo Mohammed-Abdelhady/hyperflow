@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.20.1] — 2026-05-23
+
+### Fixed
+- Hand off to spec, not scaffold
+- Route handoff through scaffold → spec for the brainstorm flow
+
+### Changed
+- Trim to a minimal landing — depth moves to docs + site
+
+
 ## [4.20.0] — 2026-05-23
 
 ### Added
@@ -724,7 +734,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.1...HEAD
+[4.20.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.0...v4.20.1
 [4.20.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.19.0...v4.20.0
 [4.19.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.18.0...v4.19.0
 [4.18.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.17.0...v4.18.0
