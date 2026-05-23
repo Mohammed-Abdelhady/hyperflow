@@ -1,0 +1,75 @@
+name: plugin-validation
+
+# Safety note: no step in this workflow consumes untrusted github.event.* input
+# (issue body, PR title, commit message, etc.) inside a run: block. All shell
+# commands operate on paths from the checked-out tree or static literals.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly cold-cache run on Mondays at 06:17 UTC — catches drift from
+    # upstream changes (renamed files, edited README links) that nobody
+    # pushed directly.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate plugin manifests, skills, hooks, README links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run validate-plugin.py
+        run: ./scripts/validate-plugin.py
+
+      - name: Validate JSON manifests parse with jq (defense in depth)
+        run: |
+          jq empty .claude-plugin/plugin.json
+          jq empty .claude-plugin/marketplace.json
+          jq empty hooks/hooks.json
+          jq empty package.json
+          jq empty config/defaults.json
+          jq empty config/schema.json
+
+      - name: Confirm every SKILL.md has an h1 heading in its body
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            body=$(awk '/^---$/{c++; next} c>=2{print}' "$f")
+            if ! printf '%s' "$body" | grep -qE '^# '; then
+              echo "FAIL  $f has no h1 heading in body" >&2
+              fail=1
+            fi
+          done < <(find skills -name SKILL.md)
+          exit "$fail"
+
+      - name: Confirm hook scripts are executable
+        run: |
+          fail=0
+          for script in hooks/*; do
+            case "$script" in
+              *.json|*.md) ;;
+              *)
+                if [[ -f "$script" && ! -x "$script" ]]; then
+                  echo "FAIL  hook script not executable: $script" >&2
+                  fail=1
+                fi
+                ;;
+            esac
+          done
+          exit "$fail"
