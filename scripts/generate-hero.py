@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Generate docs/assets/hero.svg from config/features.json.
 
-Editorial-minimalism dark card. Centerpiece: the six-skill chain rendered as
-an elegant horizontal flow with the thinking/worker color split.
+A system schematic, not a logo. Three modules tell the whole story at a glance:
+  - the 10 orchestration layers (left rail)
+  - the chain (top-right)
+  - one phase exploded into sub-phases → parallel workers → reviewers (centre)
+  - the memory band (persists across sessions)
+
+Dark editorial card. Flat fills, hairline strokes, brand-color accents — no glow.
 """
 from __future__ import annotations
 
@@ -12,10 +17,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def esc(text: str) -> str:
     return (
@@ -33,265 +34,270 @@ def load_features() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Layout constants
+# Layout
 # ---------------------------------------------------------------------------
 
-W   = 1200   # viewBox width
-H   = 420    # viewBox height
-PAD = 56     # horizontal outer padding
+W, H = 1200, 620
+PAD = 48
 
-FONT = "ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif"
+FONT = "ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
 MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
-# Chain: skills that appear in the horizontal flow (first 6, in order)
-CHAIN_SKILLS = ["scaffold", "spec", "scope", "dispatch", "audit", "deploy"]
-
-# Color role for each chain node — matches the thinking/worker split story
-# thinking = Opus/orchestration tier; worker = Sonnet/execution tier
+CHAIN = ["scaffold", "spec", "scope", "dispatch", "audit", "deploy"]
 CHAIN_ROLE = {
-    "scaffold": "worker",
-    "spec":     "thinking",
-    "scope":    "thinking",
-    "dispatch": "worker",
-    "audit":    "thinking",
-    "deploy":   "worker",
+    "scaffold": "neutral", "spec": "thinking", "scope": "thinking",
+    "dispatch": "worker", "audit": "gate", "deploy": "gate",
 }
 
 
-# ---------------------------------------------------------------------------
-# SVG renderer
-# ---------------------------------------------------------------------------
-
 def render(features: dict, version_override: str | None) -> str:
     version = version_override or features.get("version", "0.0.0")
-    tagline  = features.get("tagline", "")
-    colors   = features["branding"]["colors"]
-    skills   = {s["name"]: s for s in features["skills"]}
+    tagline = features.get("tagline", "")
+    c = features["branding"]["colors"]
+    skills = {s["name"]: s for s in features["skills"]}
+    layers = features.get("layers", [])
 
-    thinking_color = colors["thinking"]   # #7C3AED
-    worker_color   = colors["worker"]     # #14B8A6
-    bg_start       = colors["bg_start"]   # #0B0F1A
-    bg_end         = colors["bg_end"]     # #0E1422
-    border         = colors["border"]     # #334155
-    text_primary   = colors["text_primary"]    # #F8FAFC
-    text_secondary = colors["text_secondary"]  # #94A3B8
+    THINK = c["thinking"]       # violet
+    WORK = c["worker"]          # teal
+    MEM = c["memory"]           # amber
+    SEC = c["security"]         # red
+    GIT = c["git"]              # blue
+    BG0, BG1 = c["bg_start"], c["bg_end"]
+    BORDER = c["border"]
+    TXT = c["text_primary"]
+    TXT2 = c["text_secondary"]
+    FAINT = "#475569"
+    HAIR = "#22304A"
+    SURFACE = "#131C28"
 
-    # Slightly lighter tints for node fills (semi-transparent over dark bg)
-    thinking_fill = "rgba(124,58,237,0.18)"
-    worker_fill   = "rgba(20,184,166,0.14)"
-    thinking_stroke = thinking_color
-    worker_stroke   = worker_color
+    role_color = {"thinking": THINK, "worker": WORK, "gate": THINK, "neutral": "#3C4A5E"}
+    layer_color = {"thinking": THINK, "worker": WORK, "memory": MEM,
+                   "security": SEC, "git": GIT, "user": "#64748B"}
 
-    parts: list[str] = []
+    P: list[str] = []
+    def o(s: str) -> None: P.append(s)
 
-    def o(s: str) -> None:
-        parts.append(s)
+    o(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}"')
+    o(f'     role="img" aria-labelledby="t d" font-family="{FONT}">')
+    o(f'  <title id="t">Hyperflow v{esc(version)}</title>')
+    o(f'  <desc id="d">{esc(tagline)} — orchestration layers, the chain, and one phase exploded into sub-phases and parallel agents.</desc>')
 
-    # ---- SVG open ----------------------------------------------------------
-    o(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}"')
-    o(f'     width="{W}" height="{H}"')
-    o(f'     role="img" aria-labelledby="hf-title hf-desc"')
-    o(f'     font-family="{FONT}">')
-    o(f'  <title id="hf-title">Hyperflow v{esc(version)}</title>')
-    o(f'  <desc id="hf-desc">{esc(tagline)}</desc>')
-    o("")
+    # defs
+    o('  <defs>')
+    o(f'    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">')
+    o(f'      <stop offset="0%" stop-color="{BG0}"/><stop offset="100%" stop-color="{BG1}"/>')
+    o('    </linearGradient>')
+    o(f'    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">')
+    o(f'      <circle cx="1" cy="1" r="0.7" fill="{TXT2}"/></pattern>')
+    o('    <clipPath id="card"><rect width="%d" height="%d" rx="18"/></clipPath>' % (W, H))
+    for mid, col in (("aN", FAINT), ("aT", THINK), ("aW", WORK)):
+        o(f'    <marker id="{mid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">')
+        o(f'      <path d="M0,0 L10,5 L0,10 Z" fill="{col}"/></marker>')
+    o('  </defs>')
 
-    # ---- defs --------------------------------------------------------------
-    o("  <defs>")
-    # Background gradient (top to bottom, subtle)
-    o(f'    <linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1">')
-    o(f'      <stop offset="0%"   stop-color="{bg_start}"/>')
-    o(f'      <stop offset="100%" stop-color="{bg_end}"/>')
-    o(f'    </linearGradient>')
-    # Connector arrow marker
-    o(f'    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4"')
-    o(f'            markerWidth="4" markerHeight="4" orient="auto">')
-    o(f'      <path d="M0,0 L8,4 L0,8 Z" fill="{border}"/>')
-    o(f'    </marker>')
-    # Clip rect for the card (rounded corners)
-    o(f'    <clipPath id="card-clip">')
-    o(f'      <rect width="{W}" height="{H}" rx="16"/>')
-    o(f'    </clipPath>')
-    o("  </defs>")
-    o("")
+    o(f'  <rect width="{W}" height="{H}" rx="18" fill="url(#bg)" stroke="{BORDER}" stroke-width="1.5"/>')
+    o(f'  <rect clip-path="url(#card)" width="{W}" height="{H}" fill="url(#dots)" opacity="0.022"/>')
 
-    # ---- card background ---------------------------------------------------
-    # Outer card with border
-    o(f'  <rect width="{W}" height="{H}" rx="16"')
-    o(f'        fill="url(#bg-grad)" stroke="{border}" stroke-width="1.5"/>')
-    o("")
+    # ── tiny helpers ────────────────────────────────────────────────────────
+    def text(x, y, s, size=12, fill=TXT, weight=400, anchor="start", mono=False,
+             ls=None, italic=False, opacity=None):
+        attrs = [f'x="{x}"', f'y="{y}"', f'fill="{fill}"', f'font-size="{size}"',
+                 f'font-weight="{weight}"', f'text-anchor="{anchor}"']
+        if mono: attrs.append(f'font-family="{MONO}"')
+        if ls is not None: attrs.append(f'letter-spacing="{ls}"')
+        if italic: attrs.append('font-style="italic"')
+        if opacity is not None: attrs.append(f'opacity="{opacity}"')
+        o(f'  <text {" ".join(attrs)}>{esc(s)}</text>')
 
-    # Very subtle noise texture: one tiled dot pattern (cheap; ~13KB lighter
-    # than enumerating every dot as its own path)
-    o(f'  <pattern id="dot-grid" width="24" height="24" patternUnits="userSpaceOnUse">')
-    o(f'    <circle cx="1" cy="1" r="0.75" fill="{text_secondary}"/>')
-    o("  </pattern>")
-    o(f'  <rect clip-path="url(#card-clip)" x="0" y="0" width="{W}" height="{H}" fill="url(#dot-grid)" opacity="0.025"/>')
-    o("")
+    def rrect(x, y, w, h, rx=8, fill="none", stroke=None, sw=1.25, dash=None, op=None):
+        a = [f'x="{x}"', f'y="{y}"', f'width="{w}"', f'height="{h}"', f'rx="{rx}"', f'fill="{fill}"']
+        if stroke: a.append(f'stroke="{stroke}"'); a.append(f'stroke-width="{sw}"')
+        if dash: a.append(f'stroke-dasharray="{dash}"')
+        if op is not None: a.append(f'opacity="{op}"')
+        o(f'  <rect {" ".join(a)}/>')
 
-    # ---- wordmark region (left column) -------------------------------------
-    wordmark_x = PAD
-    wordmark_baseline_y = 80
+    def line(x1, y1, x2, y2, stroke=HAIR, sw=1.25, marker=None, dash=None, op=None):
+        a = [f'x1="{x1}"', f'y1="{y1}"', f'x2="{x2}"', f'y2="{y2}"', f'stroke="{stroke}"', f'stroke-width="{sw}"']
+        if marker: a.append(f'marker-end="url(#{marker})"')
+        if dash: a.append(f'stroke-dasharray="{dash}"')
+        if op is not None: a.append(f'opacity="{op}"')
+        o(f'  <line {" ".join(a)}/>')
 
-    # "Hyperflow" — large, confident, near-white
-    o(f'  <text x="{wordmark_x}" y="{wordmark_baseline_y}"')
-    o(f'        fill="{text_primary}" font-size="52" font-weight="800"')
-    o(f'        letter-spacing="-1.5">Hyperflow</text>')
+    # ── LEFT COLUMN — identity + layer rail ─────────────────────────────────
+    lx = PAD
+    text(lx, 78, "Hyperflow", size=46, fill=TXT, weight=800, ls="-1.5")
+    tg = tagline if len(tagline) <= 34 else tagline[:31] + "…"
+    text(lx, 104, tg, size=12.5, fill=TXT2)
 
-    # Tagline — slate secondary, smaller
-    # Truncate to a single clean line (~55 chars fits the left column well)
-    tagline_short = tagline if len(tagline) <= 55 else tagline[:52] + "..."
-    o(f'  <text x="{wordmark_x}" y="{wordmark_baseline_y + 32}"')
-    o(f'        fill="{text_secondary}" font-size="14" font-weight="400">{esc(tagline_short)}</text>')
+    # tier legend
+    o(f'  <circle cx="{lx+5}" cy="129" r="5" fill="{THINK}"/>')
+    text(lx + 16, 133, "thinking · Opus / Gemini Pro", size=10.5, fill=TXT2)
+    o(f'  <circle cx="{lx+5}" cy="148" r="5" fill="{WORK}"/>')
+    text(lx + 16, 152, "worker · Sonnet / Gemini Flash", size=10.5, fill=TXT2)
 
-    # Thinking / Worker legend — two small labeled dots
-    legend_y = wordmark_baseline_y + 68
-    dot_r = 5
+    # version
+    bw = len(f"v{version}") * 8 + 16
+    rrect(lx, 166, bw, 21, rx=10, fill="rgba(255,255,255,0.05)", stroke=BORDER, sw=1)
+    text(lx + bw / 2, 180, f"v{version}", size=11, fill=TXT2, weight=600, anchor="middle")
 
-    o(f'  <circle cx="{wordmark_x + dot_r}" cy="{legend_y}" r="{dot_r}" fill="{thinking_color}"/>')
-    o(f'  <text x="{wordmark_x + dot_r * 2 + 6}" y="{legend_y + 4}"')
-    o(f'        fill="{text_secondary}" font-size="11" font-weight="500">thinking tier (Opus)</text>')
+    # layer rail
+    text(lx, 224, "ORCHESTRATION LAYERS", size=9.5, fill=TXT2, weight=700, ls="1.6")
+    y = 244
+    row_h = 30
+    for L in layers:
+        col = layer_color.get(L.get("color", "user"), "#64748B")
+        o(f'  <rect x="{lx}" y="{y-9}" width="3" height="14" rx="1.5" fill="{col}"/>')
+        text(lx + 12, y + 2, f"L{L['n']}", size=10.5, fill=col, weight=700, mono=True)
+        text(lx + 46, y + 2, L["name"], size=11, fill=TXT, weight=500)
+        y += row_h
 
-    worker_legend_x = wordmark_x + 165
-    o(f'  <circle cx="{worker_legend_x + dot_r}" cy="{legend_y}" r="{dot_r}" fill="{worker_color}"/>')
-    o(f'  <text x="{worker_legend_x + dot_r * 2 + 6}" y="{legend_y + 4}"')
-    o(f'        fill="{text_secondary}" font-size="11" font-weight="500">worker tier (Sonnet)</text>')
+    # vertical divider between columns
+    line(330, 56, 330, H - 64, stroke=BORDER, sw=1, op=0.5)
 
-    # Version badge — bottom-left under legend
-    version_y = legend_y + 28
-    badge_label = f"v{version}"
-    badge_w = len(badge_label) * 8 + 16
-    o(f'  <rect x="{wordmark_x}" y="{version_y}" width="{badge_w}" height="22" rx="11"')
-    o(f'        fill="rgba(255,255,255,0.05)" stroke="{border}" stroke-width="1"/>')
-    o(f'  <text x="{wordmark_x + badge_w // 2}" y="{version_y + 14}" text-anchor="middle"')
-    o(f'        fill="{text_secondary}" font-size="11" font-weight="600">{esc(badge_label)}</text>')
+    # ── RIGHT COLUMN ────────────────────────────────────────────────────────
+    rx0 = 362
+    rx1 = W - PAD  # 1152
 
-    # ---- chain region (right/center, starting after the left column) ------
-    #
-    # Chain layout: nodes spaced evenly, connectors between them.
-    # The chain spans from chain_x_start to W - PAD.
-    # Each node is a rounded rect with the skill command in monospace + tagline.
+    # ---- Module 1: THE CHAIN -----------------------------------------------
+    text(rx0, 74, "THE CHAIN", size=9.5, fill=TXT2, weight=700, ls="1.6")
+    n = len(CHAIN)
+    cw = 116
+    gap = (rx1 - rx0 - n * cw) / (n - 1)
+    cy = 96
+    ch = 50
+    # thinking-tier bracket over the row
+    line(rx0, cy - 12, rx1, cy - 12, stroke=THINK, sw=1.1, op=0.5)
+    line(rx0, cy - 12, rx0, cy - 6, stroke=THINK, sw=1.1, op=0.5)
+    line(rx1, cy - 12, rx1, cy - 6, stroke=THINK, sw=1.1, op=0.5)
+    text((rx0 + rx1) / 2, cy - 16, "thinking tier orchestrates + reviews every phase",
+         size=8.5, fill=THINK, anchor="middle", opacity=0.85)
+    centers = []
+    for i, name in enumerate(CHAIN):
+        sk = skills.get(name, {})
+        role = CHAIN_ROLE.get(name, "neutral")
+        col = role_color[role]
+        nx = rx0 + i * (cw + gap)
+        centers.append(nx + cw / 2)
+        dash = "4 3" if role == "gate" else None
+        rrect(nx, cy, cw, ch, rx=7, fill=SURFACE, stroke=BORDER, sw=1)
+        if role in ("thinking", "worker"):
+            o(f'  <rect x="{nx}" y="{cy}" width="{cw}" height="3" rx="1.5" fill="{col}"/>')
+        if dash:
+            rrect(nx, cy, cw, ch, rx=7, stroke=col, sw=1, dash=dash, op=0.7)
+        text(nx + cw / 2, cy + 22, "/" + name, size=11.5, fill=TXT, weight=700, anchor="middle", mono=True)
+        sub = {"scaffold": "STANDALONE", "spec": "CHAIN STARTER", "scope": "CHAIN STARTER",
+               "dispatch": "ENDPOINT", "audit": "GATE", "deploy": "GATE"}[name]
+        text(nx + cw / 2, cy + 38, sub, size=7.5, fill=TXT2, anchor="middle", ls="0.8")
+        if i < n - 1:
+            line(nx + cw + 3, cy + ch / 2, nx + cw + gap - 3, cy + ch / 2, stroke=FAINT, sw=1.1, marker="aN")
+    # worker bracket under
+    line(rx0, cy + ch + 12, rx1, cy + ch + 12, stroke=WORK, sw=1.1, op=0.5)
+    line(rx0, cy + ch + 12, rx0, cy + ch + 6, stroke=WORK, sw=1.1, op=0.5)
+    line(rx1, cy + ch + 12, rx1, cy + ch + 6, stroke=WORK, sw=1.1, op=0.5)
+    text((rx0 + rx1) / 2, cy + ch + 24, "worker tier executes — in parallel, persona-stitched",
+         size=8.5, fill=WORK, anchor="middle", opacity=0.85)
 
-    chain_x_start = PAD + 310   # leave room for the wordmark column
-    chain_x_end   = W - PAD
-    chain_usable  = chain_x_end - chain_x_start
-    n_skills      = len(CHAIN_SKILLS)
-    n_connectors  = n_skills - 1
+    # ---- Module 2: ONE PHASE EXPLODED --------------------------------------
+    ex_top = 230
+    text(rx0, ex_top, "ONE PHASE  →  SUB-PHASES  →  PARALLEL AGENTS", size=9.5, fill=TXT2, weight=700, ls="1.4")
+    # dashed connector from the dispatch node down into the zoom
+    disp_cx = centers[CHAIN.index("dispatch")]
+    line(disp_cx, cy + ch + 30, disp_cx, ex_top + 14, stroke=THINK, sw=1, dash="3 3", op=0.6)
+    line(disp_cx, ex_top + 14, rx0 + 60, ex_top + 14, stroke=THINK, sw=1, dash="3 3", op=0.6)
 
-    node_w = 118
-    node_h = 68
-    # Space between nodes (occupied by connector arrows)
-    connector_w = (chain_usable - n_skills * node_w) // n_connectors
+    # parent "dispatch / Step 2"
+    py = ex_top + 30
+    prrx = rx0
+    rrect(prrx, py, 96, 56, rx=7, fill=SURFACE, stroke=WORK, sw=1.25)
+    text(prrx + 48, py + 23, "dispatch", size=11, fill=TXT, weight=700, anchor="middle", mono=True)
+    text(prrx + 48, py + 39, "Step 2", size=9, fill=TXT2, anchor="middle")
+    text(prrx + 48, py + 50, "fan out", size=7.5, fill=WORK, anchor="middle", opacity=0.8)
 
-    chain_center_y = H // 2 - 10   # vertical center of the chain row
+    # three sub-phase groups
+    groups = [("2a", "surface map"), ("2b", "semantic index"), ("2c", "convention scan")]
+    gx0 = prrx + 96 + 40
+    gw = 168
+    ggap = 18
+    chip_w, chip_h = 66, 22
+    for gi, (sid, sname) in enumerate(groups):
+        gx = gx0 + gi * (gw + ggap)
+        gy = py - 10
+        # group frame
+        rrect(gx, gy, gw, 96, rx=8, fill="none", stroke=HAIR, sw=1)
+        text(gx + 12, gy + 18, sid, size=10.5, fill=THINK, weight=700, mono=True)
+        text(gx + 32, gy + 18, sname, size=9, fill=TXT2)
+        # two parallel worker chips
+        wy = gy + 28
+        for wi in range(2):
+            wxx = gx + 12 + wi * (chip_w + 8)
+            rrect(wxx, wy, chip_w, chip_h, rx=5, fill="rgba(20,184,166,0.12)", stroke=WORK, sw=1)
+            text(wxx + chip_w / 2, wy + 15, f"worker {wi+1}", size=8.5, fill=WORK, anchor="middle")
+        # reviewer chip (full width) below, with arrows up from workers
+        ry = wy + chip_h + 14
+        rrect(gx + 12, ry, gw - 24, chip_h, rx=5, fill="rgba(124,58,237,0.14)", stroke=THINK, sw=1)
+        text(gx + (gw) / 2, ry + 15, "reviewer", size=8.5, fill=THINK, anchor="middle", weight=600)
+        # connectors worker→reviewer
+        for wi in range(2):
+            wxx = gx + 12 + wi * (chip_w + 8) + chip_w / 2
+            line(wxx, wy + chip_h, wxx, ry, stroke=FAINT, sw=1, marker="aT")
+        # arrow from parent to first group / between groups
+        if gi == 0:
+            line(prrx + 96 + 4, py + 28, gx - 4, py + 28, stroke=FAINT, sw=1.1, marker="aN")
 
-    # Section label above the chain
-    label_y = chain_center_y - node_h // 2 - 28
-    o(f'  <text x="{chain_x_start}" y="{label_y}"')
-    o(f'        fill="{text_secondary}" font-size="10" font-weight="700"')
-    o(f'        letter-spacing="1.8">THE CHAIN</text>')
-    o("")
+    # batch reviewer + synthesis at far right, fed by the groups
+    bxr = gx0 + 3 * gw + 2 * ggap + 16
+    if bxr + 96 > rx1:
+        bxr = rx1 - 96
+    by = py + 6
+    rrect(bxr, by, 96, 44, rx=7, fill="rgba(124,58,237,0.14)", stroke=THINK, sw=1.25)
+    text(bxr + 48, by + 19, "batch", size=10, fill=THINK, weight=700, anchor="middle")
+    text(bxr + 48, by + 33, "reviewer", size=9, fill=THINK, anchor="middle")
+    # arrow from last group to batch reviewer
+    last_gx = gx0 + 2 * (gw + ggap) + gw
+    line(last_gx + 4, by + 22, bxr - 4, by + 22, stroke=FAINT, sw=1.1, marker="aT")
 
-    for idx, skill_name in enumerate(CHAIN_SKILLS):
-        skill = skills.get(skill_name, {})
-        command = skill.get("command", f"/hyperflow:{skill_name}")
-        tagline_s = skill.get("tagline", skill_name)
-        role = CHAIN_ROLE.get(skill_name, "worker")
+    text(rx0, ex_top + 30 + 96 + 26,
+         "every non-trivial phase decomposes into ≥2 named sub-phases · each fans out parallel workers · each output reviewed (DOCTRINE §12.2)",
+         size=9, fill=TXT2, italic=True, opacity=0.85)
 
-        fill   = thinking_fill   if role == "thinking" else worker_fill
-        stroke = thinking_stroke if role == "thinking" else worker_stroke
-        accent = thinking_color  if role == "thinking" else worker_color
+    # ---- Module 3: MEMORY band ---------------------------------------------
+    my = H - 96
+    line(rx0, my - 14, rx1, my - 14, stroke=BORDER, sw=0.75, op=0.5)
+    text(rx0, my + 2, "PROJECT MEMORY", size=9.5, fill=MEM, weight=700, ls="1.4")
+    tiers = [("hot", "always injected"), ("warm", "tag-matched"), ("cold", "on-demand")]
+    tx = rx0 + 150
+    for ti, (tn, td) in enumerate(tiers):
+        op = 1.0 - ti * 0.28
+        rrect(tx, my - 12, 150, 22, rx=5, fill="none", stroke=MEM, sw=1, op=op)
+        text(tx + 10, my + 3, tn, size=9.5, fill=MEM, weight=700, opacity=op, mono=True)
+        text(tx + 44, my + 3, td, size=8.5, fill=TXT2, opacity=op)
+        if ti < 2:
+            line(tx + 150, my - 1, tx + 150 + 16, my - 1, stroke=MEM, sw=1, marker=None, op=0.5)
+        tx += 150 + 16
+    text(rx1, my + 3, "persists across sessions", size=9, fill=TXT2, anchor="end", italic=True, opacity=0.8)
 
-        nx = chain_x_start + idx * (node_w + connector_w)
-        ny = chain_center_y - node_h // 2
+    # footer
+    fy = H - 30
+    line(PAD, fy - 14, W - PAD, fy - 14, stroke=BORDER, sw=0.75, op=0.4)
+    text(PAD, fy + 4, "github.com/Mohammed-Abdelhady/hyperflow", size=10.5, fill=FAINT)
+    text(W - PAD, fy + 4, "multi-agent orchestration for Claude Code · OpenCode · Antigravity",
+         size=10.5, fill=FAINT, anchor="end")
 
-        # Node card
-        o(f'  <rect x="{nx}" y="{ny}" width="{node_w}" height="{node_h}" rx="10"')
-        o(f'        fill="{fill}" stroke="{stroke}" stroke-width="1.5"/>')
+    o('</svg>')
+    return "\n".join(P)
 
-        # Command — monospace, small, accent color
-        cmd_display = command.replace("/hyperflow:", "/")
-        o(f'  <text x="{nx + node_w // 2}" y="{ny + 22}" text-anchor="middle"')
-        o(f'        fill="{accent}" font-size="11" font-weight="700"')
-        o(f'        font-family="{MONO}">{esc(cmd_display)}</text>')
-
-        # Thin rule under command
-        o(f'  <line x1="{nx + 10}" y1="{ny + 28}" x2="{nx + node_w - 10}" y2="{ny + 28}"')
-        o(f'        stroke="{stroke}" stroke-width="0.75" opacity="0.4"/>')
-
-        # Tagline — near-white, readable
-        o(f'  <text x="{nx + node_w // 2}" y="{ny + 44}" text-anchor="middle"')
-        o(f'        fill="{text_primary}" font-size="11.5" font-weight="600">{esc(tagline_s)}</text>')
-
-        # Role label — tiny, bottom of node
-        role_label = "think" if role == "thinking" else "work"
-        o(f'  <text x="{nx + node_w // 2}" y="{ny + node_h - 8}" text-anchor="middle"')
-        o(f'        fill="{accent}" font-size="9" font-weight="500" opacity="0.7">{role_label}</text>')
-
-        # Connector to next node (hairline with arrow)
-        if idx < n_skills - 1:
-            conn_x1 = nx + node_w + 4
-            conn_x2 = nx + node_w + connector_w - 4
-            conn_y  = chain_center_y
-            o(f'  <line x1="{conn_x1}" y1="{conn_y}" x2="{conn_x2}" y2="{conn_y}"')
-            o(f'        stroke="{border}" stroke-width="1.5" marker-end="url(#arr)"/>')
-
-    o("")
-
-    # ---- chain annotation below nodes -------------------------------------
-    # Auto-chain annotation: spec auto-chains to scope, scope to dispatch
-    ann_y = chain_center_y + node_h // 2 + 18
-
-    # Auto-chain arc label: sits below spec→scope→dispatch
-    spec_idx   = CHAIN_SKILLS.index("spec")
-    dispatch_idx = CHAIN_SKILLS.index("dispatch")
-
-    spec_x     = chain_x_start + spec_idx   * (node_w + connector_w) + node_w // 2
-    dispatch_x = chain_x_start + dispatch_idx * (node_w + connector_w) + node_w // 2
-    arc_cx     = (spec_x + dispatch_x) // 2
-
-    o(f'  <text x="{arc_cx}" y="{ann_y}"')
-    o(f'        fill="{text_secondary}" font-size="10" text-anchor="middle"')
-    o(f'        font-style="italic" opacity="0.7">auto-chains: spec → scope → dispatch</text>')
-
-    # ---- footer rule -------------------------------------------------------
-    footer_y = H - 36
-    o(f'  <line x1="{PAD}" y1="{footer_y}" x2="{W - PAD}" y2="{footer_y}"')
-    o(f'        stroke="{border}" stroke-width="0.75" opacity="0.5"/>')
-
-    # Footer left: repo URL
-    o(f'  <text x="{PAD}" y="{footer_y + 18}"')
-    o(f'        fill="#475569" font-size="11">github.com/Mohammed-Abdelhady/hyperflow</text>')
-
-    # Footer right: "multi-agent orchestration for Claude Code"
-    o(f'  <text x="{W - PAD}" y="{footer_y + 18}" text-anchor="end"')
-    o(f'        fill="#475569" font-size="11">multi-agent orchestration for Claude Code</text>')
-
-    o("")
-    o("</svg>")
-
-    return "\n".join(parts)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate docs/assets/hero.svg from config/features.json")
-    parser.add_argument("--version", help="override version from features.json")
-    parser.add_argument("--output", default=str(ROOT / "docs" / "assets" / "hero.svg"),
-                        help="output path (default: docs/assets/hero.svg)")
-    args = parser.parse_args()
-
-    features = load_features()
-    svg = render(features, args.version)
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(svg, encoding="utf-8")
-
+    ap = argparse.ArgumentParser(description="Generate docs/assets/hero.svg from config/features.json")
+    ap.add_argument("--version")
+    ap.add_argument("--output", default=str(ROOT / "docs" / "assets" / "hero.svg"))
+    args = ap.parse_args()
+    svg = render(load_features(), args.version)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(svg, encoding="utf-8")
     import sys
-    print(f"wrote {out_path} ({len(svg):,} bytes)", file=sys.stderr)
+    print(f"wrote {out} ({len(svg):,} bytes)", file=sys.stderr)
 
 
 if __name__ == "__main__":
