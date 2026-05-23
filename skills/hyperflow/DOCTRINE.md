@@ -400,6 +400,31 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 
    If the orchestrator discovers mid-step that the work requires generation or research, it MUST abort the inline path and dispatch an Agent. Trivial-eligibility is evaluated at step-start, not assumed throughout.
 
+12.2. **Sub-phase decomposition.** Every non-trivial Step (per §12, not §12.1-exempt) MUST decompose into ≥ 2 named sub-phases unless intrinsically atomic. A **sub-phase** is a named unit `Step Na`, `Step Nb`, `Step Nc`, ... inside a parent Step.
+
+   **Sub-phase rules:**
+
+   1. **Named.** One-line name describing what the sub-phase produces (`Step 2a — Surface mapping`).
+   2. **Parallel by default.** Sibling sub-phases dispatch in one message (P1). Sequential only when an explicit data dependency exists; the dependency is documented in the sub-phase header (`Step 4b — depends on Step 4a output`).
+   3. **Multi-agent per sub-phase.** Each sub-phase dispatches **≥ 2 Worker Agents in parallel**, each exploring a different angle of the same concern (e.g., glob discovery + import-graph traversal + symbol-graph probe). Single-Worker sub-phases are allowed only when no independent angle exists (rare — and the sub-phase header must justify it: `Step 3a — Sequential synthesis (no parallel angle: single canonical aggregation)`).
+   4. **Per-sub-phase Reviewer.** Each sub-phase dispatches **one Sonnet Reviewer** over its workers' outputs. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. Counts toward the §13.P2 thinking-agent floor but does NOT replace the per-batch and final-integration Reviewers — those still run at higher granularity over cumulative sub-phase outputs.
+   5. **Aggregation.** The parent Step's output is the union of its sub-phases' worker outputs plus the per-sub-phase Reviewer verdicts. If a sub-phase Reviewer returns `NEEDS_REVISION`, the parent re-dispatches only that sub-phase (not the whole Step).
+   6. **Numbering.** Letter suffixes on the parent Step number (`2a`, `2b`, `2c`). Cross-skill references to the parent Step (`spec Step 4`, `scope Step 0.5`) remain valid and resolve to the sub-phase aggregate. Backwards-compatible.
+   7. **Floor.** A Step has either 0 sub-phases (atomic, exempt) OR ≥ 2 sub-phases. Never exactly 1 — that's just the Step with extra syntax.
+   8. **Atomic exemption.** A Step is atomic when its entire body is one of: a single `AskUserQuestion` call · a single mechanical decision (file existence, git status, route choice) · a single Worker → Reviewer pair with no independent angles to fan out across. In all other cases, decompose into ≥ 2 sub-phases.
+
+   **Cost.** Per parent Step with N sub-phases, +N Sonnet Reviewer dispatches (one per sub-phase, ~5k tokens each for small diffs). A typical 5-substantive-Step chain skill with avg 3 sub-phases per Step adds ~15 Sonnet reviews · ~75k tokens. Acceptable for the granular catch — sub-phase misses (e.g., the surface mapping Searcher missed a critical file) get caught BEFORE the parent Step's per-batch Reviewer aggregates the propagation downstream.
+
+   **Worked example — scope Step 2 (Research):**
+   - OLD: `Step 2 — Research (Searcher × 2 parallel)`
+   - NEW:
+     - `Step 2a — Surface mapping` — Searcher × 2 (glob discovery + import-graph traversal) → Sonnet Reviewer
+     - `Step 2b — Semantic indexing` — Searcher × 2 (type-system probe + symbol-graph probe) → Sonnet Reviewer
+     - `Step 2c — Convention scan` — Searcher × 1 (existing test patterns + lint config; single-angle, justified inline) → Sonnet Reviewer
+     - Step 2 aggregate (union of 2a/2b/2c outputs + 3 sub-phase verdicts) handed to Step 3
+
+   **Compatibility.** §12.2 does NOT relax §12 or §13. Every sub-phase still respects rule 6 (multi-level review), rule 8 (thinking-agent floor), and the latency patterns. Sub-phase Reviewers ADD to the thinking-agent count; they don't substitute for batch or integration Reviewers.
+
 13. **Latency discipline.** Reduce wall-clock time by restructuring *when* and *how* dispatches fire — never by cutting who reviews what or which tier is used.
    - **P1 — Parallelize sibling workers.** Sub-tasks that share a common upstream input and have no inter-dependency MUST be dispatched in a single message with parallel `Agent` calls. Never sequentialize siblings.
    - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Opus Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect. The batched Reviewer counts as **one** Reviewer per batch toward the `thinking agents ≥ batches + 1` floor, regardless of sub-task count. Floor lowered from +2 to +1: wrap-up Reviewer dropped per §12.1 (wrap-up is mechanical, trivial-eligible).
