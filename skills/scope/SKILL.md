@@ -111,7 +111,7 @@ Then proceed to Step 0.5.
 
    Then proceed to Step 0.5. The mis-classification cost at this confidence tier is bounded by the small-task token budget and falls below the ~2k token Reviewer cost.
 
-3. If any P4 condition fails, dispatch the Triage Reviewer. The Reviewer validates the inherited triage classification (DOCTRINE Layer 0.5, propagated via chain args) against:
+3. If any P4 condition fails, dispatch the Triage Reviewer. The Reviewer validates the triage classification (inherited via chain args on Path A, or produced by the Classifier in step 1 on Path B) against:
 
    1. The user's original request — does the classification reflect what they actually asked for?
    2. `.hyperflow/profile.md` — does the classification match the codebase's tech stack, risk level, and known complexity patterns?
