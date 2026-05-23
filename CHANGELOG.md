@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.19.0] — 2026-05-23
+
+### Added
+- Add GitHub Pages landing site
+- Tighten scenario to full chain + re-theme to dracula
+
+### Changed
+- Restyle the four guides to editorial minimalism
+- Restyle to editorial minimalism + lead with hero.svg
+- Rebuild hero.svg as an editorial dark card
+
+
 ## [4.18.0] — 2026-05-23
 
 ### Added
@@ -702,7 +714,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.18.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.19.0...HEAD
+[4.19.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.18.0...v4.19.0
 [4.18.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.17.0...v4.18.0
 [4.17.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.3...v4.17.0
 [4.16.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.2...v4.16.3
