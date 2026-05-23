@@ -463,6 +463,8 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
     - **Reviewer error**: same as Worker tool error (retry → thinking-tier → abort).
     - **Cross-cutting:** every retry counts against the chain's wall-clock budget. After 3 cumulative aborts in a single chain, the chain itself aborts and prints the full failure trail.
 
+    **Observability:** every retry / escalation / abort emits one status line per [failure-recovery.md § Observability](failure-recovery.md) — the failure-recovery budget burn is visible in real time, not only at chain end.
+
     **Why explicit:** before rule 14, each skill's failure path was implicit ("Reviewer intervenes") and skills handled it differently. Explicit policy means consistent recovery behavior, observable failure modes, and zero ambiguity about when to surface to the user.
 
 15. **Triage validation.** Triage (Layer 0.5) classifies each request into `{ types, complexity, risk, scope, ambiguity, flow, personas[] }` via a single Sonnet Classifier call. A bad triage cascades through every downstream decision — wrong flow profile, wrong personas, wrong batch decomposition — silently. Before any chain-starter consumes the triage output, dispatch one **Sonnet Triage Reviewer** that validates the classification against the user's request + the project profile. Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}.
