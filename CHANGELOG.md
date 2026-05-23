@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.17.0] — 2026-05-23
+
+### Added
+- Add retry/escalate/abort observability to failure-recovery policy
+- Apply 5 logic improvements across all 6 chain skills
+- Add rule 14 (failure recovery) + rule 15 (triage validation) + sub-phase × flag clarifications
+- Add rule 12.2 — sub-phase decomposition with mandatory per-sub-phase Reviewer
+
+### Fixed
+- Address second-pass integration review findings
+- Address Opus integration review findings
+- Refuse to bump version when commits since last tag are docs/chore-only
+
+### Changed
+- Document sub-phases, triage validation, failure recovery, and new memory files
+- Register anti-patterns.md (hot) and project-decisions.md (spec-tier) in memory-system catalog
+- Update inside-a-chain diagram to show sub-phase fan-out
+- Apply DOCTRINE 12.2 sub-phase decomposition across all 6 chain skills
+- Trim verbose comments and section dividers from validator + CI workflow
+- Correct install instructions — official marketplace CLI not live yet
+
+
 ## [4.16.3] — 2026-05-23
 
 ### Changed
@@ -671,7 +693,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.3...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.17.0...HEAD
+[4.17.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.3...v4.17.0
 [4.16.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.1...v4.16.2
 [4.16.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.0...v4.16.1
