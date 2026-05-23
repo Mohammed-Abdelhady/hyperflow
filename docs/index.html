@@ -7,7 +7,7 @@
   <meta name="description" content="Thinking models orchestrate and review. Worker models execute. Every step dispatches a Worker → Reviewer pair. scaffold → spec → scope → dispatch → audit → deploy." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     /* ─── Reset + base ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +29,8 @@
       --surface:        #111827;
       --surface-raised: #16202E;
 
-      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', system-ui, sans-serif;
+      --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
       --max-w: 72rem;
@@ -71,17 +72,20 @@
     }
 
     h2 {
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 600;
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 3.2vw, 2.15rem);
+      font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--text-primary);
       margin-bottom: 0.75rem;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     h3 {
-      font-size: 1rem;
-      font-weight: 600;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
     }
@@ -162,9 +166,10 @@
     }
 
     .nav-wordmark {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
       color: var(--text-primary);
       text-decoration: none;
     }
@@ -207,10 +212,11 @@
     }
 
     .hero-wordmark {
-      font-size: clamp(3.5rem, 8vw, 6.5rem);
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      line-height: 0.95;
+      font-family: var(--font-display);
+      font-size: clamp(3.75rem, 8.5vw, 7rem);
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 0.92;
       color: var(--text-primary);
       margin-bottom: 1.75rem;
     }
@@ -709,7 +715,275 @@
       .hero-ctas { flex-direction: column; align-items: flex-start; }
     }
 
-    /* ─── Focus styles (a11y) ────────────────────────────────────── */
+    /* ─── Worker-Reviewer section ───────────────────────────────────── */
+    #worker-reviewer .wr-diagram-wrap {
+      margin-top: 3rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .wr-svg-wrap { width: 100%; min-width: 560px; }
+
+    .wr-explainer {
+      margin-top: 2rem;
+      max-width: 62ch;
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ─── Sub-phases section ─────────────────────────────────────────── */
+    #sub-phases .sp-diagram-wrap {
+      margin-top: 3rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .sp-svg-wrap { width: 100%; min-width: 680px; }
+
+    .sp-explainer {
+      margin-top: 2rem;
+      max-width: 62ch;
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ─── Flow profiles ──────────────────────────────────────────────── */
+    #flow-profiles .profiles-intro { margin-top: 0.5rem; margin-bottom: 3rem; }
+
+    .profiles-note {
+      margin-top: 1.25rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Personas ───────────────────────────────────────────────────── */
+    #personas .personas-intro { margin-top: 0.5rem; margin-bottom: 3rem; }
+
+    .persona-groups {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .persona-group {
+      background: var(--surface);
+      padding: 1.5rem 1.5rem 1.75rem;
+    }
+
+    .persona-group + .persona-group { border-left: 1px solid var(--border); }
+
+    .persona-group-label {
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .persona-chips { display: flex; flex-direction: column; gap: 0.35rem; }
+
+    .persona-chip {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-faint);
+      border-radius: 2px;
+      padding: 0.2em 0.55em;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .personas-note {
+      margin-top: 1.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      max-width: 62ch;
+    }
+
+    /* ─── Memory section ─────────────────────────────────────────────── */
+    #memory .memory-intro { margin-top: 0.5rem; margin-bottom: 3rem; }
+
+    .memory-diagram-wrap {
+      margin-top: 3rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .memory-svg-wrap { width: 100%; min-width: 540px; }
+
+    .memory-auto-files {
+      margin-top: 2.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .memory-auto-header {
+      padding: 0.75rem 1.25rem;
+      background: var(--surface-raised);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Failure recovery section ───────────────────────────────────── */
+    #failure-recovery .fr-intro { margin-top: 0.5rem; margin-bottom: 3rem; }
+
+    .fr-policy {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .fr-policy-header {
+      padding: 0.75rem 1.25rem;
+      background: var(--surface-raised);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .fr-status-block {
+      padding: 1.25rem 1.5rem;
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 2;
+      color: var(--text-primary);
+      overflow-x: auto;
+    }
+
+    .fr-retry    { color: var(--worker); }
+    .fr-escalate { color: var(--thinking); }
+    .fr-abort    { color: var(--security); }
+
+    .fr-rule-list {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .fr-rule {
+      display: grid;
+      grid-template-columns: 9rem 1fr;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-faint);
+    }
+
+    .fr-rule:last-child { border-bottom: none; }
+
+    .fr-rule-name {
+      padding: 0.875rem 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+      border-right: 1px solid var(--border-faint);
+    }
+
+    .fr-rule-desc {
+      padding: 0.875rem 1.25rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* ─── Examples section ───────────────────────────────────────────── */
+    #examples .examples-intro { margin-top: 0.5rem; margin-bottom: 3rem; }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .example-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .example-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      background: var(--surface-raised);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .example-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .example-profile-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.1em 0.45em;
+      color: var(--text-secondary);
+    }
+
+    .example-body {
+      padding: 1.25rem 1.5rem;
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.85;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+
+    .ex-thinking { color: var(--thinking); font-weight: 600; }
+    .ex-worker   { color: var(--worker); }
+    .ex-dim      { color: #475569; }
+    .ex-cmd      { color: var(--text-primary); }
+
+    /* ─── Responsive additions ───────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .persona-groups { grid-template-columns: repeat(2, 1fr) !important; }
+      .persona-group + .persona-group { border-left: none !important; }
+      .persona-group:nth-child(odd)  { border-right: 1px solid var(--border); }
+      .persona-group:nth-child(n+3)  { border-top: 1px solid var(--border); }
+
+      .examples-grid { grid-template-columns: 1fr !important; }
+
+      .fr-rule { grid-template-columns: 1fr !important; }
+      .fr-rule-name {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-faint);
+        padding-bottom: 0.5rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .persona-groups { grid-template-columns: 1fr !important; }
+      .persona-group:nth-child(odd)  { border-right: none !important; }
+      .persona-group:nth-child(n+2)  { border-top: 1px solid var(--border) !important; }
+      .example-body { font-size: 0.75rem; }
+    }
+
+    /* ─── Focus styles (a11y) ────────────────────────────────────────── */
     :focus-visible {
       outline: 2px solid var(--thinking);
       outline-offset: 3px;
@@ -727,9 +1001,10 @@
       <ul class="nav-links" role="list">
         <li><a href="#chain">Chain</a></li>
         <li><a href="#tiers">Tiers</a></li>
+        <li><a href="#sub-phases">Sub-phases</a></li>
         <li><a href="#skills">Skills</a></li>
+        <li><a href="#memory">Memory</a></li>
         <li><a href="#layers">Layers</a></li>
-        <li><a href="#providers">Providers</a></li>
         <li><a href="#install">Install</a></li>
         <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
       </ul>
@@ -790,7 +1065,7 @@
 
       <div class="chain-diagram" role="img" aria-label="Chain flow: scaffold (standalone), then spec (thinking-tier) auto-chains to scope (thinking-tier) auto-chains to dispatch (worker-tier), with audit and deploy gates at the end">
         <div class="chain-svg-wrap">
-          <svg viewBox="0 0 920 212" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Inter,sans-serif">
+          <svg viewBox="0 0 920 212" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
             <!-- ─────────── Thinking-tier bracket (spans the whole chain) ─────────── -->
             <text x="460" y="22" font-size="10.5" letter-spacing="0.18em" fill="#7C3AED" text-anchor="middle">THINKING TIER</text>
             <text x="460" y="36" font-size="9" fill="#64748B" text-anchor="middle">orchestrates every phase · reviews every output</text>
@@ -920,21 +1195,21 @@
             <svg viewBox="0 0 640 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;height:auto;">
               <!-- Worker node -->
               <rect x="0" y="16" width="140" height="40" rx="4" fill="#16202E" stroke="#14B8A6" stroke-opacity="0.55" />
-              <text x="22" y="34" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#14B8A6" letter-spacing="0.06em">WORKER</text>
-              <text x="22" y="49" font-family="Inter,sans-serif" font-size="10" fill="#64748B">Sonnet / Flash</text>
+              <text x="22" y="34" font-family="Hanken Grotesk,sans-serif" font-size="10" font-weight="600" fill="#14B8A6" letter-spacing="0.06em">WORKER</text>
+              <text x="22" y="49" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#64748B">Sonnet / Flash</text>
 
               <!-- Arrow -->
               <line x1="142" y1="36" x2="210" y2="36" stroke="#334155" stroke-width="1" />
               <polygon points="210,32 218,36 210,40" fill="#334155" />
-              <text x="179" y="28" font-family="Inter,sans-serif" font-size="9" fill="#475569" text-anchor="middle">output</text>
+              <text x="179" y="28" font-family="Hanken Grotesk,sans-serif" font-size="9" fill="#475569" text-anchor="middle">output</text>
 
               <!-- Reviewer node -->
               <rect x="220" y="16" width="160" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.55" />
-              <text x="242" y="34" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#7C3AED" letter-spacing="0.06em">REVIEWER</text>
-              <text x="242" y="49" font-family="Inter,sans-serif" font-size="10" fill="#64748B">Opus / Gemini Pro</text>
+              <text x="242" y="34" font-family="Hanken Grotesk,sans-serif" font-size="10" font-weight="600" fill="#7C3AED" letter-spacing="0.06em">REVIEWER</text>
+              <text x="242" y="49" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#64748B">Opus / Gemini Pro</text>
 
               <!-- Thinking badge + label -->
-              <text x="400" y="40" font-family="Inter,sans-serif" font-size="10" fill="#475569">&#x2190; thinking-tier; validates, scores, blocks bad output</text>
+              <text x="400" y="40" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#475569">&#x2190; thinking-tier; validates, scores, blocks bad output</text>
             </svg>
           </div>
           <p style="font-size:0.8125rem;color:var(--text-secondary);margin-top:0.75rem;max-width:none;">
@@ -942,6 +1217,235 @@
           </p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Worker → Reviewer pairing ───────────────────────────────────────── -->
+  <section id="worker-reviewer" aria-labelledby="wr-heading">
+    <div class="container">
+      <p class="section-label">The core loop</p>
+      <h2 id="wr-heading">Every worker output reviewed by a thinking-tier model. No exceptions.</h2>
+      <p>
+        Independent sub-tasks fan out in parallel — three files with no shared state means three workers in one batch. Each parallel worker feeds its own thinking-tier reviewer before the batch advances. Reviews collapse synchronously at the end of each batch; no output reaches the next batch unreviewed.
+      </p>
+
+      <div class="wr-diagram-wrap" role="img" aria-label="Parallel worker fan-out: three worker nodes (teal) running simultaneously, each with an arrow to its own reviewer node (purple), all feeding into a batch synthesis step">
+        <div class="wr-svg-wrap">
+          <svg viewBox="0 0 860 260" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
+
+            <!-- ── Left: Orchestrator ── -->
+            <rect x="0" y="104" width="130" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <rect x="0" y="104" width="130" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="65" y="128" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Orchestrator</text>
+            <text x="65" y="143" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">THINKING TIER</text>
+
+            <!-- dispatch fan-out lines -->
+            <line x1="130" y1="130" x2="158" y2="100" stroke="#3A475A" stroke-width="1" />
+            <line x1="130" y1="130" x2="158" y2="130" stroke="#3A475A" stroke-width="1" />
+            <line x1="130" y1="130" x2="158" y2="160" stroke="#3A475A" stroke-width="1" />
+            <text x="144" y="90" font-size="7.5" fill="#475569" text-anchor="middle">parallel</text>
+
+            <!-- ── Workers (3) ── -->
+            <!-- Worker 1 -->
+            <rect x="160" y="74" width="130" height="52" rx="6" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.6" />
+            <rect x="160" y="74" width="130" height="3" rx="1.5" fill="#14B8A6" />
+            <text x="225" y="99" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Worker 1</text>
+            <text x="225" y="114" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">IMPLEMENTER</text>
+
+            <!-- Worker 2 -->
+            <rect x="160" y="104" width="130" height="52" rx="6" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.6" />
+            <rect x="160" y="104" width="130" height="3" rx="1.5" fill="#14B8A6" />
+            <text x="225" y="129" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Worker 2</text>
+            <text x="225" y="144" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">SEARCHER</text>
+
+            <!-- Worker 3 -->
+            <rect x="160" y="134" width="130" height="52" rx="6" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.6" />
+            <rect x="160" y="134" width="130" height="3" rx="1.5" fill="#14B8A6" />
+            <text x="225" y="159" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Worker 3</text>
+            <text x="225" y="174" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">WRITER</text>
+
+            <!-- worker → reviewer arrows -->
+            <line x1="290" y1="100" x2="378" y2="100" stroke="#3A475A" stroke-width="1" />
+            <polygon points="378,96.5 384,100 378,103.5" fill="#3A475A" />
+            <line x1="290" y1="130" x2="378" y2="130" stroke="#3A475A" stroke-width="1" />
+            <polygon points="378,126.5 384,130 378,133.5" fill="#3A475A" />
+            <line x1="290" y1="160" x2="378" y2="160" stroke="#3A475A" stroke-width="1" />
+            <polygon points="378,156.5 384,160 378,163.5" fill="#3A475A" />
+
+            <!-- ── Reviewers (3) ── -->
+            <!-- Reviewer 1 -->
+            <rect x="386" y="74" width="145" height="52" rx="6" fill="#131C28" stroke="#7C3AED" stroke-opacity="0.6" />
+            <rect x="386" y="74" width="145" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="458" y="99" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Reviewer 1</text>
+            <text x="458" y="114" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">THINKING TIER</text>
+
+            <!-- Reviewer 2 -->
+            <rect x="386" y="104" width="145" height="52" rx="6" fill="#131C28" stroke="#7C3AED" stroke-opacity="0.6" />
+            <rect x="386" y="104" width="145" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="458" y="129" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Reviewer 2</text>
+            <text x="458" y="144" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">THINKING TIER</text>
+
+            <!-- Reviewer 3 -->
+            <rect x="386" y="134" width="145" height="52" rx="6" fill="#131C28" stroke="#7C3AED" stroke-opacity="0.6" />
+            <rect x="386" y="134" width="145" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="458" y="159" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Reviewer 3</text>
+            <text x="458" y="174" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">THINKING TIER</text>
+
+            <!-- reviewer → batch synthesis collect lines -->
+            <line x1="531" y1="100" x2="559" y2="130" stroke="#3A475A" stroke-width="1" />
+            <line x1="531" y1="130" x2="559" y2="130" stroke="#3A475A" stroke-width="1" />
+            <line x1="531" y1="160" x2="559" y2="130" stroke="#3A475A" stroke-width="1" />
+
+            <!-- ── Batch synthesis ── -->
+            <rect x="562" y="104" width="148" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <text x="636" y="128" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Batch complete</text>
+            <text x="636" y="143" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">LEARNINGS INJECTED</text>
+
+            <!-- batch → next-batch arrow -->
+            <line x1="710" y1="130" x2="738" y2="130" stroke="#3A475A" stroke-width="1" />
+            <polygon points="738,126.5 744,130 738,133.5" fill="#3A475A" />
+
+            <!-- ── Next batch ── -->
+            <rect x="746" y="104" width="114" height="52" rx="6" fill="#0F1620" stroke="#2A3645" stroke-dasharray="4 3" />
+            <text x="803" y="128" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#CBD5E1" text-anchor="middle">Next batch</text>
+            <text x="803" y="143" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">WITH LEARNINGS</text>
+
+            <!-- annotation: parallel where independent -->
+            <text x="225" y="205" font-size="9" fill="#475569" text-anchor="middle" letter-spacing="0.04em">parallel where independent</text>
+            <line x1="160" y1="196" x2="290" y2="196" stroke="#334155" stroke-width="0.75" stroke-dasharray="3 3" />
+
+          </svg>
+        </div>
+      </div>
+
+      <p class="wr-explainer">
+        Per-batch worker-tier reviewers handle L1&ndash;L2 spot-checks on small diffs. The final integration reviewer (thinking-tier) runs once at the end over the cumulative diff. Batch-2 workers receive batch-1 discoveries via automatic learning injection &mdash; so later batches always know what earlier batches found.
+      </p>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Sub-phase decomposition ──────────────────────────────────────── -->
+  <section id="sub-phases" aria-labelledby="sp-heading">
+    <div class="container">
+      <p class="section-label">Sub-phase decomposition</p>
+      <h2 id="sp-heading">Every non-trivial phase fans into named sub-phases.</h2>
+      <p>
+        DOCTRINE &sect;12.2: each Step that can be parallelized decomposes into numbered sub-phases (Step 2a, 2b, 2c&hellip;). Each sub-phase runs independent workers in parallel and ends with its own worker-tier reviewer. The per-batch and final integration reviews still run on top &mdash; review happens at every granularity.
+      </p>
+
+      <div class="sp-diagram-wrap" role="img" aria-label="Sub-phase fan-out: Step 2 splits into sub-phases 2a, 2b, and 2c. Each sub-phase has two parallel workers and its own worker-tier reviewer. All sub-phase outputs converge into the batch synthesis.">
+        <div class="sp-svg-wrap">
+          <svg viewBox="0 0 900 310" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
+
+            <!-- Step 2 parent -->
+            <rect x="0" y="129" width="110" height="52" rx="6" fill="#131C28" stroke="#7C3AED" stroke-opacity="0.55" />
+            <rect x="0" y="129" width="110" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="55" y="153" font-family="JetBrains Mono,monospace" font-size="12.5" fill="#F1F5F9" text-anchor="middle">Step 2</text>
+            <text x="55" y="169" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">CURRENT PHASE</text>
+
+            <!-- fan-out lines to 2a/2b/2c rows -->
+            <line x1="110" y1="155" x2="136" y2="59"  stroke="#3A475A" stroke-width="1" />
+            <line x1="110" y1="155" x2="136" y2="155" stroke="#3A475A" stroke-width="1" />
+            <line x1="110" y1="155" x2="136" y2="251" stroke="#3A475A" stroke-width="1" />
+
+            <!-- ── Sub-phase 2a ── (y=34) -->
+            <!-- sub-phase label -->
+            <text x="144" y="30" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="start">STEP 2a</text>
+
+            <!-- workers 2a -->
+            <rect x="138" y="34" width="104" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="138" y="34" width="104" height="2.5" rx="1.25" fill="#14B8A6" />
+            <text x="190" y="56" font-family="JetBrains Mono,monospace" font-size="10" fill="#F1F5F9" text-anchor="middle">Worker A1</text>
+            <text x="190" y="70" font-size="7.5" fill="#64748B" text-anchor="middle">Surface map</text>
+
+            <rect x="248" y="34" width="104" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="248" y="34" width="104" height="2.5" rx="1.25" fill="#14B8A6" />
+            <text x="300" y="56" font-family="JetBrains Mono,monospace" font-size="10" fill="#F1F5F9" text-anchor="middle">Worker A2</text>
+            <text x="300" y="70" font-size="7.5" fill="#64748B" text-anchor="middle">Surface map</text>
+
+            <!-- arrow to reviewer 2a -->
+            <line x1="352" y1="57" x2="374" y2="57" stroke="#3A475A" stroke-width="1" />
+            <polygon points="374,53.5 380,57 374,60.5" fill="#3A475A" />
+
+            <!-- reviewer 2a -->
+            <rect x="382" y="34" width="130" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.45" />
+            <rect x="382" y="34" width="130" height="2.5" rx="1.25" fill="#14B8A6" stroke-opacity="0.45" />
+            <text x="447" y="56" font-family="JetBrains Mono,monospace" font-size="10" fill="#CBD5E1" text-anchor="middle">Reviewer 2a</text>
+            <text x="447" y="70" font-size="7.5" fill="#64748B" text-anchor="middle">WORKER TIER</text>
+
+            <!-- ── Sub-phase 2b ── (y=130) -->
+            <text x="144" y="126" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="start">STEP 2b</text>
+
+            <rect x="138" y="130" width="104" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="138" y="130" width="104" height="2.5" rx="1.25" fill="#14B8A6" />
+            <text x="190" y="152" font-family="JetBrains Mono,monospace" font-size="10" fill="#F1F5F9" text-anchor="middle">Worker B1</text>
+            <text x="190" y="166" font-size="7.5" fill="#64748B" text-anchor="middle">Semantic index</text>
+
+            <rect x="248" y="130" width="104" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="248" y="130" width="104" height="2.5" rx="1.25" fill="#14B8A6" />
+            <text x="300" y="152" font-family="JetBrains Mono,monospace" font-size="10" fill="#F1F5F9" text-anchor="middle">Worker B2</text>
+            <text x="300" y="166" font-size="7.5" fill="#64748B" text-anchor="middle">Semantic index</text>
+
+            <line x1="352" y1="153" x2="374" y2="153" stroke="#3A475A" stroke-width="1" />
+            <polygon points="374,149.5 380,153 374,156.5" fill="#3A475A" />
+
+            <rect x="382" y="130" width="130" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.45" />
+            <rect x="382" y="130" width="130" height="2.5" rx="1.25" fill="#14B8A6" stroke-opacity="0.45" />
+            <text x="447" y="152" font-family="JetBrains Mono,monospace" font-size="10" fill="#CBD5E1" text-anchor="middle">Reviewer 2b</text>
+            <text x="447" y="166" font-size="7.5" fill="#64748B" text-anchor="middle">WORKER TIER</text>
+
+            <!-- ── Sub-phase 2c ── (y=226) -->
+            <text x="144" y="222" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="start">STEP 2c</text>
+
+            <rect x="138" y="226" width="104" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="138" y="226" width="104" height="2.5" rx="1.25" fill="#14B8A6" />
+            <text x="190" y="248" font-family="JetBrains Mono,monospace" font-size="10" fill="#F1F5F9" text-anchor="middle">Worker C1</text>
+            <text x="190" y="262" font-size="7.5" fill="#64748B" text-anchor="middle">Convention scan</text>
+
+            <rect x="248" y="226" width="104" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="248" y="226" width="104" height="2.5" rx="1.25" fill="#14B8A6" />
+            <text x="300" y="248" font-family="JetBrains Mono,monospace" font-size="10" fill="#F1F5F9" text-anchor="middle">Worker C2</text>
+            <text x="300" y="262" font-size="7.5" fill="#64748B" text-anchor="middle">Convention scan</text>
+
+            <line x1="352" y1="249" x2="374" y2="249" stroke="#3A475A" stroke-width="1" />
+            <polygon points="374,245.5 380,249 374,252.5" fill="#3A475A" />
+
+            <rect x="382" y="226" width="130" height="46" rx="5" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.45" />
+            <rect x="382" y="226" width="130" height="2.5" rx="1.25" fill="#14B8A6" stroke-opacity="0.45" />
+            <text x="447" y="248" font-family="JetBrains Mono,monospace" font-size="10" fill="#CBD5E1" text-anchor="middle">Reviewer 2c</text>
+            <text x="447" y="262" font-size="7.5" fill="#64748B" text-anchor="middle">WORKER TIER</text>
+
+            <!-- converge lines from reviewers to batch synthesis -->
+            <line x1="512" y1="57"  x2="554" y2="155" stroke="#3A475A" stroke-width="1" />
+            <line x1="512" y1="153" x2="554" y2="155" stroke="#3A475A" stroke-width="1" />
+            <line x1="512" y1="249" x2="554" y2="155" stroke="#3A475A" stroke-width="1" />
+
+            <!-- Batch synthesis -->
+            <rect x="556" y="129" width="148" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <text x="630" y="153" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Step 2 synthesis</text>
+            <text x="630" y="168" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">AGGREGATED OUTPUT</text>
+
+            <!-- → per-batch reviewer -->
+            <line x1="704" y1="155" x2="728" y2="155" stroke="#3A475A" stroke-width="1" />
+            <polygon points="728,151.5 734,155 728,158.5" fill="#3A475A" />
+
+            <!-- Per-batch reviewer -->
+            <rect x="736" y="129" width="164" height="52" rx="6" fill="#131C28" stroke="#7C3AED" stroke-opacity="0.6" />
+            <rect x="736" y="129" width="164" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="818" y="153" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#F1F5F9" text-anchor="middle">Batch Reviewer</text>
+            <text x="818" y="168" font-size="8" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">THINKING TIER</text>
+
+          </svg>
+        </div>
+      </div>
+
+      <p class="sp-explainer">
+        Sub-phases cannot be exactly 1 &mdash; they are either atomic-exempt (a single <code>AskUserQuestion</code>, one mechanical step) or they fan into &ge;2 parallel angles. This rule prevents the appearance of parallelism without the substance. Cross-skill references like &ldquo;dispatch Step 2&rdquo; resolve to the sub-phase aggregate, so existing links don&rsquo;t break.
+      </p>
     </div>
   </section>
 
@@ -1047,6 +1551,361 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Adaptive flow profiles ───────────────────────────────────────── -->
+  <section id="flow-profiles" aria-labelledby="fp-heading">
+    <div class="container">
+      <p class="section-label">Adaptive flow profiles</p>
+      <h2 id="fp-heading">Triage picks the profile. Workers run at the right depth.</h2>
+      <p class="profiles-intro">
+        A 5-line edit gets <code>fast</code> (1 worker, inline review, &le;30k tokens) &mdash; not a 300k deep run. The triage call classifies <code>{ complexity, scope, risk, types, ambiguity }</code> before any worker fires. A triage reviewer validates the classification before it propagates downstream. Profiles upgrade mid-flight on <code>ESCALATE:</code>; they downgrade when research shows the task is simpler than expected.
+      </p>
+
+      <div class="skills-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Profile</th>
+              <th scope="col">Use when</th>
+              <th scope="col">Workers</th>
+              <th scope="col">Reviews</th>
+              <th scope="col">Budget</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>fast</code></td>
+              <td>Trivial single-file, reversible, low-ambiguity</td>
+              <td>1</td>
+              <td>Inline self-review</td>
+              <td>&le;30k</td>
+            </tr>
+            <tr>
+              <td><code>standard</code></td>
+              <td>Simple/moderate, 2&ndash;5 files</td>
+              <td>1&ndash;2</td>
+              <td>1 batch reviewer</td>
+              <td>&le;100k</td>
+            </tr>
+            <tr>
+              <td><code>deep</code></td>
+              <td>Complex / cross-cutting / system-wide</td>
+              <td>3+</td>
+              <td>Per-batch + final integration</td>
+              <td>300k</td>
+            </tr>
+            <tr>
+              <td><code>research</code></td>
+              <td>Unknown territory, library or code evaluation</td>
+              <td>3+ searchers</td>
+              <td>Inline</td>
+              <td>&le;80k</td>
+            </tr>
+            <tr>
+              <td><code>creative</code></td>
+              <td>UI/UX exploration, design-dominant</td>
+              <td>1&ndash;2</td>
+              <td>1 reviewer</td>
+              <td>&le;150k</td>
+            </tr>
+            <tr>
+              <td><code>scientific</code></td>
+              <td>Correctness-critical, numerical or proof work</td>
+              <td>2&ndash;3 + TDD</td>
+              <td>Multi-level L1&ndash;L5</td>
+              <td>300k</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="profiles-note">
+        Pass <code>--thorough</code> to disable speed patterns (parallel sibling drafts, batched reviews, step skipping) for high-risk runs. Profile is visible in <code>/hyperflow:status</code>.
+      </p>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Specialist personas ───────────────────────────────────────────── -->
+  <section id="personas" aria-labelledby="personas-heading">
+    <div class="container">
+      <p class="section-label">Specialist personas</p>
+      <h2 id="personas-heading">15 composable expert personas. Stitched per task.</h2>
+      <p class="personas-intro">
+        Every task is tagged with one or more types. The orchestrator stitches matching persona blocks into each worker prompt so every worker receives expert-level guidance for the exact work in front of it. A user-auth task tagged <code>[api, db, security]</code> gets all three personas composed in priority order inside a single prompt.
+      </p>
+
+      <div class="persona-groups" role="list" aria-label="15 specialist personas in four categories: Foundational, Cross-cutting, Workflow, and Surface">
+        <div class="persona-group" role="listitem">
+          <div class="persona-group-label">Foundational</div>
+          <div class="persona-chips">
+            <span class="persona-chip">architect</span>
+            <span class="persona-chip">frontend</span>
+            <span class="persona-chip">ui</span>
+            <span class="persona-chip">api</span>
+            <span class="persona-chip">db</span>
+          </div>
+        </div>
+        <div class="persona-group" role="listitem">
+          <div class="persona-group-label">Cross-cutting</div>
+          <div class="persona-chips">
+            <span class="persona-chip">security</span>
+            <span class="persona-chip">scientific</span>
+            <span class="persona-chip">performance</span>
+          </div>
+        </div>
+        <div class="persona-group" role="listitem">
+          <div class="persona-group-label">Workflow</div>
+          <div class="persona-chips">
+            <span class="persona-chip">refactor</span>
+            <span class="persona-chip">bugfix</span>
+            <span class="persona-chip">test</span>
+            <span class="persona-chip">research</span>
+          </div>
+        </div>
+        <div class="persona-group" role="listitem">
+          <div class="persona-group-label">Surface</div>
+          <div class="persona-chips">
+            <span class="persona-chip">creative</span>
+            <span class="persona-chip">devops</span>
+            <span class="persona-chip">docs</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="personas-note">
+        Personas compose by priority: <code>security</code> is stitched first so its constraints frame every other decision; <code>creative</code> is stitched last so divergent exploration adapts to structural choices above it.
+      </p>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Project memory ────────────────────────────────────────────────── -->
+  <section id="memory" aria-labelledby="memory-heading">
+    <div class="container">
+      <p class="section-label">Project memory</p>
+      <h2 id="memory-heading">Persistent learnings. Local, version-controllable, never mixed across repos.</h2>
+      <p class="memory-intro">
+        Memory lives at <code>.hyperflow/memory/</code> &mdash; plain markdown, committed with the project, never uploaded. Hyperflow reads only tag-matched entries at session start and injects them into worker prompts automatically. Three tiers control injection cost.
+      </p>
+
+      <!-- Memory tier diagram -->
+      <div class="memory-diagram-wrap" role="img" aria-label="Three memory tiers: hot (amber, always injected), warm (tag-matched injection), cold (on demand only). All feed into worker prompt at runtime.">
+        <div class="memory-svg-wrap">
+          <svg viewBox="0 0 760 160" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
+
+            <!-- Hot tier -->
+            <rect x="0" y="54" width="166" height="52" rx="6" fill="#131C28" stroke="#F59E0B" stroke-opacity="0.6" />
+            <rect x="0" y="54" width="166" height="3" rx="1.5" fill="#F59E0B" />
+            <text x="83" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#F1F5F9" text-anchor="middle">hot</text>
+            <text x="83" y="93" font-size="8" letter-spacing="0.09em" fill="#64748B" text-anchor="middle">ALWAYS INJECTED &middot; #hot</text>
+
+            <!-- Warm tier -->
+            <rect x="182" y="54" width="166" height="52" rx="6" fill="#131C28" stroke="#F59E0B" stroke-opacity="0.35" />
+            <rect x="182" y="54" width="166" height="3" rx="1.5" fill="#F59E0B" opacity="0.5" />
+            <text x="265" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#F1F5F9" text-anchor="middle">warm</text>
+            <text x="265" y="93" font-size="8" letter-spacing="0.09em" fill="#64748B" text-anchor="middle">TAG-MATCHED INJECTION</text>
+
+            <!-- Cold tier -->
+            <rect x="364" y="54" width="166" height="52" rx="6" fill="#131C28" stroke="#334155" />
+            <text x="447" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#CBD5E1" text-anchor="middle">cold</text>
+            <text x="447" y="93" font-size="8" letter-spacing="0.09em" fill="#64748B" text-anchor="middle">ON DEMAND ONLY</text>
+
+            <!-- arrows to Worker prompt -->
+            <line x1="166" y1="80" x2="550" y2="80" stroke="#3A475A" stroke-width="1" stroke-dasharray="4 3" />
+            <line x1="348" y1="80" x2="550" y2="80" stroke="#3A475A" stroke-width="1" stroke-dasharray="4 3" />
+            <line x1="530" y1="80" x2="550" y2="80" stroke="#3A475A" stroke-width="1" />
+            <polygon points="550,76.5 556,80 550,83.5" fill="#3A475A" />
+
+            <!-- Worker prompt node -->
+            <rect x="558" y="54" width="160" height="52" rx="6" fill="#131C28" stroke="#14B8A6" stroke-opacity="0.55" />
+            <rect x="558" y="54" width="160" height="3" rx="1.5" fill="#14B8A6" />
+            <text x="638" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#F1F5F9" text-anchor="middle">Worker prompt</text>
+            <text x="638" y="93" font-size="8" letter-spacing="0.09em" fill="#64748B" text-anchor="middle">AT RUNTIME</text>
+
+            <!-- tier labels below -->
+            <text x="83"  y="128" font-size="8.5" fill="#F59E0B" text-anchor="middle">&le;7 days</text>
+            <text x="265" y="128" font-size="8.5" fill="#94A3B8" text-anchor="middle">8&ndash;30 days</text>
+            <text x="447" y="128" font-size="8.5" fill="#475569" text-anchor="middle">30+ days, compressed</text>
+
+          </svg>
+        </div>
+      </div>
+
+      <!-- Auto-written files -->
+      <div class="memory-auto-files">
+        <div class="memory-auto-header">Auto-written by the chain</div>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">File</th>
+              <th scope="col">Tier</th>
+              <th scope="col">Written by</th>
+              <th scope="col">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>anti-patterns.md</code></td>
+              <td>Hot</td>
+              <td><code>/hyperflow:audit</code></td>
+              <td>Recurring findings (max 3 per run, deduped, self-compacting) &mdash; injected into every worker every session</td>
+            </tr>
+            <tr>
+              <td><code>project-decisions.md</code></td>
+              <td>Spec-tier</td>
+              <td><code>/hyperflow:spec</code></td>
+              <td>Structural answers from Smart Questions &mdash; prevents re-asking questions the codebase already answered</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Failure recovery ──────────────────────────────────────────────── -->
+  <section id="failure-recovery" aria-labelledby="fr-heading">
+    <div class="container">
+      <p class="section-label">Failure recovery</p>
+      <h2 id="fr-heading">Retry. Escalate. Abort. Never silently swallow.</h2>
+      <p class="fr-intro">
+        Every failure class has an explicit three-step policy. Worker error, malformed output, quality gate failure &mdash; all handled the same way, in every skill, with no improvisation. Three cumulative aborts across all batches halts the chain and surfaces the full failure trail.
+      </p>
+
+      <!-- Status line formats -->
+      <div class="fr-policy">
+        <div class="fr-policy-header">Real-time observability &mdash; status line formats</div>
+        <div class="fr-status-block">
+          <span class="fr-retry">[retry 1/3 &middot; Implementer &middot; tool-error]</span><br />
+          <span class="fr-retry">[retry 2/3 &middot; Writer &middot; malformed-output]</span><br />
+          <span class="fr-escalate">[escalate &rarr; thinking-tier &middot; Searcher &middot; timeout]</span><br />
+          <span class="fr-abort">[abort &middot; Reviewer &middot; 5xx &middot; chain budget 2/3]</span>
+        </div>
+      </div>
+
+      <!-- Policy rules -->
+      <div class="fr-rule-list">
+        <div class="fr-rule">
+          <div class="fr-rule-name">Worker error</div>
+          <div class="fr-rule-desc">Retry once with identical prompt &rarr; escalate to thinking-tier (with prior-attempt block injected) &rarr; abort batch on third failure</div>
+        </div>
+        <div class="fr-rule">
+          <div class="fr-rule-name">Malformed output</div>
+          <div class="fr-rule-desc">Retry with violation note (expected Y, got X, conform to schema) &rarr; escalate tier &rarr; abort</div>
+        </div>
+        <div class="fr-rule">
+          <div class="fr-rule-name">NEEDS_REVISION</div>
+          <div class="fr-rule-desc">Retry worker once with reviewer findings injected &rarr; on second NEEDS_REVISION, surface as partial and continue &mdash; no third dispatch</div>
+        </div>
+        <div class="fr-rule">
+          <div class="fr-rule-name">Quality gate</div>
+          <div class="fr-rule-desc">Retry gate once (clear caches) &rarr; surface exact stderr to user and halt push. Never <code>--no-verify</code>. Never auto-fix silently &mdash; user dispatches the fix</div>
+        </div>
+        <div class="fr-rule">
+          <div class="fr-rule-name">Security violation</div>
+          <div class="fr-rule-desc">Halt immediately with <code>SECURITY_VIOLATION:</code> &mdash; bypasses all retry logic, no auto-continue</div>
+        </div>
+        <div class="fr-rule">
+          <div class="fr-rule-name">Chain budget</div>
+          <div class="fr-rule-desc">3 cumulative aborts across all batches and sub-phases &rarr; chain itself aborts and prints the full failure trail</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Worked examples ───────────────────────────────────────────────── -->
+  <section id="examples" aria-labelledby="examples-heading">
+    <div class="container">
+      <p class="section-label">Examples</p>
+      <h2 id="examples-heading">Four flows. From quick fix to ambiguous design.</h2>
+      <p class="examples-intro">
+        These are representative transcripts showing how the orchestrator selects a profile, fans out workers, and routes through review. Labels follow the output-style spec: bold for thinking-tier, plain for worker-tier.
+      </p>
+
+      <div class="examples-grid">
+
+        <!-- Implementation -->
+        <div class="example-card">
+          <div class="example-header">
+            <span class="example-title">Implementation</span>
+            <span class="example-profile-badge">standard profile</span>
+          </div>
+          <div class="example-body">
+            <span class="ex-cmd">/hyperflow:scope "Add debounced search bar to dashboard"</span><br /><br />
+            <span class="ex-dim">  Triage    standard flow &middot; 2 files &middot; ambiguity 0.1</span><br />
+            <span class="ex-dim">  Scope     Searchers map dashboard + hooks surface</span><br />
+            <span class="ex-dim">            Decompose: SearchBar + useDebounce + wire up</span><br /><br />
+            <span class="ex-worker">  Worker 1  Implementer &mdash; SearchBar component</span>&nbsp;&nbsp;<span class="ex-dim">&#x250C;</span><br />
+            <span class="ex-worker">  Worker 2  Implementer &mdash; useDebounce hook</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="ex-dim">&#x251C; parallel</span><br /><br />
+            <span class="ex-thinking">  Reviewer  batch review L1&ndash;L2 &mdash; worker tier</span><br />
+            <span class="ex-worker">  Worker    wires SearchBar into Dashboard</span><br />
+            <span class="ex-thinking">  Reviewer  final integration &mdash; thinking tier</span>
+          </div>
+        </div>
+
+        <!-- Design (ambiguous) -->
+        <div class="example-card">
+          <div class="example-header">
+            <span class="example-title">Design &mdash; ambiguous scope</span>
+            <span class="example-profile-badge">deep profile</span>
+          </div>
+          <div class="example-body">
+            <span class="ex-cmd">/hyperflow:spec "I need a notification system"</span><br /><br />
+            <span class="ex-dim">  Triage    deep flow &middot; ambiguity 0.7</span><br />
+            <span class="ex-worker">  Searcher  context + codebase scan (Step 2a/2b)</span><br />
+            <span class="ex-thinking">  Analyst   6-dim analysis (Step 3)</span><br />
+            <span class="ex-dim">            Smart Questions (post-analysis, floor 2)</span><br />
+            <span class="ex-dim">            2 approaches &rarr; you pick</span><br />
+            <span class="ex-dim">            Design &rarr; section approval</span><br /><br />
+            <span class="ex-dim">  Scope     (auto) map &rarr; pre-elections</span><br />
+            <span class="ex-dim">  Dispatch  (auto) workers + reviews + gate</span>
+          </div>
+        </div>
+
+        <!-- Debugging -->
+        <div class="example-card">
+          <div class="example-header">
+            <span class="example-title">Debugging</span>
+            <span class="example-profile-badge">deep profile</span>
+          </div>
+          <div class="example-body">
+            <span class="ex-cmd">/hyperflow:trace "Tests failing after auth refactor"</span><br /><br />
+            <span class="ex-thinking">  Debugger  5-Whys &middot; 3 independent broken files &mdash; thinking tier</span><br /><br />
+            <span class="ex-worker">  Searcher  auth-middleware.test.ts</span>&nbsp;&nbsp;<span class="ex-dim">&#x250C;</span><br />
+            <span class="ex-worker">  Searcher  login-flow.test.ts</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ex-dim">&#x251C; parallel</span><br />
+            <span class="ex-worker">  Searcher  session-handler.test.ts</span>&nbsp;&nbsp;&nbsp;<span class="ex-dim">&#x2514;</span><br /><br />
+            <span class="ex-worker">  Implementer  root-cause fix</span><br />
+            <span class="ex-worker">  Writer       regression test</span><br />
+            <span class="ex-thinking">  Reviewer     validates fix + test &mdash; thinking tier</span>
+          </div>
+        </div>
+
+        <!-- Quick task -->
+        <div class="example-card">
+          <div class="example-header">
+            <span class="example-title">Quick task</span>
+            <span class="example-profile-badge">fast profile</span>
+          </div>
+          <div class="example-body">
+            <span class="ex-cmd">/hyperflow:scope "Rename Button to PrimaryButton"</span><br /><br />
+            <span class="ex-dim">  Triage    fast flow &middot; 1 file &middot; ambiguity 0.0</span><br /><br />
+            <span class="ex-worker">  Implementer  rename + update all imports</span><br />
+            <span class="ex-thinking">  Reviewer     inline self-review (fast) &mdash; worker tier</span><br /><br />
+            <span class="ex-dim">  Done. No batch reviewer needed at this depth.</span>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
