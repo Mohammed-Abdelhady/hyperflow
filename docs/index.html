@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyperflow — Multi-agent orchestration for Claude Code, OpenCode &amp; Antigravity</title>
+  <meta name="description" content="Thinking models orchestrate and review. Worker models execute. Every step dispatches a Worker → Reviewer pair. scaffold → spec → scope → dispatch → audit → deploy." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset + base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --thinking:       #7C3AED;
+      --thinking-dim:   #7C3AED26;
+      --worker:         #14B8A6;
+      --worker-dim:     #14B8A626;
+      --memory:         #F59E0B;
+      --security:       #EF4444;
+      --git:            #3B82F6;
+      --bg-start:       #0B0F1A;
+      --bg-end:         #0E1422;
+      --text-primary:   #F8FAFC;
+      --text-secondary: #94A3B8;
+      --border:         #334155;
+      --border-faint:   #1E2D3D;
+      --surface:        #111827;
+      --surface-raised: #16202E;
+
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+      --max-w: 72rem;
+      --section-gap: 7rem;
+      --col-gap: 2rem;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: linear-gradient(160deg, var(--bg-start) 0%, var(--bg-end) 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      line-height: 1.65;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout ────────────────────────────────────────────────── */
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    section {
+      padding-top: var(--section-gap);
+    }
+
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      color: var(--text-secondary);
+      max-width: 58ch;
+    }
+
+    p + p { margin-top: 0.75rem; }
+
+    a {
+      color: var(--text-primary);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--border);
+      transition: text-decoration-color 0.15s;
+    }
+    a:hover { text-decoration-color: var(--text-secondary); }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    code, .mono {
+      font-family: var(--font-mono);
+      font-size: 0.875em;
+    }
+
+    /* ─── Tier badges ────────────────────────────────────────────── */
+    .badge-thinking {
+      display: inline-block;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--thinking);
+      border: 1px solid var(--thinking);
+      border-radius: 2px;
+      padding: 0.1em 0.45em;
+      line-height: 1.5;
+    }
+
+    .badge-worker {
+      display: inline-block;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--worker);
+      border: 1px solid var(--worker);
+      border-radius: 2px;
+      padding: 0.1em 0.45em;
+      line-height: 1.5;
+    }
+
+    /* ─── Nav ───────────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11, 15, 26, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 3.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-wordmark {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+
+    /* ─── Hero ──────────────────────────────────────────────────── */
+    #hero {
+      padding-top: 0;
+      min-height: 92vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero-inner {
+      padding: 6rem 0 4rem;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-wordmark {
+      font-size: clamp(3.5rem, 8vw, 6.5rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      color: var(--text-primary);
+      margin-bottom: 1.75rem;
+    }
+
+    .hero-wordmark em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--thinking) 0%, var(--worker) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-positioning {
+      font-size: clamp(1rem, 2vw, 1.1875rem);
+      color: var(--text-secondary);
+      max-width: 52ch;
+      line-height: 1.55;
+      margin-bottom: 2.75rem;
+    }
+
+    .hero-ctas {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .cta-primary {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.7rem 1.1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .cta-primary:hover {
+      border-color: var(--thinking);
+      background: var(--surface-raised);
+      text-decoration: none;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-family: var(--font-sans);
+      transition: color 0.15s;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { color: var(--text-primary); }
+    .copy-btn[data-copied="true"] { color: var(--worker); }
+
+    .cta-secondary {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s;
+      padding: 0.7rem 0.25rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .cta-secondary:hover {
+      color: var(--text-primary);
+      text-decoration: none;
+      border-bottom-color: var(--border);
+    }
+
+    .hero-chain-hint {
+      margin-top: 3.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    /* ─── Chain section ──────────────────────────────────────────── */
+    #chain .chain-diagram {
+      margin-top: 3rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .chain-caption {
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Thinking / Worker split ────────────────────────────────── */
+    #tiers .tiers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5px;
+      margin-top: 3rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tier-card {
+      padding: 2rem 2rem 2.25rem;
+      background: var(--surface);
+    }
+
+    .tier-card + .tier-card {
+      border-left: 1px solid var(--border);
+    }
+
+    .tier-accent-bar {
+      width: 2rem;
+      height: 2px;
+      margin-bottom: 1.25rem;
+    }
+
+    .tier-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .tier-models {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .tier-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 36ch;
+    }
+
+    .tier-roles {
+      margin-top: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tier-role-chip {
+      font-size: 0.6875rem;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.15em 0.5em;
+    }
+
+    .pairing-row {
+      margin-top: 3rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .pairing-inner {
+      padding: 1.75rem 2rem;
+      background: var(--surface);
+    }
+
+    .pairing-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    /* ─── Skills table ───────────────────────────────────────────── */
+    #skills .skills-intro {
+      margin-top: 0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .skills-table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead tr {
+      background: var(--surface-raised);
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead th {
+      padding: 0.75rem 1.25rem;
+      text-align: left;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border-faint);
+      background: var(--surface);
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface-raised); }
+
+    td {
+      padding: 0.875rem 1.25rem;
+      vertical-align: top;
+      color: var(--text-secondary);
+    }
+
+    td:first-child { color: var(--text-primary); }
+
+    td code {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    .chain-badge {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border-radius: 2px;
+      padding: 0.1em 0.45em;
+      line-height: 1.5;
+      white-space: nowrap;
+    }
+
+    .chain-badge.starter {
+      color: var(--thinking);
+      border: 1px solid var(--thinking);
+    }
+    .chain-badge.endpoint {
+      color: var(--worker);
+      border: 1px solid var(--worker);
+    }
+    .chain-badge.standalone {
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    /* ─── Layers ─────────────────────────────────────────────────── */
+    #layers .layers-intro {
+      margin-top: 0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .layer-color-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+      flex-shrink: 0;
+      margin-top: 0.05em;
+    }
+
+    td .layer-num {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* ─── Providers ──────────────────────────────────────────────── */
+    #providers .providers-intro {
+      margin-top: 0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .providers-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .provider-card {
+      background: var(--surface);
+      padding: 1.75rem 1.75rem 2rem;
+    }
+
+    .provider-card + .provider-card {
+      border-left: 1px solid var(--border);
+    }
+
+    .provider-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+      font-family: var(--font-mono);
+    }
+
+    .provider-model-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .provider-tier-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      min-width: 5rem;
+      flex-shrink: 0;
+    }
+
+    .provider-model-name {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Install ────────────────────────────────────────────────── */
+    #install .install-intro {
+      margin-top: 0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .install-block {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .install-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      background: var(--surface-raised);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .install-block-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .install-code {
+      padding: 1.25rem 1.5rem;
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.75;
+      color: var(--text-primary);
+      overflow-x: auto;
+    }
+
+    .install-code .comment {
+      color: var(--text-secondary);
+    }
+
+    .install-note {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 1rem;
+      line-height: 1.6;
+    }
+
+    /* ─── Footer ─────────────────────────────────────────────────── */
+    footer {
+      margin-top: var(--section-gap);
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 3rem;
+    }
+
+    .footer-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-wordmark {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      font-size: 0.9375rem;
+      text-decoration: none;
+    }
+
+    .footer-meta {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-links a {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--text-primary); }
+
+    /* ─── Inline SVG helpers ─────────────────────────────────────── */
+    .chain-svg-wrap {
+      width: 100%;
+      min-width: 540px;
+    }
+
+    .pair-svg-wrap {
+      width: 100%;
+      overflow: visible;
+    }
+
+    /* ─── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      :root { --section-gap: 5rem; }
+
+      .tiers-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .tier-card + .tier-card {
+        border-left: none !important;
+        border-top: 1px solid var(--border);
+      }
+
+      .providers-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .provider-card + .provider-card {
+        border-left: none !important;
+        border-top: 1px solid var(--border);
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      :root { --section-gap: 4rem; }
+      .container { padding: 0 1.25rem; }
+      .nav-inner { padding: 0 1.25rem; }
+      .footer-inner { padding: 0 1.25rem; flex-direction: column; align-items: flex-start; }
+
+      .hero-wordmark { font-size: clamp(2.75rem, 12vw, 4rem); }
+      .hero-chain-hint { font-size: 0.75rem; }
+
+      thead th, td { padding: 0.75rem 1rem; }
+      td { font-size: 0.8375rem; }
+
+      .install-code { font-size: 0.775rem; }
+    }
+
+    @media (max-width: 400px) {
+      .hero-ctas { flex-direction: column; align-items: flex-start; }
+    }
+
+    /* ─── Focus styles (a11y) ────────────────────────────────────── */
+    :focus-visible {
+      outline: 2px solid var(--thinking);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Nav ─────────────────────────────────────────────────────────── -->
+  <nav aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-wordmark">Hyperflow</a>
+      <ul class="nav-links" role="list">
+        <li><a href="#chain">Chain</a></li>
+        <li><a href="#tiers">Tiers</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#layers">Layers</a></li>
+        <li><a href="#providers">Providers</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+  <section id="hero" aria-labelledby="hero-heading">
+    <div class="container">
+      <div class="hero-inner">
+        <p class="hero-eyebrow">Claude Code &nbsp;·&nbsp; OpenCode &nbsp;·&nbsp; Antigravity</p>
+
+        <h1 class="hero-wordmark" id="hero-heading">Hyper<em>flow</em></h1>
+
+        <p class="hero-positioning">
+          Multi-agent orchestration that thinks before it codes.
+          Thinking models orchestrate and review — worker models execute.
+          Every step dispatches its own Worker &rarr; Reviewer pair.
+        </p>
+
+        <div class="hero-ctas">
+          <!-- Primary CTA — install command with copy button -->
+          <div class="cta-primary" role="group" aria-label="Primary install command">
+            <code id="hero-cmd">claude plugin marketplace add Mohammed-Abdelhady/hyperflow</code>
+            <button
+              class="copy-btn"
+              aria-label="Copy install command to clipboard"
+              onclick="copyCmd('hero-cmd', this)"
+            >copy</button>
+          </div>
+
+          <a
+            href="https://github.com/Mohammed-Abdelhady/hyperflow"
+            class="cta-secondary"
+            target="_blank"
+            rel="noopener"
+            aria-label="View Hyperflow on GitHub (opens in new tab)"
+          >GitHub &rarr;</a>
+        </div>
+
+        <p class="hero-chain-hint">
+          scaffold &nbsp;&#x2192;&nbsp; spec &nbsp;&#x2192;&nbsp; scope &nbsp;&#x2192;&nbsp; dispatch &nbsp;&#x2192;&nbsp; audit &nbsp;&#x2192;&nbsp; deploy
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── The Chain ─────────────────────────────────────────────────────── -->
+  <section id="chain" aria-labelledby="chain-heading">
+    <div class="container">
+      <p class="section-label">The chain</p>
+      <h2 id="chain-heading">Start anywhere. Auto-advance forward.</h2>
+      <p>
+        Chain-starting skills auto-advance through the rest of the chain. Skip to any entry point — the orchestrator picks up and runs forward.
+      </p>
+
+      <div class="chain-diagram" role="img" aria-label="Chain flow: scaffold (standalone), then spec (thinking-tier) auto-chains to scope (thinking-tier) auto-chains to dispatch (worker-tier), with audit and deploy gates at the end">
+        <div class="chain-svg-wrap">
+          <svg viewBox="0 0 860 160" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+            <!-- Background surface -->
+            <rect width="860" height="160" rx="8" fill="#111827" />
+            <rect x="0.5" y="0.5" width="859" height="159" rx="7.5" stroke="#334155" />
+
+            <!-- Node helpers — pill width=110, height=40, rx=4 -->
+            <!-- scaffold (standalone) -->
+            <rect x="28" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#334155" />
+            <text x="83" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#94A3B8" text-anchor="middle">scaffold</text>
+            <text x="83" y="92" font-family="Inter,sans-serif" font-size="9" fill="#475569" text-anchor="middle" letter-spacing="0.04em">STANDALONE</text>
+
+            <!-- arrow 1 -->
+            <line x1="139" y1="80" x2="162" y2="80" stroke="#334155" stroke-width="1" />
+            <polygon points="162,76 168,80 162,84" fill="#334155" />
+
+            <!-- spec (thinking) -->
+            <rect x="170" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.6" />
+            <text x="225" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#F8FAFC" text-anchor="middle">spec</text>
+            <text x="225" y="92" font-family="Inter,sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle" letter-spacing="0.04em">THINKING</text>
+
+            <!-- arrow 2 with label -->
+            <line x1="281" y1="80" x2="304" y2="80" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.5" />
+            <polygon points="304,76 310,80 304,84" fill="#7C3AED" fill-opacity="0.5" />
+            <text x="295" y="73" font-family="Inter,sans-serif" font-size="7.5" fill="#7C3AED" text-anchor="middle" fill-opacity="0.7">auto</text>
+
+            <!-- scope (thinking) -->
+            <rect x="312" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.6" />
+            <text x="367" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#F8FAFC" text-anchor="middle">scope</text>
+            <text x="367" y="92" font-family="Inter,sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle" letter-spacing="0.04em">THINKING</text>
+
+            <!-- arrow 3 with label -->
+            <line x1="423" y1="80" x2="446" y2="80" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.5" />
+            <polygon points="446,76 452,80 446,84" fill="#7C3AED" fill-opacity="0.5" />
+            <text x="437" y="73" font-family="Inter,sans-serif" font-size="7.5" fill="#7C3AED" text-anchor="middle" fill-opacity="0.7">auto</text>
+
+            <!-- dispatch (worker) -->
+            <rect x="454" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#14B8A6" stroke-opacity="0.6" />
+            <text x="509" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#F8FAFC" text-anchor="middle">dispatch</text>
+            <text x="509" y="92" font-family="Inter,sans-serif" font-size="9" fill="#14B8A6" text-anchor="middle" letter-spacing="0.04em">WORKER</text>
+
+            <!-- arrow 4 -->
+            <line x1="565" y1="80" x2="588" y2="80" stroke="#334155" stroke-width="1" />
+            <polygon points="588,76 594,80 588,84" fill="#334155" />
+
+            <!-- audit (thinking gate) -->
+            <rect x="596" y="60" width="90" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.4" stroke-dasharray="4 2" />
+            <text x="641" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#94A3B8" text-anchor="middle">audit</text>
+            <text x="641" y="92" font-family="Inter,sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle" letter-spacing="0.04em" fill-opacity="0.6">GATE</text>
+
+            <!-- arrow 5 -->
+            <line x1="687" y1="80" x2="706" y2="80" stroke="#334155" stroke-width="1" />
+            <polygon points="706,76 712,80 706,84" fill="#334155" />
+
+            <!-- deploy (gate) -->
+            <rect x="714" y="60" width="90" height="40" rx="4" fill="#16202E" stroke="#14B8A6" stroke-opacity="0.4" stroke-dasharray="4 2" />
+            <text x="759" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#94A3B8" text-anchor="middle">deploy</text>
+            <text x="759" y="92" font-family="Inter,sans-serif" font-size="9" fill="#14B8A6" text-anchor="middle" letter-spacing="0.04em" fill-opacity="0.6">GATE</text>
+
+            <!-- Legend -->
+            <rect x="28" y="126" width="8" height="8" rx="1" fill="#7C3AED" fill-opacity="0.6" />
+            <text x="42" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">Thinking tier</text>
+            <rect x="126" y="126" width="8" height="8" rx="1" fill="#14B8A6" fill-opacity="0.6" />
+            <text x="140" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">Worker tier</text>
+            <rect x="224" y="126" width="8" height="8" rx="1" fill="#334155" />
+            <text x="238" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">Standalone</text>
+            <!-- dashed box legend -->
+            <rect x="316" y="126" width="8" height="8" rx="1" fill="none" stroke="#94A3B8" stroke-dasharray="3 1.5" />
+            <text x="330" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">End-of-chain gate</text>
+          </svg>
+        </div>
+      </div>
+
+      <p class="chain-caption">
+        <code>spec</code> &rarr; <code>scope</code> &rarr; <code>dispatch</code> is the primary chain. Enter at <code>spec</code> for design-first work, at <code>scope</code> when the approach is clear, at <code>dispatch</code> when a task file already exists.
+        <code>audit</code> and <code>deploy</code> gates fire at the end of dispatch — batched into one ask.
+      </p>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Thinking / Worker split ──────────────────────────────────────── -->
+  <section id="tiers" aria-labelledby="tiers-heading">
+    <div class="container">
+      <p class="section-label">The thinking / worker split</p>
+      <h2 id="tiers-heading">The whole product in one idea.</h2>
+      <p>
+        Expensive thinking models handle what they're best at: planning, questioning, and reviewing. Fast worker models handle what they're best at: writing code. The split is structural — not a setting.
+      </p>
+
+      <div class="tiers-grid">
+        <!-- Thinking card -->
+        <div class="tier-card">
+          <div class="tier-accent-bar" style="background:#7C3AED;"></div>
+          <div class="tier-title">Thinking tier</div>
+          <div class="tier-models mono">Opus 4.7 &nbsp;·&nbsp; Gemini 3 Pro</div>
+          <p class="tier-desc">Orchestrates the chain. Triages every task. Asks clarifying questions — after reading the code, never before. Reviews every worker output. Runs the final integration pass over the cumulative diff.</p>
+          <div class="tier-roles">
+            <span class="tier-role-chip">Orchestrator</span>
+            <span class="tier-role-chip">Triage</span>
+            <span class="tier-role-chip">Reviewer</span>
+            <span class="tier-role-chip">Debugger</span>
+            <span class="tier-role-chip">Analyst</span>
+            <span class="tier-role-chip">Planner</span>
+          </div>
+        </div>
+        <!-- Worker card -->
+        <div class="tier-card">
+          <div class="tier-accent-bar" style="background:#14B8A6;"></div>
+          <div class="tier-title">Worker tier</div>
+          <div class="tier-models mono">Sonnet 4.6 &nbsp;·&nbsp; Gemini 3.5 Flash</div>
+          <p class="tier-desc">Executes the tasks. Searches, writes, implements — in parallel wherever tasks are independent. Each worker receives a stitched persona block — expert-level guidance for the exact work in front of it.</p>
+          <div class="tier-roles">
+            <span class="tier-role-chip">Implementer</span>
+            <span class="tier-role-chip">Searcher</span>
+            <span class="tier-role-chip">Writer</span>
+            <span class="tier-role-chip">Composer</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Worker → Reviewer pairing diagram -->
+      <div class="pairing-row">
+        <div class="pairing-inner">
+          <p class="pairing-label">Every step, without exception</p>
+          <div class="pair-svg-wrap" role="img" aria-label="Worker arrow to Reviewer: worker executes, reviewer validates — every step dispatches this pair">
+            <svg viewBox="0 0 640 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;height:auto;">
+              <!-- Worker node -->
+              <rect x="0" y="16" width="140" height="40" rx="4" fill="#16202E" stroke="#14B8A6" stroke-opacity="0.55" />
+              <text x="22" y="34" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#14B8A6" letter-spacing="0.06em">WORKER</text>
+              <text x="22" y="49" font-family="Inter,sans-serif" font-size="10" fill="#64748B">Sonnet / Flash</text>
+
+              <!-- Arrow -->
+              <line x1="142" y1="36" x2="210" y2="36" stroke="#334155" stroke-width="1" />
+              <polygon points="210,32 218,36 210,40" fill="#334155" />
+              <text x="179" y="28" font-family="Inter,sans-serif" font-size="9" fill="#475569" text-anchor="middle">output</text>
+
+              <!-- Reviewer node -->
+              <rect x="220" y="16" width="160" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.55" />
+              <text x="242" y="34" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#7C3AED" letter-spacing="0.06em">REVIEWER</text>
+              <text x="242" y="49" font-family="Inter,sans-serif" font-size="10" fill="#64748B">Opus / Gemini Pro</text>
+
+              <!-- Thinking badge + label -->
+              <text x="400" y="40" font-family="Inter,sans-serif" font-size="10" fill="#475569">&#x2190; thinking-tier; validates, scores, blocks bad output</text>
+            </svg>
+          </div>
+          <p style="font-size:0.8125rem;color:var(--text-secondary);margin-top:0.75rem;max-width:none;">
+            Per-batch Sonnet reviewers do L1&ndash;L2 spot-checks. The final integration reviewer (Opus) runs over the cumulative diff. Every non-trivial phase also decomposes into named sub-phases, each with its own Sonnet reviewer — so review happens at every granularity.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Skills ────────────────────────────────────────────────────────── -->
+  <section id="skills" aria-labelledby="skills-heading">
+    <div class="container">
+      <p class="section-label">Skills</p>
+      <h2 id="skills-heading">13 specialized skills. Auto-routing on by default.</h2>
+      <p class="skills-intro">
+        Say the verb — "audit the diff", "debug this test", "scope the new auth flow" — and the orchestrator routes automatically. No <code>/hyperflow:*</code> prefix required in auto mode.
+      </p>
+
+      <div class="skills-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Skill</th>
+              <th scope="col">Command</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>scaffold</strong></td>
+              <td><code>/hyperflow:scaffold</code></td>
+              <td>Analyze project, create <code>.hyperflow/</code> cache, install multi-tool shims</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>spec</strong></td>
+              <td><code>/hyperflow:spec</code></td>
+              <td>Multi-dimensional analysis + alternatives — refuses to code before approval; auto-chains to scope</td>
+              <td><span class="chain-badge starter">Chain starter</span></td>
+            </tr>
+            <tr>
+              <td><strong>scope</strong></td>
+              <td><code>/hyperflow:scope</code></td>
+              <td>Decompose into parallel worker subtasks; writes task file; auto-chains to dispatch</td>
+              <td><span class="chain-badge starter">Chain starter</span></td>
+            </tr>
+            <tr>
+              <td><strong>dispatch</strong></td>
+              <td><code>/hyperflow:dispatch</code></td>
+              <td>Dispatch parallel workers + thinking-tier reviews + final integration review; endpoint of the chain</td>
+              <td><span class="chain-badge endpoint">Endpoint</span></td>
+            </tr>
+            <tr>
+              <td><strong>trace</strong></td>
+              <td><code>/hyperflow:trace</code></td>
+              <td>Systematic 5-Whys + hypothesis testing — never patches symptoms</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>audit</strong></td>
+              <td><code>/hyperflow:audit</code></td>
+              <td>L1 quick &rarr; L5 exhaustive review on changes, files, or PRs</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>deploy</strong></td>
+              <td><code>/hyperflow:deploy</code></td>
+              <td>Lint, typecheck, build, tests, security sweep, commit, release, push (push always asks)</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>cache</strong></td>
+              <td><code>/hyperflow:cache</code></td>
+              <td>Memory CRUD — show, search, add, edit, prune, archive, clear, stats, migrate, compact</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>status</strong></td>
+              <td><code>/hyperflow:status</code></td>
+              <td>Read-only snapshot — version, profile freshness, memory count, live per-task progress + ETA</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>background</strong></td>
+              <td><code>/hyperflow:background</code></td>
+              <td>List, show, cancel, prune task-level background agents fired by other skills</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>sticky</strong></td>
+              <td><code>/hyperflow:sticky</code></td>
+              <td><code>on</code> / <code>auto</code> / <code>off</code> / <code>status</code> — per-project auto-routing mode</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>bridge</strong></td>
+              <td><code>/hyperflow:bridge</code></td>
+              <td>Embed portable doctrine subset into <code>CLAUDE.md</code> so rules apply in Desktop, web, and IDE surfaces</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+            <tr>
+              <td><strong>flush</strong></td>
+              <td><code>/hyperflow:flush</code></td>
+              <td>Manually flush a deferred-commit queue from a prior or crashed chain</td>
+              <td><span class="chain-badge standalone">Standalone</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── The 10 Layers ─────────────────────────────────────────────────── -->
+  <section id="layers" aria-labelledby="layers-heading">
+    <div class="container">
+      <p class="section-label">Orchestration layers</p>
+      <h2 id="layers-heading">10 composable layers.</h2>
+      <p class="layers-intro">
+        Every chain skill declares which layers it exercises. The layer stack is non-negotiable — removing any layer breaks the orchestration contract.
+      </p>
+
+      <div class="skills-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Layer</th>
+              <th scope="col">Name</th>
+              <th scope="col">Summary</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span class="layer-num">L0</span>
+              </td>
+              <td>
+                <span class="layer-color-dot" style="background:#CBD5E1;"></span>Project Analysis
+              </td>
+              <td>Cache tech stack and conventions in <code>.hyperflow/</code></td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L0.5</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#7C3AED;"></span>Task Triage
+              </td>
+              <td>Classify the task (types, complexity, risk, ambiguity, flow profile, personas) before any worker fires</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L1</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#7C3AED;"></span>Autonomy
+              </td>
+              <td>Zero confirmations, minimal output, silent recovery</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L2</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#7C3AED;"></span>Model Routing
+              </td>
+              <td>Configurable thinking/worker per provider + priority chain</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L3</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#14B8A6;"></span>Orchestrator
+              </td>
+              <td>Decompose &rarr; parallel dispatch &rarr; review &rarr; synthesize</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L4</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#7C3AED;"></span>Brainstorming
+              </td>
+              <td>Design exploration + approval before implementation</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L5</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#14B8A6;"></span>Quality Gates
+              </td>
+              <td>Automated lint / typecheck / tests after every review</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L6</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#F59E0B;"></span>Project Memory
+              </td>
+              <td>Persistent learnings in <code>.hyperflow/memory/</code> — project-scoped, tagged, tiered</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L7</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#14B8A6;"></span>Task Templates
+              </td>
+              <td>Pre-built decomposition: CRUD, API, UI, migration, refactor, debug</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L8</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#3B82F6;"></span>Git Workflow
+              </td>
+              <td>Auto-branch creation, auto-commit after approval — never auto-push without consent</td>
+            </tr>
+            <tr>
+              <td><span class="layer-num">L9</span></td>
+              <td>
+                <span class="layer-color-dot" style="background:#EF4444;"></span>Security
+              </td>
+              <td>Prompt-injected blocklists for sensitive files and destructive commands</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Providers ──────────────────────────────────────────────────────── -->
+  <section id="providers" aria-labelledby="providers-heading">
+    <div class="container">
+      <p class="section-label">Providers</p>
+      <h2 id="providers-heading">One config. Auto-detected.</h2>
+      <p class="providers-intro">
+        Provider is detected at session start from environment variables and folder presence. Override any model in <code>~/.hyperflow/config.json</code> or switch mid-session.
+      </p>
+
+      <div class="providers-grid">
+        <div class="provider-card">
+          <div class="provider-name">Claude Code</div>
+          <div class="provider-model-row">
+            <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
+            <span class="provider-model-name">Opus 4.7</span>
+          </div>
+          <div class="provider-model-row">
+            <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
+            <span class="provider-model-name">Sonnet 4.6</span>
+          </div>
+        </div>
+        <div class="provider-card">
+          <div class="provider-name">OpenCode</div>
+          <div class="provider-model-row">
+            <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
+            <span class="provider-model-name">Claude Opus 4.7</span>
+          </div>
+          <div class="provider-model-row">
+            <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
+            <span class="provider-model-name">Sonnet 4.6</span>
+          </div>
+        </div>
+        <div class="provider-card">
+          <div class="provider-name">Antigravity</div>
+          <div class="provider-model-row">
+            <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
+            <span class="provider-model-name">Gemini 3 Pro</span>
+          </div>
+          <div class="provider-model-row">
+            <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
+            <span class="provider-model-name">Gemini 3.5 Flash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top: var(--section-gap);" />
+
+  <!-- ── Install ────────────────────────────────────────────────────────── -->
+  <section id="install" aria-labelledby="install-heading">
+    <div class="container">
+      <p class="section-label">Install</p>
+      <h2 id="install-heading">Direct from GitHub — verified and live.</h2>
+      <p class="install-intro">
+        The GitHub marketplace path ships every fix the day it lands. Official Anthropic marketplace ingestion is pending; use the direct path today.
+      </p>
+
+      <!-- Claude Code -->
+      <div class="install-block">
+        <div class="install-block-header">
+          <span class="install-block-title">Claude Code (terminal)</span>
+          <button
+            class="copy-btn"
+            aria-label="Copy Claude Code install commands to clipboard"
+            onclick="copyBlock('block-cc', this)"
+          >copy</button>
+        </div>
+        <div class="install-code" id="block-cc" aria-label="Claude Code install commands">
+          <span class="comment"># Step 1 — add the marketplace source</span><br />
+          claude plugin marketplace add Mohammed-Abdelhady/hyperflow<br />
+          <br />
+          <span class="comment"># Step 2 — install the plugin</span><br />
+          claude plugin install hyperflow@hyperflow-marketplace
+        </div>
+      </div>
+
+      <!-- OpenCode / Antigravity -->
+      <div class="install-block">
+        <div class="install-block-header">
+          <span class="install-block-title">OpenCode &nbsp;·&nbsp; Antigravity</span>
+          <button
+            class="copy-btn"
+            aria-label="Copy OpenCode / Antigravity install command to clipboard"
+            onclick="copyBlock('block-oc', this)"
+          >copy</button>
+        </div>
+        <div class="install-code" id="block-oc" aria-label="OpenCode and Antigravity install command">
+          <span class="comment"># Auto-detects your tool and walks you through setup</span><br />
+          curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
+        </div>
+      </div>
+
+      <!-- First run -->
+      <div class="install-block">
+        <div class="install-block-header">
+          <span class="install-block-title">First run</span>
+        </div>
+        <div class="install-code">
+          <span class="comment"># Set up a new project (builds .hyperflow/ cache)</span><br />
+          /hyperflow:scaffold<br />
+          <br />
+          <span class="comment"># Start the full chain from a feature description</span><br />
+          /hyperflow:spec "add user auth with login page and middleware"<br />
+          <br />
+          <span class="comment"># Or enter at scope if the approach is already clear</span><br />
+          /hyperflow:scope "add debounced search to the dashboard"
+        </div>
+      </div>
+
+      <p class="install-note">
+        Hyperflow runs in the <strong>terminal</strong> — Claude Code CLI, OpenCode CLI, or Antigravity. It does not run inside Claude Code Desktop (the GUI app), claude.ai web, or IDE extensions that don't shell out to the CLI. Run <code>claude</code> in a terminal in the same project directory to activate it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <a href="#hero" class="footer-wordmark">Hyperflow</a>
+        <span class="footer-meta">v4.18.0 &nbsp;·&nbsp; MIT License</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/installation.md" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Clipboard JS (progressive enhancement) ─────────────────────────── -->
+  <script>
+    function copyCmd(id, btn) {
+      const text = document.getElementById(id).textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        btn.setAttribute('data-copied', 'true');
+        btn.textContent = 'copied';
+        setTimeout(function () {
+          btn.removeAttribute('data-copied');
+          btn.textContent = 'copy';
+        }, 2000);
+      }).catch(function () {
+        // silent — clipboard API unavailable
+      });
+    }
+
+    function copyBlock(id, btn) {
+      var el = document.getElementById(id);
+      // Extract text, stripping comment lines that start with #
+      var lines = el.innerText.split('\n');
+      var code = lines
+        .map(function (l) { return l.trimEnd(); })
+        .filter(function (l) { return l !== ''; })
+        .join('\n');
+      navigator.clipboard.writeText(code).then(function () {
+        btn.setAttribute('data-copied', 'true');
+        btn.textContent = 'copied';
+        setTimeout(function () {
+          btn.removeAttribute('data-copied');
+          btn.textContent = 'copy';
+        }, 2000);
+      }).catch(function () {
+        // silent
+      });
+    }
+  </script>
+
+</body>
+</html>
