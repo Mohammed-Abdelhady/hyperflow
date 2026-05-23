@@ -19,14 +19,21 @@ This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. Afte
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
-| Step | Worker tier | Thinking tier | Notes |
-|---|---|---|---|
-| 1 — Resolve scope | — | — | Read-only git diff (exempt) |
-| 2 — Gather context | Searcher (Sonnet) | **Reviewer** (Opus) verifies coverage | Both tiers |
-| 3 — Review | — | **Reviewer** (Opus) at L1–L<n> | Pure thinking |
-| 4 — Memory append | Writer (Sonnet) | **Reviewer** (Opus) dedup check | Both tiers |
-| 5 — Output | — | — | Print only (exempt) |
-| 6 — Fix gate | — | — | `AskUserQuestion` only (exempt — structural gate) |
+| Step | Sub-phase | Worker tier | Thinking tier | Notes |
+|---|---|---|---|---|
+| 1 — Resolve scope | — | — | — | Mechanical decision (exempt) |
+| 2 — Gather context | 2a — Surface mapping | Searcher × 2 (glob + import-graph) | Sonnet Reviewer | Parallel |
+| 2 — Gather context | 2b — Semantic indexing | Searcher × 2 (type-system + symbol-graph) | Sonnet Reviewer | Parallel |
+| 2 — Gather context | 2c — Convention scan | Searcher × 1 (test patterns + lint config) | Sonnet Reviewer | Justified single-angle |
+| 2 — Gather context | 2d — Aggregate coverage gate | — | **Reviewer** (Opus) verifies aggregate coverage | Thinking-tier coverage gate |
+| 3 — Review | 3a — L1+L2 (syntax/format/naming) | — | **Reviewer** (Opus) × 2 (different file groups) + Sonnet Reviewer aggregates verdicts | Parallel Opus pair; justified single-tier (Opus are the workers at L1-L2) |
+| 3 — Review | 3b — L3 (integration/security) | — | **Reviewer** (Opus) × 2 (integration + security) + Sonnet Reviewer aggregates verdicts | Parallel Opus pair; justified single-tier (L3 requires thinking-tier) |
+| 3 — Review | 3c — L4+L5 (perf/scale/a11y/UX) | — | **Reviewer** (Opus) × 2 (perf/scale + a11y/UX) + Sonnet Reviewer aggregates verdicts | Parallel Opus pair; justified single-tier (L4-L5 requires thinking-tier) |
+| 4 — Findings synthesis | 4a — Critical findings | Writer × 2 (evidence probe + impact analysis) | Sonnet Reviewer | Parallel |
+| 4 — Findings synthesis | 4b — Important findings | Writer × 2 (root-cause probe + fix-path analysis) | Sonnet Reviewer | Parallel |
+| 4 — Findings synthesis | 4c — Suggestions + observations | Writer × 2 (pattern analysis + praise identification) | Sonnet Reviewer | Parallel |
+| 5 — Severity reconciliation | — | — | Sonnet Reviewer reconciles severity labels from Step 3 sub-phases | Atomic-exempt per DOCTRINE 12.2.8 — reads existing Step 3 labels; no Workers needed |
+| 6 — Fix gate | — | — | — | `AskUserQuestion` only (exempt — structural gate) |
 
 ## Approval Gates
 
@@ -63,32 +70,100 @@ Use the provided target or run `git diff HEAD` + `git diff --staged`. No agent d
 
 ### Step 2 — Gather context
 
-Agents — `Searcher` (Sonnet) ⇒ **Reviewer** (Opus).
+Sub-phases 2a, 2b, 2c run in parallel (P1). Step 2 output is the union of their worker outputs plus three sub-phase Reviewer verdicts, handed to an Opus aggregate coverage gate.
 
-1. Dispatch `Searcher — gathering context for review` to map referenced files and load relevant project context.
-2. Dispatch `**Reviewer** — verifying context coverage` to confirm the Searcher hit the relevant subsystems.
+#### Step 2a — Surface mapping
+
+Dispatch two Searcher agents in parallel:
+- Searcher — glob discovery (file extensions, directory tree, entry points)
+- Searcher — import-graph traversal (follow `import`/`require`/`use` chains from touched files)
+
+Then dispatch `Sonnet Reviewer — 2a surface mapping coverage check`. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-dispatch only 2a.
+
+#### Step 2b — Semantic indexing
+
+Dispatch two Searcher agents in parallel:
+- Searcher — type-system probe (interface/schema definitions relevant to changed symbols)
+- Searcher — symbol-graph probe (callsites, usages, exported references of changed symbols)
+
+Then dispatch `Sonnet Reviewer — 2b semantic indexing coverage check`. Verdict as above.
+
+#### Step 2c — Convention scan
+
+Dispatch one Searcher agent (single-angle justified — test patterns and lint config are a single orthogonal corpus with no independent axis to fan out across):
+- Searcher — convention scan (existing test patterns, lint rules, naming conventions, code-style config)
+
+Then dispatch `Sonnet Reviewer — 2c convention scan coverage check`. Verdict as above.
+
+#### Step 2d — Aggregate coverage gate
+
+After 2a + 2b + 2c complete, dispatch `**Reviewer** (Opus) — verifying aggregate context coverage` to confirm the combined surface covers all subsystems relevant to the diff. On coverage gap: re-dispatch the affected sub-phase (max 2 retries); surface gap to user if retries exhausted.
 
 ### Step 3 — Review
 
-Agents — **Reviewer** (Opus, thinking-tier).
+Sub-phases 3a, 3b, 3c run in parallel (P1) — each ends with a Sonnet sub-phase aggregator before the next batch fires. Active sub-phases scale with `--level`: L1-L2 runs only 3a; L3 adds 3b; L4-L5 add 3c.
 
-Dispatch `**Reviewer** — reviewing <scope> at level L<n>`. The Reviewer uses the [reviewer-prompt.md](references/reviewer-prompt.md) template with the diff, level definition, and any applicable spec. Produces structured `[Critical] / [Important] / [Suggestions] / [Praise]` findings.
+#### Step 3a — L1+L2: syntax, formatting, naming
 
-If any security issue is found at L3+ → emit `SECURITY_VIOLATION:` halt marker immediately. Skip the fix gate; user decides remediation.
+Dispatch two Reviewer agents in parallel over different file groups (split by directory or feature boundary):
+- **Reviewer** (Opus) — L1+L2 review, file group A (syntax errors, obvious bugs, formatting, naming conventions)
+- **Reviewer** (Opus) — L1+L2 review, file group B (same checklist, different file group)
 
-### Step 4 — Memory append
+Then dispatch `Sonnet Reviewer — 3a aggregation` to union the two verdicts and deduplicate overlapping findings. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-dispatch only 3a.
 
-Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+#### Step 3b — L3: integration, security (L3+ only)
 
-1. Dispatch `Writer — appending durable patterns to .hyperflow/memory/learnings.md` per [memory-system.md](references/memory-system.md).
-2. Dispatch `**Reviewer** — memory dedup check` to ensure no duplicate entries land.
+Dispatch two Reviewer agents in parallel over different concern dimensions:
+- **Reviewer** (Opus) — L3 integration risks (cross-file consistency, API contract mismatches, race conditions, edge cases)
+- **Reviewer** (Opus) — L3 security scan (hardcoded secrets, injection, path traversal, XSS, missing validation — per [security.md](references/security.md))
 
-### Step 5 — Output (file-first · DOCTRINE rule 8 file-first clause)
+If the security Reviewer emits `SECURITY_VIOLATION:` → halt immediately; skip the fix gate; surface the finding inline; user decides remediation.
 
-The Reviewer's full structured review is **written to a file**, not pasted into chat. Inline review blocks longer than ~10 lines are a doctrine violation — they bury the conversation in unscrollable noise and the user has no editable artefact to point at when planning fixes.
+Then dispatch `Sonnet Reviewer — 3b aggregation` to union the two verdicts. Verdict as above.
 
-1. Write the review to `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope-slug>.md` using the structured format below (see Output Format). The Reviewer agent does this directly via `Write` — the orchestrator does NOT print the review and then save a copy.
-2. After the file is written, the orchestrator prints a **short one-block summary** containing only: scope, level, verdict, counts per severity, file path. Example:
+#### Step 3c — L4+L5: performance, scalability, accessibility, UX (L4+ only)
+
+Dispatch two Reviewer agents in parallel:
+- **Reviewer** (Opus) — L4+L5 performance and scalability (algorithmic complexity, memory, bundle size, adversarial load)
+- **Reviewer** (Opus) — L4+L5 accessibility and UX (WCAG compliance, keyboard nav, screen-reader semantics, interaction design)
+
+Then dispatch `Sonnet Reviewer — 3c aggregation` to union the two verdicts. Verdict as above.
+
+The Reviewer uses the [reviewer-prompt.md](references/reviewer-prompt.md) template with the diff, level definition, and any applicable spec. Each sub-phase produces structured `[Critical] / [Important] / [Suggestions] / [Praise]` findings that feed into Step 4.
+
+### Step 4 — Findings synthesis
+
+Write the full structured audit to `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope-slug>.md`. Sub-phases 4a, 4b, 4c run in parallel (P1), each authoring a section of the audit file. The audit file also receives a memory-append section per [memory-system.md](references/memory-system.md).
+
+#### Step 4a — Critical findings
+
+Dispatch two Writer agents in parallel:
+- Writer — evidence probe (trace each Critical finding back to the diff line; confirm reproducibility)
+- Writer — impact analysis (articulate user-visible / system-level consequence for each Critical finding)
+
+Then dispatch `Sonnet Reviewer — 4a critical findings review` to verify each Critical entry has a confirmed fix path and no false positives. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}.
+
+#### Step 4b — Important findings
+
+Dispatch two Writer agents in parallel:
+- Writer — root-cause probe (trace each Important finding to its origin; confirm it's not a symptom of a Critical)
+- Writer — fix-path analysis (propose the recommended change per finding, with file:line anchors)
+
+Then dispatch `Sonnet Reviewer — 4b important findings review`. Verdict as above.
+
+#### Step 4c — Suggestions, observations, and memory append
+
+Dispatch two Writer agents in parallel:
+- Writer — pattern analysis (identify Suggestion-level improvements; extract reusable patterns for memory)
+- Writer — praise identification (flag genuinely well-done decisions; append durable patterns to `.hyperflow/memory/learnings.md` per [memory-system.md](references/memory-system.md))
+
+Then dispatch `Sonnet Reviewer — 4c suggestions + memory dedup check` to ensure no duplicate memory entries land and no Suggestions are mis-classified as Important. Verdict as above.
+
+### Step 5 — Severity reconciliation (atomic-exempt per DOCTRINE 12.2.8)
+
+Dispatch one `Sonnet Reviewer — severity reconciliation` to consolidate the `[Critical] / [Important] / [Suggestion] / [Praise]` labels already emitted by Step 3 sub-phases (3a/3b/3c). No Workers are dispatched: the Reviewer reads existing Step 3 labels and resolves any conflicts across sub-phases (e.g. a finding flagged `[Important]` in 3a and `[Critical]` in 3b resolves to `[Critical]`). Verdict ∈ {`PASS`, `NEEDS_REVISION`}. On `NEEDS_REVISION`, the Reviewer annotates the specific conflict; the orchestrator applies the resolution inline (no re-dispatch).
+
+After Step 5 completes, the orchestrator writes the graded findings into the audit file (Step 4 section headers get severity labels applied) and prints the chat summary (file-first, DOCTRINE rule 8):
 
 ```
 ── Audit Result ──────────────────────
@@ -244,10 +319,10 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-sty
 See [Flow](#flow) above — Steps 1-6 are the operational instructions. Summary:
 
 1. Resolve scope (target arg or `git diff HEAD`).
-2. Searcher gathers context; Reviewer verifies coverage.
-3. Reviewer produces L1-L<n> findings.
-4. Writer appends learnings to `.hyperflow/memory/`; Reviewer dedup-checks.
-5. Print structured output.
+2. Surface mapping + semantic indexing + convention scan (2a/2b/2c in parallel); Opus aggregate coverage gate (2d).
+3. L1+L2 syntax/naming (3a) + L3 integration/security (3b) + L4+L5 perf/a11y (3c); each sub-phase Opus pair → Sonnet aggregator.
+4. Findings synthesis: Critical (4a) + Important (4b) + Suggestions/memory (4c) — each sub-phase Writer pair → Sonnet reviewer.
+5. Severity reconciliation (atomic-exempt — single Sonnet Reviewer consolidates Step 3 labels); print chat summary pointing at audit file.
 6. Fix gate fires on `NEEDS_FIX` with critical/important findings.
 
 ## Output

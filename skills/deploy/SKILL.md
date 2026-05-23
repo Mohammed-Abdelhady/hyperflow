@@ -15,47 +15,128 @@ tags: [release, ci, automation, push-gates]
 
 No gate skipped, no failure ignored. If any gate fails, halt and report. Never `--no-verify`. Never bypass.
 
+## Per-Step Agent Map
+
+| Step | Sub-phase | Worker tier | Thinking tier | Notes |
+|---|---|---|---|---|
+| 1a | Repo-state scan | Worker A (git status), Worker B (git log) | Sonnet | — |
+| 1b | Tool detection | Worker A (profile.md + lockfiles), Worker B (testing.md + devDeps) | Sonnet | — |
+| 2a | Lint gate | Worker A (linter), Worker B (formatter) | Sonnet | — |
+| 2b | Typecheck gate | Worker A (root tsc), Worker B (per-package tsc) | Sonnet | — |
+| 2c | Build gate | Worker A (prod build), Worker B (dev build) | Sonnet | — |
+| 2d | Test gate | Worker A (unit), Worker B (integration/E2E) | Sonnet | — |
+| 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **Opus** | — |
+| 3b | Dependency audit | Worker A (CVE audit), Worker B (license check) | Sonnet | — |
+| 4 | Commit | single Worker | Sonnet | atomic-exempt (DOCTRINE 12.2) |
+| 5a | Release execution | single Worker | Sonnet | atomic-exempt (DOCTRINE 12.2) |
+| 5b | Version sync | Worker A (manifests), Worker B (changelog) | Sonnet | — |
+| 6 | Push gate | AskUserQuestion | — | structural gate; atomic-exempt |
+| 7 | Output | single print | — | atomic-exempt (§12.1) |
+
 ## Step 1 — Survey State
 
-- `git status` — track uncommitted changes for the commit step
-- `git log origin/<branch>..HEAD --oneline` — what's ahead
-- Detect package manager and project type from `.hyperflow/profile.md` and root files
+Sub-phases run in parallel (P1).
 
-## Step 2 — Quality Gates (halt on first failure)
+### Step 1a — Repo-state scan
 
-Run gates in order. Print `Gate <n> — <name>` before each.
+Two Workers in parallel:
 
-**Gate A — Lint**
+- Worker A — `git status --short` — uncommitted changes, staged files
+- Worker B — `git log origin/<branch>..HEAD --oneline` — commits ahead of remote; detect branch name
 
-Dispatch `Implementer — running lint`.
-- Detect — `npm run lint` / `pnpm lint` / `bun run lint` / `yarn lint` / `eslint .`
-- On failure — auto-fix via `--fix`, re-run once. Still failing → halt.
-- Skip silently if no lint script.
+Sonnet Reviewer — verdict on repo state (clean / has uncommitted / ahead by N). If detached HEAD or no remote configured → halt with reason.
 
-**Gate B — Typecheck**
+### Step 1b — Tool detection
 
-- Detect — `tsc --noEmit` / `npm run typecheck` / project-specific
-- Skip silently if not a typed project. Halt on failure (no auto-fix).
+Two Workers in parallel:
 
-**Gate C — Build**
+- Worker A — Read `.hyperflow/profile.md` for package manager and project type; fallback: inspect `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`
+- Worker B — Check `.hyperflow/testing.md` for test runner; fallback: detect from `package.json` devDependencies (`vitest`, `jest`, `playwright`, `pytest`, etc.)
 
-- Detect — `npm run build` / `pnpm build` / `bun run build`
-- Skip silently if no build script. Halt on failure.
+Sonnet Reviewer — produce a single tool manifest (package manager, test runner, typed-project flag, build script presence). Used by Step 2 gates.
 
-**Gate D — Tests**
+## Step 2 — Quality Gates (halt on first sub-phase failure)
 
-- Detect runner from `.hyperflow/testing.md` (vitest, jest, playwright, pytest, etc.)
-- Run full suite — not just affected. Halt on failure.
+Each sub-phase is a named gate. Sub-phases run sequentially — halt at the first `NEEDS_REVISION` verdict to avoid compounding failures. Print `Gate <letter> — <name>` before each.
+
+### Step 2a — Lint gate
+
+Two Workers in parallel:
+
+- Worker A — Detect and run primary linter: `npm run lint` / `pnpm lint` / `bun run lint` / `eslint .`. On failure: auto-fix via `--fix`, re-run once; report final error count.
+- Worker B — Detect and run formatter check: `prettier --check .` / `biome check .` / equivalent. Report diff count.
+
+Sonnet Reviewer — verdict:
+- `PASS` — both clean or both absent
+- `NEEDS_REVISION` — lint auto-fix still failing or formatter drift found → halt
+- `ESCALATE` — config errors preventing execution
+
+### Step 2b — Typecheck gate
+
+Two Workers in parallel:
+
+- Worker A — Root typecheck: `tsc --noEmit` / `npm run typecheck`. Skip if not a typed project (per Step 1b tool manifest).
+- Worker B — Per-package typecheck if workspace detected (pnpm/yarn workspaces): iterate packages with `tsc --noEmit` in each. Skip if single-package repo.
+
+Sonnet Reviewer — verdict:
+- `PASS` — no type errors or project is untyped
+- `NEEDS_REVISION` — type errors found (no auto-fix; halt for human review)
+- `ESCALATE` — tsconfig missing or malformed
+
+### Step 2c — Build gate
+
+Two Workers in parallel:
+
+- Worker A — Production build: `npm run build` / `pnpm build` / `bun run build`. Capture output; report size or artifact path if printed.
+- Worker B — Dev/preview build if a separate script exists (`npm run build:dev`, `vite build --mode development`, etc.). Skip if no separate dev-build script.
+
+Sonnet Reviewer — verdict:
+- `PASS` — production build succeeds
+- `NEEDS_REVISION` — production build fails → halt with output
+- `ESCALATE` — build tool absent or script missing (skip silently, not failure)
+
+### Step 2d — Test gate
+
+Two Workers in parallel:
+
+- Worker A — Unit tests: run full unit suite per runner from Step 1b (vitest, jest, pytest, cargo test, etc.). Full suite — not just affected. Report count.
+- Worker B — Integration / E2E tests if runner detected separately (playwright, cypress, etc.). Skip if no integration runner found.
+
+Sonnet Reviewer — verdict:
+- `PASS` — all tests pass (or integration absent)
+- `NEEDS_REVISION` — failing tests → halt with failing test names. Do NOT skip. Do NOT increase timeout.
+- `ESCALATE` — runner misconfigured or no tests found and test runner is declared
 
 See [quality-gates.md](references/quality-gates.md) for gate details.
 
 ## Step 3 — Security Sweep
 
-Dispatch `**Reviewer** — security sweep on staged + recent changes` with model: opus.
+Sub-phases run in parallel (P1).
 
-Per [security.md](references/security.md), scan for hardcoded secrets, API keys, private keys, connection strings. If any found → halt with `SECURITY_VIOLATION:` marker.
+### Step 3a — Secrets and keys scan
+
+Two Workers in parallel:
+
+- Worker A — Pattern scan staged + recent diff for hardcoded secrets: API keys, private keys, connection strings, tokens. Use `git diff HEAD~1..HEAD` as scan surface.
+- Worker B — File-level scan of files modified in this changeset for common secret patterns (SG., sk-, ghp_, AKIA, BEGIN RSA PRIVATE KEY, etc.).
+
+**Reviewer** — Opus security sweep — aggregate findings from 3a Workers. If any secret found → halt immediately with `SECURITY_VIOLATION: <file>:<line> — <pattern>`. No auto-remediation — user must rotate + remove.
+
+### Step 3b — Dependency audit
+
+Two Workers in parallel:
+
+- Worker A — `npm audit --audit-level=high` / `pnpm audit` / `pip-audit` / `cargo audit`. Report critical and high CVEs only.
+- Worker B — License check: scan new dependencies added in this changeset for prohibited licenses (GPL in a proprietary project, etc.) if `.hyperflow/profile.md` declares a license policy.
+
+Sonnet Reviewer — verdict:
+- `PASS` — no critical/high CVEs; no license violations
+- `NEEDS_REVISION` — critical CVE found → halt and surface CVE IDs
+- `ESCALATE` — audit tool absent → skip silently (not a failure); missing license policy → skip
 
 ## Step 4 — Commit
+
+Atomic — single Worker → Reviewer pair with no parallel angles. Exempt from sub-phase decomposition per DOCTRINE 12.2 atomic exemption.
 
 - Worker-introduced fixes from Step 2 → commit automatically with a conventional commit message.
 - Pre-existing user-owned uncommitted changes → use `AskUserQuestion` to confirm inclusion. Per DOCTRINE rule 8, this is a binary action gate — no recommendation marker:
@@ -70,10 +151,27 @@ Per [security.md](references/security.md), scan for hardcoded secrets, API keys,
 
 ## Step 5 — Release
 
-- `scripts/release.sh` exists → run it.
-- `release-please` / `changesets` / similar detected → use it.
-- "Nothing to release" or no releasable commits → skip.
-- Otherwise → skip (user releases manually).
+Sub-phases run sequentially (5b depends on 5a output).
+
+### Step 5a — Release script execution
+
+Single Worker (no parallel angle — single mechanical action):
+
+- Worker — `scripts/release.sh` exists → run it. `release-please` / `changesets` detected → use it. "Nothing to release" or no releasable commits → skip and record `Release: skipped`.
+
+Sonnet Reviewer — capture output: new version string (if bumped) or skip reason. Feed version to Step 5b.
+
+### Step 5b — Version sync verification
+
+Two Workers in parallel (only runs if 5a produced a new version):
+
+- Worker A — Verify version appears consistently across all manifests: `package.json`, `plugin.json`, `marketplace.json`, any other version-bearing files identified in Step 1b.
+- Worker B — Verify CHANGELOG was updated by the release script: check that the new version header exists in `CHANGELOG.md` (or equivalent). Skip if no changelog file.
+
+Sonnet Reviewer — verdict:
+- `PASS` — all manifests in sync; changelog updated
+- `NEEDS_REVISION` — version mismatch or changelog missing entry → halt
+- (Skip entirely if Step 5a returned `Release: skipped`)
 
 ## Step 6 — Push (honors `push` pre-election from Scope Step 2.6 · STRUCTURAL GATE when `push=ask`)
 
@@ -151,12 +249,12 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-sty
 
 The 7 numbered steps live in [Step 1 — Survey State](#step-1--survey-state) through [Step 7 — Output](#step-7--output) above. Summary:
 
-1. Survey state (`git status`, ahead-of-remote count, project type from `.hyperflow/profile.md`).
-2. Run quality gates A-D (lint, typecheck, build, tests) — halt on first failure.
-3. Opus security sweep on staged + recent changes — halt on `SECURITY_VIOLATION`.
-4. Commit (auto for worker fixes; `AskUserQuestion` for pre-existing uncommitted user changes).
-5. Release (`scripts/release.sh` or detected tool; skip if no releasable commits).
-6. Ask `AskUserQuestion` for push confirmation — never auto-push, never force-push to main.
+1. Survey state — two sub-phases in parallel: 1a repo-state scan (git status + ahead count), 1b tool detection (package manager, test runner, typed-project flag).
+2. Quality gates — four sequential sub-phases, each with 2 parallel Workers + Sonnet Reviewer: 2a lint, 2b typecheck, 2c build, 2d tests. Halt at first `NEEDS_REVISION`.
+3. Security sweep — two sub-phases in parallel: 3a secrets/keys scan (Opus Reviewer), 3b dependency audit. Halt on `SECURITY_VIOLATION` or critical CVE.
+4. Commit — atomic. Worker fixes auto-committed; `AskUserQuestion` for pre-existing uncommitted user changes.
+5. Release — two sequential sub-phases: 5a run release script, 5b verify version sync across manifests.
+6. Push gate — atomic structural gate. Honors `push` pre-election (auto/never/ask). `push=ask` fires `AskUserQuestion`. Never force-push to main.
 7. Print structured ship result.
 
 ## Output

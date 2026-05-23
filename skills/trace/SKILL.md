@@ -19,86 +19,174 @@ Dispatcher and reviewer — Opus 4.7 (thinking-tier). Implementer/Searcher/Write
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
-Every substantive step dispatches at least one Agent.
+Every substantive step dispatches at least one Agent. Atomic steps (per DOCTRINE 12.2.8) are a single Worker → Reviewer pair with no independent angles to fan out.
 
-| Step | Worker tier | Thinking tier | Notes |
-|---|---|---|---|
-| 1 — Reproduce | Searcher (Sonnet) if repro missing | **Reviewer** (Opus) confirms repro is valid | Both tiers if dispatched |
-| 2 — Gather evidence | Searcher × 3 (Sonnet) parallel | **Reviewer** (Opus) verifies evidence coverage | Both tiers |
-| 3 — Hypothesize | — | **Debugger** (Opus) produces ranked hypotheses | Pure thinking |
-| 4 — Verify | Implementer (Sonnet) minimal change | **Debugger** (Opus) re-evaluates against evidence | Both tiers · loop |
-| 5 — Fix at root | Implementer (Sonnet) | **Reviewer** (Opus) checks no error-swallow / no symptom-patch | Both tiers |
-| 6 — Regression test | Writer (Sonnet) | **Reviewer** (Opus) confirms test fails-without / passes-with | Both tiers |
-| 7 — Memory + final | Writer (Sonnet) appends pitfall | **Reviewer** (Opus) final validation | Both tiers |
+| Step | Status | Worker tier | Thinking tier | Notes |
+|---|---|---|---|---|
+| 1 — Reproduce | Atomic (12.2.8) | Searcher (Sonnet) | **Reviewer** (Opus) | Runs if repro missing; single Worker→Reviewer pair |
+| 2 — Gather evidence | Atomic (12.2.8) | Searcher × 3 (Sonnet) | **Reviewer** (Opus) | 3 parallel Searchers → single Reviewer; one Worker-group→Reviewer pair |
+| 3 — Hypothesize | Atomic (12.2.8) | **Debugger** (Opus) | **Reviewer** (Opus) | Single Debugger (5 Whys + ranked hypotheses in one pass) → Reviewer |
+| 4 — Verify | 2 sub-phases | Implementer × N (Sonnet) | **Debugger** (Opus) · **Reviewer** (Sonnet) | 4a: parallel Implementers → Sonnet Reviewer; 4b: Debugger re-evaluation → Reviewer |
+| 5 — Fix at root | Atomic (12.2.8) | Implementer × N (Sonnet) | **Reviewer** (Opus) | N Implementers (one per file) → Opus Reviewer; single Worker-group→Reviewer pair |
+| 6 — Regression test | Atomic (12.2.8) | Writer (Sonnet) | **Reviewer** (Opus) | Single Writer → single Reviewer; no parallel angle |
+| 7 — Memory + final | Atomic (12.2.8) | Writer (Sonnet) | **Reviewer** (Opus) | Single Writer → integration Reviewer; no parallel angle |
 
 ## Step 1 — Reproduce
 
-Agents — `Searcher` (Sonnet, if needed) ⇒ **Reviewer** (Opus).
+Atomic — single Searcher → Reviewer pair (DOCTRINE 12.2.8). No parallel angles: artifact retrieval is a single-scope search when the symptom is unknown.
 
-1. Confirm the bug is reproducible.
-2. If repro steps missing — dispatch `Searcher — locating bug reproduction in recent changes/tests`.
-3. Dispatch `**Reviewer** — confirming reproduction is valid` to validate the repro actually fails for the stated reason (not a flake).
-4. If environmental (CI-only, intermittent, time-dependent) — flag explicitly before proceeding.
+If the user supplied a stack trace, test name, or log snippet — skip the Worker dispatch entirely (Step 1 is then trivially fulfilled by existing input; proceed to Step 2).
 
-## Step 2 — Gather Evidence (parallel)
+Otherwise dispatch `Searcher — locating bug reproduction in recent changes/tests` (Sonnet).
 
-Agents — `Searcher` × 3 (Sonnet) parallel ⇒ **Reviewer** (Opus).
+Collect: failing test name or command, error message, stack trace, log lines, recent commits touching the affected surface.
 
-1. Dispatch simultaneously in a single message:
-   - `Searcher — reading error stack traces and logs`
-   - `Searcher — mapping the code paths involved`
-   - `Searcher — finding related tests (passing and failing)`
-2. Dispatch `**Reviewer** — verifying evidence coverage` to confirm the three Searchers actually triangulate the failure surface. If gaps remain, redispatch.
+Then dispatch `**Reviewer** — confirming reproduction is valid` (Opus) with the collected artifacts.
+
+Reviewer confirms:
+- The failure is consistent and deterministic (or flags intermittent).
+- The error matches the stated symptom.
+- The repro is not a test-environment artifact (missing seed data, wrong env vars, clock skew).
+
+If environmental (CI-only, intermittent, time-dependent) — flag explicitly before proceeding to Step 2.
+
+## Step 2 — Gather Evidence
+
+Atomic — one Worker-group (3 parallel Searchers) → single Reviewer pair (DOCTRINE 12.2.8). The three Searchers are parallel angles inside one sub-phase, not independent sub-phases.
+
+Dispatch simultaneously in a single message:
+- `Searcher — reading error stack traces and logs` (Sonnet)
+- `Searcher — mapping the code paths involved` (Sonnet)
+- `Searcher — finding related tests (passing and failing)` (Sonnet)
+
+Each Searcher writes its findings as a structured list: file paths, line numbers, key values, timestamps.
+
+Then dispatch `**Reviewer** — verifying evidence coverage` (Opus) over all three Searcher outputs.
+
+Reviewer confirms the three Searchers actually triangulate the failure surface. If gaps remain (e.g., no log found, code path incomplete), the Reviewer names specific missing angles — re-run the Searcher(s) for those gaps only, then re-run the Reviewer. Repeat until coverage is confirmed.
 
 ## Step 3 — Hypothesize
 
-Agents — **Debugger** (Opus, thinking-tier).
+Atomic — single Debugger → Reviewer pair (DOCTRINE 12.2.8). 5 Whys and hypothesis ranking are a single sequential reasoning task; one Debugger call produces both in one pass.
 
-Dispatch `**Debugger** — root cause analysis: <bug-summary>` — model: opus.
+Dispatch `**Debugger** — 5 Whys + hypothesis ranking: <bug-summary>` (Opus).
 
-Apply **5 Whys** + **hypothesis testing** + **bisect mindset**:
-- Why does this fail? → because X → why X? → because Y → continue to root
-- Output 1–3 hypotheses ranked by likelihood, each with:
+Single call produces:
+
+**Part A — 5 Whys causal chain** (depth-first):
+- Why does this fail? → because X → why X? → because Y → continue to root.
+- Goal: reach a structural cause (data contract violation, state mutation, missing guard, timing assumption), not a surface symptom.
+- Output: one causal chain ending at the deepest reachable root.
+
+**Part B — Hypothesis fan-out** (using Part A's causal chain):
+- Emit 1–3 ranked hypotheses. Each must include:
   - **What** — suspected root cause
-  - **Evidence** — what supports it
+  - **Evidence** — what from Step 2 supports it
   - **Counter-evidence** — what would falsify it
-  - **Test** — minimal change to verify
+  - **Test** — minimal change to verify (used by Step 4)
+
+Then dispatch `**Reviewer** — validating causal chain and hypothesis set` (Sonnet) over the Debugger's output.
+
+Reviewer confirms the causal chain reaches a structural root (not a symptom) and that each hypothesis is independently testable.
 
 ## Step 4 — Verify
 
-Agents — `Implementer` (Sonnet) ⇒ **Debugger** (Opus).
+Two sub-phases (genuine sequential dependency: 4b depends on 4a results; 4b Debugger does substantive re-evaluation work, not a pure review pass).
 
-1. Pick highest-ranked hypothesis.
-2. Dispatch `Implementer — verifying hypothesis: <hypothesis>` — make the minimal change needed to confirm/falsify.
-3. Dispatch `**Debugger** — re-evaluating hypothesis against test result` to re-check against the evidence from Step 2.
-4. Confirmed → proceed to Step 5. Falsified → return to Step 3 with next hypothesis.
+### Step 4a — Minimal change verification
+
+Workers: `Implementer` × N (Sonnet) parallel, where N = number of hypotheses to test. One Implementer per hypothesis dispatched simultaneously.
+
+- `Implementer — verifying hypothesis 1: <hypothesis-1-test>` — make the minimal change to confirm/falsify
+- `Implementer — verifying hypothesis 2: <hypothesis-2-test>` (if applicable)
+
+Each Implementer makes only the change described in the hypothesis's **Test** field from Step 3. No additional cleanup, no reformatting. Run the failing test/command after each change and capture the result.
+
+If only one hypothesis exists — single Implementer is justified (no parallel angle; single-Worker sub-phase per DOCTRINE 12.2.3 single-Worker exception).
+
+Reviewer: `Reviewer — checking verification results are deterministic` (Sonnet) over the Implementer outputs. Confirms each test run is deterministic and the result cleanly maps to a confirm/falsify verdict.
+
+### Step 4b — Re-evaluation + loop gate
+
+Worker: `**Debugger** — re-evaluating hypotheses against verification results` (Opus). Substantive reasoning — the Debugger compares hypothesis predictions against actual test outcomes and decides the next branch. Not a pass/fail check: the Debugger may emit `CONFIRMED`, `FALSIFIED ALL`, or `PARTIALLY CONFIRMED` with new directions.
+
+Reviewer: `Reviewer — confirming re-evaluation verdict is sound` (Sonnet) over the Debugger's verdict.
+
+Debugger verdicts:
+- `CONFIRMED <hypothesis-N>` → proceed to Step 5 with that hypothesis as the confirmed root cause.
+- `FALSIFIED ALL` → loop back to Step 2 with a broader evidence scope.
+- `PARTIALLY CONFIRMED` → redispatch Step 4a for the leading candidate with a tighter test.
+
+Revert all minimal changes from 4a before entering Step 5 (the real fix goes in Step 5, not here).
 
 ## Step 5 — Fix at Root
 
-Agents — `Implementer` (Sonnet) ⇒ **Reviewer** (Opus).
+Atomic — one Worker-group (N parallel Implementers) → single Opus Reviewer pair (DOCTRINE 12.2.8). N Implementers are parallel angles inside one Worker-group; the Opus Reviewer gates the group output.
 
-1. Dispatch `Implementer — fixing root cause: <root-cause>` with full context: the bug, the verified root cause, the minimal fix.
-2. Dispatch `**Reviewer** — checking fix is at root` to verify the fix actually addresses the cause and doesn't patch the symptom.
+Dispatch one Implementer per affected file simultaneously (or one Implementer total if single-file):
+- `Implementer — fixing root cause in <file-1>: <change-description>` (Sonnet)
+- `Implementer — fixing root cause in <file-2>: <change-description>` (Sonnet, if applicable)
+
+Each Implementer receives: the bug, the verified root cause from Step 4b, the minimal change. No extra refactoring, no opportunistic cleanup — root cause only.
 
 Constraints (non-negotiable):
 - No error swallowing
 - No defensive try/catch around the symptom
 - No flags or feature gates to hide the bug
 
+Then dispatch `**Reviewer** — checking fix is at root` (Opus) over all Implementer outputs.
+
+Reviewer verifies:
+- The fix addresses the confirmed root cause from Step 4b, not the symptom.
+- No constraint violations (error-swallow, try/catch workaround, feature gate).
+- Files changed are internally consistent (no partial fix across N files).
+
+On rejection — loop Step 5 with the Reviewer's specific objection attached. Do NOT commit until Step 5 passes.
+
 ## Step 6 — Regression Test
 
-Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+Atomic — single Writer → single Reviewer pair (DOCTRINE 12.2.8). Test authorship has no parallel angle: two Writers would produce duplicate or conflicting tests.
 
-1. Dispatch `Writer — adding regression test for <bug>`.
-2. Dispatch `**Reviewer** — confirming regression test fails-without and passes-with the fix`.
-3. If existing suite had gaps that allowed this bug → note in `.hyperflow/memory/pitfalls.md`.
+Dispatch `Writer — adding regression test for <bug>` (Sonnet).
+
+The test must:
+- Exercise the exact code path that was broken.
+- Assert the behavior that was missing (not just assert the fix is present).
+- Be named to describe the bug scenario, not the implementation.
+
+Then dispatch `**Reviewer** — confirming regression test fails-without and passes-with the fix` (Opus).
+
+Reviewer process:
+1. Mentally (or via Bash) revert the Step 5 fix.
+2. Confirm the new test fails in the broken state.
+3. Re-apply the fix.
+4. Confirm the test passes in the fixed state.
+
+If the test passes both with and without the fix — reject; Writer rewrites. The test must demonstrably distinguish the buggy and fixed states.
+
+If existing suite had coverage gaps that allowed this bug → note for Step 7.
 
 ## Step 7 — Memory + Final Review
 
-Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+Atomic — single Writer → single Opus integration Reviewer pair (DOCTRINE 12.2.8). Single-artifact write with no parallel angle; Reviewer covers the full cumulative diff.
 
-1. Dispatch `Writer — appending pitfall to .hyperflow/memory/pitfalls.md` per [memory-system.md](references/memory-system.md): the bug pattern, why tests missed it, prevention strategy. Tags — `pitfall` plus domain tags.
-2. Dispatch `**Reviewer** — final validation of fix + test + memory entry`. This is the integration review for the trace flow.
+Dispatch `Writer — appending pitfall to .hyperflow/memory/pitfalls.md` (Sonnet) per [memory-system.md](references/memory-system.md).
+
+Entry must include:
+- The bug pattern (generalized, not project-specific)
+- Why existing tests missed it
+- Prevention strategy
+- Tags: `pitfall` plus domain tags (e.g., `auth`, `async`, `state`)
+
+Then dispatch `**Reviewer** — final validation of fix + test + memory entry` (Opus).
+
+This is the integration review for the entire trace flow. Reviewer assesses the cumulative diff:
+- Fix lands at root (not symptom).
+- Regression test distinguishes broken vs fixed.
+- Memory entry generalizes the pattern correctly.
+- No constraint violations introduced anywhere in the chain.
+
+This is the sole Opus integration reviewer for the trace chain. Pass required before hand-off to deploy.
 
 ## Anti-Patterns (refuse these)
 
@@ -134,7 +222,7 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). See also [worker-prompt.md]
 
 ## Overview
 
-`/hyperflow:trace` is the systematic-debugging skill. It refuses to symptom-patch — every fix starts with reproduction, evidence gathering, hypothesis ranking via Opus Debugger, and verification before any code changes. Three parallel Sonnet searchers triangulate the failure surface; an Opus Debugger applies 5-Whys + hypothesis testing; an Opus Reviewer confirms the fix lands at the root and a regression test fails-without / passes-with. Off the auto-chain — standalone.
+`/hyperflow:trace` is the systematic-debugging skill. It refuses to symptom-patch — every fix starts with reproduction, evidence gathering, hypothesis ranking via Opus Debugger, and verification before any code changes. Three parallel Sonnet searchers triangulate the failure surface; an Opus Debugger applies 5-Whys + hypothesis ranking in one pass; an Opus Reviewer confirms the fix lands at the root and a regression test fails-without / passes-with. Off the auto-chain — standalone.
 
 ## Prerequisites
 
@@ -145,15 +233,15 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). See also [worker-prompt.md]
 
 ## Instructions
 
-The 7 numbered steps live in [Step 1 — Reproduce](#step-1--reproduce) through [Step 7 — Memory + Final Review](#step-7--memory--final-review) above. Summary:
+The 7 numbered steps live in [Step 1 — Reproduce](#step-1--reproduce) through [Step 7 — Memory + Final Review](#step-7--memory--final-review) above. Steps 1, 2, 3, 5, 6, 7 are atomic (DOCTRINE 12.2.8). Step 4 has 2 sub-phases (genuine sequential dependency). Summary:
 
-1. **Reproduce** — confirm the bug fails consistently; flag intermittent.
-2. **Gather evidence** — 3 parallel Searchers (logs, code paths, related tests) + Opus Reviewer verifies coverage.
-3. **Hypothesize** — Opus Debugger applies 5-Whys; emits 1-3 ranked hypotheses with evidence + counter-evidence + test.
-4. **Verify** — Implementer makes minimal change; Debugger re-evaluates. Loop until confirmed.
-5. **Fix at root** — Implementer applies the real fix; Reviewer checks it's not a symptom-patch.
-6. **Regression test** — Writer adds a test that fails-without / passes-with; Reviewer confirms both states.
-7. **Memory + final review** — append pitfall pattern to `.hyperflow/memory/pitfalls.md`; Reviewer signs off.
+1. **Reproduce** — Atomic. Searcher locates repro artifacts (if needed); Opus Reviewer validates reproducibility. Flag intermittent before proceeding.
+2. **Gather evidence** — Atomic. 3 parallel Searchers (logs, code paths, related tests); Opus Reviewer verifies coverage; re-runs specific Searchers if gaps remain.
+3. **Hypothesize** — Atomic. Opus Debugger runs 5-Whys causal chain AND fans out 1–3 ranked hypotheses in one call; Sonnet Reviewer validates the causal chain and hypothesis set.
+4. **Verify** — 2 sub-phases. 4a: parallel Implementers make minimal change per hypothesis → Sonnet Reviewer confirms determinism. 4b: Opus Debugger re-evaluates against results and emits verdict → Sonnet Reviewer confirms verdict is sound. Loops 4a or proceeds.
+5. **Fix at root** — Atomic. Parallel Implementers fix per affected file; Opus Reviewer confirms fix is not a symptom-patch; loops if rejected.
+6. **Regression test** — Atomic. Writer adds a test that must fail on broken code; Opus Reviewer confirms fail-without / pass-with; rejects if test is trivially passing.
+7. **Memory + final review** — Atomic. Writer appends pitfall pattern to `.hyperflow/memory/pitfalls.md`; Opus Reviewer integration review over the full cumulative diff.
 
 ## Output
 
@@ -183,13 +271,16 @@ Searcher — reading error stack traces and logs
 Searcher — mapping the code paths involved
 Searcher — finding related tests (passing and failing)
 **Reviewer** — verifying evidence coverage
-**Debugger** — root cause analysis: auth.test.ts:42 "refresh token rejected"
+**Debugger** — 5 Whys + hypothesis ranking: auth.test.ts:42 "refresh token rejected"
 
 Hypothesis 1 (likely): refresh token TTL changed in PR #189 but test fixture wasn't updated
 Hypothesis 2 (possible): clock skew between test env and JWT issuer
 
 Implementer — verifying hypothesis 1: refresh token TTL
-**Debugger** — re-evaluating hypothesis against test result
+Implementer — verifying hypothesis 2: clock skew check
+Reviewer — checking verification results are deterministic
+**Debugger** — re-evaluating hypotheses against verification results
+Reviewer — confirming re-evaluation verdict is sound
 [hypothesis 1 confirmed]
 
 Implementer — fixing root cause: align test fixture TTL with new TOKEN_REFRESH_TTL constant
