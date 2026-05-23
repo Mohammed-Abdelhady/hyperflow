@@ -16,7 +16,7 @@ GIF_FILE="$ASSETS_DIR/demo.gif"
 GENERATOR="$REPO_ROOT/scripts/generate-demo-cast.py"
 
 SPEED="${HYPERFLOW_DEMO_SPEED:-1.6}"
-THEME="${HYPERFLOW_DEMO_THEME:-monokai}"
+THEME="${HYPERFLOW_DEMO_THEME:-dracula}"
 FONT_SIZE="${HYPERFLOW_DEMO_FONT_SIZE:-11}"
 
 require() {
