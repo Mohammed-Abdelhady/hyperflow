@@ -24,6 +24,7 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 | Step | Sub-phase | Worker tier | Thinking tier | Notes |
 |---|---|---|---|---|
 | 0 — Chain mode | — (atomic) | — | — | `AskUserQuestion` only; 12.2.8-exempt |
+| 0.4 — Triage validation | — (atomic) | — | **Reviewer** (Sonnet · triage validation) | Skipped when chained from spec (spec's Triage Reviewer is canonical); 12.2.8-exempt — single Reviewer with no Worker angles |
 | 0.5 — Ops choices | — (atomic) | — | — | Single `AskUserQuestion` batch; 12.2.8-exempt |
 | 1 — Route | — (atomic) | — | — | Single mechanical routing decision; 12.2.8-exempt |
 | 2 — Research | 2a + 2b + 2c (P1 parallel) | | | Sub-phase aggregate handed to Step 3 |
@@ -81,6 +82,29 @@ How should I advance through the chain after this phase?
 Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking dispatch.
 
 If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
+
+### Step 0.4 — Triage Validation (DOCTRINE rule 15 · atomic-exempt)
+
+Atomic-exempt: single Reviewer with no independent Worker angles — no parallel probe dimension exists for validation.
+
+**When chained from `/hyperflow:spec`:** spec's own Triage Reviewer is canonical. Scope inherits the already-validated triage JSON passed via chain args and **skips this step entirely**. Re-running Triage Reviewer on a classification that spec already vetted is redundant and wasteful.
+
+**When invoked directly (not chained from spec):** dispatch one Sonnet Triage Reviewer before operational choices and routing. The Reviewer validates the triage classification produced in Layer 0.5 against:
+
+1. The user's original request — does the classification reflect what they actually asked for?
+2. `.hyperflow/profile.md` — does the classification match the codebase's tech stack, risk level, and known complexity patterns?
+
+```
+**Reviewer** — validating triage classification against request and project profile
+```
+
+Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}:
+
+- **PASS** — consume triage as-is; proceed to Step 0.5.
+- **RECLASSIFY** — Reviewer returns a corrected classification with reasoning. Orchestrator uses the corrected version and prints one line: `Triage reclassified: complexity high → medium · personas added: [security]`. Then proceeds to Step 0.5 with the corrected triage.
+- **ESCALATE** — Reviewer cannot determine the correct classification; the ambiguity surfaces as a clarification question at Step 2.5 (post-research, per DOCTRINE rule 8 post-analysis clarification clause). Proceed to Step 0.5 with the original triage as a provisional fallback — mark it `provisional=true` so Step 3 Planner knows to treat complexity sizing conservatively.
+
+Cost: ~2k tokens. Catches mis-classifications that would otherwise cascade into the wrong flow profile, wrong personas, and a botched batch graph — silently.
 
 ### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
 

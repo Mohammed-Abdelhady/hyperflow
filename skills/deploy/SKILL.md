@@ -15,17 +15,18 @@ tags: [release, ci, automation, push-gates]
 
 No gate skipped, no failure ignored. If any gate fails, halt and report. Never `--no-verify`. Never bypass.
 
+**Failure recovery (rule 14).** Worker errors and Quality Gate failures follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Gate failures are user-surfaced, never auto-fixed — print the failing command + full stderr and halt the push. Never `--no-verify`, never force-push to main.
+
 ## Per-Step Agent Map
 
 | Step | Sub-phase | Worker tier | Thinking tier | Notes |
 |---|---|---|---|---|
 | 1a | Repo-state scan | Worker A (git status), Worker B (git log) | Sonnet | — |
 | 1b | Tool detection | Worker A (profile.md + lockfiles), Worker B (testing.md + devDeps) | Sonnet | — |
-| 2a | Lint gate | Worker A (linter), Worker B (formatter) | Sonnet | — |
-| 2b | Typecheck gate | Worker A (root tsc), Worker B (per-package tsc) | Sonnet | — |
-| 2c | Build gate | Worker A (prod build), Worker B (dev build) | Sonnet | — |
-| 2d | Test gate | Worker A (unit), Worker B (integration/E2E) | Sonnet | — |
-| 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **Opus** | — |
+| 2a | Lint + security + typecheck (parallel) | Worker A (linter/formatter), Worker B (secrets scan), Worker C (tsc) | Sonnet · **Opus** (secrets) | Steps 2 and 3 run in parallel at orchestrator level; 2a halts chain on any failure before 2b |
+| 2b | Build gate | Worker A (prod build), Worker B (dev build) | Sonnet | Depends on 2a PASS |
+| 2c | Test gate | Worker A (unit), Worker B (integration/E2E) | Sonnet | Parallel (P1); depends on 2b PASS |
+| 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **Opus** | Runs in parallel with Step 2 (pre-build; read-only) |
 | 3b | Dependency audit | Worker A (CVE audit), Worker B (license check) | Sonnet | — |
 | 4 | Commit | single Worker | Sonnet | atomic-exempt (DOCTRINE 12.2) |
 | 5a | Release execution | single Worker | Sonnet | atomic-exempt (DOCTRINE 12.2) |
@@ -55,35 +56,28 @@ Two Workers in parallel:
 
 Sonnet Reviewer — produce a single tool manifest (package manager, test runner, typed-project flag, build script presence). Used by Step 2 gates.
 
-## Step 2 — Quality Gates (halt on first sub-phase failure)
+## Step 2 — Quality Gates
 
-Each sub-phase is a named gate. Sub-phases run sequentially — halt at the first `NEEDS_REVISION` verdict to avoid compounding failures. Print `Gate <letter> — <name>` before each.
+Step 2 runs in parallel with Step 3 (Security Sweep) at the orchestrator level — both are pre-build, read-only checks. Both must reach `PASS` before Step 4 (Commit) may proceed. Within Step 2, sub-phases 2a → 2b → 2c run sequentially (2b depends on 2a PASS; 2c depends on 2b PASS). Halt at the first `NEEDS_REVISION` verdict.
 
-### Step 2a — Lint gate
+Wall-clock note: default flow runs 3 gates simultaneously (lint + security + typecheck in parallel), then build, then tests — roughly max(lint, security, typecheck) + build + max(unit, integration), versus the old 4× sequential gate duration. Typical saving: ~40% wall-clock reduction. Under `--thorough`, intra-sub-phase Workers serialize (DOCTRINE §12.2/clarification), so the full saving collapses to 2c's unit + integration pair only.
 
-Two Workers in parallel:
+Print `Gate <letter> — <name>` before each sub-phase.
+
+### Step 2a — Lint + typecheck (parallel; no build artifact required)
+
+Three Workers in parallel (P1). None depend on build output — safe to run alongside Step 3.
 
 - Worker A — Detect and run primary linter: `npm run lint` / `pnpm lint` / `bun run lint` / `eslint .`. On failure: auto-fix via `--fix`, re-run once; report final error count.
 - Worker B — Detect and run formatter check: `prettier --check .` / `biome check .` / equivalent. Report diff count.
+- Worker C — Root typecheck: `tsc --noEmit` / `npm run typecheck`. Skip if not a typed project (per Step 1b tool manifest). Also run per-package typecheck if workspace detected (pnpm/yarn workspaces): iterate packages with `tsc --noEmit` in each.
 
-Sonnet Reviewer — verdict:
-- `PASS` — both clean or both absent
-- `NEEDS_REVISION` — lint auto-fix still failing or formatter drift found → halt
-- `ESCALATE` — config errors preventing execution
+Sonnet Reviewer — aggregate verdict across all three Workers:
+- `PASS` — all clean (or absent/untyped)
+- `NEEDS_REVISION` — any gate fails → halt before 2b. Report which specific gate(s) failed and why. Do NOT proceed to build.
+- `ESCALATE` — config errors preventing execution of any gate
 
-### Step 2b — Typecheck gate
-
-Two Workers in parallel:
-
-- Worker A — Root typecheck: `tsc --noEmit` / `npm run typecheck`. Skip if not a typed project (per Step 1b tool manifest).
-- Worker B — Per-package typecheck if workspace detected (pnpm/yarn workspaces): iterate packages with `tsc --noEmit` in each. Skip if single-package repo.
-
-Sonnet Reviewer — verdict:
-- `PASS` — no type errors or project is untyped
-- `NEEDS_REVISION` — type errors found (no auto-fix; halt for human review)
-- `ESCALATE` — tsconfig missing or malformed
-
-### Step 2c — Build gate
+### Step 2b — Build gate (sequential; depends on 2a PASS)
 
 Two Workers in parallel:
 
@@ -95,9 +89,9 @@ Sonnet Reviewer — verdict:
 - `NEEDS_REVISION` — production build fails → halt with output
 - `ESCALATE` — build tool absent or script missing (skip silently, not failure)
 
-### Step 2d — Test gate
+### Step 2c — Test gate (parallel; depends on 2b PASS)
 
-Two Workers in parallel:
+Two Workers in parallel (P1):
 
 - Worker A — Unit tests: run full unit suite per runner from Step 1b (vitest, jest, pytest, cargo test, etc.). Full suite — not just affected. Report count.
 - Worker B — Integration / E2E tests if runner detected separately (playwright, cypress, etc.). Skip if no integration runner found.
@@ -111,7 +105,9 @@ See [quality-gates.md](references/quality-gates.md) for gate details.
 
 ## Step 3 — Security Sweep
 
-Sub-phases run in parallel (P1).
+Runs in parallel with Step 2 at the orchestrator level (P3 — concurrent independent pre-conditions; DOCTRINE §12.2). Both Step 2 and Step 3 are pre-build, read-only checks with no shared state. Both must reach `PASS` before Step 4 (Commit) may proceed. Halt on `SECURITY_VIOLATION` immediately — no retry, no 2a must also complete first.
+
+Sub-phases 3a and 3b run in parallel (P1).
 
 ### Step 3a — Secrets and keys scan
 
@@ -210,9 +206,9 @@ On gate failure:
 ```
 ── Ship Result ───────────────────
 Branch: <name>
-Gates: lint pass · typecheck fail · tests skipped · build skipped
+Gates: lint pass · typecheck fail · build skipped · tests skipped
   typecheck: 3 errors in src/auth/middleware.ts
-Halted at Gate B
+Halted at Step 2a
 ──────────────────────────────────
 ```
 
@@ -236,7 +232,7 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-sty
 
 ## Overview
 
-`/hyperflow:deploy` runs the pre-push gates (lint → typecheck → build → tests → security sweep), composes any worker-introduced fixes into a clean commit, runs the release script if present, and asks before pushing. Standalone — never auto-invoked from the chain. Push always requires an explicit `AskUserQuestion` confirmation. Never bypasses hooks, never force-pushes to main, never adds AI attribution to commits.
+`/hyperflow:deploy` runs the pre-push gates (lint + typecheck + security sweep in parallel, then build, then tests), composes any worker-introduced fixes into a clean commit, runs the release script if present, and asks before pushing. Standalone — never auto-invoked from the chain. Push always requires an explicit `AskUserQuestion` confirmation. Never bypasses hooks, never force-pushes to main, never adds AI attribution to commits.
 
 ## Prerequisites
 
@@ -250,8 +246,8 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-sty
 The 7 numbered steps live in [Step 1 — Survey State](#step-1--survey-state) through [Step 7 — Output](#step-7--output) above. Summary:
 
 1. Survey state — two sub-phases in parallel: 1a repo-state scan (git status + ahead count), 1b tool detection (package manager, test runner, typed-project flag).
-2. Quality gates — four sequential sub-phases, each with 2 parallel Workers + Sonnet Reviewer: 2a lint, 2b typecheck, 2c build, 2d tests. Halt at first `NEEDS_REVISION`.
-3. Security sweep — two sub-phases in parallel: 3a secrets/keys scan (Opus Reviewer), 3b dependency audit. Halt on `SECURITY_VIOLATION` or critical CVE.
+2. Quality gates — three sequential sub-phases: 2a lint+typecheck (3-wide parallel Workers, no build artifact needed), 2b build (depends on 2a PASS), 2c tests (2-wide parallel, depends on 2b PASS). Runs in parallel with Step 3 at orchestrator level. Halt at first `NEEDS_REVISION`.
+3. Security sweep — runs in parallel with Step 2 (P3, pre-build read-only). Two sub-phases in parallel: 3a secrets/keys scan (Opus Reviewer), 3b dependency audit. Halt on `SECURITY_VIOLATION` or critical CVE. Both Step 2 and Step 3 must PASS before Step 4.
 4. Commit — atomic. Worker fixes auto-committed; `AskUserQuestion` for pre-existing uncommitted user changes.
 5. Release — two sequential sub-phases: 5a run release script, 5b verify version sync across manifests.
 6. Push gate — atomic structural gate. Honors `push` pre-election (auto/never/ask). `push=ask` fires `AskUserQuestion`. Never force-push to main.
@@ -265,10 +261,10 @@ See the ship result block in [Step 7 — Output](#step-7--output) above. Two for
 
 | Failure | Behavior |
 |---|---|
-| Gate A (lint) fails | Auto-retry once with `--fix`. Still failing → halt with error count. |
-| Gate B (typecheck) fails | Halt immediately. No auto-fix — typecheck errors require human eyes. |
-| Gate C (build) fails | Halt with build output. Pre-existing build issues likely pre-date the change set. |
-| Gate D (tests) fail | Halt with failing test names. Do NOT skip failing tests. Do NOT increase timeout. |
+| Step 2a — lint fails | Auto-retry once with `--fix`. Still failing → halt with error count. Do NOT proceed to 2b. |
+| Step 2a — typecheck fails | Halt at 2a. No auto-fix — typecheck errors require human eyes. |
+| Step 2b — build fails | Halt with build output. Pre-existing build issues likely pre-date the change set. |
+| Step 2c — tests fail | Halt with failing test names. Do NOT skip failing tests. Do NOT increase timeout. |
 | Security sweep finds secrets | Halt with `SECURITY_VIOLATION:` marker and the file:line. User decides remediation (revert the secret + rotate the credential). |
 | `scripts/release.sh` says "nothing to release" | Skip release; print `Release: skipped (nothing to release)`. Push step still fires for non-release commits. |
 | Push rejected (non-fast-forward) | Refuse to force-push. Print: `Push rejected — branch is behind origin. Pull/rebase first.` |
@@ -282,12 +278,15 @@ See the ship result block in [Step 7 — Output](#step-7--output) above. Two for
 ```
 /hyperflow:deploy
 
-Gate A — Lint
-Implementer — running lint
-Gate B — Typecheck
-Gate C — Build
-Gate D — Tests
-**Reviewer** — security sweep on staged + recent changes
+Step 2a — Lint + typecheck (parallel with Step 3 security sweep)
+Worker A — running lint
+Worker B — running formatter check
+Worker C — running tsc
+Step 3a/3b — security sweep (parallel)
+Step 2a Reviewer — all clean
+Step 3 Reviewer — no secrets found
+Step 2b — Build
+Step 2c — Tests (parallel)
 
 ? Push to origin/main?
    Push — all gates pass · safe to ship
@@ -310,17 +309,18 @@ Push: confirmed
 ```
 /hyperflow:deploy
 
-Gate A — Lint
-Implementer — running lint
+Step 2a — Lint + typecheck (parallel with Step 3 security sweep)
+Worker A — running lint
 Lint failed: 3 errors in src/auth/middleware.ts
 Auto-fix attempted... still failing.
-Halted at Gate A.
+Step 2a Reviewer — NEEDS_REVISION: lint gate failed (3 errors in src/auth/middleware.ts)
+Halted at Step 2a. Build and tests skipped.
 
 ── Ship Result ───────────────────
 Branch: main
 Gates: lint fail · typecheck skipped · build skipped · tests skipped
   lint: 3 errors in src/auth/middleware.ts (unused vars, missing return type)
-Halted at Gate A
+Halted at Step 2a
 ──────────────────────────────────
 ```
 
