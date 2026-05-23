@@ -70,14 +70,18 @@ Trivial-inline — no Agent dispatch. The orchestrator prints, then gates.
 3. **Fire the handoff gate** — `AskUserQuestion`:
 
    > **Run this amplified prompt now?**
-   > - **Send to spec** *(recommended)* — start the chain design-first (`/hyperflow:spec` with the amplified prompt)
-   > - **Send to scope** — go straight to decomposition (`/hyperflow:scope`)
-   > - **Send to dispatch** — a task file already exists (`/hyperflow:dispatch`)
+   > - **Scaffold → spec** *(recommended)* — set up project context, then brainstorm + design with the amplified prompt
+   > - **Spec directly** — skip setup, go straight to design (`/hyperflow:spec` with the amplified prompt)
+   > - **Scope** — the approach is clear, go straight to decomposition (`/hyperflow:scope`)
    > - **Copy only** — keep the prompt, run nothing
 
-   This is a multi-option gate (4 options) → it carries the `(Recommended)` marker on **Send to spec** (DOCTRINE rule 8 — named-workflow choice).
+   This is a multi-option gate (4 options) → it carries the `(Recommended)` marker on **Scaffold → spec** (DOCTRINE rule 8 — named-workflow choice).
 
-   On a `Send to …` selection, invoke the chosen skill via the `Skill` tool, passing the amplified prompt as the argument. On `Copy only`, stop — the prompt is already printed for the user to take.
+   Handoff semantics:
+   - **Scaffold → spec** — the canonical front-of-chain flow for a fresh idea. First invoke `/hyperflow:scaffold` via the `Skill` tool (analyze the project, build the `.hyperflow/` cache — this becomes brainstorming context). Scaffold takes no prompt argument. When it returns, invoke `/hyperflow:spec` via the `Skill` tool, passing the **amplified prompt** as the argument. Spec then brainstorms + designs with both the amplified prompt and the freshly-scaffolded project context. If the project is already scaffolded (`.hyperflow/` cache present and fresh), skip the scaffold step and go straight to spec — print a one-line note (`Project already scaffolded — going straight to spec`).
+   - **Spec directly** — invoke `/hyperflow:spec` with the amplified prompt; no scaffold step.
+   - **Scope** — invoke `/hyperflow:scope` with the amplified prompt.
+   - **Copy only** — stop. The prompt is already printed for the user to take.
 
 ## Iron Rules
 
