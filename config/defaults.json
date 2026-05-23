@@ -62,17 +62,21 @@
       "detection": {
         "envPrefix": "ANTIGRAVITY_",
         "pathCheck": "antigravity",
-        "dynamicFetch": "read ~/.antigravity/settings.json"
+        "dynamicFetch": "read ~/.gemini/antigravity/settings.json"
       },
+      "skillsDir": "~/.gemini/antigravity/skills/",
+      "agentsFile": "~/.gemini/AGENTS.md",
       "models": {
         "thinking": [
           { "id": "gemini-3-pro", "label": "Gemini 3 Pro", "provider": "Google", "notes": "Antigravity default thinking model (Hyperflow default)", "default": true },
           { "id": "gemini-3.1-pro", "label": "Gemini 3.1 Pro", "provider": "Google", "notes": "2M context window" },
-          { "id": "claude-opus-4-7", "label": "Claude Opus 4.7", "provider": "Anthropic", "notes": "Antigravity also supports Claude" }
+          { "id": "claude-opus-4-6", "label": "Claude Opus 4.6", "provider": "Anthropic", "notes": "Antigravity also supports Claude" },
+          { "id": "gpt-oss-120b", "label": "GPT-OSS-120B", "provider": "OpenAI", "notes": "Open-weights variant" }
         ],
         "worker": [
           { "id": "gemini-3.5-flash", "label": "Gemini 3.5 Flash", "provider": "Google", "notes": "Antigravity default worker model (Hyperflow default)", "default": true },
-          { "id": "gemini-3-flash", "label": "Gemini 3 Flash", "provider": "Google", "notes": "Previous Flash" }
+          { "id": "gemini-3-flash", "label": "Gemini 3 Flash", "provider": "Google", "notes": "Stable Flash" },
+          { "id": "claude-sonnet-4-6", "label": "Claude Sonnet 4.6", "provider": "Anthropic", "notes": "Antigravity also supports Claude" }
         ]
       },
       "agentModelMapping": {
@@ -80,7 +84,9 @@
         "gemini-3.1-pro": "gemini-3.1-pro",
         "gemini-3.5-flash": "gemini-3.5-flash",
         "gemini-3-flash": "gemini-3-flash",
-        "claude-opus-4-7": "claude-opus-4-7"
+        "claude-opus-4-6": "claude-opus-4-6",
+        "claude-sonnet-4-6": "claude-sonnet-4-6",
+        "gpt-oss-120b": "gpt-oss-120b"
       }
     }
   },

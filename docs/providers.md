@@ -65,7 +65,7 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 
 ## Antigravity
 
-Antigravity is Google's agentic IDE. It uses Gemini models natively and also supports Claude models via Anthropic's API.
+Antigravity is Google's agent-first IDE (a VS Code fork, announced Nov 2025 alongside Gemini 3). It runs agents on Gemini natively and also supports Claude and the open-weights GPT-OSS model.
 
 **Detection:** `ANTIGRAVITY_*` environment variables or `antigravity` binary in PATH.
 
@@ -79,10 +79,14 @@ Antigravity is Google's agentic IDE. It uses Gemini models natively and also sup
 |---|---|---|---|---|
 | `gemini-3-pro` | Gemini 3 Pro | Google | Thinking | Antigravity default |
 | `gemini-3.1-pro` | Gemini 3.1 Pro | Google | Thinking | 2M context window |
-| `claude-opus-4-7` | Claude Opus 4.7 | Anthropic | Thinking | Antigravity also supports Claude |
+| `claude-opus-4-6` | Claude Opus 4.6 | Anthropic | Thinking | Antigravity also supports Claude |
+| `gpt-oss-120b` | GPT-OSS-120B | OpenAI | Thinking | Open-weights variant |
 | `gemini-3.5-flash` | Gemini 3.5 Flash | Google | Worker | Antigravity default |
-| `gemini-3-flash` | Gemini 3 Flash | Google | Worker | Previous Flash |
+| `gemini-3-flash` | Gemini 3 Flash | Google | Worker | Stable Flash |
+| `claude-sonnet-4-6` | Claude Sonnet 4.6 | Anthropic | Worker | Antigravity also supports Claude |
 
-**Model format:** Antigravity uses bare model IDs (e.g., `gemini-3-pro`), not provider-prefixed.
+**Model format:** model IDs are bare slugs (e.g., `gemini-3-pro`); the per-agent model picker in Antigravity's Manager surface shows the display names.
 
-**Dynamic detection:** Hyperflow reads `~/.antigravity/settings.json` to detect the configured model.
+**Dynamic detection:** Hyperflow reads `~/.gemini/antigravity/settings.json` to detect the configured model.
+
+**Installing hyperflow into Antigravity:** Antigravity loads agent **Skills** from `~/.gemini/antigravity/skills/` (global scope) as directory packages with a `SKILL.md` — the same format hyperflow already uses. Symlink or copy hyperflow's `skills/*` into that directory and they're available across every Antigravity project. Antigravity also merges a global `~/.gemini/AGENTS.md` and a per-workspace `AGENTS.md` at session start — the hyperflow bridge doctrine subset can live there (the AGENTS.md analogue of `CLAUDE.md`).

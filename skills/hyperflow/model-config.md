@@ -99,7 +99,7 @@ When presenting the model picker during install:
 
 1. **Claude Code:** Read `~/.claude/settings.json` to detect current model. Supplement hardcoded list.
 2. **OpenCode:** Run `opencode models list --json` (2s timeout). Merge with hardcoded list.
-3. **Antigravity:** Read `~/.antigravity/settings.json`. Merge with hardcoded list.
+3. **Antigravity:** Read `~/.gemini/antigravity/settings.json`. Merge with hardcoded list.
 
 Dynamic models supplement the hardcoded list (don't replace). Fall back to hardcoded if fetch fails.
 
