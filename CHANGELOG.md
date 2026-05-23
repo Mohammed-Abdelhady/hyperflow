@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.16.3] — 2026-05-23
+
+### Changed
+- Surface official Anthropic marketplace listing as primary install path
+
+
 ## [4.16.2] — 2026-05-17
 
 ### Changed
@@ -665,7 +671,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.3...HEAD
+[4.16.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.1...v4.16.2
 [4.16.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.0...v4.16.1
 [4.16.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.15.0...v4.16.0
