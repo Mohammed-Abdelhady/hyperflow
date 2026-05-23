@@ -1,17 +1,10 @@
 name: plugin-validation
 
-# Safety note: no step in this workflow consumes untrusted github.event.* input
-# (issue body, PR title, commit message, etc.) inside a run: block. All shell
-# commands operate on paths from the checked-out tree or static literals.
-
 on:
   push:
     branches: [main]
   pull_request:
   schedule:
-    # Weekly cold-cache run on Mondays at 06:17 UTC — catches drift from
-    # upstream changes (renamed files, edited README links) that nobody
-    # pushed directly.
     - cron: "17 6 * * 1"
   workflow_dispatch:
 
@@ -37,7 +30,7 @@ jobs:
       - name: Run validate-plugin.py
         run: ./scripts/validate-plugin.py
 
-      - name: Validate JSON manifests parse with jq (defense in depth)
+      - name: jq schema sweep
         run: |
           jq empty .claude-plugin/plugin.json
           jq empty .claude-plugin/marketplace.json
@@ -46,7 +39,7 @@ jobs:
           jq empty config/defaults.json
           jq empty config/schema.json
 
-      - name: Confirm every SKILL.md has an h1 heading in its body
+      - name: Every SKILL.md has an h1 in its body
         run: |
           fail=0
           while IFS= read -r f; do
@@ -58,7 +51,7 @@ jobs:
           done < <(find skills -name SKILL.md)
           exit "$fail"
 
-      - name: Confirm hook scripts are executable
+      - name: Hook scripts are executable
         run: |
           fail=0
           for script in hooks/*; do
