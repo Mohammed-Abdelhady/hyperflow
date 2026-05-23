@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
-"""Generate docs/assets/hero.svg from config/features.json."""
+"""Generate docs/assets/hero.svg from config/features.json.
+
+Editorial-minimalism dark card. Centerpiece: the six-skill chain rendered as
+an elegant horizontal flow with the thinking/worker color split.
+"""
 from __future__ import annotations
 
 import argparse
 import json
-import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def esc(text: str) -> str:
-    """Escape XML special characters."""
     return (
         str(text)
         .replace("&", "&amp;")
@@ -25,370 +28,249 @@ def esc(text: str) -> str:
     )
 
 
-def wrap(text: str, width: int) -> list[str]:
-    """Wrap text to a list of lines no wider than `width` chars."""
-    return textwrap.wrap(text, width) or [""]
-
-
-# ---------------------------------------------------------------------------
-# Data loading
-# ---------------------------------------------------------------------------
-
 def load_features() -> dict:
     return json.loads((ROOT / "config" / "features.json").read_text())
 
 
 # ---------------------------------------------------------------------------
-# SVG builder
+# Layout constants
 # ---------------------------------------------------------------------------
 
-# Layout constants
-VB_W = 1400
-VB_H = 1520  # tall enough for all regions
+W   = 1200   # viewBox width
+H   = 420    # viewBox height
+PAD = 56     # horizontal outer padding
 
-PAD = 48          # left/right outer padding
-COL_GAP = 16      # gap between columns
-SECTION_GAP = 28  # vertical gap between major sections
+FONT = "ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif"
+MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
-# Y anchors (computed top-down)
-HEADER_Y   = 0
-HEADER_H   = 110
-PROVIDER_Y = HEADER_H + SECTION_GAP           # ~138
-PROVIDER_H = 90
-LAYERS_Y   = PROVIDER_Y + PROVIDER_H + SECTION_GAP   # ~256
-LAYERS_H   = 11 * 56  # 11 layers × 56px each = 616
-SKILLS_Y   = LAYERS_Y + LAYERS_H + SECTION_GAP       # ~844
-SKILLS_H   = 2 * 100 + COL_GAP  # 2 rows × 100px = 216
-CAPS_Y     = SKILLS_Y + SKILLS_H + SECTION_GAP       # ~1088
-CAPS_H     = 160
-SHIM_Y     = CAPS_Y + CAPS_H + SECTION_GAP           # ~1276
-SHIM_H     = 68
-MEM_Y      = SHIM_Y + SHIM_H + SECTION_GAP           # ~1372
-MEM_H      = 56
-FOOTER_Y   = MEM_Y + MEM_H + SECTION_GAP             # ~1456
+# Chain: skills that appear in the horizontal flow (first 6, in order)
+CHAIN_SKILLS = ["scaffold", "spec", "scope", "dispatch", "audit", "deploy"]
 
-
-FONT_STACK = "ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif"
-
-# Lighter tints for gradient stops
-LIGHT_TINTS = {
-    "thinking": "#A78BFA",
-    "worker":   "#5EEAD4",
-    "user":     "#F8FAFC",
-    "memory":   "#FBBF24",
-    "security": "#F87171",
-    "git":      "#60A5FA",
+# Color role for each chain node — matches the thinking/worker split story
+# thinking = Opus/orchestration tier; worker = Sonnet/execution tier
+CHAIN_ROLE = {
+    "scaffold": "worker",
+    "spec":     "thinking",
+    "scope":    "thinking",
+    "dispatch": "worker",
+    "audit":    "thinking",
+    "deploy":   "worker",
 }
 
 
+# ---------------------------------------------------------------------------
+# SVG renderer
+# ---------------------------------------------------------------------------
+
 def render(features: dict, version_override: str | None) -> str:
     version = version_override or features.get("version", "0.0.0")
-    tagline  = esc(features.get("tagline", ""))
-    subtitle = esc(features.get("subtitle", ""))
+    tagline  = features.get("tagline", "")
     colors   = features["branding"]["colors"]
+    skills   = {s["name"]: s for s in features["skills"]}
 
-    layers       = features["layers"]
-    skills       = features["skills"]
-    providers    = features["providers"]
-    capabilities = features["capabilities"]
-    shims        = features["detection"]["shims"]
-    mem_tiers    = features["memory"]["tiers"]
+    thinking_color = colors["thinking"]   # #7C3AED
+    worker_color   = colors["worker"]     # #14B8A6
+    bg_start       = colors["bg_start"]   # #0B0F1A
+    bg_end         = colors["bg_end"]     # #0E1422
+    border         = colors["border"]     # #334155
+    text_primary   = colors["text_primary"]    # #F8FAFC
+    text_secondary = colors["text_secondary"]  # #94A3B8
 
-    # Recompute VB_H based on actual footer position
-    actual_h = FOOTER_Y + 44
-    vb_h = max(actual_h, VB_H)
+    # Slightly lighter tints for node fills (semi-transparent over dark bg)
+    thinking_fill = "rgba(124,58,237,0.18)"
+    worker_fill   = "rgba(20,184,166,0.14)"
+    thinking_stroke = thinking_color
+    worker_stroke   = worker_color
 
     parts: list[str] = []
 
-    def out(s: str) -> None:
+    def o(s: str) -> None:
         parts.append(s)
 
-    # ---- opening tag -------------------------------------------------------
-    out(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VB_W} {vb_h}"')
-    out(f'     role="img" aria-labelledby="hf-title hf-desc"')
-    out(f'     font-family="{FONT_STACK}">')
-    out(f'  <title id="hf-title">Hyperflow v{esc(version)} — {tagline}</title>')
-    out(f'  <desc id="hf-desc">{subtitle}</desc>')
-    out("")
+    # ---- SVG open ----------------------------------------------------------
+    o(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}"')
+    o(f'     width="{W}" height="{H}"')
+    o(f'     role="img" aria-labelledby="hf-title hf-desc"')
+    o(f'     font-family="{FONT}">')
+    o(f'  <title id="hf-title">Hyperflow v{esc(version)}</title>')
+    o(f'  <desc id="hf-desc">{esc(tagline)}</desc>')
+    o("")
 
-    # ---- defs: gradients + marker ------------------------------------------
-    out("  <defs>")
-    out(f'    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">')
-    out(f'      <stop offset="0%" stop-color="{colors["bg_start"]}"/>')
-    out(f'      <stop offset="100%" stop-color="{colors["bg_end"]}"/>')
-    out(f'    </linearGradient>')
+    # ---- defs --------------------------------------------------------------
+    o("  <defs>")
+    # Background gradient (top to bottom, subtle)
+    o(f'    <linearGradient id="bg-grad" x1="0" y1="0" x2="0" y2="1">')
+    o(f'      <stop offset="0%"   stop-color="{bg_start}"/>')
+    o(f'      <stop offset="100%" stop-color="{bg_end}"/>')
+    o(f'    </linearGradient>')
+    # Connector arrow marker
+    o(f'    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4"')
+    o(f'            markerWidth="4" markerHeight="4" orient="auto">')
+    o(f'      <path d="M0,0 L8,4 L0,8 Z" fill="{border}"/>')
+    o(f'    </marker>')
+    # Clip rect for the card (rounded corners)
+    o(f'    <clipPath id="card-clip">')
+    o(f'      <rect width="{W}" height="{H}" rx="16"/>')
+    o(f'    </clipPath>')
+    o("  </defs>")
+    o("")
 
-    for key, base_hex in colors.items():
-        if key in LIGHT_TINTS:
-            light = LIGHT_TINTS[key]
-            out(f'    <linearGradient id="grad-{key}" x1="0" y1="0" x2="1" y2="1">')
-            out(f'      <stop offset="0%" stop-color="{light}"/>')
-            out(f'      <stop offset="100%" stop-color="{base_hex}"/>')
-            out(f'    </linearGradient>')
+    # ---- card background ---------------------------------------------------
+    # Outer card with border
+    o(f'  <rect width="{W}" height="{H}" rx="16"')
+    o(f'        fill="url(#bg-grad)" stroke="{border}" stroke-width="1.5"/>')
+    o("")
 
-    # pill clip for provider chips
-    out('    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">')
-    out('      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>')
-    out('    </marker>')
-    out("  </defs>")
-    out("")
+    # Very subtle noise texture: one tiled dot pattern (cheap; ~13KB lighter
+    # than enumerating every dot as its own path)
+    o(f'  <pattern id="dot-grid" width="24" height="24" patternUnits="userSpaceOnUse">')
+    o(f'    <circle cx="1" cy="1" r="0.75" fill="{text_secondary}"/>')
+    o("  </pattern>")
+    o(f'  <rect clip-path="url(#card-clip)" x="0" y="0" width="{W}" height="{H}" fill="url(#dot-grid)" opacity="0.025"/>')
+    o("")
 
-    # ---- background --------------------------------------------------------
-    out(f'  <rect width="{VB_W}" height="{vb_h}" fill="url(#bg)"/>')
-    out("")
+    # ---- wordmark region (left column) -------------------------------------
+    wordmark_x = PAD
+    wordmark_baseline_y = 80
 
-    # subtle grid overlay
-    out('  <g opacity="0.04" stroke="#94A3B8" stroke-width="1">')
-    grid_lines_h = " ".join(f"M0 {y} H{VB_W}" for y in range(80, vb_h, 80))
-    grid_lines_v = " ".join(f"M{x} 0 V{vb_h}" for x in range(120, VB_W, 120))
-    out(f'    <path d="{grid_lines_h}"/>')
-    out(f'    <path d="{grid_lines_v}"/>')
-    out("  </g>")
-    out("")
+    # "Hyperflow" — large, confident, near-white
+    o(f'  <text x="{wordmark_x}" y="{wordmark_baseline_y}"')
+    o(f'        fill="{text_primary}" font-size="52" font-weight="800"')
+    o(f'        letter-spacing="-1.5">Hyperflow</text>')
 
-    # ========================================================================
-    # Region 1: Header
-    # ========================================================================
-    out("  <!-- ======================== HEADER ======================== -->")
-    out(f'  <g transform="translate({PAD},{HEADER_Y + 20})">')
+    # Tagline — slate secondary, smaller
+    # Truncate to a single clean line (~55 chars fits the left column well)
+    tagline_short = tagline if len(tagline) <= 55 else tagline[:52] + "..."
+    o(f'  <text x="{wordmark_x}" y="{wordmark_baseline_y + 32}"')
+    o(f'        fill="{text_secondary}" font-size="14" font-weight="400">{esc(tagline_short)}</text>')
 
-    # Title
-    out(f'    <text y="46" fill="{colors["text_primary"]}" font-size="42" font-weight="800" letter-spacing="-1">Hyperflow</text>')
-    # Tagline
-    out(f'    <text y="74" fill="{colors["text_secondary"]}" font-size="15" font-weight="500">{tagline}</text>')
-    # Subtitle — wrapped at ~100 chars
-    sub_lines = wrap(features.get("subtitle", ""), 120)
-    for i, line in enumerate(sub_lines[:2]):
-        out(f'    <text y="{94 + i * 16}" fill="{colors["text_secondary"]}" font-size="12" opacity="0.75">{esc(line)}</text>')
+    # Thinking / Worker legend — two small labeled dots
+    legend_y = wordmark_baseline_y + 68
+    dot_r = 5
 
-    out("  </g>")
+    o(f'  <circle cx="{wordmark_x + dot_r}" cy="{legend_y}" r="{dot_r}" fill="{thinking_color}"/>')
+    o(f'  <text x="{wordmark_x + dot_r * 2 + 6}" y="{legend_y + 4}"')
+    o(f'        fill="{text_secondary}" font-size="11" font-weight="500">thinking tier (Opus)</text>')
 
-    # Version badge (top-right)
-    badge_w = 80
-    badge_x = VB_W - PAD - badge_w
-    badge_y = HEADER_Y + 20
-    out(f'  <rect x="{badge_x}" y="{badge_y}" width="{badge_w}" height="30" rx="15"')
-    out(f'        fill="{colors["bg_start"]}" stroke="{colors["border"]}" stroke-width="1.5"/>')
-    out(f'  <text x="{badge_x + badge_w // 2}" y="{badge_y + 20}" text-anchor="middle"')
-    out(f'        fill="{colors["text_secondary"]}" font-size="13" font-weight="700">v{esc(version)}</text>')
-    out("")
+    worker_legend_x = wordmark_x + 165
+    o(f'  <circle cx="{worker_legend_x + dot_r}" cy="{legend_y}" r="{dot_r}" fill="{worker_color}"/>')
+    o(f'  <text x="{worker_legend_x + dot_r * 2 + 6}" y="{legend_y + 4}"')
+    o(f'        fill="{text_secondary}" font-size="11" font-weight="500">worker tier (Sonnet)</text>')
 
-    # ========================================================================
-    # Region 2: Provider strip
-    # ========================================================================
-    out("  <!-- ======================== PROVIDERS ======================== -->")
-    section_label(out, PROVIDER_Y, "Supported Providers", colors)
+    # Version badge — bottom-left under legend
+    version_y = legend_y + 28
+    badge_label = f"v{version}"
+    badge_w = len(badge_label) * 8 + 16
+    o(f'  <rect x="{wordmark_x}" y="{version_y}" width="{badge_w}" height="22" rx="11"')
+    o(f'        fill="rgba(255,255,255,0.05)" stroke="{border}" stroke-width="1"/>')
+    o(f'  <text x="{wordmark_x + badge_w // 2}" y="{version_y + 14}" text-anchor="middle"')
+    o(f'        fill="{text_secondary}" font-size="11" font-weight="600">{esc(badge_label)}</text>')
 
-    prov_y = PROVIDER_Y + 22
-    usable_w = VB_W - 2 * PAD
-    chip_w = (usable_w - (len(providers) - 1) * COL_GAP) // len(providers)
-    chip_h = 64
+    # ---- chain region (right/center, starting after the left column) ------
+    #
+    # Chain layout: nodes spaced evenly, connectors between them.
+    # The chain spans from chain_x_start to W - PAD.
+    # Each node is a rounded rect with the skill command in monospace + tagline.
 
-    for i, prov in enumerate(providers):
-        cx = PAD + i * (chip_w + COL_GAP)
-        cy = prov_y
-        out(f'  <g transform="translate({cx},{cy})">')
-        out(f'    <rect width="{chip_w}" height="{chip_h}" rx="12"')
-        out(f'          fill="rgba(148,163,184,0.06)" stroke="{colors["border"]}" stroke-width="1"/>')
-        out(f'    <text x="{chip_w//2}" y="22" text-anchor="middle"')
-        out(f'          fill="{colors["text_primary"]}" font-size="13" font-weight="700">{esc(prov["name"])}</text>')
-        out(f'    <text x="{chip_w//2}" y="38" text-anchor="middle"')
-        out(f'          fill="#A78BFA" font-size="10" font-weight="600">think: {esc(prov["thinking"])}</text>')
-        out(f'    <text x="{chip_w//2}" y="54" text-anchor="middle"')
-        out(f'          fill="#5EEAD4" font-size="10" font-weight="600">work: {esc(prov["worker"])}</text>')
-        out("  </g>")
-    out("")
+    chain_x_start = PAD + 310   # leave room for the wordmark column
+    chain_x_end   = W - PAD
+    chain_usable  = chain_x_end - chain_x_start
+    n_skills      = len(CHAIN_SKILLS)
+    n_connectors  = n_skills - 1
 
-    # ========================================================================
-    # Region 3: 10-layer stack
-    # ========================================================================
-    out("  <!-- ======================== LAYERS ======================== -->")
-    section_label(out, LAYERS_Y, "Orchestration Layers (L0–L9)", colors)
+    node_w = 118
+    node_h = 68
+    # Space between nodes (occupied by connector arrows)
+    connector_w = (chain_usable - n_skills * node_w) // n_connectors
 
-    layer_y_start = LAYERS_Y + 22
-    LAYER_H = 52
-    layer_w = VB_W - 2 * PAD
+    chain_center_y = H // 2 - 10   # vertical center of the chain row
 
-    for i, layer in enumerate(layers):
-        n     = layer["n"]
-        name  = layer["name"]
-        summ  = layer["summary"]
-        ckey  = layer["color"]
-        base  = colors.get(ckey, "#64748B")
-        light = LIGHT_TINTS.get(ckey, base)
-        ly    = layer_y_start + i * LAYER_H
+    # Section label above the chain
+    label_y = chain_center_y - node_h // 2 - 28
+    o(f'  <text x="{chain_x_start}" y="{label_y}"')
+    o(f'        fill="{text_secondary}" font-size="10" font-weight="700"')
+    o(f'        letter-spacing="1.8">THE CHAIN</text>')
+    o("")
 
-        circle_r = 18
-        cx_center = PAD + circle_r
+    for idx, skill_name in enumerate(CHAIN_SKILLS):
+        skill = skills.get(skill_name, {})
+        command = skill.get("command", f"/hyperflow:{skill_name}")
+        tagline_s = skill.get("tagline", skill_name)
+        role = CHAIN_ROLE.get(skill_name, "worker")
 
-        # Row bg
-        out(f'  <rect x="{PAD}" y="{ly}" width="{layer_w}" height="{LAYER_H - 4}" rx="10"')
-        out(f'        fill="rgba(255,255,255,0.02)" stroke="{colors["border"]}" stroke-width="1" opacity="0.8"/>')
+        fill   = thinking_fill   if role == "thinking" else worker_fill
+        stroke = thinking_stroke if role == "thinking" else worker_stroke
+        accent = thinking_color  if role == "thinking" else worker_color
 
-        # Color bar on left
-        out(f'  <rect x="{PAD}" y="{ly}" width="4" height="{LAYER_H - 4}" rx="2"')
-        out(f'        fill="url(#grad-{ckey})" opacity="0.9"/>')
+        nx = chain_x_start + idx * (node_w + connector_w)
+        ny = chain_center_y - node_h // 2
 
-        # Circle
-        out(f'  <circle cx="{cx_center + 14}" cy="{ly + (LAYER_H - 4)//2}" r="{circle_r}"')
-        out(f'          fill="url(#grad-{ckey})" opacity="0.9"/>')
-        out(f'  <text x="{cx_center + 14}" y="{ly + (LAYER_H - 4)//2 + 5}" text-anchor="middle"')
-        out(f'        fill="#0B0F1A" font-size="12" font-weight="800">{n}</text>')
+        # Node card
+        o(f'  <rect x="{nx}" y="{ny}" width="{node_w}" height="{node_h}" rx="10"')
+        o(f'        fill="{fill}" stroke="{stroke}" stroke-width="1.5"/>')
 
-        # Name + summary
-        name_x = PAD + circle_r * 2 + 28
-        text_cy = ly + (LAYER_H - 4) // 2
-        out(f'  <text x="{name_x}" y="{text_cy - 6}"')
-        out(f'        fill="{colors["text_primary"]}" font-size="13" font-weight="700">{esc(name)}</text>')
+        # Command — monospace, small, accent color
+        cmd_display = command.replace("/hyperflow:", "/")
+        o(f'  <text x="{nx + node_w // 2}" y="{ny + 22}" text-anchor="middle"')
+        o(f'        fill="{accent}" font-size="11" font-weight="700"')
+        o(f'        font-family="{MONO}">{esc(cmd_display)}</text>')
 
-        # Truncate summary to avoid overflow
-        max_chars = 90
-        summ_trunc = summ if len(summ) <= max_chars else summ[:max_chars - 1] + "…"
-        out(f'  <text x="{name_x}" y="{text_cy + 12}"')
-        out(f'        fill="{colors["text_secondary"]}" font-size="11">{esc(summ_trunc)}</text>')
+        # Thin rule under command
+        o(f'  <line x1="{nx + 10}" y1="{ny + 28}" x2="{nx + node_w - 10}" y2="{ny + 28}"')
+        o(f'        stroke="{stroke}" stroke-width="0.75" opacity="0.4"/>')
 
-    out("")
+        # Tagline — near-white, readable
+        o(f'  <text x="{nx + node_w // 2}" y="{ny + 44}" text-anchor="middle"')
+        o(f'        fill="{text_primary}" font-size="11.5" font-weight="600">{esc(tagline_s)}</text>')
 
-    # ========================================================================
-    # Region 4: Specialized skills grid (2 cols × 4 rows)
-    # ========================================================================
-    out("  <!-- ======================== SKILLS ======================== -->")
-    section_label(out, SKILLS_Y, "Skills", colors)
+        # Role label — tiny, bottom of node
+        role_label = "think" if role == "thinking" else "work"
+        o(f'  <text x="{nx + node_w // 2}" y="{ny + node_h - 8}" text-anchor="middle"')
+        o(f'        fill="{accent}" font-size="9" font-weight="500" opacity="0.7">{role_label}</text>')
 
-    skill_y_start = SKILLS_Y + 22
-    ncols = 2
-    nrows = 4
-    skill_col_w = (VB_W - 2 * PAD - (ncols - 1) * COL_GAP) // ncols
-    skill_card_h = 88
+        # Connector to next node (hairline with arrow)
+        if idx < n_skills - 1:
+            conn_x1 = nx + node_w + 4
+            conn_x2 = nx + node_w + connector_w - 4
+            conn_y  = chain_center_y
+            o(f'  <line x1="{conn_x1}" y1="{conn_y}" x2="{conn_x2}" y2="{conn_y}"')
+            o(f'        stroke="{border}" stroke-width="1.5" marker-end="url(#arr)"/>')
 
-    for i, skill in enumerate(skills[:8]):
-        col = i % ncols
-        row = i // ncols
-        sx = PAD + col * (skill_col_w + COL_GAP)
-        sy = skill_y_start + row * (skill_card_h + COL_GAP)
+    o("")
 
-        cmd   = skill["command"]
-        stag  = skill["tagline"]
-        purp  = skill.get("purpose", "")
+    # ---- chain annotation below nodes -------------------------------------
+    # Auto-chain annotation: spec auto-chains to scope, scope to dispatch
+    ann_y = chain_center_y + node_h // 2 + 18
 
-        out(f'  <g transform="translate({sx},{sy})">')
-        out(f'    <rect width="{skill_col_w}" height="{skill_card_h}" rx="12"')
-        out(f'          fill="rgba(167,139,250,0.05)" stroke="{colors["border"]}" stroke-width="1"/>')
-        # Command badge
-        badge_lbl = esc(cmd)
-        out(f'    <rect x="12" y="12" width="{min(len(cmd)*7 + 12, skill_col_w - 24)}" height="22" rx="11"')
-        out(f'          fill="rgba(124,58,237,0.25)" stroke="#7C3AED" stroke-width="1"/>')
-        out(f'    <text x="18" y="27" fill="#DDD6FE" font-size="11" font-weight="700">{badge_lbl}</text>')
-        # Tagline
-        out(f'    <text x="12" y="52" fill="{colors["text_primary"]}" font-size="13" font-weight="700">{esc(stag)}</text>')
-        # Purpose — single truncated line
-        purp_trunc = purp if len(purp) <= 72 else purp[:71] + "…"
-        out(f'    <text x="12" y="70" fill="{colors["text_secondary"]}" font-size="11">{esc(purp_trunc)}</text>')
-        out("  </g>")
+    # Auto-chain arc label: sits below spec→scope→dispatch
+    spec_idx   = CHAIN_SKILLS.index("spec")
+    dispatch_idx = CHAIN_SKILLS.index("dispatch")
 
-    out("")
+    spec_x     = chain_x_start + spec_idx   * (node_w + connector_w) + node_w // 2
+    dispatch_x = chain_x_start + dispatch_idx * (node_w + connector_w) + node_w // 2
+    arc_cx     = (spec_x + dispatch_x) // 2
 
-    # ========================================================================
-    # Region 5: Capabilities list (2 columns)
-    # ========================================================================
-    out("  <!-- ======================== CAPABILITIES ======================== -->")
-    section_label(out, CAPS_Y, "Capabilities", colors)
+    o(f'  <text x="{arc_cx}" y="{ann_y}"')
+    o(f'        fill="{text_secondary}" font-size="10" text-anchor="middle"')
+    o(f'        font-style="italic" opacity="0.7">auto-chains: spec → scope → dispatch</text>')
 
-    cap_y_start = CAPS_Y + 22
-    bullet_col_w = (VB_W - 2 * PAD - COL_GAP) // 2
-    cap_line_h = 20
+    # ---- footer rule -------------------------------------------------------
+    footer_y = H - 36
+    o(f'  <line x1="{PAD}" y1="{footer_y}" x2="{W - PAD}" y2="{footer_y}"')
+    o(f'        stroke="{border}" stroke-width="0.75" opacity="0.5"/>')
 
-    half = (len(capabilities) + 1) // 2
-    for col_idx, col_caps in enumerate([capabilities[:half], capabilities[half:]]):
-        cx = PAD + col_idx * (bullet_col_w + COL_GAP)
-        for row_idx, cap in enumerate(col_caps):
-            cy = cap_y_start + row_idx * cap_line_h
-            # bullet
-            out(f'  <circle cx="{cx + 6}" cy="{cy - 4}" r="3" fill="{colors["text_secondary"]}" opacity="0.5"/>')
-            cap_trunc = cap if len(cap) <= 80 else cap[:79] + "…"
-            out(f'  <text x="{cx + 16}" y="{cy}"')
-            out(f'        fill="{colors["text_secondary"]}" font-size="11">{esc(cap_trunc)}</text>')
+    # Footer left: repo URL
+    o(f'  <text x="{PAD}" y="{footer_y + 18}"')
+    o(f'        fill="#475569" font-size="11">github.com/Mohammed-Abdelhady/hyperflow</text>')
 
-    out("")
+    # Footer right: "multi-agent orchestration for Claude Code"
+    o(f'  <text x="{W - PAD}" y="{footer_y + 18}" text-anchor="end"')
+    o(f'        fill="#475569" font-size="11">multi-agent orchestration for Claude Code</text>')
 
-    # ========================================================================
-    # Region 6: Multi-tool detection shim table
-    # ========================================================================
-    out("  <!-- ======================== DETECTION SHIMS ======================== -->")
-    section_label(out, SHIM_Y, "Multi-Tool Auto-Detection", colors)
-
-    shim_y_start = SHIM_Y + 22
-    shim_col_w = (VB_W - 2 * PAD - COL_GAP) // 2
-    shim_row_h = 16
-
-    # Header row
-    out(f'  <text x="{PAD}" y="{shim_y_start}"')
-    out(f'        fill="{colors["text_secondary"]}" font-size="10" font-weight="700" letter-spacing="0.8">TOOL</text>')
-    out(f'  <text x="{PAD + shim_col_w + COL_GAP}" y="{shim_y_start}"')
-    out(f'        fill="{colors["text_secondary"]}" font-size="10" font-weight="700" letter-spacing="0.8">SHIM FILE WRITTEN</text>')
-
-    for i, shim in enumerate(shims):
-        ry = shim_y_start + (i + 1) * shim_row_h + 2
-        tool_trunc = shim["tool"][:55] if len(shim["tool"]) > 55 else shim["tool"]
-        file_trunc = shim["file"][:60] if len(shim["file"]) > 60 else shim["file"]
-        out(f'  <text x="{PAD}" y="{ry}" fill="{colors["text_primary"]}" font-size="11">{esc(tool_trunc)}</text>')
-        out(f'  <text x="{PAD + shim_col_w + COL_GAP}" y="{ry}"')
-        out(f'        fill="#5EEAD4" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">{esc(file_trunc)}</text>')
-
-    out("")
-
-    # ========================================================================
-    # Region 7: Memory tiers horizontal bar
-    # ========================================================================
-    out("  <!-- ======================== MEMORY TIERS ======================== -->")
-    section_label(out, MEM_Y, "Memory Tiers", colors)
-
-    tier_y = MEM_Y + 22
-    usable_w_tiers = VB_W - 2 * PAD
-    tier_w = (usable_w_tiers - (len(mem_tiers) - 1) * COL_GAP) // len(mem_tiers)
-    tier_h = 42
-
-    tier_colors = [colors["memory"], colors["text_secondary"], colors["security"]]
-    tier_fills  = ["rgba(245,158,11,0.12)", "rgba(148,163,184,0.08)", "rgba(239,68,68,0.08)"]
-    tier_strokes = [colors["memory"], colors["border"], colors["security"]]
-
-    for i, tier in enumerate(mem_tiers):
-        tx = PAD + i * (tier_w + COL_GAP)
-        ty = tier_y
-        out(f'  <rect x="{tx}" y="{ty}" width="{tier_w}" height="{tier_h}" rx="10"')
-        out(f'        fill="{tier_fills[i % 3]}" stroke="{tier_strokes[i % 3]}" stroke-width="1"/>')
-        out(f'  <text x="{tx + tier_w // 2}" y="{ty + 17}" text-anchor="middle"')
-        out(f'        fill="{tier_colors[i % 3]}" font-size="13" font-weight="700">{esc(tier["name"].upper())}</text>')
-        meta = f'{esc(tier["age"])} · {esc(tier["load"])}'
-        out(f'  <text x="{tx + tier_w // 2}" y="{ty + 33}" text-anchor="middle"')
-        out(f'        fill="{colors["text_secondary"]}" font-size="11">{meta}</text>')
-
-    out("")
-
-    # ========================================================================
-    # Footer
-    # ========================================================================
-    out("  <!-- ======================== FOOTER ======================== -->")
-    out(f'  <text x="{PAD}" y="{FOOTER_Y + 20}"')
-    out(f'        fill="#475569" font-size="11" font-weight="500">')
-    out(f'    github.com/Mohammed-Abdelhady/hyperflow · v{esc(version)}</text>')
-    out("")
-
-    out("</svg>")
+    o("")
+    o("</svg>")
 
     return "\n".join(parts)
-
-
-# ---------------------------------------------------------------------------
-# Helper: section label
-# ---------------------------------------------------------------------------
-
-def section_label(out_fn, y: int, label: str, colors: dict) -> None:
-    """Render a small all-caps section heading with a rule."""
-    out_fn(f'  <text x="{PAD}" y="{y + 14}" fill="{colors["text_secondary"]}"')
-    out_fn(f'        font-size="10" font-weight="700" letter-spacing="1.6">{esc(label.upper())}</text>')
-    out_fn(f'  <line x1="{PAD}" y1="{y + 18}" x2="{VB_W - PAD}" y2="{y + 18}"')
-    out_fn(f'        stroke="{colors["border"]}" stroke-width="1" opacity="0.5"/>')
 
 
 # ---------------------------------------------------------------------------
@@ -407,7 +289,9 @@ def main() -> None:
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(svg, encoding="utf-8")
-    print(f"wrote {out_path} ({len(svg):,} bytes)", file=__import__("sys").stderr)
+
+    import sys
+    print(f"wrote {out_path} ({len(svg):,} bytes)", file=sys.stderr)
 
 
 if __name__ == "__main__":
