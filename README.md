@@ -100,30 +100,43 @@ Auto vs manual controls **only** confirmation pauses. Clarification questions fi
 
 Every chain-starter begins with a **triage call** that classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }`. That classification picks the flow profile, the spec depth, and which persona blocks are stitched into each worker prompt.
 
+Each **phase** (Spec / Scope / Dispatch / Audit / Deploy / Trace) decomposes into named **sub-phases** (`Step 2a`, `Step 2b`, `Step 2c`, ...) per [DOCTRINE §12.2](skills/hyperflow/DOCTRINE.md). Sub-phases fan out parallel Workers across independent angles of the same concern, then each sub-phase ends with its own Sonnet Reviewer. The per-batch Sonnet Reviewer and the final-integration Opus Reviewer still run on top, at higher granularity.
+
 ```text
 You: /hyperflow:spec "Build user auth with login page, middleware, and password reset"
          │
 [Triage] ─ types: [api, db, security, frontend, ui]
            complexity: complex  flow: deep  ambiguity: 0.55
          │
-[Spec] ─ standard depth (2-3 questions) → design approved
+[Spec] ─ Step 2 Research decomposes into 3 sub-phases:
+         │   ├── Step 2a — Surface mapping     (Searcher ×2  · Sonnet Reviewer)
+         │   ├── Step 2b — Semantic indexing   (Searcher ×2  · Sonnet Reviewer)
+         │   └── Step 2c — Convention scan     (Searcher ×1  · Sonnet Reviewer)
+         │ Step 3 Multi-dim analysis decomposes into 3a/3b/3c → 3d Analyst synthesis
+         │ Smart questions (floor 2) → design approved
          │
-[Scope] ─ Searchers map auth surface → post-research clarify (if needed)
-         │ Operational pre-elections: commit=per-task · branch=new · push=ask
-         │ Decompose → .hyperflow/tasks/auth.md
+[Scope] ─ Step 2 Research mirrors spec's 2a/2b/2c (canonical worked example)
+         │ Step 3 Decompose → 3a batch graph · 3b sizing · 3c acceptance criteria
+         │ Operational pre-elections (one batched ask): commit · branch · push
+         │ Step 4 Write task file (sub-phases by document section) → .hyperflow/tasks/auth.md
          │
-[Dispatch — deep flow] ─ Parallel workers with stitched personas:
+[Dispatch — deep flow] ─ Step 2 For each batch decomposes into 4 sub-phases:
+         │   ├── Step 2a — Pre-dispatch       (Composer ×N  · Sonnet Reviewer)
+         │   ├── Step 2b — Worker fan-out     (Worker ×N    · Sonnet Reviewer)
+         │   ├── Step 2c — Per-batch gate     (Reviewer Opus · Sonnet aggregator)
+         │   └── Step 2d — Learnings + commit (Writer ×1    · Sonnet Reviewer)
          │
-         ├── Worker 1  [security + api]   — Auth middleware
-         ├── Worker 2  [db + security]    — User schema + migration
-         └── Worker 3  [frontend + ui]    — Login + reset pages
-                       │
-[Per-batch reviewer] ─ Reviews each output (thinking-tier · batched)
+         │ Batch 1 workers (in parallel under 2b):
+         │   ├── Worker 1  [security + api]   — Auth middleware
+         │   ├── Worker 2  [db + security]    — User schema + migration
+         │   └── Worker 3  [frontend + ui]    — Login + reset pages
          │
-[Final integration review] ─ Cross-file coherence (conditional)
+[Final integration review] ─ Step 3 atomic-exempt Opus over cumulative diff (conditional)
          │
        Done. End-of-chain gates: audit? deploy?
 ```
+
+**Sub-phase floor.** Every non-trivial Step has either 0 sub-phases (declared atomic-exempt with reason — single `AskUserQuestion`, single mechanical decision, or single Worker → Reviewer with no parallel angles) OR ≥ 2 sub-phases. Never exactly 1. Cross-skill references like `dispatch Step 2` resolve to the sub-phase aggregate, so existing references don't break.
 
 ---
 
