@@ -1,7 +1,7 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>Multi-agent orchestration for Claude Code &amp; OpenCode.</strong><br/>
+  <strong>Multi-agent orchestration for Claude Code, OpenCode &amp; Antigravity.</strong><br/>
   Thinking models think. Worker models execute. Every step dispatches a Worker → Reviewer pair.
 </p>
 
@@ -17,7 +17,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Claude%20marketplace-published-22C55E?style=flat-square" alt="Published on the official Claude plugin marketplace" />
   &nbsp;
-  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20OpenCode-2EA39F?style=flat-square" alt="works with Claude Code and OpenCode" />
+  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20OpenCode%20%7C%20Antigravity-2EA39F?style=flat-square" alt="works with Claude Code, OpenCode, and Antigravity" />
 </p>
 
 <p align="center">
@@ -90,7 +90,7 @@ Auto vs manual controls **only** confirmation pauses. Clarification questions fi
 - **Predictable failure handling** — an explicit retry → escalate → abort policy for every worker error, malformed output, and quality-gate failure, with real-time `[retry n/3 · role · error-class]` status lines so you see the recovery budget burn ([failure-recovery.md](skills/hyperflow/failure-recovery.md)).
 - **Lower cost** — expensive thinking models orchestrate and review; cheap worker models write the code.
 - **Faster execution** — independent sub-tasks run in parallel; three files with no shared state means three workers, simultaneously.
-- **Multi-tool** — one config, auto-detected across Claude Code and OpenCode.
+- **Multi-tool** — one config, auto-detected across Claude Code, OpenCode, and Antigravity.
 - **Project memory that compounds** — conventions, gotchas, and decisions persist in `.hyperflow/memory/` — local, version-controllable, never mixed across repos. Audits feed recurring findings into `anti-patterns.md`; specs record structural answers in `project-decisions.md` so the same question isn't asked twice. User-invoked `/hyperflow:cache compact` keeps memory files lean.
 
 **Latency:** parallel sibling drafts (P1) + batched same-level reviews (P2) + triage-driven step skipping (P4) + lean worker prompts (P5) cut a median spec run from ~16 sequential round-trips to ~4–6. Pass `--thorough` to disable speed patterns for high-risk runs. Pattern catalogue: [`skills/spec/references/latency-patterns.md`](skills/spec/references/latency-patterns.md).
@@ -185,7 +185,7 @@ Hyperflow ships **13 specialized skills**. **Auto-routing is on by default** —
 
 ## Quick start
 
-> **Supported environment: Claude Code CLI (terminal) and OpenCode CLI.** Hyperflow does NOT run inside Claude Code Desktop (the GUI app) — Desktop does not load terminal-installed plugins. If you see `/hyperflow:spec isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop; open a terminal in the same project and run `claude` there instead. See [Where it runs](#where-it-runs) below.
+> **Supported environment: Claude Code CLI (terminal), OpenCode CLI, and Antigravity.** Hyperflow does NOT run inside Claude Code Desktop (the GUI app) — Desktop does not load terminal-installed plugins. If you see `/hyperflow:spec isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop; open a terminal in the same project and run `claude` there instead. See [Where it runs](#where-it-runs) below.
 
 ### Claude Code (terminal) — direct from GitHub (recommended today)
 
@@ -230,6 +230,7 @@ The installer auto-detects your tool, symlinks the skill, and walks you through 
 |---|---|---|
 | **Claude Code CLI** (terminal `claude` command) | yes (primary target) | Loads the plugin from `~/.claude/plugins/cache/`; slash commands + auto-routing + skills all active |
 | **OpenCode CLI** (terminal `opencode` command) | yes | Same plugin loader convention |
+| **Antigravity** (Google's agentic IDE) | yes | Same plugin loader convention |
 | **Claude Code Desktop** (Mac/Windows app) | **no — platform limitation** | Desktop does not load terminal-installed plugins. `/hyperflow:*` returns "isn't a recognized command here. Some commands only work in the Claude Code terminal." Auto-routing and intent detection are also inert because the DOCTRINE/skills aren't loaded. Open a terminal in the same project and run `claude` there to use hyperflow |
 | **claude.ai web app** | no | Same reason — no plugin loader; this repo's skills are terminal-CLI artefacts |
 | **IDE extensions** (VS Code, JetBrains) | depends | If the extension shells out to the `claude` CLI under the hood, plugins work; if it talks directly to the API without the CLI, they don't. Check the extension's docs |
@@ -418,6 +419,7 @@ Personas compose by priority. `security` is stitched first so its constraints fr
 |----------|---------------|--------------|
 | Claude Code | Opus 4.7 | Sonnet 4.6 |
 | OpenCode | Claude Opus 4.7 | Sonnet 4.6 |
+| Antigravity | Gemini 3 Pro | Gemini 3.5 Flash |
 
 Provider is auto-detected at session start. Override any model in `~/.hyperflow/config.json` or switch mid-session with `hyperflow: thinking <model>`. See [Provider Setup](docs/providers.md).
 

@@ -34,6 +34,10 @@ Location: `~/.hyperflow/config.json` (global, all projects).
         "reviewer": "opus-4-6",
         "searcher": "haiku-4-5"
       }
+    },
+    "antigravity": {
+      "thinking": "gemini-3-pro",
+      "worker": "gemini-3.5-flash"
     }
   }
 }
@@ -49,7 +53,8 @@ Detection runs at session start. First match wins:
 | 2 | `activeProvider` in config.json | Config value |
 | 3 | `CLAUDE_CODE_*` env vars present | `claude-code` |
 | 4 | `OPENCODE_*` env vars or `opencode` in PATH | `opencode` |
-| 5 | None matched | Use `defaults` directly |
+| 5 | `ANTIGRAVITY_*` env vars or `antigravity` in PATH | `antigravity` |
+| 6 | None matched | Use `defaults` directly |
 
 ## Model Resolution
 
@@ -94,6 +99,7 @@ When presenting the model picker during install:
 
 1. **Claude Code:** Read `~/.claude/settings.json` to detect current model. Supplement hardcoded list.
 2. **OpenCode:** Run `opencode models list --json` (2s timeout). Merge with hardcoded list.
+3. **Antigravity:** Read `~/.antigravity/settings.json`. Merge with hardcoded list.
 
 Dynamic models supplement the hardcoded list (don't replace). Fall back to hardcoded if fetch fails.
 
