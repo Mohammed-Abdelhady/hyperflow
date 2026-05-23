@@ -1,6 +1,8 @@
 # Orchestration
 
-How a single user request becomes a coordinated multi-agent run, end to end.
+How a single user request becomes a coordinated multi-agent run — the chain, triage, per-phase agent dispatch, parallelism accounting, and failure handling.
+
+---
 
 ## The chain
 
@@ -10,13 +12,17 @@ project setup       specify           decompose         execute              out
 (once per repo)     the design        into batches      with reviews         (gated)               (gated)
 ```
 
-The first three are **chain-starters** — invoking any of them auto-advances forward through the rest of the chain. The last two are **standalone** — never auto-invoked, only ever fired by an explicit user `Yes` to a gate question.
+The first three are **chain-starters** — invoking any of them auto-advances forward through the rest. The last two are **standalone** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question.
 
-Two other skills sit outside the chain:
+Two skills sit outside the chain:
 
-- **`trace`** — root-cause analysis (5-whys + hypothesis testing) for bugs and test failures
-- **`status`** — read-only one-screen view of project state + live in-flight progress
-- **`cache`** — CRUD on persistent project memory
+| Skill | Purpose |
+|---|---|
+| `trace` | Root-cause analysis — 5-whys + hypothesis testing for bugs and test failures |
+| `status` | Read-only one-screen view of project state and live in-flight progress |
+| `cache` | CRUD on persistent project memory |
+
+---
 
 ## Layer 0.5 — triage
 
@@ -38,12 +44,14 @@ That JSON drives every downstream decision:
 
 | Triage field | What it picks |
 |---|---|
-| `flow` | The flow profile for `dispatch` — `fast` / `standard` / `deep` / `research` / `creative` / `scientific` (see `flow-profiles.md`) |
-| `ambiguity` | The spec depth — light (2 questions) / standard (3 questions + alternatives) / deep (4–5 questions + section-by-section approval). Floor: 2 questions, always. |
+| `flow` | Flow profile for `dispatch` — `fast` / `standard` / `deep` / `research` / `creative` / `scientific` (see `flow-profiles.md`) |
+| `ambiguity` | Spec depth — light (2 questions) / standard (3 questions + alternatives) / deep (4–5 questions + section-by-section approval). Floor: 2 questions, always. |
 | `personas[]` | Which persona blocks are stitched into each worker's prompt — composed in priority order: security first, creative last |
 | `complexity` + `scope` | Number of parallel workers per batch; review level cap (L1–L5) for the per-batch reviewer |
 
-## Spec → scope → dispatch (the chain in detail)
+---
+
+## Spec → scope → dispatch
 
 ### Spec
 
@@ -53,8 +61,8 @@ Then:
 
 1. **Classifier** — triage JSON (see above)
 2. **Searcher** (worker) + **Reviewer** (thinking-tier) — context exploration
-3. **Analyst** (thinking-tier) — 6-dimension brief (intent, technical fit, scope, constraints, risks, alternatives)
-4. **`AskUserQuestion`** ×N — design questions, floor 2, scaled by ambiguity. Every option list marks a `(Recommended)` choice.
+3. **Analyst** (thinking-tier) — 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives
+4. **`AskUserQuestion`** ×N — design questions, floor 2, scaled by ambiguity; every option list marks a `(Recommended)` choice
 5. **Writer** + **Reviewer** — requirement synthesis
 6. **Writer** + **Reviewer** — 2–3 alternative approaches with trade-offs
 7. **Writer** + **Reviewer** per design section — 5 sections, each approved by the user
@@ -65,7 +73,7 @@ Every step that produces output dispatches at least one Agent (DOCTRINE rule 12)
 
 ### Scope
 
-1. **Chain-mode check** (skipped if invoked by `spec` with the arg already set)
+1. Chain-mode check (skipped if invoked by `spec` with the arg already set)
 2. **Searcher × 2** (parallel) + **Reviewer** — research: affected files, related tests, conventions
 3. **Planner** (thinking-tier) — produces the batch graph
 4. **Writer** + **Reviewer** — emits `.hyperflow/tasks/<slug>.md` with the expanded `## Status` block that `dispatch` will keep updating and `status` will read
@@ -77,13 +85,13 @@ Every step that produces output dispatches at least one Agent (DOCTRINE rule 12)
 The workhorse. Per batch:
 
 1. Print the batch header — `Batch N — parallel:K` or `serial:K`
-2. Dispatch all K sub-tasks of the batch **in a single message** with K parallel `Agent` tool calls. The runtime executes them concurrently. (Across separate messages = serial — see Parallelism auditability below.)
+2. Dispatch all K sub-tasks of the batch **in a single message** with K parallel `Agent` tool calls. The runtime executes them concurrently. (Calls across separate messages run serial — see Parallelism below.)
 3. As each worker returns:
    - **Reviewer** (thinking-tier) — reviews at L1–L<n> based on flow profile
-   - On `PASS` → commit this sub-task immediately, then update the task file's `## Status` block (tick checkbox `[ ]` → `[x]`, increment `done/total`, add tokens, refresh wall-clock + ETA)
+   - On `PASS` → commit this sub-task immediately, then update the task file's `## Status` block (tick `[ ]` → `[x]`, increment `done/total`, add tokens, refresh wall-clock + ETA)
    - On `NEEDS_FIX` → re-dispatch worker with the fix list (max 3 retries)
    - On `SECURITY_VIOLATION` → halt the chain immediately
-4. After the batch: synthesize learnings, run **Layer 5 quality gates** (lint / typecheck / tests). If a gate fixes something, it lands as a small extra commit on top — never amends per-sub-task commits.
+4. After the batch: synthesize learnings, run **Layer 5 quality gates** (lint / typecheck / tests). If a gate fixes something, it lands as a small extra commit — never amends per-sub-task commits.
 
 After all batches complete:
 
@@ -94,42 +102,53 @@ After all batches complete:
 
 Both gates respect DOCTRINE rule 8 (structural gates always fire). The orchestrator never auto-invokes audit or deploy.
 
+---
+
 ## After dispatch
 
 ### Audit (gated)
 
-If the user said `Yes` to the audit prompt — or invoked `/hyperflow:audit` directly — the skill:
+If the user said `Yes` to the audit prompt — or invoked `/hyperflow:audit` directly:
 
-1. Resolves scope (provided target, or `git diff HEAD` + `--staged`)
+1. Resolve scope (provided target, or `git diff HEAD` + `--staged`)
 2. **Searcher** + **Reviewer** — context coverage
 3. **Reviewer** at L1–L<n> — structured `[Critical] / [Important] / [Suggestions] / [Praise]` findings
 4. **Writer** + **Reviewer** — appends durable patterns to `.hyperflow/memory/learnings.md`
-5. Prints the review block
-6. **Fix gate** — *"Audit found N issues — apply fixes?"* with options:
-   - `Fix all` (Critical + Important + Suggestions)
-   - `Critical + Important`
-   - `Critical only`
-   - `No, leave as-is`
+5. Print the review block
+6. **Fix gate** — *"Audit found N issues — apply fixes?"*
+
+| Option | What runs |
+|---|---|
+| Fix all | Critical + Important + Suggestions |
+| Critical + Important | — |
+| Critical only | — |
+| No, leave as-is | Chain ends |
 
 On any `Fix …` choice, audit builds a spec file at `.hyperflow/specs/audit-<timestamp>.md` from the chosen findings and invokes `Skill` with `skill: scope, args: "chain-mode=auto spec=<path>"` — the chain runs again to fix what the audit caught.
 
 ### Deploy (gated)
 
-If the user said `Yes` to the deploy prompt — or invoked `/hyperflow:deploy` directly — the skill runs gates in order, halting on first failure:
+If the user said `Yes` to the deploy prompt — or invoked `/hyperflow:deploy` directly — gates run in order, halting on first failure:
 
-1. Survey state (`git status`, `git log origin..HEAD`)
-2. **Gate A** — Lint (auto-fix once on failure)
-3. **Gate B** — Typecheck (no auto-fix)
-4. **Gate C** — Build
-5. **Gate D** — Full test suite (not just affected)
-6. **Reviewer** (thinking-tier) — security sweep over staged + recent changes
-7. **Commit** — uncommitted worker-introduced changes go in (asks before including pre-existing user changes)
-8. **Release** — runs `scripts/release.sh` if present
-9. **`AskUserQuestion`** — *"Push to origin/<branch>?"* (Yes/No, recommended toggles with gate state; never force-pushes to main)
+| Gate | What it checks | Auto-fix? |
+|---|---|---|
+| A — Lint | Code style and lint rules | Yes — once |
+| B — Typecheck | Type correctness | No |
+| C — Build | Production build | No |
+| D — Tests | Full test suite (not just affected) | No |
+| Security sweep | Staged + recent changes (thinking-tier Reviewer) | No |
 
-## Parallelism — provable from the numbers, not the labels
+Then:
 
-Parallel dispatch in Claude Code is a *prompt-discipline* property — multiple `Agent` calls in a single message run concurrently; the same calls across separate messages run serial. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
+6. **Commit** — uncommitted worker-introduced changes go in (asks before including pre-existing user changes)
+7. **Release** — runs `scripts/release.sh` if present
+8. **`AskUserQuestion`** — *"Push to origin/<branch>?"* (Yes/No, recommended toggles with gate state; never force-pushes to main)
+
+---
+
+## Parallelism — provable from the numbers
+
+Parallel dispatch in Claude Code is a prompt-discipline property — multiple `Agent` calls in a single message run concurrently; the same calls across separate messages run serial. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
 
 To make parallelism auditable from the output alone, every batch prints a footer:
 
@@ -158,9 +177,19 @@ Total                          14 agents  243.1k tokens
 ────────────────────────────────────────────────────────────
 ```
 
-`ratio = wall-clock / cumulative`. Thresholds: `≤ 0.5` parallel · `0.5 – 0.8` mixed · `≥ 0.8` serial. If a batch is labelled `parallel:N` but the ratio lands ≥ 0.8, that's a DOCTRINE rule 2 violation — the calls went out across separate messages instead of one.
+`ratio = wall-clock / cumulative`. Thresholds:
 
-## Live progress with `/hyperflow:status`
+| Ratio | Classification |
+|---|---|
+| ≤ 0.5 | Parallel |
+| 0.5 – 0.8 | Mixed |
+| ≥ 0.8 | Serial |
+
+If a batch is labelled `parallel:N` but the ratio lands ≥ 0.8, that is a DOCTRINE rule 2 violation — the calls went out across separate messages instead of one.
+
+---
+
+## Live progress
 
 While a dispatch chain is in flight (or after it completes, while the task file still exists), `/hyperflow:status` shows:
 
@@ -183,32 +212,40 @@ Task:         implement-auth
 ─────────────────────────────────────────────────────────────
 ```
 
-The data comes from the task file's `## Status` block that `dispatch` keeps updated after every sub-task PASS — no process watcher, no IPC, just markdown. ETA is `avg_per_subtask × pending` (×1.1 if the next batch is sequential); shows `(computing)` while <3 sub-tasks are done.
+The data comes from the task file's `## Status` block that `dispatch` keeps updated after every sub-task PASS — no process watcher, no IPC, just markdown. ETA is `avg_per_subtask × pending` (×1.1 if the next batch is sequential); shows `(computing)` while fewer than 3 sub-tasks are done.
+
+---
 
 ## Commit cadence — one per sub-task
 
 Every approved sub-task produces its own conventional commit:
 
 ```
-worker writes → **Reviewer** PASS → git add <only-this-task's-files> → commit → next sub-task
+worker writes → Reviewer PASS → git add <only-this-task's-files> → commit → next sub-task
 ```
 
-A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-ups land as small extra commits on top; memory writes become a separate `chore(memory):` at wrap-up. Surgical history, bisectable, surgical reverts.
+A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-ups land as small extra commits on top; memory writes become a separate `chore(memory):` at wrap-up. Surgical history — bisectable, surgically revertible.
+
+---
 
 ## Handling failures
 
-When a worker returns:
+| Signal | Behavior |
+|---|---|
+| `NEEDS_FIX` | Same worker re-dispatched with the reviewer's fix list — max 3 retries before escalating to a thinking-tier worker |
+| `BLOCKED:` | Worker hit a security blocklist entry (`.env`, `*.pem`, `~/.ssh/*`, etc.); chain halts, surfaces the blocked resource, lets the user decide |
+| `ESCALATE: <reason>` | Task complexity exceeded the chosen flow profile; orchestrator upgrades the profile per `escalation.md` (fast → standard → deep), re-plans with completed work preserved as context, and continues. If the escalation crosses the risk threshold, `AskUserQuestion` fires first for explicit consent. |
+| `SECURITY_VIOLATION:` | A reviewer caught a hard security issue; chain halts immediately, no auto-continue |
 
-- **`NEEDS_FIX`** — same worker is re-dispatched with the reviewer's fix list (max 3 retries before escalating to a thinking-tier worker)
-- **`BLOCKED:`** — worker hit a security blocklist entry (`.env`, `*.pem`, `~/.ssh/*`, etc.); the chain halts, surfaces the blocked resource, lets the user decide
-- **`ESCALATE: <reason>`** — task complexity exceeded the chosen flow profile; the orchestrator upgrades the profile per `escalation.md` (fast → standard → deep), re-plans with completed work preserved as context, and continues. If the escalation crosses the risk threshold, `AskUserQuestion` fires first for explicit consent.
-- **`SECURITY_VIOLATION:`** — a reviewer caught a hard security issue; chain halts immediately, no auto-continue
+---
 
 ## References
 
-- `skills/hyperflow/DOCTRINE.md` — the full rule set (Layers 0–9, 12 numbered rules, red flags)
-- `skills/hyperflow/flow-profiles.md` — the 6 flow profiles + escalation paths
-- `skills/hyperflow/personas-A.md`, `personas-B.md` — all 15 persona definitions
-- `skills/hyperflow/review-levels.md` — L1–L5 checklist
-- `skills/hyperflow/git-workflow.md` — per-sub-task commit cadence + audit/deploy gate spec
-- `skills/hyperflow/output-style.md` — visual language (no decorative icons; em-dash separators; bold for thinking-tier; wall-clock / cumulative / ratio formatting)
+| File | Contents |
+|---|---|
+| `skills/hyperflow/DOCTRINE.md` | Full rule set — Layers 0–9, 12 numbered rules, red flags |
+| `skills/hyperflow/flow-profiles.md` | The 6 flow profiles and escalation paths |
+| `skills/hyperflow/personas-A.md`, `personas-B.md` | All 15 persona definitions |
+| `skills/hyperflow/review-levels.md` | L1–L5 checklist |
+| `skills/hyperflow/git-workflow.md` | Per-sub-task commit cadence and audit/deploy gate spec |
+| `skills/hyperflow/output-style.md` | Visual language — no decorative icons; em-dash separators; bold for thinking-tier; wall-clock / cumulative / ratio formatting |

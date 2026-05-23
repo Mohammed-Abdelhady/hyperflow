@@ -1,10 +1,34 @@
 # Installation
 
-> **Hyperflow runs in the Claude Code CLI (terminal) and OpenCode CLI only.** It does NOT run inside Claude Code Desktop (the Mac/Windows GUI app) or claude.ai web. If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop or web — open a terminal and run `claude` in the same project. See [Where it runs](#where-it-runs) for the full matrix and workarounds.
+Getting Hyperflow installed into your terminal CLI — covering quick install, platform compatibility, model configuration, security, and verification.
 
-## Quick Install
+---
 
-### Claude Code (terminal)
+## Where it runs
+
+Hyperflow loads as a plugin into terminal CLI environments. It does not run inside GUI apps or the web.
+
+| Environment | Works? | Notes |
+|---|---|---|
+| Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, and skills are all active |
+| OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention |
+| Antigravity IDE | yes | Loads skills from `~/.gemini/antigravity/skills/`; symlink hyperflow's `skills/*` into that directory |
+| Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
+| claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
+| IDE extensions (VS Code, JetBrains, Cursor) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
+
+If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
+
+**Workarounds for Desktop / web users:**
+
+1. Switch to the CLI for hyperflow work. Open Terminal in the same project directory and run `claude`. Project memory at `.hyperflow/memory/` is shared between CLI and any surface that reads from disk.
+2. Hand-write the autonomy rules, commit-cadence rule, and no-AI-attribution rule into the project's root `CLAUDE.md` — those rules are loaded by Desktop, web, and API. This is a lossy fallback: no auto-routing, no skill dispatch, no per-step Worker → Reviewer pattern — but useful for the simpler behavioral constraints.
+
+---
+
+## Quick install
+
+### Claude Code
 
 ```bash
 claude plugin marketplace add Mohammed-Abdelhady/hyperflow
@@ -17,35 +41,20 @@ Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customi
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-### OpenCode (terminal)
+### OpenCode
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-## Where it runs
+### What the installer does
 
-| Environment | Hyperflow works? | Notes |
-|---|---|---|
-| **Claude Code CLI** (terminal `claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands + auto-routing + skills all active |
-| **OpenCode CLI** (terminal `opencode` binary) | yes | Same plugin loader convention |
-| **Claude Code Desktop** (Mac/Windows GUI app) | **no — platform limitation** | Desktop does not load terminal-installed plugins. `/hyperflow:*` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.` Auto-routing + intent detection are inert because the DOCTRINE/skills aren't loaded |
-| **claude.ai web app** | no | Same reason — no plugin loader; hyperflow's skills are terminal-CLI artefacts |
-| **IDE extensions** (VS Code, JetBrains, Cursor, Antigravity) | depends | If the extension shells out to the `claude` CLI under the hood, plugins work; if it talks directly to the API without the CLI, they don't. Check the extension docs |
-
-**Workarounds if you primarily use Desktop / web:**
-
-1. **Switch to the CLI for hyperflow work.** Open Terminal / iTerm in the same project directory and run `claude`. Your project memory at `.hyperflow/memory/` is shared between CLI and any other surface that reads from disk.
-2. **Use `CLAUDE.md` for portable rules.** Hyperflow's full doctrine is too rich to fit a `CLAUDE.md`, but you can hand-write the autonomy rules + commit-cadence rule + no-AI-attribution rule into the project's root `CLAUDE.md` — those rules ARE loaded by Desktop / web / API. This is a lossy fallback (no auto-routing, no skill dispatch, no per-step Worker→Reviewer pattern) but useful for the simpler behavioral constraints.
-
-The install script walks you through the full setup:
-
-1. **Clones** the repo to `~/.hyperflow/repo/`
-2. **Detects** which providers are installed (OpenCode)
-3. **Symlinks** the skill into each provider's skills directory
-4. **Asks** you to pick thinking and worker models from your provider's catalog
-5. **Asks** whether to enable the security layer
-6. **Writes** your choices to `~/.hyperflow/config.json`
+1. Clones the repo to `~/.hyperflow/repo/`
+2. Detects which providers are installed (OpenCode, Antigravity)
+3. Symlinks the skill into each provider's skills directory
+4. Asks you to pick thinking and worker models from your provider's catalog
+5. Asks whether to enable the security layer
+6. Writes your choices to `~/.hyperflow/config.json`
 
 ```
 Hyperflow Installer
@@ -90,20 +99,6 @@ Hyperflow installed
   Security:  enabled
 ```
 
-**Update all providers at once:**
-
-```bash
-git -C ~/.hyperflow/repo pull
-```
-
-Because it's a symlink, every provider picks up changes immediately — no re-copying.
-
-**Re-run setup** to change models or security:
-
-```bash
-~/.hyperflow/repo/install.sh
-```
-
 <details>
 <summary>Manual installation (any provider)</summary>
 
@@ -118,9 +113,11 @@ ln -s ~/.hyperflow/repo/skills/hyperflow ~/.opencode/skills/hyperflow
 ```
 </details>
 
-## Recommended Settings
+---
 
-Add these to your `~/.claude/settings.json` for the full auto-pilot experience:
+## Recommended settings
+
+Add these to `~/.claude/settings.json` for the full auto-pilot experience:
 
 ```json
 {
@@ -148,13 +145,15 @@ Add these to your `~/.claude/settings.json` for the full auto-pilot experience:
 
 This eliminates all permission prompts and pins the main session to Opus 4.7.
 
-## Model Configuration
+---
 
-The install script creates `~/.hyperflow/config.json` with your model choices. You can also edit it manually or re-run the installer at any time.
+## Model configuration
 
-### Manual Configuration
+The install script creates `~/.hyperflow/config.json` with your model choices. Edit it manually or re-run the installer at any time.
 
-Create or edit `~/.hyperflow/config.json` directly:
+See [model-routing.md](model-routing.md) for how Hyperflow decides which model handles which role, and [providers.md](providers.md) for the full model list per platform.
+
+### Manual configuration
 
 ```json
 {
@@ -165,9 +164,9 @@ Create or edit `~/.hyperflow/config.json` directly:
 }
 ```
 
-### Multi-Provider Setup
+### Multi-provider setup
 
-If you use both platforms, configure each one:
+If you use more than one platform, configure each one:
 
 ```json
 {
@@ -193,9 +192,9 @@ If you use both platforms, configure each one:
 
 Set `activeProvider` to force a specific platform, or leave `null` for auto-detection.
 
-### Role Overrides
+### Role overrides
 
-Override the model for specific roles within a provider:
+Override the model for a specific role within a provider:
 
 ```json
 {
@@ -216,7 +215,7 @@ Override the model for specific roles within a provider:
 }
 ```
 
-### Environment Variable Overrides
+### Environment variable overrides
 
 Override models per-session without editing config:
 
@@ -229,7 +228,7 @@ HYPERFLOW_THINKING_MODEL=opus-4-7 claude
 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
 ```
 
-### Runtime Switching
+### Runtime switching
 
 Change models during a conversation:
 
@@ -240,13 +239,13 @@ hyperflow: models                # Show current config
 hyperflow: reset models          # Revert to config defaults
 ```
 
-See [providers.md](providers.md) for the full list of available models per platform.
+---
 
-## Security Configuration
+## Security configuration
 
-Hyperflow's security layer is enabled by default. It prevents workers from accessing sensitive files, running dangerous commands, and hardcoding secrets.
+The security layer is enabled by default. It prevents workers from accessing sensitive files, running dangerous commands, and hardcoding secrets.
 
-### Customize Blocked Patterns
+### Customize blocked patterns
 
 Add project-specific patterns or remove defaults that don't apply:
 
@@ -274,16 +273,16 @@ Add project-specific patterns or remove defaults that don't apply:
 }
 ```
 
-The `add`/`remove` pattern extends the built-in defaults — you can't accidentally remove critical rules by setting your own list.
+The `add`/`remove` pattern extends the built-in defaults — you cannot accidentally remove critical rules by setting your own list.
 
-### Disable Security
+### Disable security
 
-Per-session (conversation command):
+Per-session:
 ```
 hyperflow: security off
 ```
 
-Permanently (config):
+Permanently:
 ```json
 {
   "security": {
@@ -292,9 +291,11 @@ Permanently (config):
 }
 ```
 
-## Optional: CLAUDE.md Reinforcement
+---
 
-Add this to your global `~/.claude/CLAUDE.md` as a fallback:
+## Optional: CLAUDE.md reinforcement
+
+Add this to `~/.claude/CLAUDE.md` as a portable fallback for surfaces that don't load plugins:
 
 ```markdown
 ## Auto-Pilot Mode (Always On)
@@ -305,9 +306,29 @@ Add this to your global `~/.claude/CLAUDE.md` as a fallback:
 - Maximum parallel execution at all times
 ```
 
-## Verify Installation
+---
 
-Start a new Claude Code session. You should see `hyperflow` in the available skills list. It triggers automatically on every task.
+## Verify installation
+
+Start a new Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on every task.
+
+---
+
+## Updates
+
+```bash
+git -C ~/.hyperflow/repo pull
+```
+
+Because it installs via symlink, every provider picks up changes immediately — no re-copying.
+
+To change models or security settings, re-run the installer:
+
+```bash
+~/.hyperflow/repo/install.sh
+```
+
+---
 
 ## Uninstall
 
@@ -317,7 +338,7 @@ Start a new Claude Code session. You should see `hyperflow` in the available ski
 claude plugin uninstall hyperflow@hyperflow-marketplace
 ```
 
-### OpenCode
+### OpenCode / Antigravity
 
 ```bash
 ~/.hyperflow/repo/install.sh --uninstall
