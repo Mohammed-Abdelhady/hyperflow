@@ -244,7 +244,31 @@ SECURITY VIOLATION — hardcoded API key in src/config.ts:42
   Pipeline halted, review required
 ```
 
-## 12. Blocked Resources
+## 12. Retry / Escalate / Abort Status Lines
+
+Every failure-recovery transition (retry, escalation, abort) emits exactly one status line. Brackets delimit the status code — acceptable here because these are structured machine-readable tags, not decorative prefixes (same rationale as `── Hyperflow Usage ──`). No icons inside.
+
+**Formats:**
+
+```
+[retry 1/3 · <role> · <error-class>]
+[escalate → thinking-tier · <role> · <error-class>]
+[abort · <role> · <error-class> · chain budget N/3]
+```
+
+**Examples:**
+
+```
+[retry 1/3 · Implementer · tool-error]
+[escalate → thinking-tier · Writer · malformed-output]
+[abort · Reviewer · timeout · chain budget 2/3]
+```
+
+`<error-class>` values: `tool-error` · `malformed-output` · `needs-revision` · `gate-failure` · `timeout` · `oom` · `5xx`
+
+One line per event. Fires at the moment of transition. Full policy in [failure-recovery.md § Observability](failure-recovery.md).
+
+## 13. Blocked Resources
 
 ```
 BLOCKED — worker attempted to read .env

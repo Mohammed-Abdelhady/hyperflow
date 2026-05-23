@@ -75,6 +75,35 @@ If the Reviewer errors after the Worker succeeded, the Worker's output is preser
 - **NOT a replacement for the SECURITY_VIOLATION halt** (DOCTRINE rule 9). Security violations bypass this entire policy and halt the chain immediately with no retries.
 - **NOT specific to any skill.** Every skill that dispatches Workers or runs Quality Gates follows this policy.
 
+## Observability
+
+Every retry, escalation, and abort emits exactly one status line in this format — no exceptions. The failure-recovery budget burn is visible in real time, not only at chain end.
+
+**Status-line formats:**
+
+```
+[retry 1/3 · <role> · <error-class>]
+[escalate → thinking-tier · <role> · <error-class>]
+[abort · <role> · <error-class> · chain budget N/3]
+```
+
+Where:
+- `<role>` — the agent role: Implementer, Searcher, Writer, Reviewer, Classifier, etc.
+- `<error-class>` — short error category: `tool-error`, `malformed-output`, `needs-revision`, `gate-failure`, `timeout`, `oom`, `5xx`
+- The retry counter (`1/3`, `2/3`) shows position against the per-attempt limit for that failure class
+- The abort line's `chain budget N/3` shows how many of the 3 cumulative chain aborts have been consumed
+
+**Examples:**
+
+```
+[retry 1/3 · Implementer · tool-error]
+[retry 2/3 · Writer · malformed-output]
+[escalate → thinking-tier · Searcher · timeout]
+[abort · Reviewer · 5xx · chain budget 2/3]
+```
+
+The status line fires at the moment of the transition — before the retry or escalation is dispatched, and at the moment of abort. One line per event; no batching of events into a single line.
+
 ## Summary table
 
 | Failure class | Attempt 1 | Attempt 2 | Attempt 3 |
