@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <strong>Now live on the official Claude plugin marketplace.</strong> Open the <code>/plugin</code> menu in Claude Code and search <code>hyperflow</code> to install in one click.
+  <strong>Accepted to the official Claude plugin marketplace.</strong> Listed at <a href="https://claude.ai/settings/plugins/submissions">claude.ai/settings/plugins/submissions</a> (Published). CLI install via <code>hyperflow@claude-plugins-official</code> goes live once the entry lands in <a href="https://github.com/anthropics/claude-plugins-official/blob/main/.claude-plugin/marketplace.json"><code>anthropics/claude-plugins-official</code></a> — until then, install directly from this repo (instructions below).
 </p>
 
 <p align="center">
@@ -173,29 +173,28 @@ Hyperflow ships **13 specialized skills**. **Auto-routing is on by default** —
 
 > **Supported environment: Claude Code CLI (terminal) and OpenCode CLI.** Hyperflow does NOT run inside Claude Code Desktop (the GUI app) — Desktop does not load terminal-installed plugins. If you see `/hyperflow:spec isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop; open a terminal in the same project and run `claude` there instead. See [Where it runs](#where-it-runs) below.
 
-### Claude Code (terminal) — official marketplace (recommended)
-
-Hyperflow is on the official Anthropic plugin marketplace. Inside Claude Code:
-
-```text
-/plugin            # opens the marketplace UI
-                   # search "hyperflow" → Install
-```
-
-Prefer the CLI? Either of these works once the official marketplace is registered (it ships pre-registered with Claude Code v2.1+):
-
-```bash
-claude plugin install hyperflow@claude-plugins-official
-```
-
-### Claude Code (terminal) — direct from GitHub
-
-If your Claude Code version doesn't have the official marketplace pre-registered, or you want to track `main` directly:
+### Claude Code (terminal) — direct from GitHub (recommended today)
 
 ```bash
 claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
+
+This path is verified working — tags ship the moment `scripts/release.sh` pushes, so you get every fix the day it lands.
+
+### Claude Code (terminal) — official marketplace (once ingested)
+
+Hyperflow's submission is published in the Anthropic portal but the entry has not yet propagated to the public `anthropics/claude-plugins-official` marketplace.json. Once it does, either of these will work (the official marketplace ships pre-registered with Claude Code v2.1+):
+
+```text
+/plugin            # opens the marketplace UI → search "hyperflow" → Install
+```
+
+```bash
+claude plugin install hyperflow@claude-plugins-official
+```
+
+Check status: `claude plugin marketplace update claude-plugins-official && claude plugin install hyperflow@claude-plugins-official` — when this stops returning `not found`, the official path is live.
 
 Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
 
@@ -462,19 +461,21 @@ When a memory file crosses the configured line-count threshold (default 300), th
 
 ## Update + uninstall
 
-If you installed from the official marketplace:
-
-```bash
-claude plugin update hyperflow@claude-plugins-official      # update to latest
-claude plugin uninstall hyperflow@claude-plugins-official   # remove plugin (memory at .hyperflow/memory/ is kept)
-```
-
 If you installed from the GitHub marketplace directly:
 
 ```bash
 claude plugin update hyperflow@hyperflow-marketplace      # update to latest
 claude plugin uninstall hyperflow@hyperflow-marketplace   # remove plugin (memory at .hyperflow/memory/ is kept)
 ```
+
+After ingestion completes, the official-marketplace variants will be:
+
+```bash
+claude plugin update hyperflow@claude-plugins-official
+claude plugin uninstall hyperflow@claude-plugins-official
+```
+
+In either case, restart Claude Code (or `/restart`) after an update to load the new version.
 
 See [CHANGELOG](CHANGELOG.md) for what's new in each release.
 
