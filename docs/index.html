@@ -790,74 +790,75 @@
 
       <div class="chain-diagram" role="img" aria-label="Chain flow: scaffold (standalone), then spec (thinking-tier) auto-chains to scope (thinking-tier) auto-chains to dispatch (worker-tier), with audit and deploy gates at the end">
         <div class="chain-svg-wrap">
-          <svg viewBox="0 0 860 160" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
-            <!-- Background surface -->
-            <rect width="860" height="160" rx="8" fill="#111827" />
-            <rect x="0.5" y="0.5" width="859" height="159" rx="7.5" stroke="#334155" />
+          <svg viewBox="0 0 920 212" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Inter,sans-serif">
+            <!-- ─────────── Thinking-tier bracket (spans the whole chain) ─────────── -->
+            <text x="460" y="22" font-size="10.5" letter-spacing="0.18em" fill="#7C3AED" text-anchor="middle">THINKING TIER</text>
+            <text x="460" y="36" font-size="9" fill="#64748B" text-anchor="middle">orchestrates every phase · reviews every output</text>
+            <!-- bracket: flat line with downward end-ticks, no glow -->
+            <path d="M40 52 V46 H880 V52" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.55" />
+            <line x1="460" y1="46" x2="460" y2="40" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.55" />
 
-            <!-- Node helpers — pill width=110, height=40, rx=4 -->
-            <!-- scaffold (standalone) -->
-            <rect x="28" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#334155" />
-            <text x="83" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#94A3B8" text-anchor="middle">scaffold</text>
-            <text x="83" y="92" font-family="Inter,sans-serif" font-size="9" fill="#475569" text-anchor="middle" letter-spacing="0.04em">STANDALONE</text>
+            <!-- ─────────── Node row ─────────── -->
+            <!-- node: x, w=120, h=52, y=78; centers at x+60 -->
 
-            <!-- arrow 1 -->
-            <line x1="139" y1="80" x2="162" y2="80" stroke="#334155" stroke-width="1" />
-            <polygon points="162,76 168,80 162,84" fill="#334155" />
+            <!-- scaffold · standalone -->
+            <rect x="40" y="78" width="120" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <text x="100" y="106" font-family="JetBrains Mono,monospace" font-size="13" fill="#F1F5F9" text-anchor="middle">scaffold</text>
+            <text x="100" y="121" font-size="8.5" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">STANDALONE</text>
 
-            <!-- spec (thinking) -->
-            <rect x="170" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.6" />
-            <text x="225" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#F8FAFC" text-anchor="middle">spec</text>
-            <text x="225" y="92" font-family="Inter,sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle" letter-spacing="0.04em">THINKING</text>
+            <!-- spec · chain starter (thinking-led) -->
+            <rect x="184" y="78" width="120" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <rect x="184" y="78" width="120" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="244" y="106" font-family="JetBrains Mono,monospace" font-size="13" fill="#F1F5F9" text-anchor="middle">spec</text>
+            <text x="244" y="121" font-size="8.5" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">CHAIN STARTER</text>
 
-            <!-- arrow 2 with label -->
-            <line x1="281" y1="80" x2="304" y2="80" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.5" />
-            <polygon points="304,76 310,80 304,84" fill="#7C3AED" fill-opacity="0.5" />
-            <text x="295" y="73" font-family="Inter,sans-serif" font-size="7.5" fill="#7C3AED" text-anchor="middle" fill-opacity="0.7">auto</text>
+            <!-- scope · chain starter (thinking-led) -->
+            <rect x="328" y="78" width="120" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <rect x="328" y="78" width="120" height="3" rx="1.5" fill="#7C3AED" />
+            <text x="388" y="106" font-family="JetBrains Mono,monospace" font-size="13" fill="#F1F5F9" text-anchor="middle">scope</text>
+            <text x="388" y="121" font-size="8.5" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">CHAIN STARTER</text>
 
-            <!-- scope (thinking) -->
-            <rect x="312" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.6" />
-            <text x="367" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#F8FAFC" text-anchor="middle">scope</text>
-            <text x="367" y="92" font-family="Inter,sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle" letter-spacing="0.04em">THINKING</text>
+            <!-- dispatch · endpoint (worker-led) -->
+            <rect x="472" y="78" width="120" height="52" rx="6" fill="#131C28" stroke="#2A3645" />
+            <rect x="472" y="78" width="120" height="3" rx="1.5" fill="#14B8A6" />
+            <text x="532" y="106" font-family="JetBrains Mono,monospace" font-size="13" fill="#F1F5F9" text-anchor="middle">dispatch</text>
+            <text x="532" y="121" font-size="8.5" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">ENDPOINT</text>
 
-            <!-- arrow 3 with label -->
-            <line x1="423" y1="80" x2="446" y2="80" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.5" />
-            <polygon points="446,76 452,80 446,84" fill="#7C3AED" fill-opacity="0.5" />
-            <text x="437" y="73" font-family="Inter,sans-serif" font-size="7.5" fill="#7C3AED" text-anchor="middle" fill-opacity="0.7">auto</text>
+            <!-- audit · gate -->
+            <rect x="616" y="78" width="120" height="52" rx="6" fill="#0F1620" stroke="#2A3645" stroke-dasharray="4 3" />
+            <text x="676" y="106" font-family="JetBrains Mono,monospace" font-size="13" fill="#CBD5E1" text-anchor="middle">audit</text>
+            <text x="676" y="121" font-size="8.5" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">GATE</text>
 
-            <!-- dispatch (worker) -->
-            <rect x="454" y="60" width="110" height="40" rx="4" fill="#16202E" stroke="#14B8A6" stroke-opacity="0.6" />
-            <text x="509" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#F8FAFC" text-anchor="middle">dispatch</text>
-            <text x="509" y="92" font-family="Inter,sans-serif" font-size="9" fill="#14B8A6" text-anchor="middle" letter-spacing="0.04em">WORKER</text>
+            <!-- deploy · gate -->
+            <rect x="760" y="78" width="120" height="52" rx="6" fill="#0F1620" stroke="#2A3645" stroke-dasharray="4 3" />
+            <text x="820" y="106" font-family="JetBrains Mono,monospace" font-size="13" fill="#CBD5E1" text-anchor="middle">deploy</text>
+            <text x="820" y="121" font-size="8.5" letter-spacing="0.1em" fill="#64748B" text-anchor="middle">GATE</text>
 
-            <!-- arrow 4 -->
-            <line x1="565" y1="80" x2="588" y2="80" stroke="#334155" stroke-width="1" />
-            <polygon points="588,76 594,80 588,84" fill="#334155" />
+            <!-- ─────────── Connectors ─────────── -->
+            <!-- scaffold → spec -->
+            <line x1="160" y1="104" x2="178" y2="104" stroke="#3A475A" stroke-width="1.25" />
+            <polygon points="178,100.5 184,104 178,107.5" fill="#3A475A" />
+            <!-- spec → scope (auto) -->
+            <line x1="304" y1="104" x2="322" y2="104" stroke="#3A475A" stroke-width="1.25" />
+            <polygon points="322,100.5 328,104 322,107.5" fill="#3A475A" />
+            <text x="316" y="97" font-size="7.5" fill="#7C3AED" text-anchor="middle">auto</text>
+            <!-- scope → dispatch (auto) -->
+            <line x1="448" y1="104" x2="466" y2="104" stroke="#3A475A" stroke-width="1.25" />
+            <polygon points="466,100.5 472,104 466,107.5" fill="#3A475A" />
+            <text x="460" y="97" font-size="7.5" fill="#7C3AED" text-anchor="middle">auto</text>
+            <!-- dispatch → audit -->
+            <line x1="592" y1="104" x2="610" y2="104" stroke="#3A475A" stroke-width="1.25" />
+            <polygon points="610,100.5 616,104 610,107.5" fill="#3A475A" />
+            <!-- audit → deploy -->
+            <line x1="736" y1="104" x2="754" y2="104" stroke="#3A475A" stroke-width="1.25" />
+            <polygon points="754,100.5 760,104 754,107.5" fill="#3A475A" />
 
-            <!-- audit (thinking gate) -->
-            <rect x="596" y="60" width="90" height="40" rx="4" fill="#16202E" stroke="#7C3AED" stroke-opacity="0.4" stroke-dasharray="4 2" />
-            <text x="641" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#94A3B8" text-anchor="middle">audit</text>
-            <text x="641" y="92" font-family="Inter,sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle" letter-spacing="0.04em" fill-opacity="0.6">GATE</text>
-
-            <!-- arrow 5 -->
-            <line x1="687" y1="80" x2="706" y2="80" stroke="#334155" stroke-width="1" />
-            <polygon points="706,76 712,80 706,84" fill="#334155" />
-
-            <!-- deploy (gate) -->
-            <rect x="714" y="60" width="90" height="40" rx="4" fill="#16202E" stroke="#14B8A6" stroke-opacity="0.4" stroke-dasharray="4 2" />
-            <text x="759" y="76" font-family="JetBrains Mono,monospace" font-size="11" fill="#94A3B8" text-anchor="middle">deploy</text>
-            <text x="759" y="92" font-family="Inter,sans-serif" font-size="9" fill="#14B8A6" text-anchor="middle" letter-spacing="0.04em" fill-opacity="0.6">GATE</text>
-
-            <!-- Legend -->
-            <rect x="28" y="126" width="8" height="8" rx="1" fill="#7C3AED" fill-opacity="0.6" />
-            <text x="42" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">Thinking tier</text>
-            <rect x="126" y="126" width="8" height="8" rx="1" fill="#14B8A6" fill-opacity="0.6" />
-            <text x="140" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">Worker tier</text>
-            <rect x="224" y="126" width="8" height="8" rx="1" fill="#334155" />
-            <text x="238" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">Standalone</text>
-            <!-- dashed box legend -->
-            <rect x="316" y="126" width="8" height="8" rx="1" fill="none" stroke="#94A3B8" stroke-dasharray="3 1.5" />
-            <text x="330" y="134" font-family="Inter,sans-serif" font-size="9.5" fill="#94A3B8">End-of-chain gate</text>
+            <!-- ─────────── Worker-tier bracket (spans the chain) ─────────── -->
+            <!-- bracket: flat line with upward end-ticks, no glow -->
+            <path d="M40 156 V162 H880 V156" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.55" />
+            <line x1="460" y1="162" x2="460" y2="168" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.55" />
+            <text x="460" y="184" font-size="10.5" letter-spacing="0.18em" fill="#14B8A6" text-anchor="middle">WORKER TIER</text>
+            <text x="460" y="198" font-size="9" fill="#64748B" text-anchor="middle">executes in parallel — persona-stitched per task</text>
           </svg>
         </div>
       </div>
