@@ -11,13 +11,17 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v4.3.0-blueviolet?style=flat-square" alt="version v4.3.0" />
+  <img src="https://img.shields.io/badge/version-v4.16.2-blueviolet?style=flat-square" alt="version v4.16.2" />
   &nbsp;
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
   &nbsp;
-  <img src="https://img.shields.io/badge/Claude%20Code-plugin-7C3AED?style=flat-square" alt="Claude Code plugin" />
+  <img src="https://img.shields.io/badge/Claude%20marketplace-published-22C55E?style=flat-square" alt="Published on the official Claude plugin marketplace" />
   &nbsp;
   <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20OpenCode-2EA39F?style=flat-square" alt="works with Claude Code and OpenCode" />
+</p>
+
+<p align="center">
+  <strong>Now live on the official Claude plugin marketplace.</strong> Open the <code>/plugin</code> menu in Claude Code and search <code>hyperflow</code> to install in one click.
 </p>
 
 <p align="center">
@@ -169,7 +173,24 @@ Hyperflow ships **13 specialized skills**. **Auto-routing is on by default** —
 
 > **Supported environment: Claude Code CLI (terminal) and OpenCode CLI.** Hyperflow does NOT run inside Claude Code Desktop (the GUI app) — Desktop does not load terminal-installed plugins. If you see `/hyperflow:spec isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you're in Desktop; open a terminal in the same project and run `claude` there instead. See [Where it runs](#where-it-runs) below.
 
-### Claude Code (terminal)
+### Claude Code (terminal) — official marketplace (recommended)
+
+Hyperflow is on the official Anthropic plugin marketplace. Inside Claude Code:
+
+```text
+/plugin            # opens the marketplace UI
+                   # search "hyperflow" → Install
+```
+
+Prefer the CLI? Either of these works once the official marketplace is registered (it ships pre-registered with Claude Code v2.1+):
+
+```bash
+claude plugin install hyperflow@claude-plugins-official
+```
+
+### Claude Code (terminal) — direct from GitHub
+
+If your Claude Code version doesn't have the official marketplace pre-registered, or you want to track `main` directly:
 
 ```bash
 claude plugin marketplace add Mohammed-Abdelhady/hyperflow
@@ -440,6 +461,15 @@ When a memory file crosses the configured line-count threshold (default 300), th
 ---
 
 ## Update + uninstall
+
+If you installed from the official marketplace:
+
+```bash
+claude plugin update hyperflow@claude-plugins-official      # update to latest
+claude plugin uninstall hyperflow@claude-plugins-official   # remove plugin (memory at .hyperflow/memory/ is kept)
+```
+
+If you installed from the GitHub marketplace directly:
 
 ```bash
 claude plugin update hyperflow@hyperflow-marketplace      # update to latest
