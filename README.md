@@ -84,13 +84,14 @@ Auto vs manual controls **only** confirmation pauses. Clarification questions fi
 
 ## Why
 
-- **Triages every task** — a cheap classification call picks the flow profile before any worker fires; a 5-line edit gets `fast` (≤30k tokens), not a 300k deep run.
+- **Triages every task — then validates the triage** — a cheap classification call picks the flow profile before any worker fires; a 5-line edit gets `fast` (≤30k tokens), not a 300k deep run. A Triage Reviewer then validates the classification before any downstream step consumes it, so a bad triage can't silently poison the whole chain ([DOCTRINE rule 15](skills/hyperflow/DOCTRINE.md)).
 - **15 composable personas** — `security + api + db + frontend` are stitched per task so every worker gets expert-level guidance for the exact work in front of it.
-- **Higher quality** — every worker output gets a two-pass thinking-model review; batch-2 workers benefit from batch-1 discoveries via automatic learning injection.
+- **Higher quality** — every worker output gets a two-pass thinking-model review; batch-2 workers benefit from batch-1 discoveries via automatic learning injection. Every non-trivial phase decomposes into named sub-phases, each with its own Sonnet reviewer ([DOCTRINE §12.2](skills/hyperflow/DOCTRINE.md)).
+- **Predictable failure handling** — an explicit retry → escalate → abort policy for every worker error, malformed output, and quality-gate failure, with real-time `[retry n/3 · role · error-class]` status lines so you see the recovery budget burn ([failure-recovery.md](skills/hyperflow/failure-recovery.md)).
 - **Lower cost** — expensive thinking models orchestrate and review; cheap worker models write the code.
 - **Faster execution** — independent sub-tasks run in parallel; three files with no shared state means three workers, simultaneously.
 - **Multi-tool** — one config, auto-detected across Claude Code and OpenCode.
-- **Project memory** — conventions, gotchas, decisions persist in `.hyperflow/memory/` — local, version-controllable, never mixed across repos. User-invoked `/hyperflow:cache compact` keeps memory files lean.
+- **Project memory that compounds** — conventions, gotchas, and decisions persist in `.hyperflow/memory/` — local, version-controllable, never mixed across repos. Audits feed recurring findings into `anti-patterns.md`; specs record structural answers in `project-decisions.md` so the same question isn't asked twice. User-invoked `/hyperflow:cache compact` keeps memory files lean.
 
 **Latency:** parallel sibling drafts (P1) + batched same-level reviews (P2) + triage-driven step skipping (P4) + lean worker prompts (P5) cut a median spec run from ~16 sequential round-trips to ~4–6. Pass `--thorough` to disable speed patterns for high-risk runs. Pattern catalogue: [`skills/spec/references/latency-patterns.md`](skills/spec/references/latency-patterns.md).
 
@@ -167,7 +168,7 @@ Hyperflow ships **13 specialized skills**. **Auto-routing is on by default** —
 | **Flush** | `/hyperflow:flush` | Manually flush a deferred-commit queue from a prior or crashed chain that ran with `commit=per-task-deferred`. Fast-forwards `hyperflow/staging-<id>` onto user's branch, deletes staging, clears `.hyperflow/commits-queue/`. Useful for crash recovery; `/hyperflow:dispatch` Step 4 wrap-up runs the same flush automatically |
 | **Bridge** | `/hyperflow:bridge` | `generate` / `refresh` / `remove` / `mode` / `status` — embed the portable doctrine subset into the project's `CLAUDE.md` so autonomy + intent-routing + commit cadence + tier split + file-first rules apply in Claude Code Desktop, claude.ai web, and IDE extensions (surfaces that don't load CLI plugins). **Auto-bridge is ON by default** — the CLI session-start hook silently maintains the `CLAUDE.md` doctrine block on every session (including on plugin updates). Disable with `/hyperflow:bridge mode off`. Commit `CLAUDE.md` to share with teammates on mixed surfaces |
 
-**Reuse architecture:** every skill is 80–200 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`. No content duplication.
+**Reuse architecture:** every skill is 80–200 lines and references shared protocol files in `skills/hyperflow/` — `DOCTRINE.md` (autonomy + model routing + iron rules), `worker-prompt.md`, `reviewer-prompt.md`, `review-levels.md`, `memory-system.md`, `security.md`, `git-workflow.md`, `output-style.md`, `failure-recovery.md` (retry/escalate/abort policy). No content duplication.
 
 **Typical chains:**
 
@@ -453,7 +454,14 @@ Memory lives at `.hyperflow/memory/` — project-scoped, plain markdown, version
 | Warm | any topic tag | Injected when a task matches the tag |
 | Cold | none | Available on demand; never auto-injected |
 
-When a memory file crosses the configured line-count threshold (default 300), the session-start hook prints a one-line non-blocking advisory. Run `/hyperflow:cache compact` to summarise entries older than 7 days into stub lines and archive the full text to `.hyperflow/memory/archive/YYYY-MM.md`. Full protocol: [`skills/cache/references/compaction.md`](skills/cache/references/compaction.md) · memory system: [`skills/hyperflow/session-memory.md`](skills/hyperflow/session-memory.md).
+Two memory files are written automatically by the chain:
+
+| File | Tier | Written by | Read by |
+|------|------|-----------|---------|
+| `anti-patterns.md` | hot | `/hyperflow:audit` Step 4d (max 3 curated `[Critical]`/`[Important]` findings per run, deduped, self-compacting) | every worker, every session |
+| `project-decisions.md` | spec-tier | `/hyperflow:spec` Step 4 (structural answers from Smart Questions) | `/hyperflow:spec` Step 4 (skips re-asking answered questions) |
+
+When a memory file crosses the configured line-count threshold (default 300), the session-start hook prints a one-line non-blocking advisory. Run `/hyperflow:cache compact` to summarise entries older than 7 days into stub lines and archive the full text to `.hyperflow/memory/archive/YYYY-MM.md`. `anti-patterns.md` self-compacts on the same convention (merge duplicates → archive stale singletons → cap at 50, never evicting `[Critical]`-sourced patterns). Full protocol: [`skills/cache/references/compaction.md`](skills/cache/references/compaction.md) · memory system: [`skills/hyperflow/memory-system.md`](skills/hyperflow/memory-system.md).
 
 ---
 
@@ -522,6 +530,7 @@ hyperflow/
 │   │   ├── task-tracking.md      #   Task-file format and lifecycle
 │   │   ├── git-workflow.md       #   Branching + commit cadence options + no AI attribution
 │   │   ├── security.md           #   Worker containment
+│   │   ├── failure-recovery.md   #   Retry/escalate/abort policy (rule 14) + observability
 │   │   └── project-analysis.md   #   .hyperflow/ cache spec
 │   ├── scaffold/SKILL.md         # /hyperflow:scaffold — project setup (standalone)
 │   ├── spec/SKILL.md             # /hyperflow:spec     — specify the design (chain-starter)
