@@ -127,6 +127,13 @@
       "tagline": "Memory CRUD",
       "purpose": "Show, search, add, edit, prune, archive, clear, stats, migrate, off, compact",
       "chain": "standalone"
+    },
+    {
+      "name": "amplify",
+      "command": "/hyperflow:amplify",
+      "tagline": "Enhance a prompt",
+      "purpose": "Rewrite a rough prompt into the single strongest version — domain-aware persona standards + project rules, scored against an 8-dimension rubric, then a handoff into the chain",
+      "chain": "standalone"
     }
   ],
   "providers": [
