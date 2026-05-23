@@ -6,17 +6,63 @@ Advanced project-scoped memory replacing the global `~/.claude/hyperflow-memory.
 
 ```
 .hyperflow/memory/
-├── index.md          # Quick-scan index: all entry titles, tags, dates, tier
-├── learnings.md      # Discovered patterns and gotchas
-├── decisions.md      # Architectural decisions + reasoning
-├── pitfalls.md       # Failed approaches + why they failed
-├── patterns.md       # Reusable code and architecture patterns
-├── conventions.md    # Project-specific conventions learned mid-session
+├── index.md              # Quick-scan index: all entry titles, tags, dates, tier
+├── learnings.md          # Discovered patterns and gotchas
+├── decisions.md          # Architectural decisions + reasoning
+├── pitfalls.md           # Failed approaches + why they failed
+├── patterns.md           # Reusable code and architecture patterns
+├── conventions.md        # Project-specific conventions learned mid-session
+├── anti-patterns.md      # Recurring problem patterns curated from audit findings (hot-tier)
+├── project-decisions.md  # Structural project-level answers memoized across spec runs (spec-tier)
 └── archive/
-    └── YYYY-MM.md    # Compressed cold entries, one file per month
+    └── YYYY-MM.md        # Compressed cold entries, one file per month
 ```
 
 `.hyperflow/` is gitignored. Memory is local to each developer's machine.
+
+## Registered Memory Files
+
+Files in `.hyperflow/memory/` that have a defined producer, consumer, and injection tier. All others follow the standard hot/warm/cold tiering based on entry age.
+
+| File | Tier | Producer | Consumer | Notes |
+|------|------|----------|----------|-------|
+| `learnings.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | General patterns and gotchas |
+| `decisions.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Architectural decisions |
+| `pitfalls.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Failed approaches |
+| `patterns.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Reusable code patterns |
+| `conventions.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Project-specific conventions |
+| `anti-patterns.md` | **hot — always injected** | audit Step 4d (anti-pattern curation Writer) | all workers, all sessions | See below |
+| `project-decisions.md` | **spec-tier — spec pre-flight only** | spec Step 4 (post-collection append) | spec Step 4 (pre-flight read) | See below |
+
+### anti-patterns.md (hot-tier)
+
+Always loaded at session start alongside other hot-tier entries. Every worker prompt receives it regardless of task tags.
+
+- **Producer:** audit Step 4d dispatches a Writer that reads the existing file, extracts up to 3 new entries from `[Critical]` and `[Important]` findings, and appends or increments frequency counters. The Step 4d Sonnet Reviewer validates dedup and frequency accuracy before the write lands.
+- **Consumer:** injected into every worker prompt under `## Known anti-patterns` at session start. Workers use it to avoid repeating mistakes that prior audits flagged.
+- **Format:**
+  ```markdown
+  ## <Pattern category> (e.g. Error handling, Naming, Dead code)
+  - <description> — first observed in audit <YYYY-MM-DD>, frequency: <count>, last seen: <YYYY-MM-DD>
+    Recommendation: <what workers should do to avoid this>
+  ```
+- **Compaction:** subject to the standard compaction protocol (default 300-line threshold, configurable via `memory.compactionThreshold`). Run `/hyperflow:cache compact` when the session-start advisory fires. See the Compaction Protocol section below.
+- **Dedup rule:** before appending, the Writer checks for a semantic match in the existing file. On match: increment `frequency` and update `last seen`. Never create a duplicate entry.
+- **New-entry cap:** max 3 new entries per audit run. When more than 3 eligible findings exist, prioritize multi-file findings over single-file findings.
+
+### project-decisions.md (spec-tier)
+
+Not hot-tier. Only spec Step 4 reads and writes it. Injecting it into every worker prompt would be waste — workers don't make structural project decisions; they implement them.
+
+- **Producer:** spec Step 4 post-collection append — after the user answers the Smart Questions, the orchestrator scans answers for structural decisions (database choice, auth strategy, test framework, framework patterns, project-level defaults) and appends each one inline (no Agent dispatch; trivial per DOCTRINE §12.1).
+- **Consumer:** spec Step 4 pre-flight memoization check — before generating the question list, spec reads this file and skips any question whose answer is already recorded. If a cached answer conflicts with the current task's requirements, the question fires anyway, framed as "project-decisions.md says X — does this task change that?"
+- **Format:**
+  ```markdown
+  ## <Category>
+  - <decision> (recorded <YYYY-MM-DD>, source chain: <task-slug>)
+  ```
+- **Compaction:** same threshold policy as other memory files. Entries are structural and rarely go stale, so compaction is infrequent in practice.
+- **Scope:** only structural, project-wide decisions belong here. Task-specific answers (e.g., "use a modal for this feature") are excluded.
 
 ## Tag Taxonomy
 
@@ -85,9 +131,10 @@ Rules:
 
 1. Read `index.md` — always. It is small by design.
 2. Load all **hot** entries in full (≤ 7 days).
-3. Infer tags from the current task description. Load **warm** entries whose tags overlap.
-4. Skip **cold** entries unless user explicitly requests them (`hyperflow: memory show <tag>`).
-5. Inject loaded entries into the first worker prompt under `## Learnings from prior sessions`.
+3. Load `anti-patterns.md` in full — always, regardless of age or tags. It is permanently hot-tier (see Registered Memory Files above).
+4. Infer tags from the current task description. Load **warm** entries whose tags overlap.
+5. Skip **cold** entries unless user explicitly requests them (`hyperflow: memory show <tag>`).
+6. Inject loaded entries into the first worker prompt under `## Learnings from prior sessions`. Inject `anti-patterns.md` under a separate `## Known anti-patterns` header.
 
 Workers receive only the subset matching their task's inferred tags — never the full dump.
 
