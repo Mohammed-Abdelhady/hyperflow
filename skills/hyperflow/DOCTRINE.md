@@ -473,6 +473,8 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 
     Triage Reviewer cost: ~2k tokens per chain. Catches mis-classifications that would otherwise waste 100k+ tokens on the wrong flow. Net win.
 
+    **P4 skip:** when `triage.complexity == low AND triage.ambiguity < 0.2 AND scope ∈ {0-file, 1-file} AND risk != high`, skip the Triage Reviewer dispatch and consume the original Classifier output. The cost of a mis-classification at this confidence tier is bounded by the small-task token budget; the Reviewer's value evaporates. Print a one-line skip note for observability.
+
 ### Sub-phase × flag interactions (clarification of §12.2)
 
 **`--thorough` × sub-phases.** Sub-phases are SEMANTIC decomposition (named units inside a Step), not execution mode. The default behavior is sub-phases run in parallel (P1) because they typically have no inter-dependency. `--thorough` disables P1 sibling Worker parallelism within a sub-phase — i.e., the ≥ 2 parallel Workers inside a single sub-phase serialize. But the sub-phases THEMSELVES still run in parallel under `--thorough` because they are not a P1 sibling-Worker construct; they are §12.2 structural decomposition. Skill bodies do NOT need to add `--thorough` clauses per sub-phase; the rule is: sub-phase boundaries always parallel, intra-sub-phase Workers serialize under `--thorough`.

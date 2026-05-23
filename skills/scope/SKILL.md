@@ -17,6 +17,10 @@ Decompose, don't build. Read-only with respect to source code. The only writes a
 
 This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Project Memory)** for past-learning surfacing, and **Layer 7 (Task Templates)** for decomposition patterns. It also inherits the triage classification from `/hyperflow:spec` to size each batch correctly.
 
+## Iron Rules
+
+- **Failure recovery (rule 14).** Worker errors, malformed output, NEEDS_REVISION, and Reviewer errors follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Retry → escalate → abort. Chain budget: 3 cumulative aborts.
+
 ## Per-Step Agent Map (DOCTRINE rule 12 + 12.2)
 
 Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivial steps per §12.1 may be performed inline by the orchestrator. Non-trivial Steps decompose into ≥ 2 named sub-phases per DOCTRINE rule 12.2.
@@ -24,7 +28,7 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 | Step | Sub-phase | Worker tier | Thinking tier | Notes |
 |---|---|---|---|---|
 | 0 — Chain mode | — (atomic) | — | — | `AskUserQuestion` only; 12.2.8-exempt |
-| 0.4 — Triage validation | — (atomic) | — | **Reviewer** (Sonnet · triage validation) | Skipped when chained from spec (spec's Triage Reviewer is canonical); 12.2.8-exempt — single Reviewer with no Worker angles |
+| 0.4 — Triage (Classifier + Reviewer) | — (atomic) | Classifier (Sonnet) [if not inherited] | **Triage Reviewer** (Sonnet) [if not inherited + P4 conditions not met] | Skipped entirely when chained from spec (spec's validated triage is canonical); on direct invocation, dispatches its own Classifier then Triage Reviewer; skips Triage Reviewer on P4 conditions; 12.2.8-exempt |
 | 0.5 — Ops choices | — (atomic) | — | — | Single `AskUserQuestion` batch; 12.2.8-exempt |
 | 1 — Route | — (atomic) | — | — | Single mechanical routing decision; 12.2.8-exempt |
 | 2 — Research | 2a + 2b + 2c (P1 parallel) | | | Sub-phase aggregate handed to Step 3 |
@@ -83,28 +87,46 @@ Wait for the user's answer. Do not proceed without it. Save the chosen mode and 
 
 If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
 
-### Step 0.4 — Triage Validation (DOCTRINE rule 15 · atomic-exempt)
+### Step 0.4 — Triage (Classifier + Reviewer) (DOCTRINE rule 15 · atomic-exempt)
 
-Atomic-exempt: single Reviewer with no independent Worker angles — no parallel probe dimension exists for validation.
+Atomic-exempt: no parallel probe dimension exists. Two distinct paths depending on whether scope is chained from spec or invoked directly.
 
-**When chained from `/hyperflow:spec`:** spec's own Triage Reviewer is canonical. Scope inherits the already-validated triage JSON passed via chain args and **skips this step entirely**. Re-running Triage Reviewer on a classification that spec already vetted is redundant and wasteful.
-
-**When invoked directly (not chained from spec):** dispatch one Sonnet Triage Reviewer before operational choices and routing. The Reviewer validates the triage classification produced in Layer 0.5 against:
-
-1. The user's original request — does the classification reflect what they actually asked for?
-2. `.hyperflow/profile.md` — does the classification match the codebase's tech stack, risk level, and known complexity patterns?
+**Path A — chained from `/hyperflow:spec`:** spec already ran its own Classifier and Triage Reviewer and passed the validated triage JSON via chain args. Scope skips this step entirely — re-classifying a triage that spec already vetted is redundant and wasteful. Print:
 
 ```
-**Reviewer** — validating triage classification against request and project profile
+Triage Reviewer skipped — spec's validated triage inherited via chain args.
 ```
 
-Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}:
+Then proceed to Step 0.5.
 
-- **PASS** — consume triage as-is; proceed to Step 0.5.
-- **RECLASSIFY** — Reviewer returns a corrected classification with reasoning. Orchestrator uses the corrected version and prints one line: `Triage reclassified: complexity high → medium · personas added: [security]`. Then proceeds to Step 0.5 with the corrected triage.
-- **ESCALATE** — Reviewer cannot determine the correct classification; the ambiguity surfaces as a clarification question at Step 2.5 (post-research, per DOCTRINE rule 8 post-analysis clarification clause). Proceed to Step 0.5 with the original triage as a provisional fallback — mark it `provisional=true` so Step 3 Planner knows to treat complexity sizing conservatively.
+**Path B — invoked directly (no inherited triage in chain args):** scope dispatches its own Classifier first, then (unless P4 conditions apply) validates it with the Triage Reviewer.
 
-Cost: ~2k tokens. Catches mis-classifications that would otherwise cascade into the wrong flow profile, wrong personas, and a botched batch graph — silently.
+1. Dispatch `Classifier — triaging request` (Sonnet). The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON mirroring spec Step 1's Classifier output. Persist and propagate forward via chain args as `triage=<base64-json>`.
+
+2. **P4 skip (DOCTRINE §13.P4):** if ALL of the following hold — `triage.complexity == low`, `triage.ambiguity < 0.2`, `triage.scope ∈ {0-file, 1-file}`, `triage.risk != high` — skip the Triage Reviewer entirely and consume the Classifier output as-is. Print:
+
+   ```
+   Triage Reviewer skipped (P4: low complexity + low ambiguity + single-file scope). Direct triage consumed.
+   ```
+
+   Then proceed to Step 0.5. The mis-classification cost at this confidence tier is bounded by the small-task token budget and falls below the ~2k token Reviewer cost.
+
+3. If any P4 condition fails, dispatch the Triage Reviewer. The Reviewer validates the inherited triage classification (DOCTRINE Layer 0.5, propagated via chain args) against:
+
+   1. The user's original request — does the classification reflect what they actually asked for?
+   2. `.hyperflow/profile.md` — does the classification match the codebase's tech stack, risk level, and known complexity patterns?
+
+   ```
+   **Triage Reviewer** — validating classification against request and project profile
+   ```
+
+   Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}:
+
+   - **PASS** — consume triage as-is; proceed to Step 0.5.
+   - **RECLASSIFY** — Reviewer returns a corrected classification with reasoning. Orchestrator uses the corrected version and prints one line: `Triage reclassified: complexity high → medium · personas added: [security]`. Then proceeds to Step 0.5 with the corrected triage.
+   - **ESCALATE** — Reviewer cannot determine the correct classification; the ambiguity surfaces as a clarification question at Step 2.5 (post-research, per DOCTRINE rule 8 post-analysis clarification clause). Proceed to Step 0.5 with the original triage as a provisional fallback — mark it `provisional=true` so Step 3 Planner knows to treat complexity sizing conservatively.
+
+Cost (Path B, non-P4): ~2k tokens for Classifier + ~2k for Triage Reviewer. Catches mis-classifications that would otherwise cascade into the wrong flow profile, wrong personas, and a botched batch graph — silently.
 
 ### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
 
