@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.18.0] — 2026-05-23
+
+### Added
+- Add Antigravity runtime provider with Gemini 3 Pro / 3.5 Flash
+
+### Fixed
+- Correct Antigravity config path, models, and install mechanism from real docs
+
+
 ## [4.17.0] — 2026-05-23
 
 ### Added
@@ -693,7 +702,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.17.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.18.0...HEAD
+[4.18.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.17.0...v4.18.0
 [4.17.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.3...v4.17.0
 [4.16.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.2...v4.16.3
 [4.16.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.16.1...v4.16.2
