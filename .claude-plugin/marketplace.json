@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Advanced multi-agent orchestration with persistent cross-session memory, per-step multi-level review, persona stitching, and adaptive flow profiles",
-    "version": "4.19.0"
+    "version": "4.20.0"
   },
   "plugins": [
     {
@@ -16,7 +16,7 @@
         "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
       },
       "description": "Thirteen specialized slash commands turn one Claude session into a structured engineering pipeline. Auto-routing is on by default — say 'audit the diff', 'debug this test', 'brainstorm a notification system', and the orchestrator routes through the right skill without /hyperflow:* prefix. /hyperflow:spec asks the questions a senior engineer would. /hyperflow:scope decomposes into a batched task graph. /hyperflow:dispatch fans out persona-stitched workers under tiered review (Sonnet per-batch, Opus final integration). /hyperflow:bridge embeds the portable doctrine subset into CLAUDE.md so the rules apply in Claude Code Desktop, claude.ai web, and IDE extensions that don't load CLI plugins. /hyperflow:background manages opt-in background agents for latency reduction and observers. Memory compounds across sessions — yesterday's decisions are tomorrow's starting point.",
-      "version": "4.19.0",
+      "version": "4.20.0",
       "author": {
         "name": "Mohammed Abdelhady",
         "url": "https://github.com/Mohammed-Abdelhady"

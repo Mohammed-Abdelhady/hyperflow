@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "4.19.0",
+  "version": "4.20.0",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
   "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
   "layers": [
@@ -132,7 +132,7 @@
       "name": "amplify",
       "command": "/hyperflow:amplify",
       "tagline": "Enhance a prompt",
-      "purpose": "Rewrite a rough prompt into the single strongest version — domain-aware persona standards + project rules, scored against an 8-dimension rubric, then a handoff into the chain",
+      "purpose": "Rewrite a rough prompt into the single strongest version \u2014 domain-aware persona standards + project rules, scored against an 8-dimension rubric, then a handoff into the chain",
       "chain": "standalone"
     }
   ],
