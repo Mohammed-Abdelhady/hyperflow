@@ -23,7 +23,7 @@ No gate skipped, no failure ignored. If any gate fails, halt and report. Never `
 |---|---|---|---|---|
 | 1a | Repo-state scan | Worker A (git status), Worker B (git log) | Sonnet | — |
 | 1b | Tool detection | Worker A (profile.md + lockfiles), Worker B (testing.md + devDeps) | Sonnet | — |
-| 2a | Lint + security + typecheck (parallel) | Worker A (linter/formatter), Worker B (secrets scan), Worker C (tsc) | Sonnet · **Opus** (secrets) | Steps 2 and 3 run in parallel at orchestrator level; 2a halts chain on any failure before 2b |
+| 2a | Lint + typecheck (parallel) | Worker A (linter), Worker B (formatter), Worker C (tsc) | Sonnet | Step 3 (Security Sweep) runs in parallel with Step 2 at orchestrator level; 2a halts chain on any failure before 2b |
 | 2b | Build gate | Worker A (prod build), Worker B (dev build) | Sonnet | Depends on 2a PASS |
 | 2c | Test gate | Worker A (unit), Worker B (integration/E2E) | Sonnet | Parallel (P1); depends on 2b PASS |
 | 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **Opus** | Runs in parallel with Step 2 (pre-build; read-only) |

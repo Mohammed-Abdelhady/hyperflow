@@ -17,6 +17,10 @@ This phase is **thinking, not building**. No code until the user approves the de
 
 This skill drives **Layer 0.5 (Task Triage)** and **Layer 4 (Brainstorming/Spec)** from the doctrine. Multi-level review (L1–L5) runs later during `/hyperflow:dispatch` per the triage's chosen flow profile.
 
+## Iron Rules
+
+- **Failure recovery (rule 14).** Worker errors, malformed output, NEEDS_REVISION verdicts, and Reviewer errors across every dispatched agent (Classifier, Triage Reviewer, Searchers, Writers, Analyst, batched Reviewer) follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Retry → escalate → abort. Chain budget: 3 cumulative aborts.
+
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
 Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivial steps per §12.1 may be performed inline by the orchestrator.
@@ -25,7 +29,7 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 |---|---|---|---|---|
 | 0 — Chain mode | — (atomic) | — | — | `AskUserQuestion` only (exempt) |
 | 0.5 — Operational choices | — (atomic) | — | — | `AskUserQuestion` only (exempt) |
-| 1 — Triage | — (atomic) | — | **Classifier** (Opus) · **Triage Reviewer** (Sonnet) | Atomic per §12.2.8: single Worker → Reviewer pair, no independent angles. Reviewer verdicts: `PASS` / `RECLASSIFY` / `ESCALATE` (DOCTRINE rule 15) |
+| 1 — Triage | — (atomic) | — | **Classifier** (Opus) · **Triage Reviewer** (Sonnet) | Atomic per §12.2.8: single Worker → Reviewer pair, no independent angles. Reviewer verdicts: `PASS` / `RECLASSIFY` / `ESCALATE` (DOCTRINE rule 15). Skips on P4 conditions; see body |
 | 2 — Context Exploration | 2a + 2b (P1 parallel) | Searcher ×2 per sub-phase [P3 concurrent with Step 1] | **Reviewer** (Sonnet) per sub-phase | P3: Steps 1+2 dispatched in same message; no coverage Reviewer at Step level (D4) |
 | | 2a — Codebase surface mapping | Searcher ×2 (glob discovery + dependency graph) | **Reviewer** (Sonnet) | Parallel with 2b |
 | | 2b — Convention and test pattern scan | Searcher ×2 (test pattern probe + lint/config scan) | **Reviewer** (Sonnet) | Parallel with 2a |
@@ -120,6 +124,16 @@ Triage — types: [<types>] · flow: <profile> · ambiguity: <score>
 ```
 
 ##### Triage Reviewer (DOCTRINE rule 15)
+
+**P4 skip (DOCTRINE §13.P4):** before dispatching, check the Classifier's output. If ALL of the following hold — `triage.complexity == low`, `triage.ambiguity < 0.2`, `triage.scope ∈ {0-file, 1-file}`, `triage.risk != high` — skip the Triage Reviewer entirely and consume the Classifier output as-is. Print:
+
+```
+Triage Reviewer skipped (P4: low complexity + low ambiguity + single-file scope). Direct triage consumed.
+```
+
+Then proceed to Step 2. The mis-classification cost at this confidence tier is bounded by the small-task token budget and falls below the ~2k token Reviewer cost.
+
+If any condition fails, dispatch the Triage Reviewer as below.
 
 Immediately after the Classifier returns, dispatch `**Triage Reviewer** — validating classification against request and project profile` (Sonnet). The Reviewer reads:
 - The user's original request (does the classification reflect what they actually asked for?)

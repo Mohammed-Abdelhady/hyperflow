@@ -133,13 +133,13 @@ Dispatch all N sub-task Workers in a **single message** with parallel `Agent` ca
 When all workers have returned, dispatch **one** batched per-batch **Reviewer** (Sonnet by default — `model: "<resolved-worker>"`) covering the entire batch (P2 — batched single-pass review):
 - **Check level-cap homogeneity first.** If every sub-task shares the same review-level cap → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers.
 - **Also fall back to per-sub-task reviewers** when `--thorough` was passed (reviewers escalate to Opus under `--thorough`).
-- **Batched reviewer dispatch:** use [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) with `model: "<resolved-worker>"` (or `"<resolved-thinking>"` under `--thorough`). Print `**Reviewer** (Sonnet) — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. Returns one verdict per sub-task.
+- **Batched reviewer dispatch:** use [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) with `model: "<resolved-worker>"` (or `"<resolved-thinking>"` under `--thorough`). Print `**Reviewer** (Sonnet) — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. Returns one verdict per sub-task.
 - **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** (Sonnet) — reviewing <subtask> (L1–L<n>)`.
 - **Why Sonnet by default:** per-batch reviewers see one batch's diff (typically 2–8 files). L1 (syntax/format) and L2 (spec/naming/edges) are pattern-matching work Sonnet handles at near-Opus quality. The cross-cutting concerns Sonnet might miss (L3+ integration, architectural drift) are exactly what the Opus final integration Reviewer at Step 3 catches over the cumulative diff. Two-tier review covers more ground than two-Opus review at a fraction of the cost.
 
 _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention. The asymmetric paths are intentional.)_
 
-**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate tier → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate tier → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
 
 Parse the per-sub-task verdicts:
 - `SECURITY_VIOLATION` — **halt the chain** immediately. Surface the finding; do not commit anything in the batch.
@@ -153,7 +153,7 @@ After all sub-tasks in the batch have passed review, run **Layer 5 quality gates
 
 Dispatch one Worker (Sonnet) to run the gate commands. Dispatch one **Reviewer** (Sonnet) to judge the gate output. Verdict: `PASS` / `NEEDS_FIX`. On NEEDS_FIX the Worker applies fixes (never amending per-sub-task commits — fixes land as small additional commits) and the gate re-runs. Max 3 gate cycles before escalating.
 
-**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). When the per-batch Reviewer returns NEEDS_REVISION, retry the Worker once with a `## Learnings from review` injection. A second NEEDS_REVISION surfaces the sub-task as partial; the chain continues with the latest output marked partial — no third Worker dispatch.
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When the per-batch Reviewer returns NEEDS_REVISION, retry the Worker once with a `## Learnings from review` injection. A second NEEDS_REVISION surfaces the sub-task as partial; the chain continues with the latest output marked partial — no third Worker dispatch.
 
 #### Step 2d — Learnings + commit (P1 · sequential after 2c PASS)
 
@@ -181,7 +181,7 @@ If ANY of these conditions fails, the final integration review runs.
 
 > Atomic-exempt per §12.2.8 — this is a single Reviewer dispatch (Opus over the cumulative diff) with no parallel angles. No sub-phase decomposition warranted.
 
-**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). If the Opus integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context (no higher tier exists — escalation here means re-dispatching Opus with the error visible). Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). If the Opus integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context (no higher tier exists — escalation here means re-dispatching Opus with the error visible). Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
 
 Dispatch a thinking-tier **Reviewer** (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) over the full changed-file set across every batch (all sub-task commits from Step 2d). Use the same level cap as the batch reviewers (per flow profile).
 
@@ -305,7 +305,7 @@ When `chain-mode=auto`, scope batches three operational pre-elections at its Ste
 
 ## Iron Rules
 
-- **Failure recovery (rule 14).** Worker errors, malformed output, NEEDS_REVISION, and gate failures follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../../hyperflow/failure-recovery.md). Retry → escalate → abort. Chain budget: 3 cumulative aborts.
+- **Failure recovery (rule 14).** Worker errors, malformed output, NEEDS_REVISION, and gate failures follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Retry → escalate → abort. Chain budget: 3 cumulative aborts.
 - Workers never review, never coordinate, never ask the user questions.
 - Every batch produces **one** per-batch Reviewer dispatch (Sonnet · worker tier) — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case. Escalates to Opus under `--thorough`.
 - Plus **one** final integration Reviewer at the end (Step 3 · Opus · thinking tier) **when not skipped per D7**. Always Opus regardless of flags — this is the one Reviewer that sees the cumulative diff across batches.
@@ -390,7 +390,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 - [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
 - [worker-prompt.md](references/worker-prompt.md) — Sonnet implementer/searcher/writer template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template (per-sub-task fallback).
-- [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) — Opus batched reviewer template (P2).
+- [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — Opus batched reviewer template (P2).
 - [latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
 - [review-levels.md](references/review-levels.md) — L1-L5 checklist.
 - [memory-system.md](references/memory-system.md) — wrap-up memory append format.

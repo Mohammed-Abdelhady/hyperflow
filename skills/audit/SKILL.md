@@ -36,7 +36,7 @@ This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. Afte
 | 4 — Findings synthesis | 4a — Critical findings | Writer × 2 (evidence probe + impact analysis) | Sonnet Reviewer | Parallel |
 | 4 — Findings synthesis | 4b — Important findings | Writer × 2 (root-cause probe + fix-path analysis) | Sonnet Reviewer | Parallel |
 | 4 — Findings synthesis | 4c — Suggestions + observations | Writer × 2 (pattern analysis + praise identification) | Sonnet Reviewer | Parallel |
-| 4 — Findings synthesis | 4d — Memory feedback | Writer × 1 (anti-pattern curation) | Sonnet Reviewer (dedup validation) | Atomic Worker→Reviewer; runs after 4a/4b/4c complete |
+| 4 — Findings synthesis | 4d — Memory feedback | Writer × 1 (anti-pattern curation) | Sonnet Reviewer (dedup + compaction validation) | Atomic Worker→Reviewer; runs after 4a/4b/4c complete; with compaction pass when triggered |
 | 5 — Severity reconciliation | — | — | Sonnet Reviewer reconciles severity labels from Step 3 sub-phases | Atomic-exempt per DOCTRINE 12.2.8 — reads existing Step 3 labels; no Workers needed |
 | 6 — Fix gate | — | — | — | `AskUserQuestion` only (exempt — structural gate) |
 
@@ -185,7 +185,24 @@ Dispatch one Writer agent:
 
 - Tag `anti-patterns.md` as `#hot` in the session memory index so workers load it at session start alongside other hot-tier files.
 
-Then dispatch `Sonnet Reviewer — 4d anti-pattern dedup check` to verify: no duplicate entries landed, frequency counters are accurate, only Critical/Important findings were promoted, and the entry count does not exceed 3 new additions. Verdict ∈ {`PASS`, `NEEDS_REVISION`}. On `NEEDS_REVISION`, the Writer re-reads the file and corrects the specific violation (max 1 retry before surfacing inline).
+**Compaction pass (runs after the Writer appends new entries, not before):**
+
+New findings always land first. After the append, the Writer checks whether compaction is needed. Compaction is triggered when ANY of the following is true:
+
+- Total entry count in `anti-patterns.md` exceeds 50.
+- Any entry has `last seen` more than 6 months ago AND `frequency == 1` (stale singleton — never reinforced).
+- File line count meets or exceeds the `memory.compactionThreshold` (default 300, from `~/.hyperflow/config.json`).
+
+When triggered, the Writer runs these actions in order:
+
+1. **Merge duplicates.** Entries in the same category with similar wording are merged into one. Combined `frequency` = sum of the merged entries; `last seen` = most recent of the merged entries. Wording is taken from the higher-frequency entry.
+2. **Archive stale singletons.** Entries where `frequency == 1` AND `last seen` is older than 6 months move to `.hyperflow/memory/archive/anti-patterns-YYYY-MM.md` (month derived from the entry's `last seen` date). This follows the same archive-sidecar convention used by `/hyperflow:cache compact` — see `skills/cache/references/compaction.md`.
+3. **Cap at 50 entries.** If the file still exceeds 50 entries after merge and archive, evict the lowest-frequency entries. Tiebreak: oldest `last seen` is evicted first. Evicted entries are moved to the same archive sidecar.
+4. **Hot-tier is already wired.** `anti-patterns.md` is permanently hot-tier (see `memory-system.md`). The post-compaction file is injected automatically at the next session start. No manual hot-tier refresh is needed.
+
+If compaction was not triggered, the Writer skips this block entirely and proceeds to the Reviewer.
+
+Then dispatch `Sonnet Reviewer — 4d anti-pattern dedup and compaction check` to verify: no duplicate entries landed, frequency counters are accurate, only Critical/Important findings were promoted, the new-entry count does not exceed 3, and — when compaction ran — no critical entries were dropped without archiving and the archive sidecar was written correctly. Verdict ∈ {`PASS`, `NEEDS_REVISION`}. On `NEEDS_REVISION`, the Writer re-reads the file and corrects the specific violation (max 1 retry before surfacing inline).
 
 ### Step 5 — Severity reconciliation (atomic-exempt per DOCTRINE 12.2.8)
 
