@@ -764,41 +764,63 @@
       <!-- Memory tier diagram -->
       <div class="memory-diagram-wrap" role="img" aria-label="Three memory tiers: hot (amber, always injected), warm (tag-matched injection), cold (on demand only). All feed into worker prompt at runtime.">
         <div class="memory-svg-wrap">
-          <svg viewBox="0 0 760 160" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
+          <svg viewBox="0 0 760 214" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
+
+            <!-- injection note -->
+            <text x="458" y="26" font-size="8.5" fill="#6B6456" text-anchor="middle">only tag-matched entries are injected — injection cost stays bounded</text>
+
+            <!-- session start -->
+            <rect x="0" y="44" width="110" height="58" rx="6" fill="#FBFAF4" stroke="#14110C" />
+            <text x="55" y="70" font-family="JetBrains Mono,monospace" font-size="11" fill="#14110C" text-anchor="middle">session</text>
+            <text x="55" y="85" font-size="7.5" fill="#6B6456" text-anchor="middle">reads memory/</text>
+            <line x1="110" y1="73" x2="136" y2="73" stroke="#14110C" stroke-width="1.25" />
+            <polygon points="136,69.5 142,73 136,76.5" fill="#14110C" />
 
             <!-- Hot tier -->
-            <rect x="0" y="54" width="166" height="52" rx="6" fill="#FBFAF4" stroke="#F59E0B" stroke-opacity="0.6" />
-            <rect x="0" y="54" width="166" height="3" rx="1.5" fill="#F59E0B" />
-            <text x="83" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">hot</text>
-            <text x="83" y="93" font-size="8" letter-spacing="0.09em" fill="#6B6456" text-anchor="middle">ALWAYS INJECTED &middot; #hot</text>
+            <rect x="144" y="44" width="148" height="58" rx="6" fill="#FBFAF4" stroke="#F59E0B" stroke-opacity="0.7" />
+            <rect x="144" y="44" width="148" height="4" rx="2" fill="#F59E0B" />
+            <text x="218" y="71" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">hot</text>
+            <text x="218" y="86" font-size="7.5" letter-spacing="0.08em" fill="#6B6456" text-anchor="middle">ALWAYS INJECTED &middot; #hot</text>
+            <text x="218" y="118" font-size="8" fill="#B45309" text-anchor="middle">&le; 7 days</text>
 
             <!-- Warm tier -->
-            <rect x="182" y="54" width="166" height="52" rx="6" fill="#FBFAF4" stroke="#F59E0B" stroke-opacity="0.35" />
-            <rect x="182" y="54" width="166" height="3" rx="1.5" fill="#F59E0B" opacity="0.5" />
-            <text x="265" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">warm</text>
-            <text x="265" y="93" font-size="8" letter-spacing="0.09em" fill="#6B6456" text-anchor="middle">TAG-MATCHED INJECTION</text>
+            <rect x="300" y="44" width="148" height="58" rx="6" fill="#FBFAF4" stroke="#F59E0B" stroke-opacity="0.4" />
+            <rect x="300" y="44" width="148" height="4" rx="2" fill="#F59E0B" opacity="0.55" />
+            <text x="374" y="71" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">warm</text>
+            <text x="374" y="86" font-size="7.5" letter-spacing="0.08em" fill="#6B6456" text-anchor="middle">TAG-MATCHED</text>
+            <text x="374" y="118" font-size="8" fill="#6B6456" text-anchor="middle">8&ndash;30 days</text>
 
             <!-- Cold tier -->
-            <rect x="364" y="54" width="166" height="52" rx="6" fill="#FBFAF4" stroke="#14110C" />
-            <text x="447" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">cold</text>
-            <text x="447" y="93" font-size="8" letter-spacing="0.09em" fill="#6B6456" text-anchor="middle">ON DEMAND ONLY</text>
+            <rect x="456" y="44" width="148" height="58" rx="6" fill="#ECE7D7" stroke="#14110C" stroke-dasharray="4 3" />
+            <text x="530" y="71" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">cold</text>
+            <text x="530" y="86" font-size="7.5" letter-spacing="0.08em" fill="#6B6456" text-anchor="middle">ON DEMAND</text>
+            <text x="530" y="118" font-size="8" fill="#6B6456" text-anchor="middle">30+ days, compressed</text>
 
-            <!-- arrows to Worker prompt -->
-            <line x1="166" y1="80" x2="550" y2="80" stroke="#14110C" stroke-width="1" stroke-dasharray="4 3" />
-            <line x1="348" y1="80" x2="550" y2="80" stroke="#14110C" stroke-width="1" stroke-dasharray="4 3" />
-            <line x1="530" y1="80" x2="550" y2="80" stroke="#14110C" stroke-width="1" />
-            <polygon points="550,76.5 556,80 550,83.5" fill="#14110C" />
+            <!-- converge to worker prompt -->
+            <line x1="292" y1="73" x2="624" y2="73" stroke="#14110C" stroke-width="1" stroke-dasharray="4 3" opacity="0.5" />
+            <line x1="448" y1="73" x2="624" y2="73" stroke="#14110C" stroke-width="1" stroke-dasharray="4 3" opacity="0.5" />
+            <line x1="604" y1="73" x2="624" y2="73" stroke="#14110C" stroke-width="1.25" />
+            <polygon points="624,69.5 630,73 624,76.5" fill="#14110C" />
 
             <!-- Worker prompt node -->
-            <rect x="558" y="54" width="160" height="52" rx="6" fill="#FBFAF4" stroke="#14B8A6" stroke-opacity="0.55" />
-            <rect x="558" y="54" width="160" height="3" rx="1.5" fill="#14B8A6" />
-            <text x="638" y="78" font-family="JetBrains Mono,monospace" font-size="12" fill="#14110C" text-anchor="middle">Worker prompt</text>
-            <text x="638" y="93" font-size="8" letter-spacing="0.09em" fill="#6B6456" text-anchor="middle">AT RUNTIME</text>
+            <rect x="632" y="44" width="128" height="58" rx="6" fill="#FBFAF4" stroke="#14B8A6" stroke-opacity="0.7" />
+            <rect x="632" y="44" width="128" height="4" rx="2" fill="#14B8A6" />
+            <text x="696" y="71" font-family="JetBrains Mono,monospace" font-size="10.5" fill="#14110C" text-anchor="middle">Worker prompt</text>
+            <text x="696" y="86" font-size="7.5" letter-spacing="0.08em" fill="#6B6456" text-anchor="middle">AT RUNTIME</text>
 
-            <!-- tier labels below -->
-            <text x="83"  y="128" font-size="8.5" fill="#F59E0B" text-anchor="middle">&le;7 days</text>
-            <text x="265" y="128" font-size="8.5" fill="#6B6456" text-anchor="middle">8&ndash;30 days</text>
-            <text x="447" y="128" font-size="8.5" fill="#6B6456" text-anchor="middle">30+ days, compressed</text>
+            <!-- auto-written files -->
+            <text x="0" y="151" font-size="8.5" fill="#6B6456">auto-written by the chain:</text>
+            <rect x="142" y="140" width="186" height="18" rx="3" fill="#FBFAF4" stroke="#C9C2AE" />
+            <text x="150" y="152" font-family="JetBrains Mono,monospace" font-size="8" fill="#14110C">anti-patterns.md</text>
+            <text x="256" y="152" font-size="7.5" fill="#B45309">hot · audit</text>
+            <rect x="338" y="140" width="216" height="18" rx="3" fill="#FBFAF4" stroke="#C9C2AE" />
+            <text x="346" y="152" font-family="JetBrains Mono,monospace" font-size="8" fill="#14110C">project-decisions.md</text>
+            <text x="480" y="152" font-size="7.5" fill="#6B6456">spec-tier · spec</text>
+
+            <!-- persistence band -->
+            <rect x="0" y="176" width="760" height="30" rx="4" fill="#ECE7D7" stroke="#C9C2AE" stroke-dasharray="3 3" />
+            <text x="380" y="190" font-size="8.5" fill="#6B6456" text-anchor="middle">committed with the repo · never uploaded · never mixed across projects</text>
+            <text x="380" y="201" font-size="8" fill="#6B6456" text-anchor="middle">hot always loads · warm matches tags · cold stays on disk until requested</text>
 
           </svg>
         </div>
