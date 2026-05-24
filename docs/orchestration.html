@@ -1,0 +1,590 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orchestration — Hyperflow</title>
+  <meta name="description" content="How Hyperflow orchestrates: chain, tiers, sub-phases, review, memory." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/brutalist.css" />
+</head><body>
+
+  <nav aria-label="Primary navigation"><div class="nav-inner">
+    <a href="index.html" class="nav-wordmark">Hyperflow</a>
+    <ul class="nav-links" role="list">
+      <li><a href="index.html#chain">Chain</a></li>
+      <li><a href="installation.html">Install</a></li>
+      <li><a href="orchestration.html">Orchestration</a></li>
+      <li><a href="providers.html">Providers</a></li>
+      <li><a href="model-routing.html">Routing</a></li>
+      <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </div></nav>
+
+  <main>
+
+    <!-- ── Page header ──────────────────────────────────────────────────── -->
+    <section id="orchestration-header" aria-labelledby="orchestration-heading">
+      <div class="container">
+        <p class="section-label">Orchestration</p>
+        <h2 id="orchestration-heading">How a request becomes a coordinated multi-agent run.</h2>
+        <p>
+          The chain, triage, per-phase agent dispatch, parallelism accounting, and failure handling &mdash;
+          everything that turns a single user request into a set of committed, reviewed sub-tasks.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── The chain ────────────────────────────────────────────────────── -->
+    <section id="the-chain" aria-labelledby="the-chain-heading">
+      <div class="container">
+        <h2 id="the-chain-heading">The chain</h2>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">Chain overview</span>
+          </div>
+          <div class="install-code">
+            scaffold        &rarr;   spec        &rarr;   scope         &rarr;   dispatch        &rarr;   (suggest)   audit   /   deploy<br />
+            project setup       specify           decompose         execute              outside review        gates + push<br />
+            (once per repo)     the design        into batches      with reviews         (gated)               (gated)
+          </div>
+        </div>
+
+        <p>
+          The first three are <strong>chain-starters</strong> &mdash; invoking any of them auto-advances forward through the rest.
+          The last two are <strong>standalone</strong> &mdash; never auto-invoked; they fire only on an explicit user <code>Yes</code> to a gate question.
+        </p>
+
+        <p>Two skills sit outside the chain:</p>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Skill</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>trace</code></td>
+                <td>Root-cause analysis &mdash; 5-whys + hypothesis testing for bugs and test failures</td>
+              </tr>
+              <tr>
+                <td><code>status</code></td>
+                <td>Read-only one-screen view of project state and live in-flight progress</td>
+              </tr>
+              <tr>
+                <td><code>cache</code></td>
+                <td>CRUD on persistent project memory</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Layer 0.5 — triage ────────────────────────────────────────────── -->
+    <section id="triage" aria-labelledby="triage-heading">
+      <div class="container">
+        <h2 id="triage-heading">Layer 0.5 &mdash; triage</h2>
+
+        <p>
+          Every chain-starter begins with a thinking-tier <strong>Classifier</strong> dispatch (Layer 0.5 in the doctrine). It returns:
+        </p>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">Triage JSON</span>
+          </div>
+          <div class="install-code">
+            {<br />
+            &nbsp;&nbsp;"types":      ["api", "security", "frontend"],<br />
+            &nbsp;&nbsp;"complexity": "moderate",<br />
+            &nbsp;&nbsp;"risk":       "medium",<br />
+            &nbsp;&nbsp;"scope":      "5-files",<br />
+            &nbsp;&nbsp;"ambiguity":  0.4,<br />
+            &nbsp;&nbsp;"flow":       "standard",<br />
+            &nbsp;&nbsp;"personas":   ["security", "api", "frontend"]<br />
+            }
+          </div>
+        </div>
+
+        <p>That JSON drives every downstream decision:</p>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Triage field</th>
+                <th scope="col">What it picks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>flow</code></td>
+                <td>Flow profile for <code>dispatch</code> &mdash; <code>fast</code> / <code>standard</code> / <code>deep</code> / <code>research</code> / <code>creative</code> / <code>scientific</code> (see <code>flow-profiles.md</code>)</td>
+              </tr>
+              <tr>
+                <td><code>ambiguity</code></td>
+                <td>Spec depth &mdash; light (2 questions) / standard (3 questions + alternatives) / deep (4&ndash;5 questions + section-by-section approval). Floor: 2 questions, always.</td>
+              </tr>
+              <tr>
+                <td><code>personas[]</code></td>
+                <td>Which persona blocks are stitched into each worker&rsquo;s prompt &mdash; composed in priority order: security first, creative last</td>
+              </tr>
+              <tr>
+                <td><code>complexity</code> + <code>scope</code></td>
+                <td>Number of parallel workers per batch; review level cap (L1&ndash;L5) for the per-batch reviewer</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Spec → scope → dispatch ──────────────────────────────────────── -->
+    <section id="spec-scope-dispatch" aria-labelledby="ssd-heading">
+      <div class="container">
+        <h2 id="ssd-heading">Spec &rarr; scope &rarr; dispatch</h2>
+
+        <!-- Spec -->
+        <h3 id="spec-heading">Spec</h3>
+
+        <p>
+          The chain-starter asks at Step 0 whether to advance <strong>auto</strong> (no gates between phases) or <strong>manual</strong> (confirm before each).
+          The choice propagates to every downstream skill via the <code>Skill</code> tool&rsquo;s <code>args</code> parameter.
+        </p>
+
+        <p>Then:</p>
+
+        <ul>
+          <li><strong>Classifier</strong> &mdash; triage JSON (see above)</li>
+          <li><strong>Searcher</strong> (worker) + <strong>Reviewer</strong> (thinking-tier) &mdash; context exploration</li>
+          <li><strong>Analyst</strong> (thinking-tier) &mdash; 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives</li>
+          <li><strong><code>AskUserQuestion</code></strong> &times;N &mdash; design questions, floor 2, scaled by ambiguity; every option list marks a <code>(Recommended)</code> choice</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; requirement synthesis</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; 2&ndash;3 alternative approaches with trade-offs</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> per design section &mdash; 5 sections, each approved by the user</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; final spec file at <code>.hyperflow/specs/&lt;slug&gt;.md</code></li>
+          <li>Hand off to <code>scope</code></li>
+        </ul>
+
+        <p class="install-note">
+          Every step that produces output dispatches at least one Agent (DOCTRINE rule 12). Pure user-interaction steps (<code>AskUserQuestion</code>, <code>Skill</code> hand-off) are exempt.
+        </p>
+
+        <!-- Scope -->
+        <h3 id="scope-heading">Scope</h3>
+
+        <ul>
+          <li>Chain-mode check (skipped if invoked by <code>spec</code> with the arg already set)</li>
+          <li><strong>Searcher &times; 2</strong> (parallel) + <strong>Reviewer</strong> &mdash; research: affected files, related tests, conventions</li>
+          <li><strong>Planner</strong> (thinking-tier) &mdash; produces the batch graph</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; emits <code>.hyperflow/tasks/&lt;slug&gt;.md</code> with the expanded <code>## Status</code> block that <code>dispatch</code> will keep updating and <code>status</code> will read</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; appends decisions to <code>.hyperflow/memory/</code></li>
+          <li>Hand off to <code>dispatch</code></li>
+        </ul>
+
+        <!-- Dispatch -->
+        <h3 id="dispatch-heading">Dispatch</h3>
+
+        <p>The workhorse. Per batch:</p>
+
+        <ul>
+          <li>Print the batch header &mdash; <code>Batch N &mdash; parallel:K</code> or <code>serial:K</code></li>
+          <li>Dispatch all K sub-tasks of the batch <strong>in a single message</strong> with K parallel <code>Agent</code> tool calls. The runtime executes them concurrently. (Calls across separate messages run serial &mdash; see Parallelism below.)</li>
+          <li>
+            As each worker returns:
+            <ul>
+              <li><strong>Reviewer</strong> (thinking-tier) &mdash; reviews at L1&ndash;L&lt;n&gt; based on flow profile</li>
+              <li>On <code>PASS</code> &rarr; commit this sub-task immediately, then update the task file&rsquo;s <code>## Status</code> block (tick <code>[ ]</code> &rarr; <code>[x]</code>, increment <code>done/total</code>, add tokens, refresh wall-clock + ETA)</li>
+              <li>On <code>NEEDS_FIX</code> &rarr; re-dispatch worker with the fix list (max 3 retries)</li>
+              <li>On <code>SECURITY_VIOLATION</code> &rarr; halt the chain immediately</li>
+            </ul>
+          </li>
+          <li>After the batch: synthesize learnings, run <strong>Layer 5 quality gates</strong> (lint / typecheck / tests). If a gate fixes something, it lands as a small extra commit &mdash; never amends per-sub-task commits.</li>
+        </ul>
+
+        <p>After all batches complete:</p>
+
+        <ul>
+          <li><strong>Final integration review</strong> (thinking-tier, separate from per-batch reviewers, over the cumulative diff)</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> wrap-up &mdash; delete task file, append memory, <code>chore(memory):</code> commit</li>
+          <li><strong><code>AskUserQuestion</code></strong> &mdash; <em>&ldquo;Run /hyperflow:audit?&rdquo;</em> (Yes/No, recommended toggles with flow profile)</li>
+          <li><strong><code>AskUserQuestion</code></strong> &mdash; <em>&ldquo;Run /hyperflow:deploy?&rdquo;</em> (Yes/No, recommended toggles with gate state)</li>
+        </ul>
+
+        <p class="install-note">
+          Both gates respect DOCTRINE rule 8 (structural gates always fire). The orchestrator never auto-invokes audit or deploy.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── After dispatch ───────────────────────────────────────────────── -->
+    <section id="after-dispatch" aria-labelledby="after-dispatch-heading">
+      <div class="container">
+        <h2 id="after-dispatch-heading">After dispatch</h2>
+
+        <!-- Audit -->
+        <h3 id="audit-heading">Audit (gated)</h3>
+
+        <p>If the user said <code>Yes</code> to the audit prompt &mdash; or invoked <code>/hyperflow:audit</code> directly:</p>
+
+        <ul>
+          <li>Resolve scope (provided target, or <code>git diff HEAD</code> + <code>--staged</code>)</li>
+          <li><strong>Searcher</strong> + <strong>Reviewer</strong> &mdash; context coverage</li>
+          <li><strong>Reviewer</strong> at L1&ndash;L&lt;n&gt; &mdash; structured <code>[Critical] / [Important] / [Suggestions] / [Praise]</code> findings</li>
+          <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; appends durable patterns to <code>.hyperflow/memory/learnings.md</code></li>
+          <li>Print the review block</li>
+          <li><strong>Fix gate</strong> &mdash; <em>&ldquo;Audit found N issues &mdash; apply fixes?&rdquo;</em></li>
+        </ul>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Option</th>
+                <th scope="col">What runs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fix all</td>
+                <td>Critical + Important + Suggestions</td>
+              </tr>
+              <tr>
+                <td>Critical + Important</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td>Critical only</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td>No, leave as-is</td>
+                <td>Chain ends</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          On any <code>Fix &hellip;</code> choice, audit builds a spec file at <code>.hyperflow/specs/audit-&lt;timestamp&gt;.md</code> from the chosen findings
+          and invokes <code>Skill</code> with <code>skill: scope, args: "chain-mode=auto spec=&lt;path&gt;"</code> &mdash; the chain runs again to fix what the audit caught.
+        </p>
+
+        <!-- Deploy -->
+        <h3 id="deploy-heading">Deploy (gated)</h3>
+
+        <p>If the user said <code>Yes</code> to the deploy prompt &mdash; or invoked <code>/hyperflow:deploy</code> directly &mdash; gates run in order, halting on first failure:</p>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Gate</th>
+                <th scope="col">What it checks</th>
+                <th scope="col">Auto-fix?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>A &mdash; Lint</td>
+                <td>Code style and lint rules</td>
+                <td>Yes &mdash; once</td>
+              </tr>
+              <tr>
+                <td>B &mdash; Typecheck</td>
+                <td>Type correctness</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td>C &mdash; Build</td>
+                <td>Production build</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td>D &mdash; Tests</td>
+                <td>Full test suite (not just affected)</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td>Security sweep</td>
+                <td>Staged + recent changes (thinking-tier Reviewer)</td>
+                <td>No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Then:</p>
+
+        <ul>
+          <li><strong>Commit</strong> &mdash; uncommitted worker-introduced changes go in (asks before including pre-existing user changes)</li>
+          <li><strong>Release</strong> &mdash; runs <code>scripts/release.sh</code> if present</li>
+          <li><strong><code>AskUserQuestion</code></strong> &mdash; <em>&ldquo;Push to origin/&lt;branch&gt;?&rdquo;</em> (Yes/No, recommended toggles with gate state; never force-pushes to main)</li>
+        </ul>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Parallelism ───────────────────────────────────────────────────── -->
+    <section id="parallelism" aria-labelledby="parallelism-heading">
+      <div class="container">
+        <h2 id="parallelism-heading">Parallelism &mdash; provable from the numbers</h2>
+
+        <p>
+          Parallel dispatch in Claude Code is a prompt-discipline property &mdash; multiple <code>Agent</code> calls in a single message run concurrently;
+          the same calls across separate messages run serial. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
+        </p>
+
+        <p>To make parallelism auditable from the output alone, every batch prints a footer:</p>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">Batch footer</span>
+          </div>
+          <div class="install-code">
+            Batch 1 &mdash; parallel:3 &middot; standard profile &middot; L1&ndash;L2<br />
+            <br />
+            Searcher       &mdash; analyse existing auth patterns<br />
+            Implementer    &mdash; write middleware + route guards<br />
+            Writer         &mdash; generate test suite for auth<br />
+            &nbsp;&nbsp;wall-clock: 47s &middot; cumulative: 2m 18s &middot; ratio 0.34 &mdash; parallel
+          </div>
+        </div>
+
+        <p>And the usage summary at task end:</p>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">Usage summary</span>
+          </div>
+          <div class="install-code">
+            &mdash;&mdash; Hyperflow Usage &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;<br />
+            Triage                          1 agent     1.8k tokens<br />
+            Spec depth: standard            1 agent     3.2k tokens<br />
+            Profile: deep                   &mdash;           &mdash;<br />
+            Thinking  (Opus 4.7  )          4 agents   52.1k tokens  (3 batch &middot; 1 final)<br />
+            Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer &middot; 3 searcher &middot; 1 writer)<br />
+            Wall-clock                      3m 47s<br />
+            Cumulative                     14m 22s    (ratio 0.26 &mdash; parallel)<br />
+            Escalations                     0<br />
+            Total                          14 agents  243.1k tokens<br />
+            &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+          </div>
+        </div>
+
+        <p><code>ratio = wall-clock / cumulative</code>. Thresholds:</p>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Ratio</th>
+                <th scope="col">Classification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>&le; 0.5</td>
+                <td>Parallel</td>
+              </tr>
+              <tr>
+                <td>0.5 &ndash; 0.8</td>
+                <td>Mixed</td>
+              </tr>
+              <tr>
+                <td>&ge; 0.8</td>
+                <td>Serial</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="install-note">
+          If a batch is labelled <code>parallel:N</code> but the ratio lands &ge; 0.8, that is a DOCTRINE rule 2 violation &mdash; the calls went out across separate messages instead of one.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Live progress ─────────────────────────────────────────────────── -->
+    <section id="live-progress" aria-labelledby="live-progress-heading">
+      <div class="container">
+        <h2 id="live-progress-heading">Live progress</h2>
+
+        <p>
+          While a dispatch chain is in flight (or after it completes, while the task file still exists), <code>/hyperflow:status</code> shows:
+        </p>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">Status output</span>
+          </div>
+          <div class="install-code">
+            &mdash;&mdash; Hyperflow Status &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;<br />
+            Version       v3.1.0     (released 2026-05-16)<br />
+            Profile       fresh      (analyzed 2h ago)<br />
+            Memory        12 entries<br />
+            Active tasks  2<br />
+            <br />
+            &mdash;&mdash; In-flight work &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;<br />
+            Task:         implement-auth<br />
+            &nbsp;&nbsp;Progress    [&block;&block;&block;&block;&block;&block;&block;&block;&block;&block;&block;░░░░░░░░░] 8/14  57%<br />
+            &nbsp;&nbsp;Last done   T7: Reset email worker<br />
+            &nbsp;&nbsp;Running     T8: Login UI (Implementer &middot; 14s elapsed)<br />
+            &nbsp;&nbsp;Pending     6 sub-tasks<br />
+            &nbsp;&nbsp;Tokens      thinking 89.2k &middot; worker 142.0k &middot; total 231.2k<br />
+            &nbsp;&nbsp;Wall-clock  4m 22s elapsed<br />
+            &nbsp;&nbsp;ETA         ~3m 16s remaining   (avg 32s/sub-task &middot; 6 left)<br />
+            &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
+          </div>
+        </div>
+
+        <p class="install-note">
+          The data comes from the task file&rsquo;s <code>## Status</code> block that <code>dispatch</code> keeps updated after every sub-task PASS &mdash; no process watcher, no IPC, just markdown.
+          ETA is <code>avg_per_subtask &times; pending</code> (&times;1.1 if the next batch is sequential); shows <code>(computing)</code> while fewer than 3 sub-tasks are done.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Commit cadence ────────────────────────────────────────────────── -->
+    <section id="commit-cadence" aria-labelledby="commit-cadence-heading">
+      <div class="container">
+        <h2 id="commit-cadence-heading">Commit cadence &mdash; one per sub-task</h2>
+
+        <p>Every approved sub-task produces its own conventional commit:</p>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">Per-sub-task commit flow</span>
+          </div>
+          <div class="install-code">
+            worker writes &rarr; Reviewer PASS &rarr; git add &lt;only-this-task&rsquo;s-files&gt; &rarr; commit &rarr; next sub-task
+          </div>
+        </div>
+
+        <p>
+          A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-ups land as small extra commits on top;
+          memory writes become a separate <code>chore(memory):</code> at wrap-up. Surgical history &mdash; bisectable, surgically revertible.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Handling failures ─────────────────────────────────────────────── -->
+    <section id="failures" aria-labelledby="failures-heading">
+      <div class="container">
+        <h2 id="failures-heading">Handling failures</h2>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Signal</th>
+                <th scope="col">Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>NEEDS_FIX</code></td>
+                <td>Same worker re-dispatched with the reviewer&rsquo;s fix list &mdash; max 3 retries before escalating to a thinking-tier worker</td>
+              </tr>
+              <tr>
+                <td><code>BLOCKED:</code></td>
+                <td>Worker hit a security blocklist entry (<code>.env</code>, <code>*.pem</code>, <code>~/.ssh/*</code>, etc.); chain halts, surfaces the blocked resource, lets the user decide</td>
+              </tr>
+              <tr>
+                <td><code>ESCALATE: &lt;reason&gt;</code></td>
+                <td>Task complexity exceeded the chosen flow profile; orchestrator upgrades the profile per <code>escalation.md</code> (fast &rarr; standard &rarr; deep), re-plans with completed work preserved as context, and continues. If the escalation crosses the risk threshold, <code>AskUserQuestion</code> fires first for explicit consent.</td>
+              </tr>
+              <tr>
+                <td><code>SECURITY_VIOLATION:</code></td>
+                <td>A reviewer caught a hard security issue; chain halts immediately, no auto-continue</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── References ────────────────────────────────────────────────────── -->
+    <section id="references" aria-labelledby="references-heading">
+      <div class="container">
+        <h2 id="references-heading">References</h2>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">File</th>
+                <th scope="col">Contents</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>skills/hyperflow/DOCTRINE.md</code></td>
+                <td>Full rule set &mdash; Layers 0&ndash;9, 12 numbered rules, red flags</td>
+              </tr>
+              <tr>
+                <td><code>skills/hyperflow/flow-profiles.md</code></td>
+                <td>The 6 flow profiles and escalation paths</td>
+              </tr>
+              <tr>
+                <td><code>skills/hyperflow/personas-A.md</code>, <code>personas-B.md</code></td>
+                <td>All 15 persona definitions</td>
+              </tr>
+              <tr>
+                <td><code>skills/hyperflow/review-levels.md</code></td>
+                <td>L1&ndash;L5 checklist</td>
+              </tr>
+              <tr>
+                <td><code>skills/hyperflow/git-workflow.md</code></td>
+                <td>Per-sub-task commit cadence and audit/deploy gate spec</td>
+              </tr>
+              <tr>
+                <td><code>skills/hyperflow/output-style.md</code></td>
+                <td>Visual language &mdash; no decorative icons; em-dash separators; bold for thinking-tier; wall-clock / cumulative / ratio formatting</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ────────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <a href="index.html" class="footer-wordmark">Hyperflow</a>
+        <span class="footer-meta">v4.20.1 &nbsp;&middot;&nbsp; MIT License</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/installation.md" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+</body></html>
