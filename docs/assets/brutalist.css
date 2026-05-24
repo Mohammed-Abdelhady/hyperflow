@@ -322,16 +322,16 @@
       padding-top: 1rem;
     }
 
-    /* ─── Inverted schematic panels (dark SVG diagrams) ──────────── */
+    /* ─── Schematic panels (light brutalist SVG diagrams) ────────── */
     #chain .chain-diagram,
     .wr-diagram-wrap,
     .sp-diagram-wrap,
     .memory-diagram-wrap {
       margin-top: 2.5rem;
-      background: var(--panel);
+      background: var(--paper);
       border: var(--line);
       box-shadow: var(--shadow);
-      padding: 1.5rem;
+      padding: 1.75rem 1.5rem;
       overflow-x: auto;
     }
 
@@ -341,7 +341,7 @@
     .memory-svg-wrap { width: 100%; min-width: 540px; }
     .pair-svg-wrap   {
       width: 100%;
-      background: var(--panel);
+      background: var(--paper);
       border: var(--line);
       padding: 0.75rem 1.25rem;
       overflow-x: auto;
