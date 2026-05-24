@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Multi-agent orchestration for Claude Code, OpenCode &amp; Antigravity.</strong><br/>
-  Thinking models orchestrate and review. Worker models execute. Every step dispatches a Worker → Reviewer pair.
+  Thinking models plan and review every step. Worker models execute in parallel. Learnings persist in local, per-project memory.
 </p>
 
 <p align="center">
@@ -34,6 +34,16 @@
 </p>
 
 ---
+
+## What makes it different
+
+Not just another orchestrator — three things set Hyperflow apart:
+
+- **Every step is reviewed.** Worker → Reviewer is an iron rule at every granularity, sub-phases included. No worker output ships unreviewed.
+- **Memory that's yours.** Learnings, decisions, and pitfalls persist in `.hyperflow/memory/` — plain markdown, committed with your repo, never uploaded, never mixed across projects. Hot/warm/cold tiering keeps injection cheap.
+- **Depth that adapts.** Triage classifies every task and picks a flow profile (fast → scientific), so a 5-line fix never triggers a 300k-token deep run.
+
+Underneath: a structural thinking/worker model split (expensive models plan & review, fast models execute), 15 persona-stitched experts, intent auto-routing, and three auto-detected providers — all terminal-native, no daemon.
 
 ## Quick start
 
