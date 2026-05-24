@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v4.20.0-blueviolet?style=flat-square" alt="version v4.20.0" />
+  <img src="https://img.shields.io/badge/version-v4.21.0-blueviolet?style=flat-square" alt="version v4.21.0" />
   &nbsp;
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
   &nbsp;
@@ -45,6 +45,21 @@ Not just another orchestrator — three things set Hyperflow apart:
 
 Underneath: a structural thinking/worker model split (expensive models plan & review, fast models execute), 15 persona-stitched experts, intent auto-routing, and three auto-detected providers — all terminal-native, no daemon.
 
+## The chain
+
+Six skills, one pipeline. Start at any entry point — the orchestrator picks up and runs forward.
+
+| # | Skill | What it does |
+|---|-------|--------------|
+| 1 | `scaffold` | Analyze the project, build the `.hyperflow/` cache, install multi-tool shims *(standalone)* |
+| 2 | `spec` | Design-first — multi-dimensional analysis + alternatives; refuses to code before you approve |
+| 3 | `scope` | Decompose the approved design into a parallel task graph |
+| 4 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
+| 5 | `audit` | L1–L5 review on the result |
+| 6 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
+
+`spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists.
+
 ## Quick start
 
 ```bash
@@ -67,27 +82,68 @@ Setup, model routing, and per-provider notes → [Installation](docs/installatio
 
 ## How it works
 
-Invoke a skill. Chain-starters auto-advance through the rest — no always-on orchestrator, no background process.
+Invoke a skill. Chain-starters auto-advance through the rest — no always-on orchestrator, no background process, everything in your terminal.
 
-**Thinking-tier** models (Opus 4.7 · Gemini 3 Pro) orchestrate, triage, and review. **Worker-tier** models (Sonnet 4.6 · Gemini 3.5 Flash) execute in parallel. Every non-trivial phase decomposes into sub-phases, each with its own reviewer.
+### Thinking / worker split
 
-- **Every output is reviewed** — Worker → Reviewer at every step; parallel where independent.
-- **Triaged + persona-stitched** — each task gets the flow profile and expert standards it needs.
-- **Memory compounds** — conventions, decisions, and anti-patterns persist across sessions.
+The split is structural, not a setting — each tier does only what it's best at.
+
+| Tier | Models | Role |
+|------|--------|------|
+| **Thinking** | Opus 4.7 · Gemini 3 Pro | Orchestrate, triage, brainstorm, review every output, run the final integration pass |
+| **Worker** | Sonnet 4.6 · Gemini 3.5 Flash | Execute in parallel — implement, search, write |
+
+### Review at every granularity
+
+Worker → Reviewer is an iron rule. Independent sub-tasks fan out in parallel; each worker feeds its own thinking-tier reviewer before the batch advances. Every non-trivial phase decomposes into named sub-phases (`2a`, `2b`, `2c`…), each with its own reviewer. Per-batch reviewers do L1–L2 spot-checks; a final integration reviewer runs once over the cumulative diff. Each reviewer returns a verdict — `APPROVE` or `NEEDS_REVISION` (retry once with findings injected).
+
+### Triage picks the depth
+
+Every task is classified — complexity, scope, risk, ambiguity — and assigned a flow profile, so effort matches the work instead of always running deep:
+
+| Profile | Use when | Workers | Budget |
+|---------|----------|---------|--------|
+| `fast` | trivial single-file, reversible | 1 | ≤30k |
+| `standard` | simple/moderate, 2–5 files | 1–2 | ≤100k |
+| `deep` | complex / cross-cutting / system-wide | 3+ | 300k |
+| `research` | unknown territory, evaluation | 3+ searchers | ≤80k |
+| `creative` | UI/UX exploration | 1–2 | ≤150k |
+| `scientific` | correctness-critical, proof work | 2–3 + TDD | 300k |
+
+### Persona stitching
+
+15 composable expert personas — architect, api, db, frontend, ui, security, performance, scientific, refactor, bugfix, test, research, creative, devops, docs. Each task is tagged and the matching personas are stitched into the worker prompt in priority order: `security` frames every decision first, `creative` adapts last.
+
+## Memory that persists
+
+Learnings live at `.hyperflow/memory/` — plain markdown, committed with your repo, **never uploaded, never mixed across projects**.
+
+- **Three tiers** — `hot` (≤7 days, always injected), `warm` (8–30 days, tag-matched), `cold` (30+ days, on-demand, compressed).
+- **Lazy injection** — only tag-matched entries load for a given task, so injection cost stays bounded.
+- **Auto-written by the chain** — `audit` records recurring findings to `anti-patterns.md` (hot); `spec` records structural answers to `project-decisions.md`, so the same questions aren't asked twice.
 
 Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](https://mohammed-abdelhady.github.io/hyperflow/).
 
 ## Skills
 
-Fourteen skills. Chain-starters auto-advance; standalone skills run on their own.
+Fourteen skills. Three chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix.
 
-| Skill | Command | Role |
-|-------|---------|------|
-| **Spec** | `/hyperflow:spec` | Design-first — auto-chains to scope → dispatch |
-| **Scope** | `/hyperflow:scope` | Decompose into a task graph — auto-chains to dispatch |
-| **Dispatch** | `/hyperflow:dispatch` | Fan out persona-stitched workers under tiered review |
-
-Standalone: **amplify** (enhance a prompt) · **scaffold** (project setup) · **trace** (root-cause a bug) · **audit** (L1–L5 review) · **deploy** (pre-push gates + ship) · **cache** (memory CRUD) · **status** (live progress) · **background** · **sticky** · **flush** · **bridge**.
+| Skill | Command | Type | Purpose |
+|-------|---------|------|---------|
+| `spec` | `/hyperflow:spec` | Chain starter | Design-first analysis + alternatives; auto-chains to scope → dispatch |
+| `scope` | `/hyperflow:scope` | Chain starter | Decompose into parallel worker subtasks; auto-chains to dispatch |
+| `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
+| `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
+| `amplify` | `/hyperflow:amplify` | Standalone | Rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric) |
+| `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
+| `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
+| `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |
+| `cache` | `/hyperflow:cache` | Standalone | Memory CRUD — show, search, add, prune, archive, compact |
+| `status` | `/hyperflow:status` | Standalone | Read-only snapshot — version, memory count, live per-task progress |
+| `background` | `/hyperflow:background` | Standalone | List, show, cancel, prune task-level background agents |
+| `sticky` | `/hyperflow:sticky` | Standalone | `on` / `auto` / `off` — per-project auto-routing mode |
+| `bridge` | `/hyperflow:bridge` | Standalone | Embed the portable doctrine into `CLAUDE.md` for Desktop / web / IDE |
+| `flush` | `/hyperflow:flush` | Standalone | Flush a deferred-commit queue from a prior or crashed chain |
 
 ## Providers
 
