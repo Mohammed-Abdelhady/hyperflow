@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.21.0] — 2026-05-24
+
+### Added
+- Add brutalist HTML doc pages + link them from the landing
+
+### Changed
+- Sharpen positioning to lead with what's unique
+- Enrich memory diagram with session flow + auto-written files
+- Refresh plugin + marketplace descriptions to current state
+- Frame amplify + operational utilities in the skills section
+- Recolor diagrams to light brutalist + enrich chain/review flow
+- Extract brutalist styles into shared stylesheet
+- Redraw hero.svg generator in the brutalist style system
+- Redesign to brutalist/technical style system
+- Rebuild as a system schematic — layers, agents, sub-phases
+
+
 ## [4.20.1] — 2026-05-23
 
 ### Fixed
@@ -734,7 +751,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.21.0...HEAD
+[4.21.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.1...v4.21.0
 [4.20.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.0...v4.20.1
 [4.20.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.19.0...v4.20.0
 [4.19.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.18.0...v4.19.0
