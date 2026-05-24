@@ -1,0 +1,357 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Routing — Hyperflow</title>
+  <meta name="description" content="Configure thinking/worker model routing per provider in Hyperflow." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/brutalist.css" />
+</head><body>
+
+  <nav aria-label="Primary navigation"><div class="nav-inner">
+    <a href="index.html" class="nav-wordmark">Hyperflow</a>
+    <ul class="nav-links" role="list">
+      <li><a href="index.html#chain">Chain</a></li>
+      <li><a href="installation.html">Install</a></li>
+      <li><a href="orchestration.html">Orchestration</a></li>
+      <li><a href="providers.html">Providers</a></li>
+      <li><a href="model-routing.html">Routing</a></li>
+      <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </div></nav>
+
+  <main>
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <section id="intro" aria-labelledby="intro-heading">
+      <div class="container">
+        <p class="section-label">Model Routing</p>
+        <h2 id="intro-heading">How Hyperflow assigns models to roles.</h2>
+        <p>
+          The thinking/worker split, resolution priority, per-provider defaults, and runtime customization.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── The thinking/worker split ─────────────────────────────────────── -->
+    <section id="split" aria-labelledby="split-heading">
+      <div class="container">
+        <h2 id="split-heading">The thinking/worker split</h2>
+        <p>
+          Not every task needs the most powerful model. Hyperflow routes work to the right tier based on what the task requires:
+        </p>
+        <ul>
+          <li><strong>Thinking models</strong> — orchestration, review, debugging, architecture decisions. Reasoning over ambiguity.</li>
+          <li><strong>Worker models</strong> — implementation, search, writing, boilerplate. Execution against a clear spec.</li>
+        </ul>
+        <p>
+          This keeps costs lower and speed higher without sacrificing quality — because every worker output gets a thinking-model review before it lands.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Role routing table ─────────────────────────────────────────────── -->
+    <section id="role-routing" aria-labelledby="role-routing-heading">
+      <div class="container">
+        <h2 id="role-routing-heading">Role routing table</h2>
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Tier</th>
+                <th>Default (Claude Code)</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Orchestrator</td>
+                <td>Thinking</td>
+                <td><code>Opus 4.7</code></td>
+                <td>Decomposing "build a dashboard" into 5 parallel tasks</td>
+              </tr>
+              <tr>
+                <td>Reviewer</td>
+                <td>Thinking</td>
+                <td><code>Opus 4.7</code></td>
+                <td>Checking if a worker's component matches the spec</td>
+              </tr>
+              <tr>
+                <td>Debugger</td>
+                <td>Thinking</td>
+                <td><code>Opus 4.7</code></td>
+                <td>Root-causing why tests fail after a refactor</td>
+              </tr>
+              <tr>
+                <td>Decision-maker</td>
+                <td>Thinking</td>
+                <td><code>Opus 4.7</code></td>
+                <td>Choosing between REST vs tRPC for a new API</td>
+              </tr>
+              <tr>
+                <td>Brainstormer</td>
+                <td>Thinking</td>
+                <td><code>Opus 4.7</code></td>
+                <td>Exploring 2–3 approaches with trade-offs</td>
+              </tr>
+              <tr>
+                <td>Implementer</td>
+                <td>Worker</td>
+                <td><code>Sonnet 4.6</code></td>
+                <td>Writing a React component from a clear spec</td>
+              </tr>
+              <tr>
+                <td>Searcher</td>
+                <td>Worker</td>
+                <td><code>Sonnet 4.6</code></td>
+                <td>Finding all files that import a specific module</td>
+              </tr>
+              <tr>
+                <td>Writer</td>
+                <td>Worker</td>
+                <td><code>Sonnet 4.6</code></td>
+                <td>Creating test files, config files, documentation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Per-provider defaults ──────────────────────────────────────────── -->
+    <section id="providers" aria-labelledby="providers-heading">
+      <div class="container">
+        <h2 id="providers-heading">Per-provider defaults</h2>
+        <p>
+          Each supported platform has its own model naming and defaults:
+        </p>
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Default Thinking</th>
+                <th>Default Worker</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Claude Code</td>
+                <td><code>opus-4-7</code></td>
+                <td><code>sonnet-4-6</code></td>
+              </tr>
+              <tr>
+                <td>OpenCode</td>
+                <td><code>anthropic/claude-opus-4-7</code></td>
+                <td><code>anthropic/claude-sonnet-4-6</code></td>
+              </tr>
+              <tr>
+                <td>Antigravity</td>
+                <td><code>gemini-3-pro</code></td>
+                <td><code>gemini-3.5-flash</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="install-note">
+          See <a href="providers.html">providers.html</a> for the full model list per platform, including version pinning and dynamic detection.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── How it works in practice ──────────────────────────────────────── -->
+    <section id="practice" aria-labelledby="practice-heading">
+      <div class="container">
+        <h2 id="practice-heading">How it works in practice</h2>
+        <p>When you give Hyperflow a task:</p>
+        <ol>
+          <li><strong>Config loaded</strong> — reads <code>~/.hyperflow/config.json</code> and auto-detects the active provider</li>
+          <li><strong>Models resolved</strong> — thinking and worker models determined via the priority chain (see below)</li>
+          <li><strong>Thinking model</strong> (orchestrator) receives your request</li>
+          <li><strong>Thinking model</strong> breaks it into sub-tasks and identifies which can run in parallel</li>
+          <li><strong>Thinking model</strong> dispatches <strong>worker model</strong> agents with self-contained prompts</li>
+          <li><strong>Worker model</strong> agents execute and return results + notes</li>
+          <li><strong>Thinking model</strong> reviews each output — approves or sends back for fixes</li>
+          <li><strong>Thinking model</strong> synthesizes learnings and injects them into the next batch</li>
+          <li>Repeat until done</li>
+        </ol>
+        <p class="install-note">
+          For the full chain mechanics, see <a href="orchestration.html">orchestration.html</a>.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Model resolution priority ─────────────────────────────────────── -->
+    <section id="priority" aria-labelledby="priority-heading">
+      <div class="container">
+        <h2 id="priority-heading">Model resolution priority</h2>
+        <p>
+          When Hyperflow needs to determine which model to use for a role, it walks this chain — first match wins:
+        </p>
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Source</th>
+                <th>Scope</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Per-task inline request</td>
+                <td>Single task</td>
+                <td>"Fix this bug using opus-4-7"</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Session command</td>
+                <td>Current session</td>
+                <td><code>hyperflow: thinking opus-4-7</code></td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Environment variable</td>
+                <td>Current session</td>
+                <td><code>HYPERFLOW_THINKING_MODEL=opus-4-7</code></td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Role override</td>
+                <td>Persistent</td>
+                <td><code>providers.claude-code.roles.reviewer: "opus-4-7"</code></td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>Provider tier</td>
+                <td>Persistent</td>
+                <td><code>providers.claude-code.thinking: "opus-4-7"</code></td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td>Global default</td>
+                <td>Persistent</td>
+                <td><code>defaults.thinking: "opus-4-7"</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Customization ──────────────────────────────────────────────────── -->
+    <section id="customization" aria-labelledby="customization-heading">
+      <div class="container">
+        <h2 id="customization-heading">Customization</h2>
+
+        <h3>Change default models</h3>
+        <p>Edit <code>~/.hyperflow/config.json</code>:</p>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">~/.hyperflow/config.json</span>
+          </div>
+          <div class="install-code">{<br />
+&nbsp;&nbsp;"defaults": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
+&nbsp;&nbsp;}<br />
+}</div>
+        </div>
+
+        <h3>Override a specific role</h3>
+        <p>
+          Drop the reviewer to the previous Opus to save cost while keeping orchestration on the latest:
+        </p>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">~/.hyperflow/config.json</span>
+          </div>
+          <div class="install-code">{<br />
+&nbsp;&nbsp;"providers": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reviewer": "opus-4-6"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;}<br />
+}</div>
+        </div>
+
+        <h3>Use a cheaper worker for search tasks</h3>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">~/.hyperflow/config.json</span>
+          </div>
+          <div class="install-code">{<br />
+&nbsp;&nbsp;"providers": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"searcher": "haiku-4-5"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;}<br />
+}</div>
+        </div>
+
+        <h3>Switch models mid-session</h3>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">session commands</span>
+          </div>
+          <div class="install-code">hyperflow: thinking opus-4-7<br />
+hyperflow: worker haiku-4-5<br />
+hyperflow: models          <span class="comment"># verify current config</span><br />
+hyperflow: reset models    <span class="comment"># revert to config.json defaults</span></div>
+        </div>
+
+        <h3>Per-session via environment</h3>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">bash</span>
+          </div>
+          <div class="install-code">HYPERFLOW_THINKING_MODEL=opus-4-7 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude</div>
+        </div>
+
+        <p class="install-note">
+          For initial setup and the full model catalog, see <a href="installation.html">installation.html</a> and <a href="providers.html">providers.html</a>.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <a href="index.html" class="footer-wordmark">Hyperflow</a>
+        <span class="footer-meta">v4.18.0 &nbsp;·&nbsp; MIT License</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/installation.md" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+</body></html>
