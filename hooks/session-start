@@ -58,6 +58,15 @@ if [ -n "$HF_DIR" ]; then
     HF_MODE="$(python3 "$PLUGIN_ROOT/scripts/resolve-mode.py" "$project_root" 2>>"$HF_DIR/.session-start.log" || echo "default")"
   fi
 
+  # Post-compaction recovery — surface the snapshot the pre-compact hook wrote
+  # just before the conversation was compacted, then consume it (once only).
+  if [ -f "$HF_DIR/.precompact.md" ] && [ -n "$(find "$HF_DIR/.precompact.md" -mmin -60 2>/dev/null || true)" ]; then
+    CONTENT="$CONTENT
+
+$(cat "$HF_DIR/.precompact.md" 2>/dev/null || true)"
+  fi
+  rm -f "$HF_DIR/.precompact.md" 2>/dev/null || true
+
   # D3: Session-cached context — generate .hyperflow/memory/session-context.md
   # Skip if .hyperflow/memory/ doesn't exist (scaffold hasn't run yet).
   # Non-blocking: errors go to stderr only; never fail the session.
