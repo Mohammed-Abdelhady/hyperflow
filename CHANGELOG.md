@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Antigravity install was advertised but never wired: `install.sh` only targeted Claude Code and OpenCode, and the documented skills path (`~/.gemini/antigravity/skills/`) was wrong. The installer now detects Antigravity at the live `~/.gemini/config/skills/` (legacy fallback `~/.antigravity/skills/`) and links a single-agent-adapted skill set.
+
+### Added
+- Single-agent-adapted Antigravity skill + workflow templates under `templates/antigravity/` (12 skills incl. `hyperflow-amplify`, and the matching `.agent/workflows/hyperflow*` slash commands). Adapts the multi-agent doctrine to Antigravity's single-agent runtime (no sub-agent dispatch, no tier split — self-review before per-task commits).
+- `setup-detection.sh --tools antigravity` writes the `/hyperflow*` slash commands into a project's `.agent/workflows/` (and AGENTS.md).
+
 ## [4.21.0] — 2026-05-24
 
 ### Added

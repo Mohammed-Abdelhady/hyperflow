@@ -12,7 +12,7 @@ Hyperflow loads as a plugin into terminal CLI environments. It does not run insi
 |---|---|---|
 | Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, and skills are all active |
 | OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention |
-| Antigravity IDE | yes | Loads skills from `~/.gemini/antigravity/skills/`; symlink hyperflow's `skills/*` into that directory |
+| Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch or tier split — the single agent runs every phase and self-reviews |
 | Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
 | claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
 | IDE extensions (VS Code, JetBrains, Cursor) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
