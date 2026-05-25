@@ -350,6 +350,8 @@
 
     .hero-chain-hint {
       margin-top: 3rem;
+      max-width: none;
+      white-space: nowrap;
       font-family: var(--font-mono);
       font-size: 0.8125rem;
       font-weight: 500;
@@ -919,7 +921,7 @@
       .footer-inner { padding: 0 1.25rem; flex-direction: column; align-items: flex-start; }
       .persona-groups { grid-template-columns: 1fr; }
       .hero-wordmark { font-size: clamp(3rem, 14vw, 4.5rem); }
-      .hero-chain-hint { font-size: 0.75rem; }
+      .hero-chain-hint { font-size: 0.75rem; white-space: normal; }
       thead th, td { padding: 0.7rem 1rem; }
       td { font-size: 0.8375rem; }
       .install-code, .example-body { font-size: 0.775rem; }
