@@ -172,7 +172,8 @@
     "Security blocklists for sensitive files and destructive commands",
     "Conventional commits + automated release versioning",
     "Task tracking with incomplete-task recovery across sessions",
-    "Session-start update check (cached daily) with an in-session prompt to update"
+    "Session-start update check (cached daily) with an in-session prompt to update",
+    "Pre-compaction snapshot + post-compaction recovery — task, decisions, and anti-patterns survive a context compact"
   ],
   "detection": {
     "shims": [

@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# PreCompact hook — runs just before Claude Code compacts the conversation.
+#
+# Claude Code does NOT let a PreCompact hook inject text into the compaction
+# model (no additionalContext for this event). So instead of trying to "pass
+# what to keep" into the summary, we SNAPSHOT the volatile chain state to a
+# durable file. The SessionStart hook (which also fires on the `compact`
+# trigger) re-injects that snapshot right after compaction — so the active task,
+# decisions, anti-patterns, and uncommitted-diff survive the context squeeze.
+#
+# Never blocks compaction; never fails the session. Exit 0 always.
+set -uo pipefail
+
+INPUT="$(cat 2>/dev/null || true)"
+
+# Resolve the project dir from the hook payload, falling back to PWD.
+CWD="$(printf '%s' "$INPUT" | python3 -c 'import sys, json
+try:
+    print(json.load(sys.stdin).get("cwd", "") or "")
+except Exception:
+    print("")' 2>/dev/null || true)"
+[ -z "${CWD:-}" ] && CWD="$PWD"
+
+TRIGGER="$(printf '%s' "$INPUT" | python3 -c 'import sys, json
+try:
+    print(json.load(sys.stdin).get("compaction_trigger", "auto") or "auto")
+except Exception:
+    print("auto")' 2>/dev/null || true)"
+
+# Walk up to find .hyperflow/ (stop at git root or filesystem root).
+HF_DIR=""
+d="$CWD"
+while [ "$d" != "/" ] && [ -n "$d" ]; do
+  if [ -d "$d/.hyperflow" ]; then HF_DIR="$d/.hyperflow"; break; fi
+  [ -d "$d/.git" ] && break
+  d="$(dirname "$d")"
+done
+
+# Nothing to preserve if the project isn't scaffolded.
+[ -z "$HF_DIR" ] && exit 0
+
+ROOT="$(dirname "$HF_DIR")"
+SNAP="$HF_DIR/.precompact.md"
+
+{
+  printf '<!-- hyperflow precompact snapshot · %s · trigger=%s -->\n' "$(date -u +%FT%TZ 2>/dev/null || echo now)" "${TRIGGER:-auto}"
+  printf '## Recovered context (post-compaction)\n'
+  printf 'The conversation was just compacted mid-run. Re-orient from the durable state below before continuing — do not assume earlier turns are still in context.\n\n'
+
+  # 1 — Active task + chain state
+  if ls "$HF_DIR/tasks/"*.md >/dev/null 2>&1; then
+    printf '### Active task files (resume here)\n'
+    for f in "$HF_DIR/tasks/"*.md; do
+      [ -f "$f" ] && printf -- '- `%s`\n' "$(basename "$f")"
+    done
+    printf '\n'
+  fi
+
+  # 2 — Decisions / spec
+  for df in project-decisions.md decisions.md; do
+    if [ -f "$HF_DIR/memory/$df" ]; then
+      printf '### Decisions (%s)\n' "$df"
+      head -n 40 "$HF_DIR/memory/$df"
+      printf '\n'
+      break
+    fi
+  done
+  if ls "$HF_DIR/specs/"*.md >/dev/null 2>&1; then
+    printf '### Open specs\n'
+    for f in "$HF_DIR/specs/"*.md; do
+      [ -f "$f" ] && printf -- '- `%s`\n' "$(basename "$f")"
+    done
+    printf '\n'
+  fi
+
+  # 3 — Reviewer findings / anti-patterns (hot memory)
+  if [ -f "$HF_DIR/memory/anti-patterns.md" ]; then
+    printf '### Anti-patterns (hot — keep enforcing)\n'
+    head -n 30 "$HF_DIR/memory/anti-patterns.md"
+    printf '\n'
+  fi
+
+  # 4 — Recent edits / diff summary
+  if git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    unstaged="$(git -C "$ROOT" --no-pager diff --stat 2>/dev/null | head -n 40 || true)"
+    staged="$(git -C "$ROOT" --no-pager diff --stat --cached 2>/dev/null | head -n 40 || true)"
+    if [ -n "$unstaged" ] || [ -n "$staged" ]; then
+      printf '### Uncommitted changes so far\n```\n'
+      [ -n "$staged" ] && { printf '# staged\n'; printf '%s\n' "$staged"; }
+      [ -n "$unstaged" ] && { printf '# unstaged\n'; printf '%s\n' "$unstaged"; }
+      printf '```\n'
+    fi
+  fi
+} > "$SNAP" 2>/dev/null || true
+
+exit 0
