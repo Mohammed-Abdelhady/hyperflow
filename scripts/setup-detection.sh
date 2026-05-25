@@ -20,7 +20,7 @@ FORCE=false
 DRY_RUN=false
 
 # ── Valid tool names ───────────────────────────────────────────────────────────
-VALID_TOOLS="claude-code opencode agents all"
+VALID_TOOLS="claude-code opencode agents antigravity all"
 
 # ── Usage ─────────────────────────────────────────────────────────────────────
 usage() {
@@ -32,11 +32,12 @@ tools can discover and load hyperflow conventions automatically.
 
 OPTIONS:
   --tools <list>   Comma-separated tools to set up (default: all)
-                   Valid values: claude-code, opencode, agents, all
+                   Valid values: claude-code, opencode, agents, antigravity, all
                      claude-code  — writes CLAUDE.md (append mode)
                      opencode     — writes AGENTS.md
                      agents       — writes AGENTS.md (alias for opencode)
-                     all          — claude-code + opencode + agents
+                     antigravity  — writes AGENTS.md + .agent/workflows/hyperflow* slash commands
+                     all          — claude-code + opencode + agents + antigravity
   --force          Overwrite existing files (default: skip with warning)
   --dry-run        Print what would be created without writing files
   --help           Show this help message
@@ -103,10 +104,13 @@ wants_tool() {
 # ── Derived flags per file ────────────────────────────────────────────────────
 need_agents_md=false
 need_claude_md=false
+need_antigravity=false
 
 wants_tool "opencode"    && need_agents_md=true
 wants_tool "agents"      && need_agents_md=true
 wants_tool "claude-code" && need_claude_md=true
+wants_tool "antigravity" && need_antigravity=true
+wants_tool "antigravity" && need_agents_md=true   # Antigravity also reads AGENTS.md
 
 # ── Template directory ────────────────────────────────────────────────────────
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
@@ -260,6 +264,22 @@ main() {
   if [[ "$need_claude_md" == true ]]; then
     echo -e "${BLUE}==> CLAUDE.md (Claude Code)${RESET}"
     write_claude_md
+  fi
+
+  # .agent/workflows — Antigravity slash commands (/hyperflow*)
+  if [[ "$need_antigravity" == true ]]; then
+    echo -e "${BLUE}==> .agent/workflows (Antigravity)${RESET}"
+    local wf_src="$TEMPLATE_DIR/antigravity/workflows"
+    if [[ -d "$wf_src" ]]; then
+      mkdir -p "$ROOT/.agent/workflows"
+      local wf
+      for wf in "$wf_src"/*.md; do
+        [[ -f "$wf" ]] || continue
+        write_file "$ROOT/.agent/workflows/$(basename "$wf")" "$(cat "$wf")"
+      done
+    else
+      echo -e "${YELLOW}  antigravity workflow templates not found at $wf_src${RESET}"
+    fi
   fi
 
   echo ""
