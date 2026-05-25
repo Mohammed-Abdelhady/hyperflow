@@ -1,124 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470"
      role="img" aria-labelledby="t d" font-family="'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif">
   <title id="t">Hyperflow v4.21.0</title>
-  <desc id="d">Advanced multi-agent orchestration with persistent cross-session memory — the chain (amplify, spec, scope, dispatch, audit, deploy), a thinking/worker review loop, phase to sub-phase fan-out, and memory that persists across sessions.</desc>
+  <desc id="d">Advanced multi-agent orchestration with persistent cross-session memory — first init once with scaffold, then the chain: amplify, spec, scope, dispatch, audit, deploy, with thinking/worker tiers and a Worker to Reviewer review at every step.</desc>
   <defs>
-    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
-      <path d="M28 0 L0 0 0 28" fill="none" stroke="#ECE7D7" stroke-width="1"/></pattern>
-    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M0,0 L10,5 L0,10 Z" fill="#14110C"/></marker>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0 L0 0 0 28" fill="none" stroke="#ECE7D7" stroke-width="1"/></pattern>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#14110C"/></marker>
   </defs>
-  <rect x="0" y="0" width="1200" height="560" fill="#F4F1E8"/>
-  <rect x="0" y="0" width="1200" height="560" fill="url(#grid)"/>
-  <rect x="1" y="1" width="1198" height="558" fill="none" stroke="#14110C" stroke-width="2"/>
-  <text x="48" y="110" fill="#14110C" font-size="70" font-weight="700" text-anchor="start" letter-spacing="-3">Hyper</text>
-  <rect x="258" y="59" width="182" height="72" fill="#14110C"/>
-  <rect x="253" y="54" width="182" height="72" fill="#E8470F"/>
-  <text x="344.0" y="110" fill="#F4F1E8" font-size="70" font-weight="700" text-anchor="middle" letter-spacing="-3">flow</text>
-  <rect x="1067" y="50" width="85" height="26" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <text x="1109.5" y="68" fill="#14110C" font-size="12" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">v4.21.0</text>
-  <text x="48" y="148" fill="#6B6456" font-size="13" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">Advanced multi-agent orchestration with persistent cros…</text>
-  <rect x="48" y="166" width="11" height="11" fill="#7C3AED"/>
-  <text x="68" y="176" fill="#14110C" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">thinking · plans + reviews · Opus / Gemini Pro</text>
-  <rect x="408" y="166" width="11" height="11" fill="#14B8A6"/>
-  <text x="428" y="176" fill="#14110C" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">worker · executes in parallel · Sonnet / Gemini Flash</text>
-  <text x="48" y="218" fill="#6B6456" font-size="11" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="2">THE CHAIN</text>
-  <rect x="52.0" y="236" width="150" height="74" fill="#14110C"/>
-  <rect x="48.0" y="232" width="150" height="74" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="48.0" y="232" width="150" height="5" fill="#7C3AED"/>
-  <text x="123.0" y="262" fill="#14110C" font-size="15" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/amplify</text>
-  <text x="123.0" y="281" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">sharpen the ask</text>
-  <text x="123.0" y="297" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">FRONT DOOR</text>
-  <line x1="202.0" y1="269.0" x2="234.8" y2="269.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="242.8" y="236" width="150" height="74" fill="#14110C"/>
-  <rect x="238.8" y="232" width="150" height="74" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="238.8" y="232" width="150" height="5" fill="#7C3AED"/>
-  <text x="313.8" y="262" fill="#14110C" font-size="15" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/spec</text>
-  <text x="313.8" y="281" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">specify design</text>
-  <text x="313.8" y="297" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">CHAIN STARTER</text>
-  <line x1="392.8" y1="269.0" x2="425.6" y2="269.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="433.6" y="236" width="150" height="74" fill="#14110C"/>
-  <rect x="429.6" y="232" width="150" height="74" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="429.6" y="232" width="150" height="5" fill="#7C3AED"/>
-  <text x="504.6" y="262" fill="#14110C" font-size="15" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/scope</text>
-  <text x="504.6" y="281" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">decompose work</text>
-  <text x="504.6" y="297" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">CHAIN STARTER</text>
-  <line x1="583.6" y1="269.0" x2="616.4" y2="269.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="624.4000000000001" y="236" width="150" height="74" fill="#14110C"/>
-  <rect x="620.4000000000001" y="232" width="150" height="74" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="620.4000000000001" y="232" width="150" height="5" fill="#14B8A6"/>
-  <text x="695.4000000000001" y="262" fill="#14110C" font-size="15" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/dispatch</text>
-  <text x="695.4000000000001" y="281" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">execute batches</text>
-  <text x="695.4000000000001" y="297" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">ENDPOINT</text>
-  <line x1="774.4000000000001" y1="269.0" x2="807.2" y2="269.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="815.2" y="236" width="150" height="74" fill="#14110C"/>
-  <rect x="811.2" y="232" width="150" height="74" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="811.2" y="232" width="150" height="74" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
-  <rect x="811.2" y="232" width="150" height="5" fill="#ECE7D7"/>
-  <text x="886.2" y="262" fill="#14110C" font-size="15" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/audit</text>
-  <text x="886.2" y="281" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">code review</text>
-  <text x="886.2" y="297" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
-  <line x1="965.2" y1="269.0" x2="998.0" y2="269.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="1006.0" y="236" width="150" height="74" fill="#14110C"/>
-  <rect x="1002.0" y="232" width="150" height="74" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="1002.0" y="232" width="150" height="74" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
-  <rect x="1002.0" y="232" width="150" height="5" fill="#ECE7D7"/>
-  <text x="1077.0" y="262" fill="#14110C" font-size="15" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/deploy</text>
-  <text x="1077.0" y="281" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">pre-push gates</text>
-  <text x="1077.0" y="297" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
-  <text x="504.6" y="330" fill="#14110C" font-size="10" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">amplify hands off · spec → scope → dispatch auto-chains · audit + deploy gate at the end</text>
-  <rect x="52.0" y="364" width="336" height="132" fill="#14110C"/>
-  <rect x="48.0" y="360" width="336" height="132" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <text x="64.0" y="386" fill="#6B6456" font-size="10" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="1.4">EVERY STEP REVIEWED</text>
-  <rect x="66.0" y="412" width="130" height="40" fill="#F4F1E8" stroke="#14B8A6" stroke-width="2"/>
-  <rect x="66.0" y="412" width="130" height="5" fill="#14B8A6"/>
-  <text x="131.0" y="437" fill="#14110C" font-size="13" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">Worker</text>
-  <line x1="200.0" y1="432" x2="234.0" y2="432" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <text x="218.0" y="424" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle">output</text>
-  <rect x="238.0" y="412" width="130" height="40" fill="#F4F1E8" stroke="#7C3AED" stroke-width="2"/>
-  <rect x="238.0" y="412" width="130" height="5" fill="#7C3AED"/>
-  <text x="303.0" y="437" fill="#14110C" font-size="13" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">Reviewer</text>
-  <text x="216.0" y="476" fill="#6B6456" font-size="8.5" font-weight="400" text-anchor="middle">thinking-tier reviews every worker output — no exceptions</text>
-  <rect x="436.0" y="364" width="336" height="132" fill="#14110C"/>
-  <rect x="432.0" y="360" width="336" height="132" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <text x="448.0" y="386" fill="#6B6456" font-size="10" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="1.4">PHASES → SUB-PHASES</text>
-  <rect x="450.0" y="416" width="70" height="34" fill="#F4F1E8" stroke="#14110C" stroke-width="2"/>
-  <text x="485.0" y="437" fill="#14110C" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">phase</text>
-  <line x1="523.0" y1="433" x2="557.0" y2="421" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="560.0" y="410" width="54" height="20" fill="#F4F1E8" stroke="#14B8A6" stroke-width="1.5"/>
-  <text x="587.0" y="424" fill="#14110C" font-size="9.5" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">2a</text>
-  <rect x="624.0" y="410" width="80" height="20" fill="#F4F1E8" stroke="#7C3AED" stroke-width="1.5"/>
-  <text x="664.0" y="424" fill="#14110C" font-size="8.5" font-weight="400" text-anchor="middle">review</text>
-  <line x1="616.0" y1="420" x2="622.0" y2="420" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <line x1="523.0" y1="433" x2="557.0" y2="445" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="560.0" y="434" width="54" height="20" fill="#F4F1E8" stroke="#14B8A6" stroke-width="1.5"/>
-  <text x="587.0" y="448" fill="#14110C" font-size="9.5" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">2b</text>
-  <rect x="624.0" y="434" width="80" height="20" fill="#F4F1E8" stroke="#7C3AED" stroke-width="1.5"/>
-  <text x="664.0" y="448" fill="#14110C" font-size="8.5" font-weight="400" text-anchor="middle">review</text>
-  <line x1="616.0" y1="444" x2="622.0" y2="444" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <line x1="523.0" y1="433" x2="557.0" y2="469" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="560.0" y="458" width="54" height="20" fill="#F4F1E8" stroke="#14B8A6" stroke-width="1.5"/>
-  <text x="587.0" y="472" fill="#14110C" font-size="9.5" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">2c</text>
-  <rect x="624.0" y="458" width="80" height="20" fill="#F4F1E8" stroke="#7C3AED" stroke-width="1.5"/>
-  <text x="664.0" y="472" fill="#14110C" font-size="8.5" font-weight="400" text-anchor="middle">review</text>
-  <line x1="616.0" y1="468" x2="622.0" y2="468" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <text x="600.0" y="476" fill="#6B6456" font-size="8.5" font-weight="400" text-anchor="middle">each phase fans into ≥2 parallel sub-phases · each reviewed</text>
-  <rect x="820.0" y="364" width="336" height="132" fill="#14110C"/>
-  <rect x="816.0" y="360" width="336" height="132" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <text x="832.0" y="386" fill="#6B6456" font-size="10" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="1.4">MEMORY ACROSS SESSIONS</text>
-  <rect x="834.0" y="418" width="64" height="30" fill="#F4F1E8" stroke="#14110C" stroke-width="2"/>
-  <text x="866.0" y="432" fill="#14110C" font-size="9" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">session</text>
-  <text x="866.0" y="443" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">N</text>
-  <line x1="901.0" y1="433" x2="926.0" y2="433" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="930.0" y="416" width="96" height="34" fill="#F4F1E8" stroke="#F59E0B" stroke-width="2"/>
-  <rect x="930.0" y="416" width="96" height="5" fill="#F59E0B"/>
-  <text x="978.0" y="437" fill="#14110C" font-size="10.5" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">memory</text>
-  <line x1="1029.0" y1="433" x2="1054.0" y2="433" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="1058.0" y="418" width="64" height="30" fill="#F4F1E8" stroke="#14110C" stroke-width="2"/>
-  <text x="1090.0" y="432" fill="#14110C" font-size="9" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">session</text>
-  <text x="1090.0" y="443" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">N+1</text>
-  <text x="984.0" y="476" fill="#6B6456" font-size="8.5" font-weight="400" text-anchor="middle">local · per-project · never uploaded · learns as it works</text>
-  <line x1="48" y1="522" x2="1152" y2="522" stroke="#14110C" stroke-width="2"/>
-  <text x="48" y="536" fill="#6B6456" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">github.com/Mohammed-Abdelhady/hyperflow</text>
-  <text x="1152" y="536" fill="#6B6456" font-size="11" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">premium multi-agent orchestration · Claude Code · OpenCode · Antigravity</text>
+  <rect x="0" y="0" width="1200" height="470" fill="#F4F1E8"/>
+  <rect x="0" y="0" width="1200" height="470" fill="url(#grid)"/>
+  <rect x="1" y="1" width="1198" height="468" fill="none" stroke="#14110C" stroke-width="2"/>
+  <text x="48" y="64" fill="#14110C" font-size="38" font-weight="700" text-anchor="start" letter-spacing="-2">Hyper</text>
+  <rect x="163" y="38" width="95" height="39" fill="#14110C"/>
+  <rect x="159" y="34" width="95" height="39" fill="#E8470F"/>
+  <text x="206.5" y="64" fill="#F4F1E8" font-size="38" font-weight="700" text-anchor="middle" letter-spacing="-2">flow</text>
+  <rect x="1067" y="40" width="85" height="26" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <text x="1109.5" y="58" fill="#14110C" font-size="12" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">v4.21.0</text>
+  <text x="48" y="92" fill="#6B6456" font-size="12.5" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">Advanced multi-agent orchestration with persistent cross-session me…</text>
+  <text x="48" y="116" fill="#14110C" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">INIT ONCE  ·  scaffold sets up the project + .hyperflow/ cache</text>
+  <text x="600.0" y="150" fill="#7C3AED" font-size="11" font-weight="400" text-anchor="middle" letter-spacing="0.18em">THINKING TIER</text>
+  <text x="600.0" y="164" fill="#6B6456" font-size="9" font-weight="400" text-anchor="middle">orchestrates every phase · triages · reviews every output</text>
+  <line x1="48" y1="182" x2="1152" y2="182" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5"/>
+  <line x1="48" y1="182" x2="48" y2="176" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5"/>
+  <line x1="1152" y1="182" x2="1152" y2="176" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5"/>
+  <rect x="52.0" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="48.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="48.0" y="200" width="164" height="5" fill="#7C3AED"/>
+  <text x="130.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/amplify</text>
+  <text x="130.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">FRONT DOOR</text>
+  <line x1="64.0" y1="262" x2="196.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="130.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">sharpen the ask</text>
+  <line x1="216.0" y1="243.0" x2="232.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="240.0" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="236.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="236.0" y="200" width="164" height="5" fill="#7C3AED"/>
+  <text x="318.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/spec</text>
+  <text x="318.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">CHAIN STARTER</text>
+  <line x1="252.0" y1="262" x2="384.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="318.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">design + approval</text>
+  <line x1="404.0" y1="243.0" x2="420.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="428.0" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="424.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="424.0" y="200" width="164" height="5" fill="#7C3AED"/>
+  <text x="506.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/scope</text>
+  <text x="506.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">CHAIN STARTER</text>
+  <line x1="440.0" y1="262" x2="572.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="506.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">decompose to tasks</text>
+  <line x1="592.0" y1="243.0" x2="608.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="616.0" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="612.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="612.0" y="200" width="164" height="5" fill="#14B8A6"/>
+  <text x="694.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/dispatch</text>
+  <text x="694.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">ENDPOINT</text>
+  <line x1="628.0" y1="262" x2="760.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="694.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">parallel build + review</text>
+  <line x1="780.0" y1="243.0" x2="796.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="804.0" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="800.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="800.0" y="200" width="164" height="86" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
+  <rect x="800.0" y="200" width="164" height="5" fill="#ECE7D7"/>
+  <text x="882.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/audit</text>
+  <text x="882.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">GATE</text>
+  <line x1="816.0" y1="262" x2="948.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="882.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">L1–L5 review</text>
+  <line x1="968.0" y1="243.0" x2="984.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="992.0" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="988.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="988.0" y="200" width="164" height="86" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
+  <rect x="988.0" y="200" width="164" height="5" fill="#ECE7D7"/>
+  <text x="1070.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/deploy</text>
+  <text x="1070.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">GATE</text>
+  <line x1="1004.0" y1="262" x2="1136.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="1070.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">pre-push gates</text>
+  <line x1="48" y1="304" x2="1152" y2="304" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5"/>
+  <line x1="48" y1="304" x2="48" y2="310" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5"/>
+  <line x1="1152" y1="304" x2="1152" y2="310" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5"/>
+  <text x="600.0" y="326" fill="#14B8A6" font-size="11" font-weight="400" text-anchor="middle" letter-spacing="0.18em">WORKER TIER</text>
+  <text x="600.0" y="340" fill="#6B6456" font-size="9" font-weight="400" text-anchor="middle">executes in parallel — persona-stitched per task</text>
+  <rect x="48" y="356" width="1104" height="26" fill="#ECE7D7" stroke="#C9C2AE" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="600.0" y="373" fill="#6B6456" font-size="9.5" font-weight="400" text-anchor="middle">every step dispatches a Worker → Reviewer pair · no output reaches the next step unreviewed</text>
+  <text x="48" y="448" fill="#6B6456" font-size="10.5" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">github.com/Mohammed-Abdelhady/hyperflow</text>
+  <text x="1152" y="448" fill="#6B6456" font-size="10.5" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">premium multi-agent orchestration · Claude Code · OpenCode · Antigravity</text>
 </svg>

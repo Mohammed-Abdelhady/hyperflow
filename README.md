@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="docs/assets/hero.svg" alt="Hyperflow — multi-agent orchestration. amplify → spec → scope → dispatch → audit → deploy" width="100%" />
+  <picture>
+    <source media="(max-width: 600px)" srcset="docs/assets/hero-vertical.svg" />
+    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then the chain: amplify → spec → scope → dispatch → audit → deploy, with thinking/worker tiers and a Worker → Reviewer review at every step" width="100%" />
+  </picture>
 </p>
 
 <h1 align="center">Hyperflow</h1>
@@ -67,11 +70,12 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-Then invoke any skill:
+First initialize the project (once), then invoke any skill:
 
 ```text
-/hyperflow:spec "add user auth with login + middleware"   # design → scope → dispatch
-/hyperflow:amplify "make a login page"                     # enhance a rough prompt first
+/hyperflow:scaffold                                        # first: set up the project (once per repo)
+/hyperflow:amplify "make a login page"                     # turn a rough idea into a strong prompt
+/hyperflow:spec "add user auth with login + middleware"    # design → scope → dispatch
 /hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
 /hyperflow:deploy                                          # pre-push gates + ship
 ```

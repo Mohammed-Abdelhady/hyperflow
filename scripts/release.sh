@@ -345,6 +345,7 @@ git add \
 for optional in \
   "$ROOT/config/features.json" \
   "$ROOT/docs/assets/hero.svg" \
+  "$ROOT/docs/assets/hero-vertical.svg" \
   "$ROOT/docs/assets/demo.cast" \
   "$ROOT/docs/assets/demo.gif" \
   "$ROOT/docs/assets/whats-new.cast" \

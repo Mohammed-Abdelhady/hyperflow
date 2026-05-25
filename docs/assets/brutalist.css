@@ -925,6 +925,29 @@
       .install-code, .example-body { font-size: 0.775rem; }
       .fr-rule { grid-template-columns: 1fr; }
       .fr-rule-name { border-right: none; border-bottom: var(--line-hair); }
+
+      /* Install command: wrap to multiple lines instead of horizontal scroll */
+      .hero-ctas { flex-direction: column; align-items: stretch; }
+      .cta-primary { flex-wrap: wrap; }
+      .cta-primary > code,
+      .cta-primary > #hero-cmd {
+        white-space: normal;
+        overflow-x: visible;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        flex: 1 1 100%;
+      }
+      .cta-primary .copy-btn { flex: 1 1 100%; border-left: none; border-top: var(--line); padding: 0.55rem; }
+      .cta-secondary { justify-content: center; padding: 0.75rem 1.4rem; }
+
+      /* Diagrams scale to fit the screen instead of scrolling horizontally */
+      .chain-svg-wrap, .wr-svg-wrap, .sp-svg-wrap, .memory-svg-wrap, .pair-svg-wrap { min-width: 0; }
+      #chain .chain-diagram, .wr-diagram-wrap, .sp-diagram-wrap, .memory-diagram-wrap,
+      .pair-svg-wrap { overflow-x: hidden; padding: 1rem; }
+      /* Wide tables may still scroll inside their own bordered box (never the page) */
+      .skills-table-wrap { overflow-x: auto; }
     }
 
     @media (max-width: 420px) {
