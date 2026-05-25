@@ -591,14 +591,14 @@
     <section id="updates" aria-labelledby="updates-heading">
       <div class="container">
         <p class="section-label">Updates</p>
-        <h2 id="updates-heading">Pull and go — symlinks do the rest.</h2>
+        <h2 id="updates-heading">It tells you when there's a new version.</h2>
         <p>
-          Because Hyperflow installs via symlink, every provider picks up changes immediately — no re-copying.
+          Hyperflow checks for a newer release at session start (once per 24h, non-blocking). When one is available it tells you the version jump and asks — via a prompt — whether to update now; on <strong>Update now</strong> it runs the right command for your install and continues on the new version.
         </p>
 
         <div class="install-block" style="margin-top:2rem;">
           <div class="install-block-header">
-            <span class="install-block-title">UPDATE</span>
+            <span class="install-block-title">UPDATE MANUALLY</span>
             <button
               class="copy-btn"
               aria-label="Copy update command"
@@ -606,9 +606,17 @@
             >copy</button>
           </div>
           <div class="install-code" id="block-update">
-            git -C ~/.hyperflow/repo pull
+            <span class="comment"># installer / git install</span><br />
+            git -C ~/.hyperflow/repo pull<br />
+            <br />
+            <span class="comment"># marketplace install</span><br />
+            claude plugin update hyperflow@hyperflow-marketplace
           </div>
         </div>
+
+        <p class="install-note" style="margin-top:1rem;">
+          The installer path installs via symlink, so every provider picks up changes immediately — no re-copying.
+        </p>
 
         <p class="install-note" style="margin-top:1.5rem;">
           To change models or security settings, re-run the installer:
