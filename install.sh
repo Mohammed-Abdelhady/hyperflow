@@ -48,6 +48,20 @@ detect_providers() {
       PROVIDER_KEYS+=("$key")
     fi
   done
+
+  # Antigravity migrated its config from ~/.antigravity to ~/.gemini/config.
+  # Prefer the live (migrated) skills dir; fall back to the legacy one.
+  local ag_skills=""
+  if [ -d "$HOME/.gemini/config" ]; then
+    ag_skills="$HOME/.gemini/config/skills"
+  elif [ -d "$HOME/.antigravity" ]; then
+    ag_skills="$HOME/.antigravity/skills"
+  fi
+  if [ -n "$ag_skills" ]; then
+    PROVIDERS+=("Antigravity")
+    PROVIDER_PATHS+=("$ag_skills")
+    PROVIDER_KEYS+=("antigravity")
+  fi
 }
 
 # ─── Prompt Helpers ───
@@ -124,6 +138,33 @@ link_provider() {
     return
   fi
 
+  # Antigravity uses a flat skills dir (one dir per skill with SKILL.md) and cannot
+  # load the multi-agent Claude plugin tree. Link the single-agent-adapted skill set.
+  if [ "$name" = "Antigravity" ]; then
+    local ag_src="$INSTALL_DIR/templates/antigravity/skills"
+    if [ ! -d "$ag_src" ]; then
+      warn "Antigravity — adapted skills not found at $ag_src (update your clone)"
+      return
+    fi
+    mkdir -p "$skills_dir"
+    local linked=0 skill_path sname stgt
+    for skill_path in "$ag_src"/*/; do
+      [ -d "$skill_path" ] || continue
+      sname="$(basename "$skill_path")"
+      stgt="$skills_dir/$sname"
+      if [ -L "$stgt" ]; then
+        rm "$stgt"
+      elif [ -d "$stgt" ]; then
+        mv "$stgt" "${stgt}.bak"
+      fi
+      ln -s "${skill_path%/}" "$stgt"
+      linked=$((linked + 1))
+    done
+    info "Antigravity — linked $linked skills into $skills_dir"
+    step "  Slash commands: run scripts/setup-detection.sh --tools antigravity <project> to add .agent/workflows/hyperflow*"
+    return
+  fi
+
   local target="$skills_dir/hyperflow"
   local source="$INSTALL_DIR/$SKILL_DIR"
 
@@ -188,6 +229,15 @@ configure_models_opencode() {
     "Gemini 3 Flash|Fast and cheap"
   local worker_options=("anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" "openai/gpt-5.4-mini" "google-vertex-ai/gemini-3-flash")
   SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
+}
+
+configure_models_antigravity() {
+  header "Model Configuration — Antigravity"
+  step "Antigravity selects its model in the IDE model picker (Gemini or Claude)."
+  step "Hyperflow's thinking/worker tier split does not apply — the single agent runs"
+  step "every phase itself. No model config is needed here."
+  SELECTED_THINKING="ide-managed"
+  SELECTED_WORKER="ide-managed"
 }
 
 # ─── Security ───
@@ -308,6 +358,8 @@ print_summary() {
     for i in "${!PROVIDERS[@]}"; do
       if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
         step "  Claude Code — plugin (claude plugin install hyperflow@hyperflow-marketplace)"
+      elif [ "${PROVIDERS[$i]}" = "Antigravity" ]; then
+        step "  Antigravity — hyperflow* skills → ${PROVIDER_PATHS[$i]}"
       else
         step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
       fi
@@ -340,6 +392,23 @@ uninstall() {
 
     if [ "$name" = "Claude Code" ]; then
       step "  Claude Code — use 'claude plugin uninstall hyperflow@hyperflow-marketplace'"
+      continue
+    fi
+
+    if [ "$name" = "Antigravity" ]; then
+      local ag_removed=0 skill_path sname stgt
+      for skill_path in "$INSTALL_DIR/templates/antigravity/skills"/*/; do
+        [ -d "$skill_path" ] || continue
+        sname="$(basename "$skill_path")"
+        stgt="${PROVIDER_PATHS[$i]}/$sname"
+        if [ -L "$stgt" ]; then rm "$stgt"; ag_removed=$((ag_removed + 1)); fi
+      done
+      if [ $ag_removed -gt 0 ]; then
+        info "Antigravity — removed $ag_removed skill symlinks"
+        removed=$((removed + 1))
+      else
+        step "  Antigravity — not installed, skipping"
+      fi
       continue
     fi
 
@@ -459,6 +528,7 @@ main() {
   case "$config_provider" in
     "Claude Code") configure_models_claude_code ;;
     OpenCode)      configure_models_opencode ;;
+    Antigravity)   configure_models_antigravity ;;
     *)             configure_models_claude_code ;;
   esac
 
