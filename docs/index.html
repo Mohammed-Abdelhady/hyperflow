@@ -65,7 +65,7 @@
         </div>
 
         <p class="hero-chain-hint">
-          scaffold &nbsp;&#x2192;&nbsp; spec &nbsp;&#x2192;&nbsp; scope &nbsp;&#x2192;&nbsp; dispatch &nbsp;&#x2192;&nbsp; audit &nbsp;&#x2192;&nbsp; deploy
+          amplify &nbsp;&#x2192;&nbsp; spec &nbsp;&#x2192;&nbsp; scope &nbsp;&#x2192;&nbsp; dispatch &nbsp;&#x2192;&nbsp; audit &nbsp;&#x2192;&nbsp; deploy
         </p>
       </div>
     </div>
@@ -82,7 +82,7 @@
         Chain-starting skills auto-advance through the rest of the chain. Skip to any entry point — the orchestrator picks up and runs forward.
       </p>
 
-      <div class="chain-diagram" role="img" aria-label="Chain flow: scaffold (standalone), then spec (thinking-tier) auto-chains to scope (thinking-tier) auto-chains to dispatch (worker-tier), with audit and deploy gates at the end">
+      <div class="chain-diagram" role="img" aria-label="Chain flow: amplify (front door) hands off to spec (thinking-tier), which auto-chains to scope (thinking-tier) and dispatch (worker-tier), with audit and deploy gates at the end">
         <div class="chain-svg-wrap">
           <svg viewBox="0 0 960 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
             <!-- ─────────── Thinking-tier bracket ─────────── -->
@@ -92,13 +92,13 @@
             <line x1="479" y1="46" x2="479" y2="40" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5" />
 
             <!-- ─────────── Node row (w=128 h=76 y=72; x: 40,190,340,490,640,790) ─────────── -->
-            <!-- scaffold · standalone -->
+            <!-- amplify · front door -->
             <rect x="40" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
-            <rect x="40" y="72" width="128" height="4" rx="2" fill="#6B6456" />
-            <text x="104" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">scaffold</text>
-            <text x="104" y="114" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">STANDALONE</text>
+            <rect x="40" y="72" width="128" height="4" rx="2" fill="#7C3AED" />
+            <text x="104" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">amplify</text>
+            <text x="104" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">FRONT DOOR</text>
             <line x1="56" y1="122" x2="152" y2="122" stroke="#C9C2AE" stroke-width="1" />
-            <text x="104" y="137" font-size="9" fill="#6B6456" text-anchor="middle">project setup + cache</text>
+            <text x="104" y="137" font-size="9" fill="#6B6456" text-anchor="middle">sharpen the ask</text>
 
             <!-- spec · thinking -->
             <rect x="190" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
@@ -139,9 +139,9 @@
             <text x="854" y="137" font-size="9" fill="#6B6456" text-anchor="middle">pre-push gates + ship</text>
 
             <!-- ─────────── Connectors (node mid y=110) ─────────── -->
-            <line x1="170" y1="110" x2="186" y2="110" stroke="#14110C" stroke-width="1.25" />
-            <polygon points="186,106.5 192,110 186,113.5" fill="#14110C" />
-            <text x="179" y="103" font-size="7" fill="#6B6456" text-anchor="middle">then</text>
+            <line x1="170" y1="110" x2="186" y2="110" stroke="#7C3AED" stroke-width="1.5" />
+            <polygon points="186,106.5 192,110 186,113.5" fill="#7C3AED" />
+            <text x="179" y="103" font-size="7" fill="#7C3AED" text-anchor="middle">hands off</text>
 
             <line x1="320" y1="110" x2="336" y2="110" stroke="#7C3AED" stroke-width="1.5" />
             <polygon points="336,106.5 342,110 336,113.5" fill="#7C3AED" />
@@ -158,9 +158,10 @@
             <polygon points="786,106.5 792,110 786,113.5" fill="#14110C" />
 
             <!-- ─────────── Entry-point markers ─────────── -->
-            <text x="254" y="164" font-size="8" fill="#7C3AED" text-anchor="middle">▸ start here</text>
-            <text x="404" y="164" font-size="8" fill="#7C3AED" text-anchor="middle">▸ start here</text>
-            <text x="554" y="164" font-size="8" fill="#14B8A6" text-anchor="middle">▸ start here</text>
+            <text x="104" y="164" font-size="8" fill="#7C3AED" text-anchor="middle" font-weight="700">▸ start from a rough idea</text>
+            <text x="254" y="164" font-size="8" fill="#7C3AED" text-anchor="middle">▸ or here</text>
+            <text x="404" y="164" font-size="8" fill="#7C3AED" text-anchor="middle">▸ or here</text>
+            <text x="554" y="164" font-size="8" fill="#14B8A6" text-anchor="middle">▸ or here</text>
 
             <!-- auto-chain span under spec → dispatch -->
             <path d="M190 176 V182 H618 V176" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
@@ -186,8 +187,7 @@
       </div>
 
       <p class="chain-caption">
-        <code>spec</code> &rarr; <code>scope</code> &rarr; <code>dispatch</code> is the primary chain. Enter at <code>spec</code> for design-first work, at <code>scope</code> when the approach is clear, at <code>dispatch</code> when a task file already exists.
-        <code>audit</code> and <code>deploy</code> gates fire at the end of dispatch — batched into one ask.
+        Start with a rough idea: <code>amplify</code> rewrites it into the strongest prompt, then hands off into the chain. <code>spec</code> &rarr; <code>scope</code> &rarr; <code>dispatch</code> auto-chains — enter at <code>spec</code> for design-first work, at <code>scope</code> when the approach is clear, at <code>dispatch</code> when a task file already exists. <code>audit</code> and <code>deploy</code> gates fire at the end, batched into one ask. (<code>scaffold</code> is a one-time project setup, run once per repo.)
       </p>
     </div>
   </section>
@@ -516,7 +516,7 @@
       <p class="section-label">Skills</p>
       <h2 id="skills-heading">14 specialized skills. Auto-routing on by default.</h2>
       <p class="skills-intro">
-        Say the verb — "audit the diff", "debug this test", "scope the new auth flow" — and the orchestrator routes automatically. No <code>/hyperflow:*</code> prefix required in auto mode. Three chain-starters drive the main flow; the rest are standalone — including <code>amplify</code> (rewrites a rough prompt into the strongest version) and the operational utilities <code>status</code>, <code>background</code>, <code>sticky</code>, <code>bridge</code>, and <code>flush</code>.
+        Say the verb — "audit the diff", "debug this test", "scope the new auth flow" — and the orchestrator routes automatically. No <code>/hyperflow:*</code> prefix required in auto mode. <code>amplify</code> is the front door: it rewrites a rough prompt into the strongest version and hands off into the chain. <code>scaffold</code> sets a project up once; the operational utilities <code>status</code>, <code>background</code>, <code>sticky</code>, <code>bridge</code>, and <code>flush</code> run on their own.
       </p>
 
       <div class="skills-table-wrap">

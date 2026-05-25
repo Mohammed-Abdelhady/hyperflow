@@ -47,17 +47,17 @@ INK = "#14110C"
 MUTED = "#6B6456"
 ACCENT = "#E8470F"
 
-CHAIN = ["scaffold", "spec", "scope", "dispatch", "audit", "deploy"]
+CHAIN = ["amplify", "spec", "scope", "dispatch", "audit", "deploy"]
 CHAIN_ROLE = {
-    "scaffold": "standalone", "spec": "thinking", "scope": "thinking",
+    "amplify": "thinking", "spec": "thinking", "scope": "thinking",
     "dispatch": "worker", "audit": "gate", "deploy": "gate",
 }
 CHAIN_SUB = {
-    "scaffold": "STANDALONE", "spec": "CHAIN STARTER", "scope": "CHAIN STARTER",
+    "amplify": "FRONT DOOR", "spec": "CHAIN STARTER", "scope": "CHAIN STARTER",
     "dispatch": "ENDPOINT", "audit": "GATE", "deploy": "GATE",
 }
 CHAIN_CAPTION = {
-    "scaffold": "project setup", "spec": "specify design", "scope": "decompose work",
+    "amplify": "sharpen the ask", "spec": "specify design", "scope": "decompose work",
     "dispatch": "execute batches", "audit": "code review", "deploy": "pre-push gates",
 }
 
@@ -76,7 +76,7 @@ def render(features: dict, version_override: str | None) -> str:
     o(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}"')
     o(f'     role="img" aria-labelledby="t d" font-family="{FONT}">')
     o(f'  <title id="t">Hyperflow v{esc(version)}</title>')
-    o(f'  <desc id="d">{esc(tagline)} — the chain: scaffold, spec, scope, dispatch, audit, deploy.</desc>')
+    o(f'  <desc id="d">{esc(tagline)} — the chain: amplify, spec, scope, dispatch, audit, deploy.</desc>')
 
     o('  <defs>')
     o(f'    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">')
