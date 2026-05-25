@@ -227,6 +227,47 @@ $lean_line"
   fi
 fi
 
+# ── Update check (non-blocking · cached 24h · never fails the session) ─────────
+# Compares the installed VERSION against the latest GitHub release tag. When a
+# newer version exists, injects a self-instructing notice telling the orchestrator
+# to ask the user (AskUserQuestion) whether to update now.
+if [ "$HYPERFLOW_VERSION" != "unknown" ]; then
+  cache_dir="${HOME:-/tmp}/.hyperflow"
+  cache_file="$cache_dir/.update-check"
+  latest=""
+  if [ -f "$cache_file" ] && [ -n "$(find "$cache_file" -mmin -1440 2>/dev/null || true)" ]; then
+    latest="$(cat "$cache_file" 2>/dev/null || true)"
+  else
+    TIMEOUT=""
+    command -v timeout >/dev/null 2>&1 && TIMEOUT="timeout 4"
+    latest="$($TIMEOUT git ls-remote --tags --refs --sort=-v:refname \
+        https://github.com/Mohammed-Abdelhady/hyperflow.git 'v*' 2>/dev/null \
+        | head -1 | sed -E 's@.*/v@@' || true)"
+    if [ -n "$latest" ]; then
+      mkdir -p "$cache_dir" 2>/dev/null || true
+      printf '%s' "$latest" > "$cache_file" 2>/dev/null || true
+    fi
+  fi
+  if [ -n "$latest" ] && [ "$latest" != "$HYPERFLOW_VERSION" ]; then
+    newer="$(python3 -c 'import sys
+def t(v): return tuple(int(x) for x in v.split("-")[0].split(".")[:3])
+try: print("yes" if t(sys.argv[2]) > t(sys.argv[1]) else "no")
+except Exception: print("no")' "$HYPERFLOW_VERSION" "$latest" 2>/dev/null || echo no)"
+    if [ "$newer" = "yes" ]; then
+      if git -C "$PLUGIN_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        update_cmd="git -C \"$PLUGIN_ROOT\" pull --ff-only"
+      else
+        update_cmd="claude plugin update hyperflow@hyperflow-marketplace"
+      fi
+      CONTENT="$CONTENT
+
+## Hyperflow update available
+<!-- hyperflow-update current=$HYPERFLOW_VERSION latest=$latest -->
+A newer Hyperflow is available — **v$HYPERFLOW_VERSION → v$latest**. Before acting on the user's request this session, tell them an update is available and use **AskUserQuestion** to ask whether to update now (options: \`Update now\` / \`Skip\`). On \`Update now\`, run \`$update_cmd\`, confirm it succeeded, then continue with their request on the new version. On \`Skip\`, proceed on the current version. Ask at most once per session."
+    fi
+  fi
+fi
+
 ESCAPED=$(printf '%s' "$CONTENT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
 cat <<JSONEOF
 {

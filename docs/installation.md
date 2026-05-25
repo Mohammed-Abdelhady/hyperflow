@@ -316,11 +316,16 @@ Start a new Claude Code session. Hyperflow should appear in the available skills
 
 ## Updates
 
+Hyperflow checks for a newer release at session start (once per 24h, non-blocking). When one is available it tells you the version jump and asks — via a prompt — whether to update now; on **Update now** it runs the right command for your install and continues on the new version.
+
+To update manually:
+
 ```bash
-git -C ~/.hyperflow/repo pull
+git -C ~/.hyperflow/repo pull                          # installer / git install
+claude plugin update hyperflow@hyperflow-marketplace   # marketplace install
 ```
 
-Because it installs via symlink, every provider picks up changes immediately — no re-copying.
+Because the installer path installs via symlink, every provider picks up changes immediately — no re-copying.
 
 To change models or security settings, re-run the installer:
 
