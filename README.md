@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/hero.svg" alt="Hyperflow — multi-agent orchestration. scaffold → spec → scope → dispatch → audit → deploy" width="100%" />
+  <img src="docs/assets/hero.svg" alt="Hyperflow — multi-agent orchestration. amplify → spec → scope → dispatch → audit → deploy" width="100%" />
 </p>
 
 <h1 align="center">Hyperflow</h1>
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <code>scaffold</code> → <code>spec</code> → <code>scope</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
+  <code>amplify</code> → <code>spec</code> → <code>scope</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
   Start anywhere. Auto-advance forward. Memory persists across sessions.
 </p>
 
@@ -47,18 +47,18 @@ Underneath: a structural thinking/worker model split (expensive models plan & re
 
 ## The chain
 
-Six skills, one pipeline. Start at any entry point — the orchestrator picks up and runs forward.
+Start with a rough idea — the pipeline carries it to shipped. Start at any entry point; the orchestrator picks up and runs forward.
 
 | # | Skill | What it does |
 |---|-------|--------------|
-| 1 | `scaffold` | Analyze the project, build the `.hyperflow/` cache, install multi-tool shims *(standalone)* |
+| 1 | `amplify` | **Front door** — rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric), then hand off into the chain |
 | 2 | `spec` | Design-first — multi-dimensional analysis + alternatives; refuses to code before you approve |
 | 3 | `scope` | Decompose the approved design into a parallel task graph |
 | 4 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
 | 5 | `audit` | L1–L5 review on the result |
 | 6 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
 
-`spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists.
+`amplify` hands off to `spec`, then `spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
 ## Quick start
 
@@ -134,7 +134,7 @@ Fourteen skills. Three chain-starters auto-advance through the chain; the rest a
 | `scope` | `/hyperflow:scope` | Chain starter | Decompose into parallel worker subtasks; auto-chains to dispatch |
 | `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
 | `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
-| `amplify` | `/hyperflow:amplify` | Standalone | Rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric) |
+| `amplify` | `/hyperflow:amplify` | Front door | Rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric), then hand off into the chain |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
 | `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |

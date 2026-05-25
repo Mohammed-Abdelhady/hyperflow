@@ -7,12 +7,12 @@ How a single user request becomes a coordinated multi-agent run — the chain, t
 ## The chain
 
 ```
-scaffold        →   spec        →   scope         →   dispatch        →   (suggest)   audit   /   deploy
-project setup       specify           decompose         execute              outside review        gates + push
-(once per repo)     the design        into batches      with reviews         (gated)               (gated)
+amplify     →   spec        →   scope         →   dispatch        →   (suggest)   audit   /   deploy
+sharpen         specify         decompose         execute              outside review        gates + push
+the prompt      the design      into batches      with reviews         (gated)               (gated)
 ```
 
-The first three are **chain-starters** — invoking any of them auto-advances forward through the rest. The last two are **standalone** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question.
+Start with a rough idea: **`amplify`** rewrites it into the strongest prompt, then hands off to `spec`. From there `spec → scope → dispatch` are **chain-starters** — invoking any of them auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
 
 Two skills sit outside the chain:
 

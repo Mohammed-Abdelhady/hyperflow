@@ -46,15 +46,14 @@
             <span class="install-block-title">Chain overview</span>
           </div>
           <div class="install-code">
-            scaffold        &rarr;   spec        &rarr;   scope         &rarr;   dispatch        &rarr;   (suggest)   audit   /   deploy<br />
-            project setup       specify           decompose         execute              outside review        gates + push<br />
-            (once per repo)     the design        into batches      with reviews         (gated)               (gated)
+            amplify     &rarr;   spec        &rarr;   scope         &rarr;   dispatch        &rarr;   (suggest)   audit   /   deploy<br />
+            sharpen         specify         decompose         execute              outside review        gates + push<br />
+            the prompt      the design      into batches      with reviews         (gated)               (gated)
           </div>
         </div>
 
         <p>
-          The first three are <strong>chain-starters</strong> &mdash; invoking any of them auto-advances forward through the rest.
-          The last two are <strong>standalone</strong> &mdash; never auto-invoked; they fire only on an explicit user <code>Yes</code> to a gate question.
+          Start with a rough idea: <strong><code>amplify</code></strong> rewrites it into the strongest prompt, then hands off to <code>spec</code>. From there <code>spec &rarr; scope &rarr; dispatch</code> are <strong>chain-starters</strong> &mdash; invoking any of them auto-advances forward through the rest. <code>audit</code> and <code>deploy</code> are <strong>gates</strong> &mdash; never auto-invoked; they fire only on an explicit user <code>Yes</code> to a gate question. <code>scaffold</code> is a one-time project setup (run once per repo), so it sits before the flow rather than inside it.
         </p>
 
         <p>Two skills sit outside the chain:</p>
