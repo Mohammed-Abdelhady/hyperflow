@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Providers — Hyperflow</title>
-  <meta name="description" content="Hyperflow providers: Claude Code, OpenCode, Antigravity — auto-detected." />
+  <meta name="description" content="Hyperflow providers: Codex, Claude Code, OpenCode, Antigravity — auto-detected." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -31,7 +31,7 @@
         <p class="section-label">Providers</p>
         <h2 id="providers-heading">Provider Setup Guides</h2>
         <p>
-          Model naming, detection, and configuration quirks for each of the three platforms Hyperflow supports.
+          Model naming, detection, and configuration quirks for each platform Hyperflow supports.
           See <a href="model-routing.html">model-routing</a> for how Hyperflow selects between thinking and worker tiers at runtime,
           and <a href="installation.html">installation</a> for the initial setup flow.
         </p>
@@ -245,6 +245,48 @@
 
     <hr style="margin-top: var(--section-gap);" />
 
+    <!-- ── Codex ─────────────────────────────────────────────────────────── -->
+    <section id="codex" aria-labelledby="codex-heading">
+      <div class="container">
+        <h2 id="codex-heading">Codex</h2>
+        <p><strong>Detection:</strong> <code>CODEX_*</code> environment variables or the <code>codex</code> binary in PATH.</p>
+        <p><strong>Default models:</strong></p>
+        <div class="providers-grid">
+          <div class="provider-card">
+            <div class="provider-name">Codex</div>
+            <div class="provider-model-row">
+              <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
+              <span class="provider-model-name">GPT-5.5 · adaptive</span>
+            </div>
+            <div class="provider-model-row">
+              <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
+              <span class="provider-model-name">GPT-5.4 · fast</span>
+            </div>
+          </div>
+        </div>
+        <p><strong>Available models:</strong></p>
+        <div class="skills-table-wrap">
+          <table>
+            <thead><tr><th>Model ID</th><th>Name</th><th>Provider</th><th>Tier</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>gpt-5.5</code></td><td>GPT-5.5</td><td>OpenAI</td><td><span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span></td><td>Codex default for orchestrator, reviewer, debugger, decision-maker, brainstormer</td></tr>
+              <tr><td><code>gpt-5.4</code></td><td>GPT-5.4</td><td>OpenAI</td><td><span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span></td><td>Codex fast worker default; can be used as thinking fallback</td></tr>
+              <tr><td><code>gpt-5.4-mini</code></td><td>GPT-5.4 Mini</td><td>OpenAI</td><td><span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span></td><td>Lower-cost worker fallback</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Reasoning policy:</strong> Thinking roles use task-adaptive reasoning: <code>low</code> for trivial docs/config checks, <code>medium</code> for normal planning/review, and <code>high</code> for debugging, architecture, security, and final integration. Worker roles stay on <code>low</code> reasoning for fast mode unless explicitly overridden. Codex defaults never use <code>xhigh</code>.</p>
+        <p><strong>Installing into Codex:</strong></p>
+        <div class="install-block">
+          <div class="install-block-header"><span class="install-block-title">Codex</span></div>
+          <div class="install-code">codex plugin marketplace add Mohammed-Abdelhady/hyperflow<br />codex plugin add hyperflow@hyperflow-marketplace</div>
+        </div>
+        <p class="install-note">Codex reads project instructions from <code>AGENTS.md</code>; run <code>scripts/setup-detection.sh --tools codex &lt;project&gt;</code> to generate the project shim.</p>
+      </div>
+    </section>
+
+    <hr style="margin-top: var(--section-gap);" />
+
     <!-- ── Antigravity ────────────────────────────────────────────────────── -->
     <section id="antigravity" aria-labelledby="antigravity-heading">
       <div class="container">
@@ -361,7 +403,7 @@
     <div class="footer-inner">
       <div class="footer-left">
         <a href="index.html" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta">v4.20.1 &nbsp;·&nbsp; MIT License</span>
+        <span class="footer-meta">v4.22.0 &nbsp;·&nbsp; MIT License</span>
       </div>
       <div class="footer-links">
         <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>

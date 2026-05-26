@@ -153,6 +153,11 @@
                 <td><code>anthropic/claude-sonnet-4-6</code></td>
               </tr>
               <tr>
+                <td>Codex</td>
+                <td><code>gpt-5.5</code> with adaptive reasoning</td>
+                <td><code>gpt-5.4</code> with fast/low reasoning</td>
+              </tr>
+              <tr>
                 <td>Antigravity</td>
                 <td><code>gemini-3-pro</code></td>
                 <td><code>gemini-3.5-flash</code></td>
@@ -161,7 +166,7 @@
           </table>
         </div>
         <p class="install-note">
-          See <a href="providers.html">providers.html</a> for the full model list per platform, including version pinning and dynamic detection.
+          See <a href="providers.html">providers.html</a> for the full model list per platform, including version pinning, reasoning policy, and dynamic detection.
         </p>
       </div>
     </section>
@@ -187,6 +192,16 @@
         <p class="install-note">
           For the full chain mechanics, see <a href="orchestration.html">orchestration.html</a>.
         </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Codex reasoning ─────────────────────────────────────────────── -->
+    <section id="codex-reasoning" aria-labelledby="codex-reasoning-heading">
+      <div class="container">
+        <h2 id="codex-reasoning-heading">Codex reasoning</h2>
+        <p>Codex uses <code>gpt-5.5</code> for thinking roles and resolves reasoning by task: <code>low</code> for trivial docs/config checks, <code>medium</code> for normal planning/review, and <code>high</code> for debugging, architecture, security, and final integration. Worker roles use <code>gpt-5.4</code> with <code>low</code> reasoning for fast mode. Codex defaults never use <code>xhigh</code>.</p>
       </div>
     </section>
 

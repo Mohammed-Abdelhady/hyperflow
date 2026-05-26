@@ -150,6 +150,12 @@
       "key": "opencode"
     },
     {
+      "name": "Codex",
+      "thinking": "GPT-5.5 (adaptive reasoning)",
+      "worker": "GPT-5.4 (fast mode)",
+      "key": "codex"
+    },
+    {
       "name": "Antigravity",
       "thinking": "Gemini 3 Pro",
       "worker": "Gemini 3.5 Flash",
@@ -165,7 +171,7 @@
     "Hot/warm/cold memory tiering with user-invoked compaction (`/hyperflow:cache compact`) and automatic cold archiving",
     "Lazy memory injection (only tag-matched entries per task)",
     "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
-    "3 provider support (Claude Code, OpenCode, Antigravity)",
+    "4 provider support (Claude Code, Codex, OpenCode, Antigravity)",
     "Auto-detect provider via env vars or folder presence",
     "Configurable model routing per role",
     "Quality gates (lint, typecheck, build, tests)",
@@ -180,6 +186,10 @@
     "shims": [
       {
         "tool": "OpenCode",
+        "file": "AGENTS.md"
+      },
+      {
+        "tool": "Codex",
         "file": "AGENTS.md"
       },
       {

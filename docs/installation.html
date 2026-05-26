@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Installation — Hyperflow</title>
-  <meta name="description" content="Install Hyperflow on Claude Code, OpenCode, or Antigravity." />
+  <meta name="description" content="Install Hyperflow on Codex, Claude Code, OpenCode, or Antigravity." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -33,7 +33,7 @@
     <section id="installation-header" aria-labelledby="installation-heading">
       <div class="container">
         <p class="section-label">Installation</p>
-        <h2 id="installation-heading">Get Hyperflow running in your terminal CLI.</h2>
+        <h2 id="installation-heading">Get Hyperflow running in Codex and terminal CLIs.</h2>
         <p>
           Covers quick install, platform compatibility, model configuration, security, and verification.
         </p>
@@ -46,9 +46,9 @@
     <section id="where-it-runs" aria-labelledby="where-heading">
       <div class="container">
         <p class="section-label">Where it runs</p>
-        <h2 id="where-heading">Terminal CLI environments only.</h2>
+        <h2 id="where-heading">Codex and terminal CLI environments.</h2>
         <p>
-          Hyperflow loads as a plugin into terminal CLI environments. It does not run inside GUI apps or the web.
+          Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It does not run inside web-only surfaces.
         </p>
 
         <div class="skills-table-wrap" style="margin-top:2.5rem;">
@@ -65,6 +65,11 @@
                 <td><strong>Claude Code CLI</strong> (<code>claude</code> binary)</td>
                 <td>yes — primary target</td>
                 <td>Loads plugins from <code>~/.claude/plugins/cache/</code>; slash commands, auto-routing, and skills are all active</td>
+              </tr>
+              <tr>
+                <td><strong>Codex App / CLI</strong> (<code>codex</code> binary)</td>
+                <td>yes</td>
+                <td>Loads plugins from Codex marketplaces into <code>~/.codex/plugins/cache/</code>; skills, hooks, AGENTS.md instructions, and provider-aware model config are active</td>
               </tr>
               <tr>
                 <td><strong>OpenCode CLI</strong> (<code>opencode</code> binary)</td>
@@ -113,7 +118,7 @@
     <section id="quick-install" aria-labelledby="quick-install-heading">
       <div class="container">
         <p class="section-label">Quick install</p>
-        <h2 id="quick-install-heading">Two commands for Claude Code. One for everything else.</h2>
+        <h2 id="quick-install-heading">Two commands for Codex and Claude Code. One wizard for everything else.</h2>
 
         <!-- Claude Code -->
         <h3 style="margin-top:2rem;margin-bottom:1rem;">Claude Code</h3>
@@ -151,6 +156,28 @@
           </div>
         </div>
 
+        <!-- Codex -->
+        <h3 style="margin-top:2rem;margin-bottom:1rem;">Codex App / CLI</h3>
+
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">CODEX</span>
+            <button
+              class="copy-btn"
+              aria-label="Copy Codex install commands to clipboard"
+              onclick="copyBlock('block-codex', this)"
+            >copy</button>
+          </div>
+          <div class="install-code" id="block-codex">
+            codex plugin marketplace add Mohammed-Abdelhady/hyperflow<br />
+            codex plugin add hyperflow@hyperflow-marketplace
+          </div>
+        </div>
+
+        <p class="install-note">
+          Codex defaults to GPT-5.5 for thinking roles with task-adaptive reasoning and GPT-5.4 for workers in fast mode.
+        </p>
+
         <!-- OpenCode -->
         <h3 style="margin-top:2.5rem;margin-bottom:1rem;">OpenCode</h3>
 
@@ -172,9 +199,9 @@
         <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">What the installer does</h3>
         <ol style="padding-left:1.5rem;color:var(--muted);line-height:1.9;margin-bottom:1.5rem;">
           <li>Clones the repo to <code>~/.hyperflow/repo/</code></li>
-          <li>Detects which providers are installed (OpenCode, Antigravity)</li>
-          <li>Symlinks the skill into each provider's skills directory</li>
-          <li>Asks you to pick thinking and worker models from your provider's catalog</li>
+          <li>Detects which providers are installed (Codex, OpenCode, Antigravity)</li>
+          <li>Installs or links the provider integration where needed</li>
+          <li>Asks you to pick thinking and worker models from your provider's catalog, or applies provider defaults where the host owns model selection</li>
           <li>Asks whether to enable the security layer</li>
           <li>Writes your choices to <code>~/.hyperflow/config.json</code></li>
         </ol>
@@ -580,7 +607,7 @@
         <p class="section-label">Verify</p>
         <h2 id="verify-heading">Confirm Hyperflow is active.</h2>
         <p>
-          Start a new Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on every task.
+          Start a new Codex or Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on matching task intents.
         </p>
       </div>
     </section>
@@ -610,7 +637,8 @@
             git -C ~/.hyperflow/repo pull<br />
             <br />
             <span class="comment"># marketplace install</span><br />
-            claude plugin update hyperflow@hyperflow-marketplace
+            claude plugin update hyperflow@hyperflow-marketplace<br />
+            codex plugin marketplace upgrade hyperflow-marketplace
           </div>
         </div>
 
@@ -664,11 +692,11 @@
         </div>
 
         <!-- OpenCode / Antigravity -->
-        <h3 style="margin-top:2rem;margin-bottom:0.75rem;">OpenCode / Antigravity</h3>
+        <h3 style="margin-top:2rem;margin-bottom:0.75rem;">Codex / OpenCode / Antigravity</h3>
 
         <div class="install-block">
           <div class="install-block-header">
-            <span class="install-block-title">OPENCODE / ANTIGRAVITY</span>
+            <span class="install-block-title">CODEX / OPENCODE / ANTIGRAVITY</span>
             <button
               class="copy-btn"
               aria-label="Copy OpenCode / Antigravity uninstall command"
@@ -676,6 +704,7 @@
             >copy</button>
           </div>
           <div class="install-code" id="block-uninstall-oc">
+            codex plugin remove hyperflow@hyperflow-marketplace<br />
             ~/.hyperflow/repo/install.sh --uninstall
           </div>
         </div>
@@ -700,7 +729,7 @@
     <div class="footer-inner">
       <div class="footer-left">
         <a href="index.html" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta">v4.20.1 &nbsp;·&nbsp; MIT License</span>
+        <span class="footer-meta">v4.22.0 &nbsp;·&nbsp; MIT License</span>
       </div>
       <div class="footer-links">
         <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>

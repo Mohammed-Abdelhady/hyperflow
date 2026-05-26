@@ -175,7 +175,7 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
 
 Models are configurable per provider. See [model-config.md](model-config.md) for full config reference, auto-detection, and runtime switching.
 
-**Default routing (Claude Code):**
+**Default routing (Claude Code; Codex maps the same tiers to GPT-5.5 / GPT-5.4):**
 
 ### The three roles (Team Lead model)
 
@@ -221,6 +221,7 @@ The named decision dispatches in this doctrine — Classifier (triage), Analyst 
 3. Resolve thinking/worker models via priority chain:
    per-task inline > session command > env var > role override > provider tier > global default
 4. Map resolved models to Agent tool `model:` parameter (Claude Code: `"opus"`, `"sonnet"`, `"haiku"`)
+5. For Codex, resolve thinking reasoning adaptively: `low` for trivial docs/config checks, `medium` for normal planning/review, `high` for debugging, architecture, security, and final integration. Worker fast mode stays `low`; never default to `xhigh`.
 
 ### Dispatching subagents
 

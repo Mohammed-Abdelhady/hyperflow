@@ -35,6 +35,14 @@ Location: `~/.hyperflow/config.json` (global, all projects).
         "searcher": "haiku-4-5"
       }
     },
+    "codex": {
+      "thinking": "gpt-5.5",
+      "worker": "gpt-5.4",
+      "reasoning": {
+        "thinking": "adaptive",
+        "worker": "low"
+      }
+    },
     "antigravity": {
       "thinking": "gemini-3-pro",
       "worker": "gemini-3.5-flash"
@@ -53,8 +61,9 @@ Detection runs at session start. First match wins:
 | 2 | `activeProvider` in config.json | Config value |
 | 3 | `CLAUDE_CODE_*` env vars present | `claude-code` |
 | 4 | `OPENCODE_*` env vars or `opencode` in PATH | `opencode` |
-| 5 | `ANTIGRAVITY_*` env vars or `antigravity` in PATH | `antigravity` |
-| 6 | None matched | Use `defaults` directly |
+| 5 | `CODEX_*` env vars or `codex` in PATH | `codex` |
+| 6 | `ANTIGRAVITY_*` env vars or `antigravity` in PATH | `antigravity` |
+| 7 | None matched | Use `defaults` directly |
 
 ## Model Resolution
 
@@ -80,6 +89,18 @@ For any role, resolve the model using this priority chain (highest first):
 | `searcher` | worker | Explores codebase, finds files |
 | `writer` | worker | Tests, docs, configs |
 
+## Codex Reasoning
+
+Codex defaults to `gpt-5.5` for thinking roles and `gpt-5.4` for worker roles. Thinking reasoning is adaptive by task/profile:
+
+| Work type | Reasoning |
+|---|---|
+| Trivial docs/config checks | `low` |
+| Normal implementation planning/review | `medium` |
+| Debugging, architecture, security, final integration review | `high` |
+
+Worker fast mode is fixed at `low` unless the user overrides it. Codex defaults never use `xhigh`.
+
 ## Claude Code Model Mapping
 
 The Agent tool's `model` parameter accepts aliases, not full model IDs. Map config values:
@@ -99,7 +120,8 @@ When presenting the model picker during install:
 
 1. **Claude Code:** Read `~/.claude/settings.json` to detect current model. Supplement hardcoded list.
 2. **OpenCode:** Run `opencode models list --json` (2s timeout). Merge with hardcoded list.
-3. **Antigravity:** Read `~/.gemini/antigravity/settings.json`. Merge with hardcoded list.
+3. **Codex:** Detect `CODEX_*` and the `codex` binary. Use `gpt-5.5` / `gpt-5.4` defaults unless overridden.
+4. **Antigravity:** Read `~/.gemini/antigravity/settings.json`. Merge with hardcoded list.
 
 Dynamic models supplement the hardcoded list (don't replace). Fall back to hardcoded if fetch fails.
 

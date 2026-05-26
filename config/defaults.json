@@ -57,6 +57,45 @@
         ]
       }
     },
+    "codex": {
+      "displayName": "Codex",
+      "detection": {
+        "envPrefix": "CODEX_",
+        "pathCheck": "codex",
+        "dynamicFetch": "codex models list when available"
+      },
+      "models": {
+        "thinking": [
+          { "id": "gpt-5.5", "label": "GPT-5.5", "provider": "OpenAI", "notes": "Codex thinking default", "default": true },
+          { "id": "gpt-5.4", "label": "GPT-5.4", "provider": "OpenAI", "notes": "Can be used as thinking model for cost savings" }
+        ],
+        "worker": [
+          { "id": "gpt-5.4", "label": "GPT-5.4", "provider": "OpenAI", "notes": "Codex fast worker default", "default": true },
+          { "id": "gpt-5.4-mini", "label": "GPT-5.4 Mini", "provider": "OpenAI", "notes": "Lower-cost worker fallback" }
+        ]
+      },
+      "reasoning": {
+        "thinking": "adaptive",
+        "worker": "low"
+      },
+      "reasoningPolicy": {
+        "thinking": {
+          "trivial": "low",
+          "standard": "medium",
+          "debug": "high",
+          "architecture": "high",
+          "security": "high",
+          "finalIntegration": "high"
+        },
+        "worker": "low",
+        "disallowed": ["xhigh"]
+      },
+      "agentModelMapping": {
+        "gpt-5.5": "gpt-5.5",
+        "gpt-5.4": "gpt-5.4",
+        "gpt-5.4-mini": "gpt-5.4-mini"
+      }
+    },
     "antigravity": {
       "displayName": "Antigravity",
       "detection": {

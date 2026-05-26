@@ -1,6 +1,6 @@
 # Privacy
 
-Hyperflow is a local-only Claude Code / OpenCode plugin. It makes no outbound network calls at runtime, has no analytics, has no telemetry, and never proxies or intercepts the data that flows between your editor and your configured LLM provider.
+Hyperflow is a local-only Codex, Claude Code, and OpenCode plugin. It makes no outbound network calls at runtime, has no analytics, has no telemetry, and never proxies or intercepts the data that flows between your editor and your configured LLM provider.
 
 This page documents exactly what the plugin reads, writes, and exposes on your machine. If anything below is inaccurate, please open an issue: <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
 
@@ -74,7 +74,7 @@ You can extend or override these in `~/.hyperflow/config.json`. See `skills/hype
 
 ## LLM provider traffic
 
-The plugin runs **inside your editor's existing LLM session**. Your editor (Claude Code or OpenCode) sends prompts to its configured provider; the plugin influences the *content* of those prompts (system-prompt injection, worker prompt templates, persona stitching) but does not act as a proxy.
+The plugin runs **inside your editor's existing LLM session**. Your editor (Codex, Claude Code, or OpenCode) sends prompts to its configured provider; the plugin influences the *content* of those prompts (system-prompt injection, worker prompt templates, persona stitching) but does not act as a proxy.
 
 **Concretely:**
 
@@ -94,7 +94,7 @@ The optional installer (`curl … | bash` from the README's Quick Start) is a on
 
 After running, the installer **does not stay resident** and makes no further network calls.
 
-You can skip the installer entirely if you install via `claude plugin install hyperflow@hyperflow-marketplace` — that path uses Claude Code's own plugin manager.
+You can skip the installer entirely if you install via `codex plugin add hyperflow@hyperflow-marketplace` or `claude plugin install hyperflow@hyperflow-marketplace` — those paths use the editor's own plugin manager.
 
 ## What you can audit yourself
 
