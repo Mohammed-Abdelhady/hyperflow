@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "4.21.0",
+  "version": "4.22.0",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
   "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
   "layers": [
@@ -173,7 +173,7 @@
     "Conventional commits + automated release versioning",
     "Task tracking with incomplete-task recovery across sessions",
     "Session-start update check (cached daily) with an in-session prompt to update",
-    "Pre-compaction snapshot + post-compaction recovery — task, decisions, and anti-patterns survive a context compact"
+    "Pre-compaction snapshot + post-compaction recovery \u2014 task, decisions, and anti-patterns survive a context compact"
   ],
   "detection": {
     "shims": [

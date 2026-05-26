@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.22.0] — 2026-05-26
+
+### Added
+- Preserve chain state across context compaction
+- Prompt to update when a newer version is available
+- Single-agent skill + workflow templates
+
+### Fixed
+- Write all detected providers to config.json
+- Keep the hero chain-hint on one line on desktop
+- Wrap footer links on mobile
+- Two-line install on mobile, no x-scroll, tier-bracket hero
+- Mobile overflow, accessibility, and SEO
+- Detect and install hyperflow into antigravity
+
+### Changed
+- Full installer-written config + compaction recovery
+- Show the whole system — review loop, sub-phases, cross-session memory
+- Start the flow from amplify across website, README, and docs
+- Correct skills path and add changelog entry
+- Expand from minimal to a full overview
+
+
 ### Fixed
 - Antigravity install was advertised but never wired: `install.sh` only targeted Claude Code and OpenCode, and the documented skills path (`~/.gemini/antigravity/skills/`) was wrong. The installer now detects Antigravity at the live `~/.gemini/config/skills/` (legacy fallback `~/.antigravity/skills/`) and links a single-agent-adapted skill set.
 
@@ -758,7 +781,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.21.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.22.0...HEAD
+[4.22.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v4.22.0
 [4.21.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.1...v4.21.0
 [4.20.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.0...v4.20.1
 [4.20.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.19.0...v4.20.0
