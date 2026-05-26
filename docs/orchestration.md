@@ -266,13 +266,19 @@ Tune or disable it in `~/.hyperflow/config.json`:
 }
 ```
 
-Force a run on demand:
+Force a sweep on demand:
 
 ```bash
 python3 ~/.hyperflow/repo/scripts/archive-artefacts.py /path/to/project/.hyperflow --force
 ```
 
-Net effect: durable learnings compound in memory, and the working folders only ever hold what's still in flight.
+Or archive **one specific file immediately** (on-completion mode — what closing skills call when a chain finishes successfully, bypassing staleness):
+
+```bash
+python3 ~/.hyperflow/repo/scripts/archive-artefacts.py /path/to/project/.hyperflow --file .hyperflow/tasks/<slug>.md
+```
+
+Net effect: durable learnings compound in memory, the working folders only ever hold what's still in flight, and finished work is cleaned up the moment the chain closes.
 
 ---
 

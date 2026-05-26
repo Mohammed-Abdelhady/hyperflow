@@ -543,6 +543,31 @@ Worker containment via prompt-injected blocklists. See [security.md](security.md
 
 Workers that hit a blocked resource report `BLOCKED:`. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
 
+## Layer 10: Hygiene — finalize on completion, compact proactively
+
+Two non-negotiable cleanup behaviours so artefact folders and the context window stay healthy across long sessions:
+
+### Finalize on completion
+
+When a chain closes successfully — the final integration reviewer approved and per-task commits landed — the **last** thing the closing skill (`dispatch`, `audit`, or `deploy`) does is archive its own working artefact. The orchestrator runs:
+
+```bash
+python3 "$CLAUDE_PLUGIN_ROOT/scripts/archive-artefacts.py" "$PROJECT/.hyperflow" --file "$ARTEFACT"
+```
+
+where `$ARTEFACT` is the task file (for `dispatch`/`deploy`) or the audit file (for `audit`). The script:
+
+1. Promotes `## Learnings` / `## Decisions` / `## Anti-patterns` / `## Pitfalls` sections to `.hyperflow/memory/*.md` (whole-line de-duped).
+2. Moves the source file to `.hyperflow/archive/<type>/YYYY-MM/`.
+
+Net effect: durable insight compounds in memory, and `.hyperflow/{tasks,audits,specs}/` only ever holds work still in flight. Stale files left behind by interrupted runs are still caught by the daily session-start sweep (`cleanup.staleDays`, default 7).
+
+### Proactive `/compact`
+
+The context window is a resource. When a run has consumed roughly **two-thirds of the available budget** — typically a deep flow profile mid-batch with several reviewer round-trips already on the stack — the orchestrator suggests running `/compact` before the next batch instead of waiting for the auto-compact at the limit. The `PreCompact` hook will snapshot the active task, decisions, anti-patterns, and uncommitted diff so the chain state survives the squeeze. Surface the suggestion as a single status line, not a question; the user can accept or ignore.
+
+This is a heuristic, not a hard trigger — Claude Code does not expose a precise budget signal to plugins. Cue on visible context indicators (long transcripts, prior compaction notices) and the inherent cost of the current flow profile.
+
 ## Skills
 
 Hyperflow has no always-on entry. Each skill is invoked explicitly. Chain-starters auto-advance forward.
