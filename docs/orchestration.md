@@ -55,9 +55,9 @@ That JSON drives every downstream decision:
 
 ### Spec
 
-The chain-starter asks at Step 0 whether to advance **auto** (no gates between phases) or **manual** (confirm before each). The choice propagates to every downstream skill via the `Skill` tool's `args` parameter.
+The chain-starter asks at Step 0 whether to advance **auto** (no gates between phases) or **manual** (confirm before each). The choice propagates to every downstream skill via the `Skill` tool's `args` parameter. In Codex App/CLI, where that host handoff may not exist, Hyperflow treats the handoff as inline continuation and keeps running the next skill in the same thread.
 
-On Codex App/CLI, if the host does not expose a popup question UI, every required `AskUserQuestion` gate renders as a concise `Hyperflow Question` chat block with numbered options and waits for the answer. The fallback applies to Amplify handoff, Spec questions, Scope ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
+On Codex App/CLI, `/hyperflow:*` messages are skill aliases rather than native slash commands. If the host does not expose a popup question UI, every required `AskUserQuestion` gate renders as a concise `Hyperflow Question` chat block with numbered options and waits for the answer. The fallback applies to Amplify handoff, Spec questions, Scope ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
 
 Then:
 
@@ -71,7 +71,7 @@ Then:
 8. **Writer** + **Reviewer** — final spec file at `.hyperflow/specs/<slug>.md`
 9. Hand off to `scope`
 
-Every step that produces output dispatches at least one Agent (DOCTRINE rule 12). Pure user-interaction steps (`AskUserQuestion`, `Skill` hand-off) are exempt.
+Every step that produces output dispatches at least one Agent (DOCTRINE rule 12). In Codex, Hyperflow maps those dispatches to Codex subagents when available; when subagents are not exposed in the session, the single foreground agent runs the worker/reviewer phases inline with labels and continues. Pure user-interaction steps (`AskUserQuestion`, `Skill` hand-off) are exempt.
 
 ### Scope
 
@@ -150,7 +150,7 @@ Then:
 
 ## Parallelism — provable from the numbers
 
-Parallel dispatch in Claude Code is a prompt-discipline property — multiple `Agent` calls in a single message run concurrently; the same calls across separate messages run serial. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
+Parallel dispatch is a prompt-discipline property — multiple `Agent` calls in Claude Code, or multiple Codex subagent calls when exposed, should be issued together so independent work runs concurrently; the same calls across separate messages run serial. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
 
 To make parallelism auditable from the output alone, every batch prints a footer:
 

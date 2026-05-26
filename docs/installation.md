@@ -11,7 +11,7 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | Environment | Works? | Notes |
 |---|---|---|
 | Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, and skills are all active |
-| Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, and provider-aware model config are active |
+| Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, inline auto-chain fallback, and provider-aware model config are active |
 | OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention |
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch or tier split — the single agent runs every phase and self-reviews |
 | Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
@@ -19,6 +19,8 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | IDE extensions (VS Code, JetBrains, Cursor) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
 
 If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
+
+In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow spec`, `hyperflow amplify`, and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
 
 **Workarounds for Desktop / web users:**
 
