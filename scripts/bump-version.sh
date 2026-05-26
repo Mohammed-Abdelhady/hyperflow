@@ -7,6 +7,7 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PACKAGE_JSON="$ROOT/package.json"
 PLUGIN_JSON="$ROOT/.claude-plugin/plugin.json"
+CODEX_PLUGIN_JSON="$ROOT/.codex-plugin/plugin.json"
 MARKETPLACE_JSON="$ROOT/.claude-plugin/marketplace.json"
 README_MD="$ROOT/README.md"
 SKILL_VERSION="$ROOT/skills/hyperflow/VERSION"
@@ -26,7 +27,7 @@ if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 # Verify all files exist
-for FILE in "$PACKAGE_JSON" "$PLUGIN_JSON" "$MARKETPLACE_JSON" "$README_MD"; do
+for FILE in "$PACKAGE_JSON" "$PLUGIN_JSON" "$CODEX_PLUGIN_JSON" "$MARKETPLACE_JSON" "$README_MD"; do
   if [[ ! -f "$FILE" ]]; then
     echo "Error: file not found: $FILE"
     exit 1
@@ -48,6 +49,10 @@ echo "Updated $PACKAGE_JSON"
 sed "${SED_INPLACE[@]}" 's/"version": "[^"]*"/"version": "'"$NEW_VERSION"'"/' "$PLUGIN_JSON"
 echo "Updated $PLUGIN_JSON"
 
+# Update Codex plugin.json
+sed "${SED_INPLACE[@]}" 's/"version": "[^"]*"/"version": "'"$NEW_VERSION"'"/' "$CODEX_PLUGIN_JSON"
+echo "Updated $CODEX_PLUGIN_JSON"
+
 # Update marketplace.json (both occurrences)
 sed "${SED_INPLACE[@]}" 's/"version": "[^"]*"/"version": "'"$NEW_VERSION"'"/g' "$MARKETPLACE_JSON"
 echo "Updated $MARKETPLACE_JSON (2 occurrences)"
@@ -60,4 +65,4 @@ echo "Updated $README_MD"
 echo "$NEW_VERSION" > "$SKILL_VERSION"
 echo "Updated $SKILL_VERSION"
 
-echo "Version bumped to $NEW_VERSION (5 files)"
+echo "Version bumped to $NEW_VERSION (6 files)"
