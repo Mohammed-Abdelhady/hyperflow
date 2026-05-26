@@ -189,6 +189,42 @@ def main() -> None:
     stale = max(1, int(cfg.get("staleDays", 7)))
     prune = max(stale, int(cfg.get("pruneDays", 30)))
 
+    # ─── On-completion mode: --file <path> archives one file immediately ──────
+    # Skills call this when a chain finishes successfully so the task/audit/spec
+    # is promoted + archived right away rather than waiting for it to go stale.
+    file_arg = None
+    args = sys.argv[2:]
+    for i, a in enumerate(args):
+        if a == "--file" and i + 1 < len(args):
+            file_arg = args[i + 1]
+            break
+        if a.startswith("--file="):
+            file_arg = a.split("=", 1)[1]
+            break
+    if file_arg:
+        fpath = Path(file_arg)
+        if not fpath.is_absolute():
+            fpath = hf.parent / fpath
+        if not fpath.is_file():
+            return
+        # Determine artefact type from the path (tasks/audits/specs).
+        type_ = "tasks"
+        for t in TYPES:
+            try:
+                if (hf / t).resolve() in fpath.resolve().parents:
+                    type_ = t
+                    break
+            except Exception:
+                pass
+        moved, promoted = archive_file(hf, type_, fpath)
+        if moved or promoted:
+            print(
+                f"hyperflow cleanup: archived {fpath.name} on completion · "
+                f"promoted {promoted} line(s) to memory",
+                file=sys.stderr,
+            )
+        return
+
     # Daily gate — don't re-walk the tree on every session this day.
     marker = hf / ".last-cleanup"
     force = "--force" in sys.argv
