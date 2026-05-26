@@ -259,8 +259,41 @@
       <div class="container">
         <h2 id="customization-heading">Customization</h2>
 
-        <h3>Change default models</h3>
-        <p>Edit <code>~/.hyperflow/config.json</code>:</p>
+        <h3>Generated config (what the installer writes)</h3>
+        <p>
+          The installer detects every provider on your machine and writes a full block for each one in <code>~/.hyperflow/config.json</code> &mdash; not just the active provider. Each block carries the canonical model list, a default <code>thinking</code> / <code>worker</code>, and the role mapping. You can edit any field; missing fields fall back to per-provider defaults.
+        </p>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">~/.hyperflow/config.json (full)</span>
+          </div>
+          <div class="install-code">{<br />
+&nbsp;&nbsp;"activeProvider": "claude-code",<br />
+&nbsp;&nbsp;"defaults": { "thinking": "opus-4-7", "worker": "sonnet-4-6" },<br />
+&nbsp;&nbsp;"providers": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker":&nbsp;&nbsp; "sonnet-4-6",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"models": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": ["opus-4-7", "opus-4-6", "opus-4-5", "sonnet-4-6"],<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker":&nbsp;&nbsp; ["sonnet-4-6", "sonnet-4-5", "haiku-4-5"]<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"orchestrator": "opus-4-7", "reviewer": "opus-4-7", "debugger": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"decision-maker": "opus-4-7", "brainstormer": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"implementer": "sonnet-4-6", "searcher": "sonnet-4-6", "writer": "sonnet-4-6"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+&nbsp;&nbsp;&nbsp;&nbsp;},<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"opencode":&nbsp;&nbsp;&nbsp;&nbsp;{ "thinking": "anthropic/claude-opus-4-7", "worker": "anthropic/claude-sonnet-4-6", "models": { &hellip; }, "roles": { &hellip; } },<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"antigravity": { "thinking": "gemini-3-pro",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "worker": "gemini-3.5-flash",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "models": { &hellip; }, "roles": { &hellip; } }<br />
+&nbsp;&nbsp;},<br />
+&nbsp;&nbsp;"security": { "enabled": true },<br />
+&nbsp;&nbsp;"memory":&nbsp;&nbsp; { "compactionThreshold": 300 }<br />
+}</div>
+        </div>
+
+        <h3 style="margin-top:2rem;">Change default models</h3>
+        <p>The minimal override — works if you only care about thinking / worker globally:</p>
         <div class="install-block">
           <div class="install-block-header">
             <span class="install-block-title">~/.hyperflow/config.json</span>

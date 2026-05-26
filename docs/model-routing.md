@@ -79,9 +79,39 @@ When Hyperflow needs to determine which model to use for a role, it walks this c
 
 ## Customization
 
+### Generated config (what the installer writes)
+
+The installer detects every provider on your machine and writes a full block for each one in `~/.hyperflow/config.json` — not just the active provider. Each block carries the canonical model list, a default `thinking` / `worker`, and the role mapping. You can edit any field; missing fields fall back to the per-provider defaults.
+
+```json
+{
+  "activeProvider": "claude-code",
+  "defaults": { "thinking": "opus-4-7", "worker": "sonnet-4-6" },
+  "providers": {
+    "claude-code": {
+      "thinking": "opus-4-7",
+      "worker":   "sonnet-4-6",
+      "models": {
+        "thinking": ["opus-4-7", "opus-4-6", "opus-4-5", "sonnet-4-6"],
+        "worker":   ["sonnet-4-6", "sonnet-4-5", "haiku-4-5"]
+      },
+      "roles": {
+        "orchestrator": "opus-4-7", "reviewer": "opus-4-7",
+        "debugger": "opus-4-7", "decision-maker": "opus-4-7", "brainstormer": "opus-4-7",
+        "implementer": "sonnet-4-6", "searcher": "sonnet-4-6", "writer": "sonnet-4-6"
+      }
+    },
+    "opencode":    { "thinking": "anthropic/claude-opus-4-7", "worker": "anthropic/claude-sonnet-4-6", "models": { … }, "roles": { … } },
+    "antigravity": { "thinking": "gemini-3-pro",              "worker": "gemini-3.5-flash",           "models": { … }, "roles": { … } }
+  },
+  "security": { "enabled": true },
+  "memory":   { "compactionThreshold": 300 }
+}
+```
+
 ### Change default models
 
-Edit `~/.hyperflow/config.json`:
+The minimal override — works if you only care about thinking / worker globally:
 
 ```json
 {

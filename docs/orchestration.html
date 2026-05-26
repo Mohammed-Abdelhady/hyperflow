@@ -524,6 +524,26 @@
 
     <hr />
 
+    <!-- ── Surviving context compaction ──────────────────────────────────── -->
+    <section id="compaction" aria-labelledby="compaction-heading">
+      <div class="container">
+        <p class="section-label">Compaction</p>
+        <h2 id="compaction-heading">Chain state survives a context compact.</h2>
+        <p>
+          Long chains eventually hit Claude Code&rsquo;s context limit and auto-compact (or you can run <code>/compact</code> yourself sooner). Hyperflow does not lose the chain state across that squeeze:
+        </p>
+        <ul>
+          <li>A <code>PreCompact</code> hook snapshots the volatile state to <code>.hyperflow/.precompact.md</code> right before compaction &mdash; active task file(s), structural decisions, hot anti-patterns, and the uncommitted <code>git diff --stat</code>.</li>
+          <li>The <code>SessionStart</code> hook (which also fires on the <code>compact</code> trigger) re-injects that snapshot immediately after, then consumes it. The orchestrator comes out of the compact still knowing the task, the decisions, and the quality rules.</li>
+        </ul>
+        <p class="install-note">
+          Neither hook blocks compaction or fails a session; if <code>.hyperflow/</code> isn&rsquo;t present the snapshot is skipped silently.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
     <!-- ── References ────────────────────────────────────────────────────── -->
     <section id="references" aria-labelledby="references-heading">
       <div class="container">
