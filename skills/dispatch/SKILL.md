@@ -3,7 +3,7 @@ name: dispatch
 description: |
   Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel Sonnet workers under per-batch Opus reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
-allowed-tools: Read, Write, Edit, Bash(git:*), Agent
+allowed-tools: Read, Write, Edit, Bash(git:*), Agent, AskUserQuestion
 argument-hint: "[task-file] [chain-mode=auto|manual] [--from-batch N] [--final-only] [--thorough]"
 version: 3.1.2
 license: MIT
@@ -88,7 +88,7 @@ How should I handle progress through the batches?
   Manual              — pause between batches and ask before continuing.
 ```
 
-Wait for the user's answer. Do not proceed without it. If `AskUserQuestion` cannot be presented, print an error and stop — never silently default.
+Wait for the user's answer. Do not proceed without it. If `AskUserQuestion` cannot be presented as a popup, use the Codex fallback: print the same gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print an error and stop — never silently default.
 
 ### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
 
@@ -211,7 +211,7 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 
 ### Step 5 — End of Auto-Chain · Audit + Deploy gates
 
-Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only.
+Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. In Codex, if the popup UI is unavailable, render both questions in one `Hyperflow Question` chat block and wait for the user's answers.
 
 > **DOCTRINE rule 8 preserved:** both questions still fire; they just batch into one round-trip instead of two. Combined gate cuts human-in-the-loop latency by ~half at end-of-chain.
 
@@ -334,7 +334,7 @@ Doctrine floor: thinking agents ≥ batches + 1 (per-batch reviewer + final inte
 - `.hyperflow/profile.md`, `architecture.md`, `conventions.md` populated (Layer 0 context injected into worker prompts).
 - Model routing config supports both thinking (Opus) and worker (Sonnet) tiers.
 - Git repository for per-sub-task commits.
-- For Step 5: `AskUserQuestion` available — required for audit + deploy gates. Headless mode skips gates with explicit warning.
+- For Step 5: `AskUserQuestion` popup available, or Codex chat fallback available — required for audit + deploy gates. Headless mode with no interactive channel skips gates with explicit warning.
 
 ## Instructions
 
@@ -378,7 +378,8 @@ Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 | Layer 5 gate failure (lint/typecheck/test) | Worker fix + re-run. Max 3 gate cycles before escalating. |
 | Per-sub-task commit fails (hook rejects, conflict) | Stop; surface the hook error. Do NOT use `--no-verify`. Do NOT amend per-sub-task commits. |
 | Wrap-up memory append has duplicate entries (detected post-commit) | `git revert HEAD` reverts the chore(memory) commit; orchestrator rewrites and recommits. No Reviewer to catch this inline — `git log` and `git revert` are the recovery path. |
-| `AskUserQuestion` unavailable for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
+| `AskUserQuestion` popup unavailable in Codex | Print audit/deploy as a `Hyperflow Question` chat block and wait for the user's answers. |
+| No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
 | Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
 
 ## Examples

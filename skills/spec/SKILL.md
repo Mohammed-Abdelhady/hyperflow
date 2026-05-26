@@ -84,7 +84,7 @@ How should I advance through the chain after each phase?
 
 `Auto` is the recommended default because most users invoking a chain-starter want momentum; `Manual` exists for high-risk or exploratory work. Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"`.
 
-If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
+If the agent cannot present `AskUserQuestion` as a popup, use the Codex fallback: print the same gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print an error and stop — never silently default.
 
 ### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
 

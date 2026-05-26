@@ -3,7 +3,7 @@ name: scope
 description: |
   Use when the user has a clear-enough task and wants it decomposed into batched worker sub-tasks before any code is written. Writes a task file under .hyperflow/tasks/ and auto-chains into /hyperflow:dispatch.
   Trigger with /hyperflow:scope, "plan this", "decompose this task", "break this down", "write the task file".
-allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep
+allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, AskUserQuestion
 argument-hint: "<task description> [chain-mode=auto|manual]"
 version: 3.1.2
 license: MIT
@@ -85,7 +85,7 @@ How should I advance through the chain after this phase?
 
 Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking dispatch.
 
-If the agent cannot present `AskUserQuestion` (e.g., headless mode), it should print an error and stop — never silently default.
+If the agent cannot present `AskUserQuestion` as a popup, use the Codex fallback: print the same gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print an error and stop — never silently default.
 
 ### Step 0.4 — Triage (Classifier + Reviewer) (DOCTRINE rule 15 · atomic-exempt)
 
@@ -483,7 +483,8 @@ The written task file follows the template in [Step 4](#step-4--write-task-file)
 | Planner produces single-batch plan for multi-file work | Reviewer rejects; redispatch Planner with feedback to split into parallel + sequential batches. |
 | Task file write fails (path locked, disk full) | Abort with explicit error; do not auto-chain. User retries after fix. |
 | `chain-mode` arg malformed | Refuse and re-ask via `AskUserQuestion`. Never silently default. |
-| `AskUserQuestion` unavailable (headless) | Print error stating chain-mode gate cannot fire; exit. |
+| `AskUserQuestion` popup unavailable in Codex | Print the gate as a `Hyperflow Question` chat block and wait for the user's answer. |
+| No interactive channel at all | Print error stating chain-mode gate cannot fire; exit. |
 
 ## Examples
 

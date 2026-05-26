@@ -63,6 +63,8 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 
 `amplify` hands off to `spec`, then `spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
+In Codex App/CLI, hosts may not expose Hyperflow's `AskUserQuestion` popup UI. Required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. This preserves Amplify handoff, Spec questions, audit/deploy gates, and push confirmation without inventing extra confirmations.
+
 ## Quick start
 
 ```bash

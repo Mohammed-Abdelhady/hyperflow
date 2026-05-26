@@ -79,6 +79,8 @@ Trivial-inline — no Agent dispatch. The orchestrator prints, then gates.
 
    On a `Send to …` selection, invoke the chosen skill via the `Skill` tool, passing the **amplified prompt** as the argument. Spec is the default because a freshly-amplified prompt is a design starting point — spec's brainstorming + section-by-section design is exactly what it feeds. On `Copy only`, stop — the prompt is already printed for the user to take.
 
+   **Codex fallback:** if the host does not expose the `AskUserQuestion` popup UI, print the same gate as a `Hyperflow Question` chat block with the four numbered choices and wait for the user's reply. Do not auto-select `Send to spec`.
+
 ## Iron Rules
 
 - **Amplify never writes code.** It produces a prompt; downstream skills execute it. If the user wanted code, the handoff gate routes there.
