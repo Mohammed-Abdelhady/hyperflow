@@ -38,6 +38,7 @@ Each supported platform has its own model naming and defaults:
 |---|---|---|
 | Claude Code | `opus-4-7` | `sonnet-4-6` |
 | OpenCode | `anthropic/claude-opus-4-7` | `anthropic/claude-sonnet-4-6` |
+| Codex | `gpt-5.5` with adaptive reasoning | `gpt-5.4` with fast/low reasoning |
 | Antigravity | `gemini-3-pro` | `gemini-3.5-flash` |
 
 See [providers.md](providers.md) for the full model list per platform, including version pinning and dynamic detection.
@@ -101,6 +102,23 @@ The installer detects every provider on your machine and writes a full block for
         "implementer": "sonnet-4-6", "searcher": "sonnet-4-6", "writer": "sonnet-4-6"
       }
     },
+    "codex": {
+      "thinking": "gpt-5.5",
+      "worker": "gpt-5.4",
+      "models": {
+        "thinking": ["gpt-5.5", "gpt-5.4"],
+        "worker": ["gpt-5.4", "gpt-5.4-mini"]
+      },
+      "roles": {
+        "orchestrator": "gpt-5.5", "reviewer": "gpt-5.5",
+        "debugger": "gpt-5.5", "decision-maker": "gpt-5.5", "brainstormer": "gpt-5.5",
+        "implementer": "gpt-5.4", "searcher": "gpt-5.4", "writer": "gpt-5.4"
+      },
+      "reasoning": {
+        "thinking": "adaptive",
+        "worker": "low"
+      }
+    },
     "opencode":    { "thinking": "anthropic/claude-opus-4-7", "worker": "anthropic/claude-sonnet-4-6", "models": { … }, "roles": { … } },
     "antigravity": { "thinking": "gemini-3-pro",              "worker": "gemini-3.5-flash",           "models": { … }, "roles": { … } }
   },
@@ -108,6 +126,10 @@ The installer detects every provider on your machine and writes a full block for
   "memory":   { "compactionThreshold": 300 }
 }
 ```
+
+### Codex reasoning
+
+Codex keeps model choice and reasoning effort separate. Hyperflow uses `gpt-5.5` for thinking roles and resolves reasoning by task: `low` for trivial docs/config checks, `medium` for normal planning/review, and `high` for debugging, architecture, security, and final integration. Worker roles use `gpt-5.4` with `low` reasoning for fast mode. Codex defaults never use `xhigh`.
 
 ### Change default models
 

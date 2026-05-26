@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hyperflow — Premium multi-agent orchestration for Claude Code, OpenCode &amp; Antigravity</title>
-  <meta name="description" content="Premium multi-agent orchestration for Claude Code, OpenCode & Antigravity. Thinking models plan and review every step, fast workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions, never uploaded, never mixed across repos." />
+  <title>Hyperflow — Premium multi-agent orchestration for Codex, Claude Code, OpenCode &amp; Antigravity</title>
+  <meta name="description" content="Premium multi-agent orchestration for Codex, Claude Code, OpenCode & Antigravity. Thinking models plan and review every step, fast workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions, never uploaded, never mixed across repos." />
   <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta name="theme-color" content="#14110C" />
 
@@ -54,7 +54,7 @@
   <section id="hero" aria-labelledby="hero-heading">
     <div class="container">
       <div class="hero-inner">
-        <p class="hero-eyebrow">Claude Code &nbsp;·&nbsp; OpenCode &nbsp;·&nbsp; Antigravity</p>
+        <p class="hero-eyebrow">Codex &nbsp;·&nbsp; Claude Code &nbsp;·&nbsp; OpenCode &nbsp;·&nbsp; Antigravity</p>
 
         <h1 class="hero-wordmark" id="hero-heading">Hyper<em>flow</em></h1>
 
@@ -1202,6 +1202,25 @@
         </div>
       </div>
 
+      <!-- Codex -->
+      <div class="install-block">
+        <div class="install-block-header">
+          <span class="install-block-title">Codex App &nbsp;·&nbsp; CLI</span>
+          <button
+            class="copy-btn"
+            aria-label="Copy Codex install commands to clipboard"
+            onclick="copyBlock('block-codex', this)"
+          >copy</button>
+        </div>
+        <div class="install-code" id="block-codex" aria-label="Codex install commands">
+          <span class="comment"># Step 1 — add the marketplace source</span><br />
+          codex plugin marketplace add Mohammed-Abdelhady/hyperflow<br />
+          <br />
+          <span class="comment"># Step 2 — install the plugin</span><br />
+          codex plugin add hyperflow@hyperflow-marketplace
+        </div>
+      </div>
+
       <!-- OpenCode / Antigravity -->
       <div class="install-block">
         <div class="install-block-header">
@@ -1236,7 +1255,7 @@
       </div>
 
       <p class="install-note">
-        Hyperflow runs in the <strong>terminal</strong> — Claude Code CLI, OpenCode CLI, or Antigravity. It does not run inside Claude Code Desktop (the GUI app), claude.ai web, or IDE extensions that don't shell out to the CLI. Run <code>claude</code> in a terminal in the same project directory to activate it.
+        Hyperflow runs locally in <strong>Codex App/CLI</strong>, Claude Code CLI, OpenCode CLI, or Antigravity. Claude Code Desktop and claude.ai web still need the portable CLAUDE.md fallback because they do not load terminal plugins.
       </p>
     </div>
   </section>
@@ -1246,7 +1265,7 @@
     <div class="footer-inner">
       <div class="footer-left">
         <a href="#hero" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta">v4.21.0 &nbsp;·&nbsp; MIT License</span>
+        <span class="footer-meta">v4.22.0 &nbsp;·&nbsp; MIT License</span>
       </div>
       <div class="footer-links">
         <a href="installation.html">Install</a>

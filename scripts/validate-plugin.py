@@ -55,6 +55,32 @@ def check_plugin_json() -> None:
         fail(f".claude-plugin/plugin.json version '{version}' is not strict semver MAJOR.MINOR.PATCH")
 
 
+def check_codex_plugin_json() -> None:
+    path = ROOT / ".codex-plugin" / "plugin.json"
+    if not path.exists():
+        fail(f"missing {path.relative_to(ROOT)}")
+        return
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError as e:
+        fail(f".codex-plugin/plugin.json is not valid JSON: {e}")
+        return
+    for field in PLUGIN_JSON_REQUIRED:
+        if field not in data:
+            fail(f".codex-plugin/plugin.json missing required field: {field}")
+    if data.get("name") != "hyperflow":
+        fail(f".codex-plugin/plugin.json name is '{data.get('name')}', expected 'hyperflow'")
+    version = data.get("version", "")
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        fail(f".codex-plugin/plugin.json version '{version}' is not strict semver MAJOR.MINOR.PATCH")
+
+    claude_plugin = ROOT / ".claude-plugin" / "plugin.json"
+    if claude_plugin.exists():
+        claude_version = json.loads(claude_plugin.read_text()).get("version")
+        if version != claude_version:
+            fail(f".codex-plugin/plugin.json version '{version}' != .claude-plugin/plugin.json version '{claude_version}'")
+
+
 def check_marketplace_json() -> None:
     path = ROOT / ".claude-plugin" / "marketplace.json"
     if not path.exists():
@@ -175,7 +201,13 @@ def check_hooks() -> None:
         for block in event_blocks:
             for hook in block.get("hooks", []):
                 cmd = hook.get("command", "")
-                resolved = cmd.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT)).strip().strip('"')
+                resolved = (
+                    cmd.replace("${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}", str(ROOT))
+                    .replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
+                    .replace("${CODEX_PLUGIN_ROOT}", str(ROOT))
+                    .strip()
+                    .strip('"')
+                )
                 script_path = Path(resolved.split()[0]) if resolved else None
                 if script_path and not script_path.exists():
                     fail(f"hooks.json {event_name} references non-existent script: {script_path}")
@@ -203,6 +235,7 @@ def check_readme_links() -> None:
 def main() -> int:
     print(f"Validating hyperflow plugin at {ROOT}")
     section("plugin.json", check_plugin_json)
+    section("codex plugin.json", check_codex_plugin_json)
     section("marketplace.json", check_marketplace_json)
     section("package.json", check_package_json)
     section("SKILL.md frontmatter", check_skills)

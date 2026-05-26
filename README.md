@@ -8,7 +8,7 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>Multi-agent orchestration for Claude Code, OpenCode &amp; Antigravity.</strong><br/>
+  <strong>Multi-agent orchestration for Codex App/CLI, Claude Code, OpenCode &amp; Antigravity.</strong><br/>
   Thinking models plan and review every step. Worker models execute in parallel. Learnings persist in local, per-project memory.
 </p>
 
@@ -18,13 +18,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v4.21.0-blueviolet?style=flat-square" alt="version v4.21.0" />
+  <img src="https://img.shields.io/badge/version-v4.22.0-blueviolet?style=flat-square" alt="version v4.22.0" />
   &nbsp;
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
   &nbsp;
   <img src="https://img.shields.io/badge/Claude%20marketplace-published-22C55E?style=flat-square" alt="Published on the official Claude plugin marketplace" />
   &nbsp;
-  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20OpenCode%20%7C%20Antigravity-2EA39F?style=flat-square" alt="works with Claude Code, OpenCode, and Antigravity" />
+  <img src="https://img.shields.io/badge/works%20with-Codex%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Antigravity-2EA39F?style=flat-square" alt="works with Codex, Claude Code, OpenCode, and Antigravity" />
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@ Not just another orchestrator — three things set Hyperflow apart:
 - **Memory that's yours.** Learnings, decisions, and pitfalls persist in `.hyperflow/memory/` — plain markdown, committed with your repo, never uploaded, never mixed across projects. Hot/warm/cold tiering keeps injection cheap.
 - **Depth that adapts.** Triage classifies every task and picks a flow profile (fast → scientific), so a 5-line fix never triggers a 300k-token deep run.
 
-Underneath: a structural thinking/worker model split (expensive models plan & review, fast models execute), 15 persona-stitched experts, intent auto-routing, and three auto-detected providers — all terminal-native, no daemon.
+Underneath: a structural thinking/worker model split (expensive models plan & review, fast models execute), 15 persona-stitched experts, intent auto-routing, and four auto-detected providers — all local, no daemon.
 
 ## The chain
 
@@ -68,6 +68,13 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 ```bash
 claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
+```
+
+Codex App/CLI:
+
+```bash
+codex plugin marketplace add Mohammed-Abdelhady/hyperflow
+codex plugin add hyperflow@hyperflow-marketplace
 ```
 
 First initialize the project (once), then invoke any skill:
@@ -94,8 +101,8 @@ The split is structural, not a setting — each tier does only what it's best at
 
 | Tier | Models | Role |
 |------|--------|------|
-| **Thinking** | Opus 4.7 · Gemini 3 Pro | Orchestrate, triage, brainstorm, review every output, run the final integration pass |
-| **Worker** | Sonnet 4.6 · Gemini 3.5 Flash | Execute in parallel — implement, search, write |
+| **Thinking** | GPT-5.5 · Opus 4.7 · Gemini 3 Pro | Orchestrate, triage, brainstorm, review every output, run the final integration pass |
+| **Worker** | GPT-5.4 fast mode · Sonnet 4.6 · Gemini 3.5 Flash | Execute in parallel — implement, search, write |
 
 ### Review at every granularity
 
@@ -153,6 +160,7 @@ Fourteen skills. Three chain-starters auto-advance through the chain; the rest a
 
 | Provider | Thinking | Worker |
 |----------|----------|--------|
+| Codex App/CLI | GPT-5.5 (adaptive reasoning) | GPT-5.4 (fast mode) |
 | Claude Code | Opus 4.7 | Sonnet 4.6 |
 | OpenCode | Claude Opus 4.7 | Sonnet 4.6 |
 | Antigravity | Gemini 3 Pro | Gemini 3.5 Flash |

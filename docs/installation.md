@@ -1,16 +1,17 @@
 # Installation
 
-Getting Hyperflow installed into your terminal CLI — covering quick install, platform compatibility, model configuration, security, and verification.
+Getting Hyperflow installed into Codex, terminal CLIs, and supported IDE surfaces — covering quick install, platform compatibility, model configuration, security, and verification.
 
 ---
 
 ## Where it runs
 
-Hyperflow loads as a plugin into terminal CLI environments. It does not run inside GUI apps or the web.
+Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It does not run inside web-only surfaces.
 
 | Environment | Works? | Notes |
 |---|---|---|
 | Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, and skills are all active |
+| Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, and provider-aware model config are active |
 | OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention |
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch or tier split — the single agent runs every phase and self-reviews |
 | Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
@@ -41,6 +42,15 @@ Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customi
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
+### Codex App / CLI
+
+```bash
+codex plugin marketplace add Mohammed-Abdelhady/hyperflow
+codex plugin add hyperflow@hyperflow-marketplace
+```
+
+Codex defaults to GPT-5.5 for thinking roles with task-adaptive reasoning and GPT-5.4 for workers in fast mode.
+
 ### OpenCode
 
 ```bash
@@ -50,9 +60,9 @@ curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/i
 ### What the installer does
 
 1. Clones the repo to `~/.hyperflow/repo/`
-2. Detects which providers are installed (OpenCode, Antigravity)
-3. Symlinks the skill into each provider's skills directory
-4. Asks you to pick thinking and worker models from your provider's catalog
+2. Detects which providers are installed (Codex, OpenCode, Antigravity)
+3. Installs or links the provider integration where needed
+4. Asks you to pick thinking and worker models from your provider's catalog, or applies provider defaults where the host owns model selection
 5. Asks whether to enable the security layer
 6. Writes your choices to `~/.hyperflow/config.json`
 
@@ -176,6 +186,15 @@ If you use more than one platform, configure each one:
     "worker": "sonnet-4-6"
   },
   "providers": {
+    "codex": {
+      "thinking": "gpt-5.5",
+      "worker": "gpt-5.4",
+      "reasoning": {
+        "thinking": "adaptive",
+        "worker": "low"
+      },
+      "roles": {}
+    },
     "claude-code": {
       "thinking": "opus-4-7",
       "worker": "sonnet-4-6",
@@ -191,6 +210,8 @@ If you use more than one platform, configure each one:
 ```
 
 Set `activeProvider` to force a specific platform, or leave `null` for auto-detection.
+
+For Codex, `reasoning.thinking: "adaptive"` resolves to `low` for trivial docs/config checks, `medium` for normal planning/review, and `high` for debugging, architecture, security, and final integration. Worker fast mode stays `low`; Hyperflow never defaults Codex to `xhigh`.
 
 ### Role overrides
 
@@ -310,7 +331,7 @@ Add this to `~/.claude/CLAUDE.md` as a portable fallback for surfaces that don't
 
 ## Verify installation
 
-Start a new Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on every task.
+Start a new Codex or Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on matching task intents.
 
 ---
 
@@ -323,6 +344,7 @@ To update manually:
 ```bash
 git -C ~/.hyperflow/repo pull                          # installer / git install
 claude plugin update hyperflow@hyperflow-marketplace   # marketplace install
+codex plugin marketplace upgrade hyperflow-marketplace  # Codex marketplace snapshot
 ```
 
 Because the installer path installs via symlink, every provider picks up changes immediately — no re-copying.
@@ -343,9 +365,10 @@ To change models or security settings, re-run the installer:
 claude plugin uninstall hyperflow@hyperflow-marketplace
 ```
 
-### OpenCode / Antigravity
+### Codex / OpenCode / Antigravity
 
 ```bash
+codex plugin remove hyperflow@hyperflow-marketplace
 ~/.hyperflow/repo/install.sh --uninstall
 ```
 
