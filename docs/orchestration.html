@@ -544,6 +544,46 @@
 
     <hr />
 
+    <!-- ── Auto-archive ──────────────────────────────────────────────────── -->
+    <section id="archive" aria-labelledby="archive-heading">
+      <div class="container">
+        <p class="section-label">Auto-archive</p>
+        <h2 id="archive-heading">Finished work cleans itself up.</h2>
+        <p>
+          <code>.hyperflow/{tasks,audits,specs}/</code> would grow forever if every run left its files behind. A daily-gated session-start step keeps the project tidy:
+        </p>
+        <ul>
+          <li>For each <code>*.md</code> in those folders older than <code>cleanup.staleDays</code> (default <strong>7</strong>), the archiver extracts the <code>## Learnings</code> / <code>## Decisions</code> / <code>## Anti-patterns</code> (or <code>## Pitfalls</code>) sections and appends them &mdash; whole-line de-duped &mdash; to <code>.hyperflow/memory/learnings.md</code> / <code>decisions.md</code> / <code>anti-patterns.md</code>. <em>Then</em> the source file moves to <code>.hyperflow/archive/&lt;type&gt;/YYYY-MM/</code>.</li>
+          <li>Anything under <code>.hyperflow/archive/**</code> older than <code>cleanup.pruneDays</code> (default <strong>30</strong>) is deleted; empty directories collapse.</li>
+          <li>A marker (<code>.hyperflow/.last-cleanup</code>) gates the walk to once per 24h per project &mdash; repeat session-starts are free.</li>
+        </ul>
+
+        <p style="margin-top:1rem;">Tune or disable in <code>~/.hyperflow/config.json</code>:</p>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">~/.hyperflow/config.json</span>
+          </div>
+          <div class="install-code">{<br />
+&nbsp;&nbsp;"cleanup": { "auto": true, "staleDays": 7, "pruneDays": 30 }<br />
+}</div>
+        </div>
+
+        <p style="margin-top:1rem;">Force a run on demand:</p>
+        <div class="install-block">
+          <div class="install-block-header">
+            <span class="install-block-title">SHELL</span>
+          </div>
+          <div class="install-code">python3 ~/.hyperflow/repo/scripts/archive-artefacts.py /path/to/project/.hyperflow --force</div>
+        </div>
+
+        <p class="install-note">
+          Net effect: durable learnings compound in memory, and the working folders only ever hold what&rsquo;s still in flight.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
     <!-- ── References ────────────────────────────────────────────────────── -->
     <section id="references" aria-labelledby="references-heading">
       <div class="container">

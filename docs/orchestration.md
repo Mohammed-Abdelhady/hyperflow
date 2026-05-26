@@ -250,6 +250,32 @@ Neither hook blocks compaction or fails a session; if `.hyperflow/` isn't presen
 
 ---
 
+## Auto-archive — finished work cleans itself up
+
+`.hyperflow/{tasks,audits,specs}/` would grow forever if every run left its files behind. A daily-gated session-start step keeps the project tidy:
+
+- For each `*.md` in those folders older than `cleanup.staleDays` (default **7**), the archiver extracts the `## Learnings` / `## Decisions` / `## Anti-patterns` (or `## Pitfalls`) sections and appends them — whole-line de-duped — to `.hyperflow/memory/learnings.md` / `decisions.md` / `anti-patterns.md`. Only **then** is the source file moved to `.hyperflow/archive/<type>/YYYY-MM/`.
+- Anything under `.hyperflow/archive/**` older than `cleanup.pruneDays` (default **30**) gets deleted; empty directories collapse.
+- A marker (`.hyperflow/.last-cleanup`) gates the walk to once per 24h per project — repeat session-starts are free.
+
+Tune or disable it in `~/.hyperflow/config.json`:
+
+```json
+{
+  "cleanup": { "auto": true, "staleDays": 7, "pruneDays": 30 }
+}
+```
+
+Force a run on demand:
+
+```bash
+python3 ~/.hyperflow/repo/scripts/archive-artefacts.py /path/to/project/.hyperflow --force
+```
+
+Net effect: durable learnings compound in memory, and the working folders only ever hold what's still in flight.
+
+---
+
 ## References
 
 | File | Contents |
