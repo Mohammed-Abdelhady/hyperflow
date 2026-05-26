@@ -165,7 +165,7 @@ Dispatch one Writer (Sonnet) in parallel to synthesize per-batch learnings from 
 
 The two activities (commits + learnings synthesis) run concurrently — the Writer synthesizes while commits land sequentially per the commit cadence arg.
 
-After Step 2d, print a one-line status update — *"Batch 1 done · 9/36 sub-tasks · next: B2 deps"* — then proceed to the next batch immediately in `auto` mode. Per DOCTRINE rule 8, "transparency checkpoints" / "midway sanity checks" / "scope re-confirmations" / "cost heads-ups" are banned. The only inter-batch gates are: (a) `chain-mode=manual` → pause and ask before the next batch fires; (b) `SECURITY_VIOLATION` → hard halt; (c) `ESCALATE: <reason>` crossing the irreversibility boundary → fire the escalation gate per [escalation.md](references/escalation.md). If none apply, the next batch fires immediately.
+After Step 2d, print a one-line status update — *"Batch 1 done · 9/36 sub-tasks · next: B2 deps"* — then proceed to the next batch immediately in `auto` mode. Per DOCTRINE rule 8, "transparency checkpoints" / "midway sanity checks" / "scope re-confirmations" / "cost heads-ups" are banned. The only inter-batch gates are: (a) `chain-mode=manual` → pause and ask before the next batch fires; (b) `SECURITY_VIOLATION` → hard halt; (c) `ESCALATE: <reason>` crossing the irreversibility boundary → fire the escalation gate per [escalation.md](../hyperflow/escalation.md). If none apply, the next batch fires immediately.
 
 ### Step 3 — Final Integration Review
 
