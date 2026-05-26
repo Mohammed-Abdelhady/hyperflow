@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.24.2] — 2026-05-26
+
+### Fixed
+- Route hyperflow aliases and subagents
+
+
 ## [4.24.1] — 2026-05-26
 
 ### Fixed
@@ -808,7 +814,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.2...HEAD
+[4.24.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.1...v4.24.2
 [4.24.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.0...v4.24.1
 [4.24.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.23.0...v4.24.0
 [4.23.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.22.0...v4.23.0
