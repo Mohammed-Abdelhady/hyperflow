@@ -67,6 +67,12 @@ $(cat "$HF_DIR/.precompact.md" 2>/dev/null || true)"
   fi
   rm -f "$HF_DIR/.precompact.md" 2>/dev/null || true
 
+  # Auto-archive stale artefacts and promote learnings to memory (daily-gated,
+  # non-blocking; controlled by cleanup.* in ~/.hyperflow/config.json).
+  if [ -x "$PLUGIN_ROOT/scripts/archive-artefacts.py" ]; then
+    python3 "$PLUGIN_ROOT/scripts/archive-artefacts.py" "$HF_DIR" 2>>"$HF_DIR/.session-start.log" || true
+  fi
+
   # D3: Session-cached context — generate .hyperflow/memory/session-context.md
   # Skip if .hyperflow/memory/ doesn't exist (scaffold hasn't run yet).
   # Non-blocking: errors go to stderr only; never fail the session.
