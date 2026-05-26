@@ -274,32 +274,67 @@ write_config() {
     fi
   fi
 
-  if [ -n "$provider_key" ]; then
-    cat > "$CONFIG_FILE" <<EOF
-{
-  "activeProvider": "$provider_key",
-  "defaults": {
-    "thinking": "$SELECTED_THINKING",
-    "worker": "$SELECTED_WORKER"
-  },
-  "security": {
-    "enabled": $SECURITY_ENABLED
-  }
-}
-EOF
-  else
-    cat > "$CONFIG_FILE" <<EOF
-{
-  "defaults": {
-    "thinking": "$SELECTED_THINKING",
-    "worker": "$SELECTED_WORKER"
-  },
-  "security": {
-    "enabled": $SECURITY_ENABLED
-  }
-}
-EOF
+  local providers_csv=""
+  if [ "${#PROVIDER_KEYS[@]}" -gt 0 ]; then
+    providers_csv="$(IFS=,; echo "${PROVIDER_KEYS[*]}")"
   fi
+
+  python3 - "$CONFIG_FILE" "$provider_key" "$SELECTED_THINKING" "$SELECTED_WORKER" "$SECURITY_ENABLED" "$providers_csv" "$INSTALL_DIR" <<'PYEOF'
+import json, os, sys
+config_path, active, sel_think, sel_worker, sec, prov_csv, install_dir = sys.argv[1:8]
+keys = [k for k in prov_csv.split(",") if k]
+
+defaults_path = os.path.join(install_dir, "config", "defaults.json")
+try:
+    with open(defaults_path) as f:
+        defaults = json.load(f)
+except Exception:
+    defaults = {"providers": {}}
+
+ROLES_THINKING = ["orchestrator", "reviewer", "debugger", "decision-maker", "brainstormer"]
+ROLES_WORKER   = ["implementer", "searcher", "writer"]
+
+def default_id(models):
+    for m in models:
+        if m.get("default"): return m["id"]
+    return models[0]["id"] if models else ""
+
+def ids(models): return [m["id"] for m in models]
+
+provs = {}
+for k in keys:
+    pdef = defaults.get("providers", {}).get(k, {})
+    m = pdef.get("models", {})
+    t = default_id(m.get("thinking", []))
+    w = default_id(m.get("worker", []))
+    if k == active:
+        if sel_think: t = sel_think
+        if sel_worker: w = sel_worker
+    roles = {r: t for r in ROLES_THINKING}
+    roles.update({r: w for r in ROLES_WORKER})
+    provs[k] = {
+        "thinking": t,
+        "worker": w,
+        "models": {
+            "thinking": ids(m.get("thinking", [])),
+            "worker":   ids(m.get("worker", [])),
+        },
+        "roles": roles,
+    }
+
+cfg = {}
+if active:
+    cfg["activeProvider"] = active
+cfg["defaults"] = {"thinking": sel_think, "worker": sel_worker}
+if provs:
+    cfg["providers"] = provs
+cfg["security"] = {"enabled": sec == "true"}
+cfg["memory"]   = {"compactionThreshold": 300}
+
+with open(config_path, "w") as f:
+    json.dump(cfg, f, indent=2)
+    f.write("\n")
+PYEOF
 
   info "Config saved to $CONFIG_FILE"
 }
