@@ -63,7 +63,7 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 
 `amplify` hands off to `spec`, then `spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
-In Codex App/CLI, hosts may not expose Hyperflow's `AskUserQuestion` popup UI. Required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. This preserves Amplify handoff, Spec questions, audit/deploy gates, and push confirmation without inventing extra confirmations.
+In Codex App/CLI, `/hyperflow:*` entries are treated as plugin skill aliases, not native host slash commands. If the host does not expose Hyperflow's `AskUserQuestion` popup UI, required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. When Codex subagents are available, Hyperflow maps worker/searcher/writer dispatches to them; otherwise those phases run inline and the chain continues in the same thread.
 
 ## Quick start
 
@@ -87,6 +87,14 @@ First initialize the project (once), then invoke any skill:
 /hyperflow:spec "add user auth with login + middleware"    # design → scope → dispatch
 /hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
 /hyperflow:deploy                                          # pre-push gates + ship
+```
+
+Codex-safe equivalent:
+
+```text
+hyperflow scaffold
+hyperflow amplify "make a login page"
+hyperflow trace "tests fail after the auth refactor"
 ```
 
 Auto-routing is on by default — say "audit the diff" or "debug this test" and the right skill runs without the `/hyperflow:*` prefix.
@@ -139,7 +147,7 @@ Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](ht
 
 ## Skills
 
-Fourteen skills. Three chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix.
+Fourteen skills. Three chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
