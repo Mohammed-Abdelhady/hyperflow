@@ -239,6 +239,17 @@ A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-up
 
 ---
 
+## Surviving context compaction
+
+Long chains will eventually hit Claude Code's context limit and auto-compact (or you can `/compact` yourself sooner). Hyperflow doesn't lose the chain state across that squeeze:
+
+- A `PreCompact` hook snapshots the volatile state to `.hyperflow/.precompact.md` right before compaction — active task file(s), structural decisions, hot anti-patterns, and the uncommitted `git diff --stat`.
+- The `SessionStart` hook (which also fires on the `compact` trigger) re-injects that snapshot immediately after, then consumes it. The orchestrator comes out of the compact still knowing the task, the decisions, and the quality rules.
+
+Neither hook blocks compaction or fails a session; if `.hyperflow/` isn't present the snapshot is skipped silently.
+
+---
+
 ## References
 
 | File | Contents |
