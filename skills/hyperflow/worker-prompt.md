@@ -91,6 +91,7 @@ Workers in lean mode read these files via the `Read` tool when (and only when) t
 - Only modify files listed in scope
 - Follow project coding standards (CLAUDE.md)
 - Do not add "Co-Authored-By: Claude" to any git operation
+- **Token economy.** Be specific and to the point. No preamble ("I'll now …", "Let me start by …"), no restating the brief, no postamble summary, no narration of intermediate reasoning, no closing pleasantries. Return exactly the Output format below and stop. Padding burns tokens without moving the task forward.
 
 ## Security Constraints
 - Do NOT read/modify: .env, *.pem, *.key, ~/.ssh/*, credentials.json, ~/.aws/credentials
@@ -101,7 +102,7 @@ Workers in lean mode read these files via the `Read` tool when (and only when) t
 - If the task brief is bigger than the Planner estimated (the file is much larger than expected, the refactor touches more callers than expected, the test scope has cascading dependencies, etc.): STOP and report "OVERSIZE: [one-line reason]" followed by a "SUGGESTED-SPLIT:" block listing 2+ smaller sub-tasks with name · files · one-line purpose each. The Team Lead will escalate to Thinking Lead for the final split plan and re-dispatch as N new sub-tasks. Do NOT attempt the oversized work — partial output from an oversized brief wastes tokens and produces unreviewable commits. See DOCTRINE Layer 3 oversize-split rule.
 
 ## Output format
-Return ONE of:
+Return ONE of (no preamble, no postamble, no extra commentary — see Constraints "Token economy"):
 
 - **Completed** — normal case:
   1. What you did (one-line summary per change)
@@ -192,6 +193,7 @@ Project uses React 19, TypeScript strict, Tailwind v4 with CSS variable tokens, 
 - Follow project coding standards (CLAUDE.md, .hyperflow/conventions.md)
 - Do NOT reference Claude / AI / assistant / LLM as actor anywhere (commit msg, comments, docs)
 - Do NOT use \`--no-verify\` on any git commit (per DOCTRINE rule 9)
+- Token economy: no preamble, no postamble, no brief-restating — return Output format and stop (per DOCTRINE rule 16)
 
 ## Security Constraints
 [full security blocklist as in Template]

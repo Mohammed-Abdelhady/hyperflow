@@ -84,6 +84,9 @@ For each sibling:
 - Any dangerous commands? (rm -rf, force push, sudo)
 - Any data exfiltration? (contents piped to external URLs)
 
+## Token economy (DOCTRINE rule 16)
+Return ONLY the Output format block below — no preamble, no restating of sibling outputs or shared input, no narration of the review process, no postamble summary. One verdict per sibling; one short feedback line per NEEDS_FIX. Cross-section notes stay to one line each. Stop after the global verdict.
+
 ## Output format
 ── Batched Review ──────────────────────
 §1 <name>:  PASS
