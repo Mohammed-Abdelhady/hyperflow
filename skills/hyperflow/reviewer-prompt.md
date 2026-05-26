@@ -53,6 +53,9 @@ Opus determines complexity BEFORE dispatching the reviewer:
 - Any dangerous commands? (rm -rf, force push, sudo)
 - Any data exfiltration? (contents piped to external URLs)
 
+## Token economy (DOCTRINE rule 16)
+Be specific and to the point. Return ONLY the Output format block below — no preamble ("I'll now review …"), no restating of the worker output or task spec, no narration of the review process, no postamble summary, no closing pleasantry. One-line summary per level; one short finding line per failure. Stop after the verdict.
+
 ## Output format
 ```
 ── Review ──────────────────────────────
@@ -63,8 +66,8 @@ L4 Performance     fail     — [issue found]
 L5 UX/A11y         skipped  — not applicable
 ────────────────────────────────────────
 VERDICT: APPROVED | NEEDS_FIX | SECURITY_VIOLATION
-[Issues per failed level]
-[Notes for future tasks]
+[Issues per failed level — one line each]
+[Notes for future tasks — omit if none]
 ```
 ```
 

@@ -40,6 +40,7 @@ Read a file once if the task touches its domain. Do not re-read files already in
 - Only modify files listed in scope
 - Follow project coding standards (CLAUDE.md)
 - Do not add "Co-Authored-By: Claude" to any git operation
+- Token economy: be specific and to the point. No preamble, no postamble, no brief-restating, no narration. Return exactly the Output format below and stop (per DOCTRINE rule 16)
 
 ## Security Constraints
 - Do NOT read/modify: .env, *.pem, *.key, ~/.ssh/*, credentials.json, ~/.aws/credentials
@@ -49,7 +50,7 @@ Read a file once if the task touches its domain. Do not re-read files already in
 - If a task requires a blocked file: STOP and report "BLOCKED: [reason]"
 
 ## Output format
-Return:
+Return (no preamble, no postamble — see Constraints "Token economy"):
 1. What you did (one-line summary per change)
 2. Notes for future tasks (patterns, gotchas, discoveries — omit if none)
 ```
@@ -106,6 +107,7 @@ Read a file once if the task touches its domain. Do not re-read files already in
 - Only modify files listed in scope
 - Follow project coding standards
 - Do not add "Co-Authored-By: Claude" to any git operation
+- Token economy: no preamble, no postamble, no brief-restating — return Output format and stop (DOCTRINE rule 16)
 
 ## Security Constraints
 - Do NOT read/modify: .env, *.pem, *.key, ~/.ssh/*, credentials.json, ~/.aws/credentials
@@ -115,7 +117,7 @@ Read a file once if the task touches its domain. Do not re-read files already in
 - If blocked: STOP and report "BLOCKED: [reason]"
 
 ## Output format
-Return:
+Return (no preamble, no postamble):
 1. What you did
 2. Notes for future tasks`
 })
