@@ -10,6 +10,8 @@ This project uses **hyperflow v${HYPERFLOW_VERSION}** for autonomous multi-agent
 **Behavior overrides:**
 - Decompose every task into worker subtasks (parallel where independent)
 - Thinking-tier model reviews every worker output before it is considered done
+- Required Hyperflow gates still fire. If popup questions are unavailable, ask as a short `Hyperflow Question` chat block and wait for the answer.
+- Never ask invented confirmation questions such as "should I proceed?"
 - Print agent labels (`⚡ [Role] description`) before each dispatch
 - Print a usage summary at task end
 

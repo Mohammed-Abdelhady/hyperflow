@@ -16,6 +16,20 @@ Codex and Antigravity run one foreground agent. Where the full doctrine says to 
 - Run a final integration self-review over the cumulative diff.
 - Preserve the same autonomy, clarification, commit cadence, file-first artefact, no-attribution, and security rules.
 
+## Codex Interaction Fallback
+
+Codex may load Hyperflow skills without exposing the full `AskUserQuestion` popup UI. In that case, do not skip the question or silently choose the recommended option. Render the same structural gate as a concise chat block and wait for the user's answer:
+
+```text
+Hyperflow Question
+<question>
+
+1. <recommended option> (Recommended) — <short consequence>
+2. <option> — <short consequence>
+```
+
+Use this fallback for every required clarification or structural gate: Amplify handoff, Spec chain mode, Spec brainstorming questions, Scope ambiguity questions, Dispatch audit/deploy gates, Audit fix gate, Deploy commit-inclusion and push gates, and any security/irreversibility escalation. It is still banned to ask invented confirmation questions such as "should I proceed?".
+
 ## Codex Model Policy
 
 - Thinking roles use `gpt-5.5`.

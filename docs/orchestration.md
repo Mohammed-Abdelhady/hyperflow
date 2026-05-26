@@ -57,6 +57,8 @@ That JSON drives every downstream decision:
 
 The chain-starter asks at Step 0 whether to advance **auto** (no gates between phases) or **manual** (confirm before each). The choice propagates to every downstream skill via the `Skill` tool's `args` parameter.
 
+On Codex App/CLI, if the host does not expose a popup question UI, every required `AskUserQuestion` gate renders as a concise `Hyperflow Question` chat block with numbered options and waits for the answer. The fallback applies to Amplify handoff, Spec questions, Scope ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
+
 Then:
 
 1. **Classifier** — triage JSON (see above)

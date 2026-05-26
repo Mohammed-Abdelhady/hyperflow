@@ -161,6 +161,10 @@
           The choice propagates to every downstream skill via the <code>Skill</code> tool&rsquo;s <code>args</code> parameter.
         </p>
 
+        <p>
+          On Codex App/CLI, if the host does not expose a popup question UI, every required <code>AskUserQuestion</code> gate renders as a concise <code>Hyperflow Question</code> chat block with numbered options and waits for the answer. The fallback applies to Amplify handoff, Spec questions, Scope ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
+        </p>
+
         <p>Then:</p>
 
         <ul>
