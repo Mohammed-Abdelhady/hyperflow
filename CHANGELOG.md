@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.23.0] — 2026-05-26
+
+### Added
+- Add codex app and cli support
+- On-completion archive + proactive-compact doctrine
+- Auto-archive stale artefacts and promote learnings to memory
+
+### Fixed
+- Bump codex plugin manifest
+- Hero install command actually installs
+
+
 ## [4.22.0] — 2026-05-26
 
 ### Added
@@ -781,7 +793,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.22.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.23.0...HEAD
+[4.23.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.22.0...v4.23.0
 [4.22.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v4.22.0
 [4.21.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.1...v4.21.0
 [4.20.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.20.0...v4.20.1

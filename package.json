@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
-  "version": "4.22.0",
-  "description": "Multi-agent orchestration for AI coding tools. Thinking models think, worker models execute, everything runs in parallel.",
+  "version": "4.23.0",
+  "description": "Multi-agent orchestration for AI coding tools including Codex, Claude Code, OpenCode, and Antigravity. Thinking models think, worker models execute, everything runs in parallel.",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -18,6 +18,8 @@
     "orchestration",
     "claude-code",
     "claude-code-plugin",
+    "codex",
+    "codex-plugin",
     "opencode",
     "model-routing",
     "parallel-execution",

@@ -20,7 +20,7 @@ FORCE=false
 DRY_RUN=false
 
 # ── Valid tool names ───────────────────────────────────────────────────────────
-VALID_TOOLS="claude-code opencode agents antigravity all"
+VALID_TOOLS="claude-code opencode codex agents antigravity all"
 
 # ── Usage ─────────────────────────────────────────────────────────────────────
 usage() {
@@ -32,12 +32,13 @@ tools can discover and load hyperflow conventions automatically.
 
 OPTIONS:
   --tools <list>   Comma-separated tools to set up (default: all)
-                   Valid values: claude-code, opencode, agents, antigravity, all
+                   Valid values: claude-code, opencode, codex, agents, antigravity, all
                      claude-code  — writes CLAUDE.md (append mode)
                      opencode     — writes AGENTS.md
+                     codex        — writes AGENTS.md
                      agents       — writes AGENTS.md (alias for opencode)
                      antigravity  — writes AGENTS.md + .agent/workflows/hyperflow* slash commands
-                     all          — claude-code + opencode + agents + antigravity
+                     all          — claude-code + opencode + codex + agents + antigravity
   --force          Overwrite existing files (default: skip with warning)
   --dry-run        Print what would be created without writing files
   --help           Show this help message
@@ -45,6 +46,7 @@ OPTIONS:
 EXAMPLES:
   $(basename "$0")
   $(basename "$0") --tools opencode
+  $(basename "$0") --tools codex
   $(basename "$0") --tools all --force
   $(basename "$0") --dry-run
 EOF
@@ -107,6 +109,7 @@ need_claude_md=false
 need_antigravity=false
 
 wants_tool "opencode"    && need_agents_md=true
+wants_tool "codex"       && need_agents_md=true
 wants_tool "agents"      && need_agents_md=true
 wants_tool "claude-code" && need_claude_md=true
 wants_tool "antigravity" && need_antigravity=true
@@ -254,9 +257,9 @@ main() {
   [[ "$DRY_RUN" == true ]] && echo -e "    Mode:         dry-run"
   echo ""
 
-  # AGENTS.md — OpenCode
+  # AGENTS.md — OpenCode / Codex
   if [[ "$need_agents_md" == true ]]; then
-    echo -e "${BLUE}==> AGENTS.md (OpenCode)${RESET}"
+    echo -e "${BLUE}==> AGENTS.md (OpenCode / Codex)${RESET}"
     write_file "$ROOT/AGENTS.md" "$(load_template "AGENTS.md.template")"
   fi
 
