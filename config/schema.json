@@ -7,7 +7,7 @@
     "activeProvider": {
       "description": "Force a specific provider. null = auto-detect at runtime.",
       "type": ["string", "null"],
-      "enum": ["claude-code", "opencode", "antigravity", null],
+      "enum": ["claude-code", "opencode", "codex", "antigravity", null],
       "default": null
     },
     "defaults": {
@@ -155,6 +155,23 @@
             "implementer": { "type": "string" },
             "searcher": { "type": "string" },
             "writer": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "reasoning": {
+          "description": "Reasoning effort defaults for providers that expose effort controls.",
+          "type": "object",
+          "properties": {
+            "thinking": {
+              "description": "Thinking-tier reasoning mode. 'adaptive' resolves from task type/profile.",
+              "type": "string",
+              "enum": ["adaptive", "low", "medium", "high"]
+            },
+            "worker": {
+              "description": "Worker-tier reasoning mode.",
+              "type": "string",
+              "enum": ["low", "medium", "high"]
+            }
           },
           "additionalProperties": false
         }

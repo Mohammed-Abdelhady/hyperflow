@@ -1,6 +1,6 @@
 # Provider Setup Guides
 
-Model naming, detection, and configuration quirks for each of the three platforms Hyperflow supports.
+Model naming, detection, and configuration quirks for each platform Hyperflow supports.
 
 See [model-routing.md](model-routing.md) for how Hyperflow selects between thinking and worker tiers at runtime, and [installation.md](installation.md) for the initial setup flow.
 
@@ -70,6 +70,38 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 **Dynamic detection:** Hyperflow runs `opencode models list --json` (2s timeout) to get the full list of available models. This captures BYOK and custom provider models.
 
 **OpenCode config:** Models can also be set in `opencode.json` via `"model"` and `"small_model"` fields.
+
+---
+
+## Codex
+
+**Detection:** `CODEX_*` environment variables or the `codex` binary in PATH.
+
+**Default models:**
+
+| Tier | Model ID | Name | Reasoning |
+|---|---|---|---|
+| Thinking | `gpt-5.5` | GPT-5.5 | Adaptive by task |
+| Worker | `gpt-5.4` | GPT-5.4 | Fast mode (`low`) |
+
+**Available models:**
+
+| Model ID | Name | Provider | Tier | Notes |
+|---|---|---|---|---|
+| `gpt-5.5` | GPT-5.5 | OpenAI | Thinking | Codex default for orchestrator, reviewer, debugger, decision-maker, brainstormer |
+| `gpt-5.4` | GPT-5.4 | OpenAI | Worker | Codex fast worker default; can be used as thinking fallback |
+| `gpt-5.4-mini` | GPT-5.4 Mini | OpenAI | Worker | Lower-cost worker fallback |
+
+**Reasoning policy:** Thinking roles use task-adaptive reasoning: `low` for trivial docs/config checks, `medium` for normal planning/review, and `high` for debugging, architecture, security, and final integration. Worker roles stay on `low` reasoning for fast mode unless explicitly overridden. Codex defaults never use `xhigh`.
+
+**Installing into Codex:** Codex App and Codex CLI share the plugin marketplace/cache flow:
+
+```bash
+codex plugin marketplace add Mohammed-Abdelhady/hyperflow
+codex plugin add hyperflow@hyperflow-marketplace
+```
+
+Codex reads project instructions from `AGENTS.md`; run `scripts/setup-detection.sh --tools codex <project>` to generate the project shim.
 
 ---
 

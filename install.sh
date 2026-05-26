@@ -33,9 +33,9 @@ SECURITY_ENABLED="true"
 
 detect_providers() {
   local name path key
-  local -a names=("Claude Code" "OpenCode")
-  local -a paths=("$HOME/.claude/skills" "$HOME/.opencode/skills")
-  local -a keys=("claude-code" "opencode")
+  local -a names=("Claude Code" "OpenCode" "Codex")
+  local -a paths=("$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.codex/plugins")
+  local -a keys=("claude-code" "opencode" "codex")
 
   for i in "${!names[@]}"; do
     name="${names[$i]}"
@@ -135,6 +135,11 @@ link_provider() {
     else
       step "  Claude Code — run 'claude plugin install hyperflow@hyperflow-marketplace' to install"
     fi
+    return
+  fi
+
+  if [ "$name" = "Codex" ]; then
+    step "  Codex — run 'codex plugin marketplace add Mohammed-Abdelhady/hyperflow' and 'codex plugin add hyperflow@hyperflow-marketplace' to install"
     return
   fi
 
@@ -240,6 +245,15 @@ configure_models_antigravity() {
   SELECTED_WORKER="ide-managed"
 }
 
+configure_models_codex() {
+  header "Model Configuration — Codex"
+  step "Codex uses GPT-5.5 for thinking roles with task-adaptive reasoning."
+  step "Worker roles use GPT-5.4 in fast mode (low reasoning)."
+  step "Reasoning never defaults to xhigh."
+  SELECTED_THINKING="gpt-5.5"
+  SELECTED_WORKER="gpt-5.4"
+}
+
 # ─── Security ───
 
 configure_security() {
@@ -312,7 +326,7 @@ for k in keys:
         if sel_worker: w = sel_worker
     roles = {r: t for r in ROLES_THINKING}
     roles.update({r: w for r in ROLES_WORKER})
-    provs[k] = {
+    provider = {
         "thinking": t,
         "worker": w,
         "models": {
@@ -321,6 +335,10 @@ for k in keys:
         },
         "roles": roles,
     }
+    reasoning = pdef.get("reasoning")
+    if isinstance(reasoning, dict):
+        provider["reasoning"] = reasoning
+    provs[k] = provider
 
 cfg = {}
 if active:
@@ -348,7 +366,7 @@ setup_project_detection() {
   fi
 
   echo ""
-  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md and CLAUDE.md so Claude Code and OpenCode auto-load hyperflow in that project." "n"; then
+  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md and CLAUDE.md so Codex, Claude Code, and OpenCode auto-load hyperflow in that project." "n"; then
     return
   fi
 
@@ -393,6 +411,8 @@ print_summary() {
     for i in "${!PROVIDERS[@]}"; do
       if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
         step "  Claude Code — plugin (claude plugin install hyperflow@hyperflow-marketplace)"
+      elif [ "${PROVIDERS[$i]}" = "Codex" ]; then
+        step "  Codex — plugin (codex plugin add hyperflow@hyperflow-marketplace)"
       elif [ "${PROVIDERS[$i]}" = "Antigravity" ]; then
         step "  Antigravity — hyperflow* skills → ${PROVIDER_PATHS[$i]}"
       else
@@ -427,6 +447,11 @@ uninstall() {
 
     if [ "$name" = "Claude Code" ]; then
       step "  Claude Code — use 'claude plugin uninstall hyperflow@hyperflow-marketplace'"
+      continue
+    fi
+
+    if [ "$name" = "Codex" ]; then
+      step "  Codex — use 'codex plugin remove hyperflow@hyperflow-marketplace'"
       continue
     fi
 
@@ -563,6 +588,7 @@ main() {
   case "$config_provider" in
     "Claude Code") configure_models_claude_code ;;
     OpenCode)      configure_models_opencode ;;
+    Codex)         configure_models_codex ;;
     Antigravity)   configure_models_antigravity ;;
     *)             configure_models_claude_code ;;
   esac

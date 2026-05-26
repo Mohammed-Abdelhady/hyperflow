@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"
 VERSION_FILE="$PLUGIN_ROOT/skills/hyperflow/VERSION"
 HYPERFLOW_VERSION="$( [ -f "$VERSION_FILE" ] && cat "$VERSION_FILE" || echo "unknown" )"
 
