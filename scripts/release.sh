@@ -338,6 +338,7 @@ git add \
   "$PACKAGE_JSON" \
   "$ROOT/.claude-plugin/plugin.json" \
   "$ROOT/.claude-plugin/marketplace.json" \
+  "$ROOT/.codex-plugin/plugin.json" \
   "$README" \
   "$ROOT/skills/hyperflow/VERSION"
 
