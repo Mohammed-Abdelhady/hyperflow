@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.24.4] — 2026-05-28
+
+### Fixed
+- Resolve hyperflow hook paths across hosts
+
+
 ## [4.24.3] — 2026-05-27
 
 ### Fixed
@@ -823,7 +829,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.3...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.4...HEAD
+[4.24.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.3...v4.24.4
 [4.24.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.2...v4.24.3
 [4.24.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.1...v4.24.2
 [4.24.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.0...v4.24.1
