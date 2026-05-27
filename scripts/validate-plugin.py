@@ -201,6 +201,8 @@ def check_hooks() -> None:
         for block in event_blocks:
             for hook in block.get("hooks", []):
                 cmd = hook.get("command", "")
+                if cmd.startswith("sh -c "):
+                    continue
                 resolved = (
                     cmd.replace("${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}", str(ROOT))
                     .replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
