@@ -105,7 +105,7 @@
         </p>
 
         <p class="install-note" style="margin-top:1rem;">
-          In Codex App/CLI, <code>/hyperflow:*</code> is a Hyperflow alias rather than a native host slash command. <code>hyperflow spec</code>, <code>hyperflow amplify</code>, and similar text invocations are the most portable form; the plugin still recognizes <code>/hyperflow:*</code> aliases when the session-start hook is loaded.
+          In Codex App/CLI, Hyperflow does not register a bare <code>/hyperflow</code> root command, so it may not appear in the slash-command picker. <code>hyperflow spec</code>, <code>hyperflow amplify</code>, and similar text invocations are the most portable form; <code>/hyperflow:*</code> remains an alias when the session-start hook is loaded.
         </p>
 
         <h3 style="margin-top:2rem;">Workarounds for Desktop / web users</h3>

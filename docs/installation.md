@@ -20,7 +20,7 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 
 If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
 
-In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow spec`, `hyperflow amplify`, and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
+In Codex App/CLI, Hyperflow does not register a bare `/hyperflow` root command, so it may not appear in the slash-command picker. `hyperflow spec`, `hyperflow amplify`, and similar text invocations are the most portable form; `/hyperflow:*` remains an alias when the session-start hook is loaded.
 
 **Workarounds for Desktop / web users:**
 

@@ -209,6 +209,8 @@ def check_hooks() -> None:
                     .strip('"')
                 )
                 script_path = Path(resolved.split()[0]) if resolved else None
+                if script_path and not script_path.is_absolute():
+                    script_path = ROOT / script_path
                 if script_path and not script_path.exists():
                     fail(f"hooks.json {event_name} references non-existent script: {script_path}")
                 elif script_path and not script_path.is_file():

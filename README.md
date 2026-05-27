@@ -63,7 +63,7 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 
 `amplify` hands off to `spec`, then `spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
-In Codex App/CLI, `/hyperflow:*` entries are treated as plugin skill aliases, not native host slash commands. If the host does not expose Hyperflow's `AskUserQuestion` popup UI, required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. When Codex subagents are available, Hyperflow maps worker/searcher/writer dispatches to them; otherwise those phases run inline and the chain continues in the same thread.
+In Codex App/CLI, Hyperflow does not register a bare `/hyperflow` root command. Use `hyperflow <skill>` as the portable spelling, or `/hyperflow:<skill>` where plugin aliases are active. If the host does not expose Hyperflow's `AskUserQuestion` popup UI, required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. When Codex subagents are available, Hyperflow maps worker/searcher/writer dispatches to them; otherwise those phases run inline and the chain continues in the same thread.
 
 ## Quick start
 
@@ -79,22 +79,22 @@ codex plugin marketplace add Mohammed-Abdelhady/hyperflow
 codex plugin add hyperflow@hyperflow-marketplace
 ```
 
-First initialize the project (once), then invoke any skill:
+First initialize the project (once), then invoke any skill. In Codex, prefer the text form:
 
 ```text
-/hyperflow:scaffold                                        # first: set up the project (once per repo)
-/hyperflow:amplify "make a login page"                     # turn a rough idea into a strong prompt
-/hyperflow:spec "add user auth with login + middleware"    # design → scope → dispatch
-/hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
-/hyperflow:deploy                                          # pre-push gates + ship
+hyperflow scaffold                                        # first: set up the project (once per repo)
+hyperflow amplify "make a login page"                     # turn a rough idea into a strong prompt
+hyperflow spec "add user auth with login + middleware"    # design → scope → dispatch
+hyperflow trace "tests fail after the auth refactor"      # root-cause a bug
+hyperflow deploy                                          # pre-push gates + ship
 ```
 
-Codex-safe equivalent:
+Slash-alias equivalent when the host routes plugin aliases:
 
 ```text
-hyperflow scaffold
-hyperflow amplify "make a login page"
-hyperflow trace "tests fail after the auth refactor"
+/hyperflow:scaffold
+/hyperflow:amplify "make a login page"
+/hyperflow:trace "tests fail after the auth refactor"
 ```
 
 Auto-routing is on by default — say "audit the diff" or "debug this test" and the right skill runs without the `/hyperflow:*` prefix.
