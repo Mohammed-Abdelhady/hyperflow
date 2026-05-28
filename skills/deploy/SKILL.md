@@ -242,7 +242,7 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-sty
 - Git repository with a remote configured (for the push step).
 - Lint / typecheck / build / test scripts detectable in `package.json` or via `.hyperflow/testing.md`. Missing scripts are skipped silently (not failed).
 - `scripts/release.sh` (or `release-please` / `changesets`) optional — if present, runs at Step 5; otherwise release is user-managed.
-- For security sweep: a thinking-tier model (Opus 4.7) available. Sweep is mandatory; missing model = halt.
+- For security sweep: a thinking-tier model (Opus 4.8) available. Sweep is mandatory; missing model = halt.
 
 ## Instructions
 

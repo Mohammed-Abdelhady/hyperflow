@@ -19,11 +19,11 @@ This keeps costs lower and speed higher without sacrificing quality — because 
 
 | Role | Tier | Default (Claude Code) | Examples |
 |---|---|---|---|
-| Orchestrator | Thinking | Opus 4.7 | Decomposing "build a dashboard" into 5 parallel tasks |
-| Reviewer | Thinking | Opus 4.7 | Checking if a worker's component matches the spec |
-| Debugger | Thinking | Opus 4.7 | Root-causing why tests fail after a refactor |
-| Decision-maker | Thinking | Opus 4.7 | Choosing between REST vs tRPC for a new API |
-| Brainstormer | Thinking | Opus 4.7 | Exploring 2–3 approaches with trade-offs |
+| Orchestrator | Thinking | Opus 4.8 | Decomposing "build a dashboard" into 5 parallel tasks |
+| Reviewer | Thinking | Opus 4.8 | Checking if a worker's component matches the spec |
+| Debugger | Thinking | Opus 4.8 | Root-causing why tests fail after a refactor |
+| Decision-maker | Thinking | Opus 4.8 | Choosing between REST vs tRPC for a new API |
+| Brainstormer | Thinking | Opus 4.8 | Exploring 2–3 approaches with trade-offs |
 | Implementer | Worker | Sonnet 4.6 | Writing a React component from a clear spec |
 | Searcher | Worker | Sonnet 4.6 | Finding all files that import a specific module |
 | Writer | Worker | Sonnet 4.6 | Creating test files, config files, documentation |
@@ -36,8 +36,8 @@ Each supported platform has its own model naming and defaults:
 
 | Provider | Default Thinking | Default Worker |
 |---|---|---|
-| Claude Code | `opus-4-7` | `sonnet-4-6` |
-| OpenCode | `anthropic/claude-opus-4-7` | `anthropic/claude-sonnet-4-6` |
+| Claude Code | `opus-4-8` | `sonnet-4-6` |
+| OpenCode | `anthropic/claude-opus-4-8` | `anthropic/claude-sonnet-4-6` |
 | Codex | `gpt-5.5` with adaptive reasoning | `gpt-5.4` with fast/low reasoning |
 | Antigravity | `gemini-3-pro` | `gemini-3.5-flash` |
 
@@ -69,12 +69,12 @@ When Hyperflow needs to determine which model to use for a role, it walks this c
 
 | Priority | Source | Scope | Example |
 |---|---|---|---|
-| 1 | Per-task inline request | Single task | "Fix this bug using opus-4-7" |
-| 2 | Session command | Current session | `hyperflow: thinking opus-4-7` |
-| 3 | Environment variable | Current session | `HYPERFLOW_THINKING_MODEL=opus-4-7` |
-| 4 | Role override | Persistent | `providers.claude-code.roles.reviewer: "opus-4-7"` |
-| 5 | Provider tier | Persistent | `providers.claude-code.thinking: "opus-4-7"` |
-| 6 | Global default | Persistent | `defaults.thinking: "opus-4-7"` |
+| 1 | Per-task inline request | Single task | "Fix this bug using opus-4-8" |
+| 2 | Session command | Current session | `hyperflow: thinking opus-4-8` |
+| 3 | Environment variable | Current session | `HYPERFLOW_THINKING_MODEL=opus-4-8` |
+| 4 | Role override | Persistent | `providers.claude-code.roles.reviewer: "opus-4-8"` |
+| 5 | Provider tier | Persistent | `providers.claude-code.thinking: "opus-4-8"` |
+| 6 | Global default | Persistent | `defaults.thinking: "opus-4-8"` |
 
 ---
 
@@ -87,18 +87,18 @@ The installer detects every provider on your machine and writes a full block for
 ```json
 {
   "activeProvider": "claude-code",
-  "defaults": { "thinking": "opus-4-7", "worker": "sonnet-4-6" },
+  "defaults": { "thinking": "opus-4-8", "worker": "sonnet-4-6" },
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-7",
+      "thinking": "opus-4-8",
       "worker":   "sonnet-4-6",
       "models": {
-        "thinking": ["opus-4-7", "opus-4-6", "opus-4-5", "sonnet-4-6"],
+        "thinking": ["opus-4-8", "opus-4-7", "opus-4-6", "opus-4-5", "sonnet-4-6"],
         "worker":   ["sonnet-4-6", "sonnet-4-5", "haiku-4-5"]
       },
       "roles": {
-        "orchestrator": "opus-4-7", "reviewer": "opus-4-7",
-        "debugger": "opus-4-7", "decision-maker": "opus-4-7", "brainstormer": "opus-4-7",
+        "orchestrator": "opus-4-8", "reviewer": "opus-4-8",
+        "debugger": "opus-4-8", "decision-maker": "opus-4-8", "brainstormer": "opus-4-8",
         "implementer": "sonnet-4-6", "searcher": "sonnet-4-6", "writer": "sonnet-4-6"
       }
     },
@@ -119,7 +119,7 @@ The installer detects every provider on your machine and writes a full block for
         "worker": "low"
       }
     },
-    "opencode":    { "thinking": "anthropic/claude-opus-4-7", "worker": "anthropic/claude-sonnet-4-6", "models": { … }, "roles": { … } },
+    "opencode":    { "thinking": "anthropic/claude-opus-4-8", "worker": "anthropic/claude-sonnet-4-6", "models": { … }, "roles": { … } },
     "antigravity": { "thinking": "gemini-3-pro",              "worker": "gemini-3.5-flash",           "models": { … }, "roles": { … } }
   },
   "security": { "enabled": true },
@@ -138,7 +138,7 @@ The minimal override — works if you only care about thinking / worker globally
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   }
 }
@@ -152,10 +152,10 @@ Drop the reviewer to the previous Opus to save cost while keeping orchestration 
 {
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-7",
+      "thinking": "opus-4-8",
       "worker": "sonnet-4-6",
       "roles": {
-        "reviewer": "opus-4-6"
+        "reviewer": "opus-4-7"
       }
     }
   }
@@ -168,7 +168,7 @@ Drop the reviewer to the previous Opus to save cost while keeping orchestration 
 {
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-7",
+      "thinking": "opus-4-8",
       "worker": "sonnet-4-6",
       "roles": {
         "searcher": "haiku-4-5"
@@ -181,7 +181,7 @@ Drop the reviewer to the previous Opus to save cost while keeping orchestration 
 ### Switch models mid-session
 
 ```
-hyperflow: thinking opus-4-7
+hyperflow: thinking opus-4-8
 hyperflow: worker haiku-4-5
 hyperflow: models          # verify current config
 hyperflow: reset models    # revert to config.json defaults
@@ -190,7 +190,7 @@ hyperflow: reset models    # revert to config.json defaults
 ### Per-session via environment
 
 ```bash
-HYPERFLOW_THINKING_MODEL=opus-4-7 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
+HYPERFLOW_THINKING_MODEL=opus-4-8 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
 ```
 
 For initial setup and the full model catalog, see [installation.md](installation.md) and [providers.md](providers.md).

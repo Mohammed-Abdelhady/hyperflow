@@ -17,7 +17,7 @@
         "thinking": {
           "type": "string",
           "description": "Default thinking (orchestrator/reviewer/debugger) model.",
-          "default": "opus-4-7"
+          "default": "opus-4-8"
         },
         "worker": {
           "type": "string",

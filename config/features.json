@@ -139,13 +139,13 @@
   "providers": [
     {
       "name": "Claude Code",
-      "thinking": "Opus 4.7",
+      "thinking": "Opus 4.8",
       "worker": "Sonnet 4.6",
       "key": "claude-code"
     },
     {
       "name": "OpenCode",
-      "thinking": "Claude Opus 4.7",
+      "thinking": "Claude Opus 4.8",
       "worker": "Sonnet 4.6",
       "key": "opencode"
     },

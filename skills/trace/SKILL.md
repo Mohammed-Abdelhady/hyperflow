@@ -15,7 +15,7 @@ tags: [debugging, root-cause, systematic, multi-agent]
 
 Root cause, not symptom. Never patch over a bug without understanding why it happened.
 
-Dispatcher and reviewer — Opus 4.7 (thinking-tier). Implementer/Searcher/Writer — Sonnet 4.6.
+Dispatcher and reviewer — Opus 4.8 (thinking-tier). Implementer/Searcher/Writer — Sonnet 4.6.
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 

@@ -11,7 +11,7 @@ Location: `~/.hyperflow/config.json` (global, all projects).
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   }
 }
@@ -23,15 +23,15 @@ Location: `~/.hyperflow/config.json` (global, all projects).
 {
   "activeProvider": null,
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   },
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-7",
+      "thinking": "opus-4-8",
       "worker": "sonnet-4-6",
       "roles": {
-        "reviewer": "opus-4-6",
+        "reviewer": "opus-4-7",
         "searcher": "haiku-4-5"
       }
     },
@@ -69,8 +69,8 @@ Detection runs at session start. First match wins:
 
 For any role, resolve the model using this priority chain (highest first):
 
-1. **Per-task inline request** — user says "use opus-4-7 for this"
-2. **Session override** — `hyperflow: thinking opus-4-7` command
+1. **Per-task inline request** — user says "use opus-4-8 for this"
+2. **Session override** — `hyperflow: thinking opus-4-8` command
 3. **Env var** — `HYPERFLOW_THINKING_MODEL` or `HYPERFLOW_WORKER_MODEL`
 4. **Role override** — `providers.<detected>.roles.<role>`
 5. **Provider tier** — `providers.<detected>.thinking` or `.worker`
@@ -107,7 +107,8 @@ The Agent tool's `model` parameter accepts aliases, not full model IDs. Map conf
 
 | Config Value | `model:` param | Version Pinning Env Var |
 |---|---|---|
-| `opus-4-7` | `"opus"` | None needed (current default) |
+| `opus-4-8` | `"opus"` | None needed (current default) |
+| `opus-4-7` | `"opus"` | `ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-7` |
 | `opus-4-6` | `"opus"` | `ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6` |
 | `opus-4-5` | `"opus"` | `ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-5` |
 | `sonnet-4-6` | `"sonnet"` | None needed (current default) |

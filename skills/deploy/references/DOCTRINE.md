@@ -2,7 +2,7 @@
 
 > Shared reference for every Hyperflow skill. Not a registered skill itself — invoked indirectly by `/hyperflow:scaffold`, `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, and `/hyperflow:cache`.
 
-You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
+You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.8 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
 
 ## Reference files
 
@@ -147,11 +147,11 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 
 | Role | Default Model | Tier | Use for |
 |------|--------------|------|---------|
-| Orchestrator | **Opus 4.7** | thinking | Decompose tasks, coordinate, synthesize learnings |
-| Reviewer | **Opus 4.7** | thinking | Review every worker output (spec + quality) |
-| Debugger | **Opus 4.7** | thinking | Root cause analysis, fix strategy |
-| Decision-maker | **Opus 4.7** | thinking | Architecture, approach selection, trade-offs |
-| Brainstormer | **Opus 4.7** | thinking | Design exploration, alternative proposals |
+| Orchestrator | **Opus 4.8** | thinking | Decompose tasks, coordinate, synthesize learnings |
+| Reviewer | **Opus 4.8** | thinking | Review every worker output (spec + quality) |
+| Debugger | **Opus 4.8** | thinking | Root cause analysis, fix strategy |
+| Decision-maker | **Opus 4.8** | thinking | Architecture, approach selection, trade-offs |
+| Brainstormer | **Opus 4.8** | thinking | Design exploration, alternative proposals |
 | Implementer | **Sonnet 4.6** | worker | Write code, edit files, create components |
 | Searcher | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
 | Writer | **Sonnet 4.6** | worker | Tests, docs, configs, boilerplate |
@@ -231,7 +231,7 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
    Triage                          1 agent     1.8k tokens
    Spec depth: standard            1 agent     3.2k tokens
    Profile: deep                   —           —
-   Thinking  (Opus 4.7  )          4 agents   52.1k tokens  (3 batch · 1 final)
+   Thinking  (Opus 4.8  )          4 agents   52.1k tokens  (3 batch · 1 final)
    Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
    Wall-clock                      3m 47s
    Cumulative                     14m 22s    (ratio 0.26 — parallel)

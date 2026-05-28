@@ -15,7 +15,7 @@ tags: [prompt-engineering, enhancement, quality, personas, multi-agent]
 
 Turn a rough prompt into a high-signal one. Detect the domain, inject the standards that domain demands, score it against a rubric — then offer to run it.
 
-Dispatcher and reviewer — Opus 4.7 (thinking-tier). Searcher/Writer — Sonnet 4.6 (worker-tier).
+Dispatcher and reviewer — Opus 4.8 (thinking-tier). Searcher/Writer — Sonnet 4.6 (worker-tier).
 
 Amplify does **one** thing well: it rewrites the prompt you give it into the single strongest version, then hands it off. It does not write code itself — it produces a prompt other skills (or you) execute.
 

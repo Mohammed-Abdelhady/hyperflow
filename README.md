@@ -111,7 +111,7 @@ The split is structural, not a setting — each tier does only what it's best at
 
 | Tier | Models | Role |
 |------|--------|------|
-| **Thinking** | GPT-5.5 · Opus 4.7 · Gemini 3 Pro | Orchestrate, triage, brainstorm, review every output, run the final integration pass |
+| **Thinking** | GPT-5.5 · Opus 4.8 · Gemini 3 Pro | Orchestrate, triage, brainstorm, review every output, run the final integration pass |
 | **Worker** | GPT-5.4 fast mode · Sonnet 4.6 · Gemini 3.5 Flash | Execute in parallel — implement, search, write |
 
 ### Review at every granularity
@@ -171,8 +171,8 @@ Fourteen skills. Three chain-starters auto-advance through the chain; the rest a
 | Provider | Thinking | Worker |
 |----------|----------|--------|
 | Codex App/CLI | GPT-5.5 (adaptive reasoning) | GPT-5.4 (fast mode) |
-| Claude Code | Opus 4.7 | Sonnet 4.6 |
-| OpenCode | Claude Opus 4.7 | Sonnet 4.6 |
+| Claude Code | Opus 4.8 | Sonnet 4.6 |
+| OpenCode | Claude Opus 4.8 | Sonnet 4.6 |
 | Antigravity | Gemini 3 Pro | Gemini 3.5 Flash |
 
 Auto-detected at session start. Override in `~/.hyperflow/config.json`. See [Model Routing](docs/model-routing.md).

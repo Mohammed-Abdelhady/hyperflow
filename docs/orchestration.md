@@ -170,7 +170,7 @@ And the usage summary at task end:
 Triage                          1 agent     1.8k tokens
 Spec depth: standard            1 agent     3.2k tokens
 Profile: deep                   —           —
-Thinking  (Opus 4.7  )          4 agents   52.1k tokens  (3 batch · 1 final)
+Thinking  (Opus 4.8  )          4 agents   52.1k tokens  (3 batch · 1 final)
 Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
 Wall-clock                      3m 47s
 Cumulative                     14m 22s    (ratio 0.26 — parallel)
