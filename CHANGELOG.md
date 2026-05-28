@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.25.0] — 2026-05-28
+
+### Added
+- Default Claude thinking to Opus 4.8
+
+
 ## [4.24.4] — 2026-05-28
 
 ### Fixed
@@ -829,7 +835,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.4...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.25.0...HEAD
+[4.25.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.4...v4.25.0
 [4.24.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.3...v4.24.4
 [4.24.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.2...v4.24.3
 [4.24.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.1...v4.24.2
