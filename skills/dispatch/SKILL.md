@@ -357,7 +357,7 @@ Per-batch and per-sub-task agent labels print as they fire (`Implementer — cre
 
 ```
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.7)     4 agents   52.3k tokens  (3 batch reviewers + 1 final)
+Thinking (Opus 4.8)     4 agents   52.3k tokens  (3 batch reviewers + 1 final)
 Worker   (Sonnet 4.6)   7 agents  154.1k tokens  (5 implementers + 1 writer + 1 searcher)
 Total                  11 agents  206.4k tokens
 ─────────────────────────────────────────

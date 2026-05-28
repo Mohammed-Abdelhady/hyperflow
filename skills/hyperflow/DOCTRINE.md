@@ -2,7 +2,7 @@
 
 > Shared reference for every Hyperflow skill. Not a registered skill itself — invoked indirectly by `/hyperflow:scaffold`, `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, and `/hyperflow:cache`.
 
-You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.7 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
+You operate as a thinking-model orchestrator coordinating worker-model agents. Models are configurable per provider (default: Opus 4.8 orchestrator + Sonnet 4.6 workers). Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
 
 ## Reference files
 
@@ -183,21 +183,21 @@ Models are configurable per provider. See [model-config.md](model-config.md) for
 Hyperflow runs three roles internally:
 
 1. **Workers** (Sonnet) — execute mechanical work: write code, search, edit, run tests, generate boilerplate. Workers never decide what to build; they execute the brief they were dispatched with.
-2. **Orchestrator (Team Lead)** — the running Claude session. Coordinates workers, sequences dispatches, parses return values, handles file IO, manages chain state, presents as the single point of contact to workers (workers see the Team Lead, not the Thinking Lead behind it). Currently Opus 4.7 (same model as Thinking Lead), but the role is conceptually distinct.
+2. **Orchestrator (Team Lead)** — the running Claude session. Coordinates workers, sequences dispatches, parses return values, handles file IO, manages chain state, presents as the single point of contact to workers (workers see the Team Lead, not the Thinking Lead behind it). Currently Opus 4.8 (same model as Thinking Lead), but the role is conceptually distinct.
 3. **Thinking Lead** (Opus, always) — takes every real decision: architecture choice, approach selection, multi-dim analysis, root-cause judgment, dispute resolution, quality verdict, escalation call. The orchestrator consults the Thinking Lead at each decision point via a dispatched Agent call; the Thinking Lead returns a one-shot decision and the orchestrator continues mechanical work.
 
 The named decision dispatches in this doctrine — Classifier (triage), Analyst (6-dim spec analysis), Planner (batch decomposition), final-integration Reviewer, standalone Reviewer (audit / deploy security sweep / spec Step 8), Debugger, Brainstormer — are all **Thinking Lead consultations**. The orchestrator dispatches them at the right moment with the right context; the Thinking Lead decides; the orchestrator carries the decision forward.
 
 | Role | Default Model | Tier | Use for |
 |------|--------------|------|---------|
-| **Orchestrator (Team Lead)** | **Opus 4.7** | thinking | Coordinate workers, dispatch sequencing, parse return values, manage chain state, present to workers as the single contact |
-| **Thinking Lead — Classifier** | **Opus 4.7** | thinking | Layer 0.5 triage classification (`Haiku 4.5` for triage specifically per existing fallback chain; Opus on escalation) |
-| **Thinking Lead — Analyst** | **Opus 4.7** | thinking | Spec Step 3 multi-dimensional analysis |
-| **Thinking Lead — Planner** | **Opus 4.7** | thinking | Scope Step 3 batch graph decomposition |
-| **Thinking Lead — Decision-maker / Brainstormer** | **Opus 4.7** | thinking | Architecture, approach selection, trade-offs, design exploration |
-| **Thinking Lead — Debugger** | **Opus 4.7** | thinking | Root-cause analysis, fix strategy (trace skill) |
-| **Thinking Lead — Final integration Reviewer** | **Opus 4.7** | thinking | End-of-chain cross-cutting review (dispatch Step 3) |
-| **Thinking Lead — Standalone Reviewer** | **Opus 4.7** | thinking | Audit Step 3, deploy security sweep, spec Step 8 final sanity |
+| **Orchestrator (Team Lead)** | **Opus 4.8** | thinking | Coordinate workers, dispatch sequencing, parse return values, manage chain state, present to workers as the single contact |
+| **Thinking Lead — Classifier** | **Opus 4.8** | thinking | Layer 0.5 triage classification (`Haiku 4.5` for triage specifically per existing fallback chain; Opus on escalation) |
+| **Thinking Lead — Analyst** | **Opus 4.8** | thinking | Spec Step 3 multi-dimensional analysis |
+| **Thinking Lead — Planner** | **Opus 4.8** | thinking | Scope Step 3 batch graph decomposition |
+| **Thinking Lead — Decision-maker / Brainstormer** | **Opus 4.8** | thinking | Architecture, approach selection, trade-offs, design exploration |
+| **Thinking Lead — Debugger** | **Opus 4.8** | thinking | Root-cause analysis, fix strategy (trace skill) |
+| **Thinking Lead — Final integration Reviewer** | **Opus 4.8** | thinking | End-of-chain cross-cutting review (dispatch Step 3) |
+| **Thinking Lead — Standalone Reviewer** | **Opus 4.8** | thinking | Audit Step 3, deploy security sweep, spec Step 8 final sanity |
 | **Per-batch / per-sub-task Reviewer** | **Sonnet 4.6** | worker | In-flight reviews anchored to a single batch's diff (dispatch Step 2, spec Step 7 batched section review, scope Step 4 task-file check) — anchored, not architectural, so worker tier suffices |
 | **Worker — Implementer** | **Sonnet 4.6** | worker | Write code, edit files, create components |
 | **Worker — Searcher** | **Sonnet 4.6** | worker | Explore codebase, search docs, find files |
@@ -367,7 +367,7 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
    Triage                          1 agent     1.8k tokens
    Spec depth: standard            1 agent     3.2k tokens
    Profile: deep                   —           —
-   Thinking  (Opus 4.7  )          4 agents   52.1k tokens  (3 batch · 1 final)
+   Thinking  (Opus 4.8  )          4 agents   52.1k tokens  (3 batch · 1 final)
    Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
    Wall-clock                      3m 47s
    Cumulative                     14m 22s    (ratio 0.26 — parallel)

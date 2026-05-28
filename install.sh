@@ -199,10 +199,11 @@ configure_models_claude_code() {
   header "Model Configuration — Claude Code"
 
   pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Opus 4.7|Latest Opus — Hyperflow default" \
-    "Opus 4.6|Previous Opus" \
+    "Opus 4.8|Latest Opus — Hyperflow default" \
+    "Opus 4.7|Previous Opus" \
+    "Opus 4.6|Legacy Opus" \
     "Sonnet 4.6|Cost savings — less capable for review"
-  local thinking_options=("opus-4-7" "opus-4-6" "sonnet-4-6")
+  local thinking_options=("opus-4-8" "opus-4-7" "opus-4-6" "sonnet-4-6")
   SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
 
   echo ""
@@ -218,11 +219,12 @@ configure_models_opencode() {
   header "Model Configuration — OpenCode"
 
   pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Claude Opus 4.7|Hyperflow default" \
-    "Claude Opus 4.6|Previous Opus" \
+    "Claude Opus 4.8|Hyperflow default" \
+    "Claude Opus 4.7|Previous Opus" \
+    "Claude Opus 4.6|Legacy Opus" \
     "GPT-5.5|Latest GPT" \
     "Gemini 3.1 Pro|2M context window"
-  local thinking_options=("anthropic/claude-opus-4-7" "anthropic/claude-opus-4-6" "openai/gpt-5.5" "google-vertex-ai/gemini-3.1-pro")
+  local thinking_options=("anthropic/claude-opus-4-8" "anthropic/claude-opus-4-7" "anthropic/claude-opus-4-6" "openai/gpt-5.5" "google-vertex-ai/gemini-3.1-pro")
   SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
 
   echo ""

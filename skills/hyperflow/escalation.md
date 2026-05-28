@@ -192,10 +192,10 @@ The orchestrator tracks token usage from every agent after each dispatch:
 ```text
 agent_id | role      | model       | input_tokens | output_tokens | total_tokens | timestamp
 ---------|-----------|-------------|--------------|---------------|--------------|----------
-t-01     | triage    | opus-4-7    | 1200         | 340           | 1540         | T+0s
+t-01     | triage    | opus-4-8    | 1200         | 340           | 1540         | T+0s
 w-01     | searcher  | sonnet-4-6  | 3100         | 890           | 3990         | T+12s
 w-02     | implementer | sonnet-4-6 | 4200        | 1100          | 5300         | T+12s
-r-01     | reviewer  | opus-4-7    | 6800         | 420           | 7220         | T+28s
+r-01     | reviewer  | opus-4-8    | 6800         | 420           | 7220         | T+28s
 ```
 
 After each batch completes:
@@ -246,7 +246,7 @@ Triage:      moderate   · flow: standard   · types: [api, db]
 Profile:     standard   · budget: 100k     · actual: 87k  (under)
 Spec depth:  light      · 1 question       · 2.3k tokens
 ─────────────────────────────────────────────────────
-Thinking  (Opus 4.7  )   2 agents    42.1k tokens
+Thinking  (Opus 4.8  )   2 agents    42.1k tokens
 Worker    (Sonnet 4.6)   3 agents    45.0k tokens
 Total                    5 agents    87.1k tokens
 ─────────────────────────────────────────────────────

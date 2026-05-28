@@ -38,7 +38,7 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
+Works immediately with defaults (Opus 4.8 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
@@ -78,8 +78,9 @@ Hyperflow Installer
 Model Configuration — OpenCode
 
 Thinking model (orchestrator, reviewer, debugger):
-  [1] Claude Opus 4.7 — Hyperflow default
-  [2] Claude Opus 4.6 — Previous Opus
+  [1] Claude Opus 4.8 — Hyperflow default
+  [2] Claude Opus 4.7 — Previous Opus
+  [3] Claude Opus 4.6 — Legacy Opus
 
   Choice [1]: 1
 
@@ -107,7 +108,7 @@ Hyperflow installed
   Config:    ~/.hyperflow/config.json
   Update:    git -C ~/.hyperflow/repo pull
 
-  Models:    thinking=anthropic/claude-opus-4-7  worker=anthropic/claude-sonnet-4-6
+  Models:    thinking=anthropic/claude-opus-4-8  worker=anthropic/claude-sonnet-4-6
   Security:  enabled
 ```
 
@@ -148,14 +149,14 @@ Add these to `~/.claude/settings.json` for the full auto-pilot experience:
       "mcp__*"
     ]
   },
-  "model": "claude-opus-4-7",
+  "model": "claude-opus-4-8",
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true
 }
 ```
 
-This eliminates all permission prompts and pins the main session to Opus 4.7.
+This eliminates all permission prompts and pins the main session to Opus 4.8.
 
 ---
 
@@ -170,7 +171,7 @@ See [model-routing.md](model-routing.md) for how Hyperflow decides which model h
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   }
 }
@@ -184,7 +185,7 @@ If you use more than one platform, configure each one:
 {
   "activeProvider": null,
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   },
   "providers": {
@@ -198,12 +199,12 @@ If you use more than one platform, configure each one:
       "roles": {}
     },
     "claude-code": {
-      "thinking": "opus-4-7",
+      "thinking": "opus-4-8",
       "worker": "sonnet-4-6",
       "roles": {}
     },
     "opencode": {
-      "thinking": "anthropic/claude-opus-4-7",
+      "thinking": "anthropic/claude-opus-4-8",
       "worker": "anthropic/claude-sonnet-4-6",
       "roles": {}
     }
@@ -222,15 +223,15 @@ Override the model for a specific role within a provider:
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   },
   "providers": {
     "claude-code": {
-      "thinking": "opus-4-7",
+      "thinking": "opus-4-8",
       "worker": "sonnet-4-6",
       "roles": {
-        "reviewer": "opus-4-6",
+        "reviewer": "opus-4-7",
         "searcher": "haiku-4-5"
       }
     }
@@ -247,7 +248,7 @@ Override models per-session without editing config:
 HYPERFLOW_PROVIDER=claude-code claude
 
 # Override models for this session
-HYPERFLOW_THINKING_MODEL=opus-4-7 claude
+HYPERFLOW_THINKING_MODEL=opus-4-8 claude
 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
 ```
 
@@ -256,7 +257,7 @@ HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
 Change models during a conversation:
 
 ```
-hyperflow: thinking opus-4-7     # Switch thinking model
+hyperflow: thinking opus-4-8     # Switch thinking model
 hyperflow: worker haiku-4-5      # Switch worker model
 hyperflow: models                # Show current config
 hyperflow: reset models          # Revert to config defaults
@@ -275,7 +276,7 @@ Add project-specific patterns or remove defaults that don't apply:
 ```json
 {
   "defaults": {
-    "thinking": "opus-4-7",
+    "thinking": "opus-4-8",
     "worker": "sonnet-4-6"
   },
   "security": {

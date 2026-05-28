@@ -23,7 +23,7 @@ The only exception: code blocks may contain whatever the user's code contains. B
 
 ```
 Hyperflow v1.12.1
-Thinking: Opus 4.7  ·  Worker: Sonnet 4.6
+Thinking: Opus 4.8  ·  Worker: Sonnet 4.6
 ```
 
 Two lines. Version on first. Models indented on second, separated by a middle dot.
@@ -162,7 +162,7 @@ Printed after every completed task. The summary now surfaces `Wall-clock` and `C
 Triage                          1 agent     1.8k tokens
 Spec depth: standard            1 agent     3.2k tokens
 Profile: deep                   —           —
-Thinking  (Opus 4.7  )          4 agents   52.1k tokens
+Thinking  (Opus 4.8  )          4 agents   52.1k tokens
 Worker    (Sonnet 4.6)          8 agents  186.0k tokens
 Wall-clock                      3m 47s
 Cumulative                      14m 22s    (ratio 0.26 — parallel)
@@ -179,7 +179,7 @@ Older example (single-batch task, single tier shown):
 
 ```
 ── Usage ─────────────────────────────────────────
-Thinking  (Opus 4.7  )   3 agents    48.1k tokens
+Thinking  (Opus 4.8  )   3 agents    48.1k tokens
 Worker    (Sonnet 4.6)   8 agents   186.0k tokens
 Total                   11 agents   234.1k tokens
 ──────────────────────────────────────────────────

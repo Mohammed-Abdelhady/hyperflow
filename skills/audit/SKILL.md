@@ -13,7 +13,7 @@ tags: [code-review, quality, multi-level, multi-agent]
 
 # Audit
 
-Multi-level code review. Dispatcher — Opus 4.7 (thinking-tier). Workers — Sonnet 4.6.
+Multi-level code review. Dispatcher — Opus 4.8 (thinking-tier). Workers — Sonnet 4.6.
 
 This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. After the review prints, a **fix gate** asks the user whether to apply the findings — on `Yes`, audit auto-invokes `/hyperflow:scope` with the findings as the spec, which then chains to `/hyperflow:dispatch`.
 
@@ -357,7 +357,7 @@ Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-sty
 
 - Git repository with the change(s) to review present in the working tree, staged, or in history.
 - `.hyperflow/` cache optional but recommended (Layer 0 analysis improves reviewer context). Run `/hyperflow:scaffold` first if missing.
-- Model routing config supports a thinking tier (default: Opus 4.7). Without it, the reviewer downgrades to the worker tier and emits a warning.
+- Model routing config supports a thinking tier (default: Opus 4.8). Without it, the reviewer downgrades to the worker tier and emits a warning.
 
 ## Instructions
 

@@ -14,15 +14,16 @@ See [model-routing.md](model-routing.md) for how Hyperflow selects between think
 
 | Tier | Model ID | Name |
 |---|---|---|
-| Thinking | `opus-4-7` | Opus 4.7 |
+| Thinking | `opus-4-8` | Opus 4.8 |
 | Worker | `sonnet-4-6` | Sonnet 4.6 |
 
 **Available models:**
 
 | Model ID | Name | Tier | Notes |
 |---|---|---|---|
-| `opus-4-7` | Opus 4.7 | Thinking | Latest — Hyperflow default |
-| `opus-4-6` | Opus 4.6 | Thinking | Previous Opus |
+| `opus-4-8` | Opus 4.8 | Thinking | Latest — Hyperflow default |
+| `opus-4-7` | Opus 4.7 | Thinking | Previous Opus |
+| `opus-4-6` | Opus 4.6 | Thinking | Legacy |
 | `opus-4-5` | Opus 4.5 | Thinking | Legacy |
 | `sonnet-4-6` | Sonnet 4.6 | Worker | Hyperflow default |
 | `sonnet-4-5` | Sonnet 4.5 | Worker | Legacy |
@@ -31,7 +32,7 @@ See [model-routing.md](model-routing.md) for how Hyperflow selects between think
 **Version pinning:** Claude Code's Agent tool accepts `"opus"`, `"sonnet"`, `"haiku"` aliases that resolve to the latest version. To pin a specific version:
 
 ```bash
-export ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-7
+export ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-8
 export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 ```
 
@@ -47,15 +48,16 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 
 | Tier | Model ID | Name |
 |---|---|---|
-| Thinking | `anthropic/claude-opus-4-7` | Claude Opus 4.7 |
+| Thinking | `anthropic/claude-opus-4-8` | Claude Opus 4.8 |
 | Worker | `anthropic/claude-sonnet-4-6` | Claude Sonnet 4.6 |
 
 **Available models:**
 
 | Model ID | Name | Provider | Tier | Notes |
 |---|---|---|---|---|
-| `anthropic/claude-opus-4-7` | Claude Opus 4.7 | Anthropic | Thinking | Hyperflow default |
-| `anthropic/claude-opus-4-6` | Claude Opus 4.6 | Anthropic | Thinking | Previous Opus |
+| `anthropic/claude-opus-4-8` | Claude Opus 4.8 | Anthropic | Thinking | Hyperflow default |
+| `anthropic/claude-opus-4-7` | Claude Opus 4.7 | Anthropic | Thinking | Previous Opus |
+| `anthropic/claude-opus-4-6` | Claude Opus 4.6 | Anthropic | Thinking | Legacy |
 | `openai/gpt-5.5` | GPT-5.5 | OpenAI | Thinking | Latest GPT |
 | `openai/gpt-5.4` | GPT-5.4 | OpenAI | Thinking | Cached input discount |
 | `deepseek/deepseek-v4-pro` | DeepSeek V4 Pro | DeepSeek | Thinking | Open-weight |
@@ -63,7 +65,7 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 | `anthropic/claude-haiku-4-5` | Claude Haiku 4.5 | Anthropic | Worker | Fast and cheap |
 | `openai/gpt-5.4-mini` | GPT-5.4 Mini | OpenAI | Worker | Cost-efficient |
 
-**Model format:** OpenCode uses `provider/model` format — e.g. `anthropic/claude-opus-4-7`.
+**Model format:** OpenCode uses `provider/model` format — e.g. `anthropic/claude-opus-4-8`.
 
 **75+ providers:** OpenCode supports Anthropic, OpenAI, Amazon Bedrock, Azure, DeepSeek, xAI, Ollama, LM Studio, OpenRouter, Together AI, Groq, and many more via the Vercel AI SDK.
 
@@ -124,7 +126,7 @@ Antigravity is Google's agent-first IDE — a VS Code fork announced November 20
 |---|---|---|---|---|
 | `gemini-3-pro` | Gemini 3 Pro | Google | Thinking | Antigravity default |
 | `gemini-3.1-pro` | Gemini 3.1 Pro | Google | Thinking | 2M context window |
-| `claude-opus-4-6` | Claude Opus 4.6 | Anthropic | Thinking | Antigravity also supports Claude |
+| `claude-opus-4-8` | Claude Opus 4.8 | Anthropic | Thinking | Antigravity also supports Claude |
 | `gpt-oss-120b` | GPT-OSS-120B | OpenAI | Thinking | Open-weights variant |
 | `gemini-3.5-flash` | Gemini 3.5 Flash | Google | Worker | Antigravity default |
 | `gemini-3-flash` | Gemini 3 Flash | Google | Worker | Stable Flash |

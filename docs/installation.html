@@ -143,7 +143,7 @@
         </div>
 
         <p class="install-note">
-          Works immediately with defaults (Opus 4.7 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
+          Works immediately with defaults (Opus 4.8 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
         </p>
 
         <div class="install-block" style="margin-top:1rem;">
@@ -224,8 +224,9 @@
             Model Configuration &mdash; OpenCode<br />
             <br />
             Thinking model (orchestrator, reviewer, debugger):<br />
-            &nbsp;&nbsp;[1] Claude Opus 4.7 &mdash; Hyperflow default<br />
-            &nbsp;&nbsp;[2] Claude Opus 4.6 &mdash; Previous Opus<br />
+            &nbsp;&nbsp;[1] Claude Opus 4.8 &mdash; Hyperflow default<br />
+            &nbsp;&nbsp;[2] Claude Opus 4.7 &mdash; Previous Opus<br />
+            &nbsp;&nbsp;[3] Claude Opus 4.6 &mdash; Legacy Opus<br />
             <br />
             &nbsp;&nbsp;Choice [1]: 1<br />
             <br />
@@ -253,7 +254,7 @@
             &nbsp;&nbsp;Config:&nbsp;&nbsp;&nbsp;&nbsp;~/.hyperflow/config.json<br />
             &nbsp;&nbsp;Update:&nbsp;&nbsp;&nbsp;&nbsp;git -C ~/.hyperflow/repo pull<br />
             <br />
-            &nbsp;&nbsp;Models:&nbsp;&nbsp;&nbsp;&nbsp;thinking=anthropic/claude-opus-4-7&nbsp;&nbsp;worker=anthropic/claude-sonnet-4-6<br />
+            &nbsp;&nbsp;Models:&nbsp;&nbsp;&nbsp;&nbsp;thinking=anthropic/claude-opus-4-8&nbsp;&nbsp;worker=anthropic/claude-sonnet-4-6<br />
             &nbsp;&nbsp;Security:&nbsp;&nbsp;enabled
           </div>
         </div>
@@ -319,7 +320,7 @@
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"mcp__*"<br />
             &nbsp;&nbsp;&nbsp;&nbsp;]<br />
             &nbsp;&nbsp;},<br />
-            &nbsp;&nbsp;"model": "claude-opus-4-7",<br />
+            &nbsp;&nbsp;"model": "claude-opus-4-8",<br />
             &nbsp;&nbsp;"effortLevel": "high",<br />
             &nbsp;&nbsp;"skipDangerousModePermissionPrompt": true,<br />
             &nbsp;&nbsp;"skipAutoPermissionPrompt": true<br />
@@ -328,7 +329,7 @@
         </div>
 
         <p class="install-note">
-          This eliminates all permission prompts and pins the main session to Opus 4.7.
+          This eliminates all permission prompts and pins the main session to Opus 4.8.
         </p>
       </div>
     </section>
@@ -362,7 +363,7 @@
           <div class="install-code" id="block-config-min">
             {<br />
             &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
             &nbsp;&nbsp;}<br />
             }
@@ -386,17 +387,17 @@
             {<br />
             &nbsp;&nbsp;"activeProvider": null,<br />
             &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
             &nbsp;&nbsp;},<br />
             &nbsp;&nbsp;"providers": {<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {}<br />
             &nbsp;&nbsp;&nbsp;&nbsp;},<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"opencode": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "anthropic/claude-opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "anthropic/claude-opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "anthropic/claude-sonnet-4-6",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {}<br />
             &nbsp;&nbsp;&nbsp;&nbsp;}<br />
@@ -425,15 +426,15 @@
           <div class="install-code" id="block-config-roles">
             {<br />
             &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
             &nbsp;&nbsp;},<br />
             &nbsp;&nbsp;"providers": {<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reviewer": "opus-4-6",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reviewer": "opus-4-7",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"searcher": "haiku-4-5"<br />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
             &nbsp;&nbsp;&nbsp;&nbsp;}<br />
@@ -460,7 +461,7 @@
             HYPERFLOW_PROVIDER=claude-code claude<br />
             <br />
             <span class="comment"># Override models for this session</span><br />
-            HYPERFLOW_THINKING_MODEL=opus-4-7 claude<br />
+            HYPERFLOW_THINKING_MODEL=opus-4-8 claude<br />
             HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
           </div>
         </div>
@@ -474,7 +475,7 @@
             <span class="install-block-title">RUNTIME COMMANDS</span>
           </div>
           <div class="install-code">
-            hyperflow: thinking opus-4-7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Switch thinking model</span><br />
+            hyperflow: thinking opus-4-8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Switch thinking model</span><br />
             hyperflow: worker haiku-4-5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Switch worker model</span><br />
             hyperflow: models&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Show current config</span><br />
             hyperflow: reset models&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Revert to config defaults</span>
@@ -510,7 +511,7 @@
           <div class="install-code" id="block-security">
             {<br />
             &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
             &nbsp;&nbsp;},<br />
             &nbsp;&nbsp;"security": {<br />

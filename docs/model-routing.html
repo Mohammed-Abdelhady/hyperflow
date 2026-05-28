@@ -72,31 +72,31 @@
               <tr>
                 <td>Orchestrator</td>
                 <td>Thinking</td>
-                <td><code>Opus 4.7</code></td>
+                <td><code>Opus 4.8</code></td>
                 <td>Decomposing "build a dashboard" into 5 parallel tasks</td>
               </tr>
               <tr>
                 <td>Reviewer</td>
                 <td>Thinking</td>
-                <td><code>Opus 4.7</code></td>
+                <td><code>Opus 4.8</code></td>
                 <td>Checking if a worker's component matches the spec</td>
               </tr>
               <tr>
                 <td>Debugger</td>
                 <td>Thinking</td>
-                <td><code>Opus 4.7</code></td>
+                <td><code>Opus 4.8</code></td>
                 <td>Root-causing why tests fail after a refactor</td>
               </tr>
               <tr>
                 <td>Decision-maker</td>
                 <td>Thinking</td>
-                <td><code>Opus 4.7</code></td>
+                <td><code>Opus 4.8</code></td>
                 <td>Choosing between REST vs tRPC for a new API</td>
               </tr>
               <tr>
                 <td>Brainstormer</td>
                 <td>Thinking</td>
-                <td><code>Opus 4.7</code></td>
+                <td><code>Opus 4.8</code></td>
                 <td>Exploring 2–3 approaches with trade-offs</td>
               </tr>
               <tr>
@@ -144,12 +144,12 @@
             <tbody>
               <tr>
                 <td>Claude Code</td>
-                <td><code>opus-4-7</code></td>
+                <td><code>opus-4-8</code></td>
                 <td><code>sonnet-4-6</code></td>
               </tr>
               <tr>
                 <td>OpenCode</td>
-                <td><code>anthropic/claude-opus-4-7</code></td>
+                <td><code>anthropic/claude-opus-4-8</code></td>
                 <td><code>anthropic/claude-sonnet-4-6</code></td>
               </tr>
               <tr>
@@ -229,37 +229,37 @@
                 <td>1</td>
                 <td>Per-task inline request</td>
                 <td>Single task</td>
-                <td>"Fix this bug using opus-4-7"</td>
+                <td>"Fix this bug using opus-4-8"</td>
               </tr>
               <tr>
                 <td>2</td>
                 <td>Session command</td>
                 <td>Current session</td>
-                <td><code>hyperflow: thinking opus-4-7</code></td>
+                <td><code>hyperflow: thinking opus-4-8</code></td>
               </tr>
               <tr>
                 <td>3</td>
                 <td>Environment variable</td>
                 <td>Current session</td>
-                <td><code>HYPERFLOW_THINKING_MODEL=opus-4-7</code></td>
+                <td><code>HYPERFLOW_THINKING_MODEL=opus-4-8</code></td>
               </tr>
               <tr>
                 <td>4</td>
                 <td>Role override</td>
                 <td>Persistent</td>
-                <td><code>providers.claude-code.roles.reviewer: "opus-4-7"</code></td>
+                <td><code>providers.claude-code.roles.reviewer: "opus-4-8"</code></td>
               </tr>
               <tr>
                 <td>5</td>
                 <td>Provider tier</td>
                 <td>Persistent</td>
-                <td><code>providers.claude-code.thinking: "opus-4-7"</code></td>
+                <td><code>providers.claude-code.thinking: "opus-4-8"</code></td>
               </tr>
               <tr>
                 <td>6</td>
                 <td>Global default</td>
                 <td>Persistent</td>
-                <td><code>defaults.thinking: "opus-4-7"</code></td>
+                <td><code>defaults.thinking: "opus-4-8"</code></td>
               </tr>
             </tbody>
           </table>
@@ -284,22 +284,22 @@
           </div>
           <div class="install-code">{<br />
 &nbsp;&nbsp;"activeProvider": "claude-code",<br />
-&nbsp;&nbsp;"defaults": { "thinking": "opus-4-7", "worker": "sonnet-4-6" },<br />
+&nbsp;&nbsp;"defaults": { "thinking": "opus-4-8", "worker": "sonnet-4-6" },<br />
 &nbsp;&nbsp;"providers": {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker":&nbsp;&nbsp; "sonnet-4-6",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"models": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": ["opus-4-7", "opus-4-6", "opus-4-5", "sonnet-4-6"],<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": ["opus-4-8", "opus-4-7", "opus-4-6", "opus-4-5", "sonnet-4-6"],<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker":&nbsp;&nbsp; ["sonnet-4-6", "sonnet-4-5", "haiku-4-5"]<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"orchestrator": "opus-4-7", "reviewer": "opus-4-7", "debugger": "opus-4-7",<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"decision-maker": "opus-4-7", "brainstormer": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"orchestrator": "opus-4-8", "reviewer": "opus-4-8", "debugger": "opus-4-8",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"decision-maker": "opus-4-8", "brainstormer": "opus-4-8",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"implementer": "sonnet-4-6", "searcher": "sonnet-4-6", "writer": "sonnet-4-6"<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
 &nbsp;&nbsp;&nbsp;&nbsp;},<br />
-&nbsp;&nbsp;&nbsp;&nbsp;"opencode":&nbsp;&nbsp;&nbsp;&nbsp;{ "thinking": "anthropic/claude-opus-4-7", "worker": "anthropic/claude-sonnet-4-6", "models": { &hellip; }, "roles": { &hellip; } },<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"opencode":&nbsp;&nbsp;&nbsp;&nbsp;{ "thinking": "anthropic/claude-opus-4-8", "worker": "anthropic/claude-sonnet-4-6", "models": { &hellip; }, "roles": { &hellip; } },<br />
 &nbsp;&nbsp;&nbsp;&nbsp;"antigravity": { "thinking": "gemini-3-pro",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "worker": "gemini-3.5-flash",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "models": { &hellip; }, "roles": { &hellip; } }<br />
 &nbsp;&nbsp;},<br />
 &nbsp;&nbsp;"security": { "enabled": true },<br />
@@ -315,7 +315,7 @@
           </div>
           <div class="install-code">{<br />
 &nbsp;&nbsp;"defaults": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
 &nbsp;&nbsp;}<br />
 }</div>
@@ -332,10 +332,10 @@
           <div class="install-code">{<br />
 &nbsp;&nbsp;"providers": {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reviewer": "opus-4-6"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reviewer": "opus-4-7"<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
 &nbsp;&nbsp;&nbsp;&nbsp;}<br />
 &nbsp;&nbsp;}<br />
@@ -350,7 +350,7 @@
           <div class="install-code">{<br />
 &nbsp;&nbsp;"providers": {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-7",<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"searcher": "haiku-4-5"<br />
@@ -365,7 +365,7 @@
           <div class="install-block-header">
             <span class="install-block-title">session commands</span>
           </div>
-          <div class="install-code">hyperflow: thinking opus-4-7<br />
+          <div class="install-code">hyperflow: thinking opus-4-8<br />
 hyperflow: worker haiku-4-5<br />
 hyperflow: models          <span class="comment"># verify current config</span><br />
 hyperflow: reset models    <span class="comment"># revert to config.json defaults</span></div>
@@ -376,7 +376,7 @@ hyperflow: reset models    <span class="comment"># revert to config.json default
           <div class="install-block-header">
             <span class="install-block-title">bash</span>
           </div>
-          <div class="install-code">HYPERFLOW_THINKING_MODEL=opus-4-7 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude</div>
+          <div class="install-code">HYPERFLOW_THINKING_MODEL=opus-4-8 HYPERFLOW_WORKER_MODEL=haiku-4-5 claude</div>
         </div>
 
         <p class="install-note">
