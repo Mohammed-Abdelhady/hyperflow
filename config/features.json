@@ -101,6 +101,13 @@
       "chain": "endpoint"
     },
     {
+      "name": "workflow",
+      "command": "/hyperflow:workflow",
+      "tagline": "Claude Code big-task path",
+      "purpose": "Create a Claude Code dynamic workflow for system-wide work, large migrations, repo-wide audits, and high-confidence verification",
+      "chain": "standalone"
+    },
+    {
       "name": "trace",
       "command": "/hyperflow:trace",
       "tagline": "Root-cause a bug",
@@ -164,6 +171,7 @@
   ],
   "capabilities": [
     "Parallel worker dispatch (independent subtasks run simultaneously)",
+    "Claude Code dynamic workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
     "Thinking-tier review of every worker output (iron rule)",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",

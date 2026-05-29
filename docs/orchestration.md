@@ -10,14 +10,20 @@ How a single user request becomes a coordinated multi-agent run — the chain, t
 amplify     →   spec        →   scope         →   dispatch        →   (suggest)   audit   /   deploy
 sharpen         specify         decompose         execute              outside review        gates + push
 the prompt      the design      into batches      with reviews         (gated)               (gated)
+
+Claude Code big tasks can branch to:
+
+workflow    →   dynamic workflow runtime   →   final synthesis
+big task        background orchestration       checked result
 ```
 
 Start with a rough idea: **`amplify`** rewrites it into the strongest prompt, then hands off to `spec`. From there `spec → scope → dispatch` are **chain-starters** — invoking any of them auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
 
-Two skills sit outside the chain:
+Four skills sit outside the chain:
 
 | Skill | Purpose |
 |---|---|
+| `workflow` | Claude Code dynamic workflow path for deep/system-wide tasks, large migrations, repo-wide audits, and high-confidence verification |
 | `trace` | Root-cause analysis — 5-whys + hypothesis testing for bugs and test failures |
 | `status` | Read-only one-screen view of project state and live in-flight progress |
 | `cache` | CRUD on persistent project memory |
@@ -48,6 +54,8 @@ That JSON drives every downstream decision:
 | `ambiguity` | Spec depth — light (2 questions) / standard (3 questions + alternatives) / deep (4–5 questions + section-by-section approval). Floor: 2 questions, always. |
 | `personas[]` | Which persona blocks are stitched into each worker's prompt — composed in priority order: security first, creative last |
 | `complexity` + `scope` | Number of parallel workers per batch; review level cap (L1–L5) for the per-batch reviewer |
+
+In Claude Code v2.1.154 or later, triage can route big tasks to `/hyperflow:workflow` instead of `scope → dispatch`. The route applies to `flow=deep`, `flow=scientific`, `scope=system-wide`, large migrations, repo-wide audits, high-confidence verification, and prompts that explicitly say `run a workflow` or `dynamic workflow`. Codex, OpenCode, Antigravity, Desktop/web bridge mode, and disabled-workflow Claude Code sessions keep using the normal `scope → dispatch` route.
 
 ---
 
@@ -103,6 +111,22 @@ After all batches complete:
 8. **`AskUserQuestion`** — *"Run /hyperflow:deploy?"* (Yes/No, recommended toggles with gate state)
 
 Both gates respect DOCTRINE rule 8 (structural gates always fire). The orchestrator never auto-invokes audit or deploy.
+
+---
+
+## Claude Code dynamic workflows
+
+`/hyperflow:workflow <task>` is the Claude Code-only big-task path. It asks the host dynamic workflow runtime to create a background workflow that keeps large orchestration state outside the conversation while preserving Hyperflow's doctrine inside the workflow prompt.
+
+The generated workflow must include:
+
+1. Research and planning over project profile, architecture, conventions, tests, memory, and affected files.
+2. Parallel implementation or investigation agents with specific objectives, file scopes, constraints, acceptance criteria, and test expectations.
+3. Adversarial verification agents that check findings or implementation slices before anything is reported.
+4. Quality gates and a focused repair loop using the detected lint, typecheck, build, and test commands.
+5. Final synthesis with evidence, changed files, unresolved risks, and next actions.
+
+Dynamic workflows require Claude Code v2.1.154+ and can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow does not enable `/effort ultracode` or `xhigh`; users can opt into `/effort ultracode` manually when they want Claude Code to make session-wide workflow choices. Successful runs can be saved from `/workflows` with `s` into `.claude/workflows/` or `~/.claude/workflows/`; Hyperflow does not ship saved workflow scripts directly because plugin packaging does not expose `.claude/workflows/` as a first-class component.
 
 ---
 

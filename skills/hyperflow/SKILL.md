@@ -26,6 +26,7 @@ Codex loads Hyperflow as skills, not as native Claude-style slash commands. Trea
 | `/hyperflow:spec`, `hyperflow spec`, `design with hyperflow` | `spec` |
 | `/hyperflow:scope`, `hyperflow scope`, `decompose with hyperflow` | `scope` |
 | `/hyperflow:dispatch`, `hyperflow dispatch`, `run the hyperflow plan` | `dispatch` |
+| `/hyperflow:workflow`, `hyperflow workflow`, `run a workflow` | `workflow` in Claude Code; otherwise `scope` |
 | `/hyperflow:trace`, `hyperflow trace`, `debug with hyperflow` | `trace` |
 | `/hyperflow:audit`, `hyperflow audit`, `review with hyperflow` | `audit` |
 | `/hyperflow:deploy`, `hyperflow deploy`, `ship with hyperflow` | `deploy` |
@@ -98,6 +99,7 @@ Use this fallback for every required clarification or structural gate: Amplify h
 |---|---|
 | `brainstorm`, `design`, `explore`, "should we" | Research first, ask material questions, then propose approaches |
 | `scope`, `decompose`, "plan out" | Map affected files, then write a task graph under `.hyperflow/tasks/` |
+| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | Use Claude Code dynamic workflow when available; otherwise decompose through `scope` |
 | `build`, `implement`, `add`, `refactor` | Decompose, execute batches, self-review, commit per task |
 | `debug`, `fix it`, "why is X failing" | Root-cause before patching |
 | `audit`, `review`, "check for issues" | Review findings first, then offer/apply fixes |

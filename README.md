@@ -58,10 +58,13 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 | 2 | `spec` | Design-first — multi-dimensional analysis + alternatives; refuses to code before you approve |
 | 3 | `scope` | Decompose the approved design into a parallel task graph |
 | 4 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
-| 5 | `audit` | L1–L5 review on the result |
-| 6 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
+| 5 | `workflow` | Claude Code big-task path — create a dynamic workflow for system-wide work |
+| 6 | `audit` | L1–L5 review on the result |
+| 7 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
 
 `amplify` hands off to `spec`, then `spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
+
+For Claude Code v2.1.154+, `workflow` is the big-task lane. Hyperflow routes deep/scientific/system-wide work, large migrations, repo-wide audits, and high-confidence verification prompts to `/hyperflow:workflow`, which asks the Claude Code dynamic workflow runtime to create a background workflow with research, parallel execution, adversarial verification, quality gates, and final synthesis. Other providers keep using `scope → dispatch`.
 
 In Codex App/CLI, `/hyperflow:*` entries are treated as plugin skill aliases, not native host slash commands. If the host does not expose Hyperflow's `AskUserQuestion` popup UI, required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. When Codex subagents are available, Hyperflow maps worker/searcher/writer dispatches to them; otherwise those phases run inline and the chain continues in the same thread.
 
@@ -85,6 +88,7 @@ First initialize the project (once), then invoke any skill:
 /hyperflow:scaffold                                        # first: set up the project (once per repo)
 /hyperflow:amplify "make a login page"                     # turn a rough idea into a strong prompt
 /hyperflow:spec "add user auth with login + middleware"    # design → scope → dispatch
+/hyperflow:workflow "large migration across the repo"      # Claude Code dynamic workflow for big tasks
 /hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
 /hyperflow:deploy                                          # pre-push gates + ship
 ```
@@ -135,6 +139,12 @@ Every task is classified — complexity, scope, risk, ambiguity — and assigned
 
 15 composable expert personas — architect, api, db, frontend, ui, security, performance, scientific, refactor, bugfix, test, research, creative, devops, docs. Each task is tagged and the matching personas are stitched into the worker prompt in priority order: `security` frames every decision first, `creative` adapts last.
 
+### Claude Code workflows for big tasks
+
+In Claude Code, Hyperflow routes very large tasks to `/hyperflow:workflow` instead of forcing everything through turn-by-turn dispatch. Use it for system-wide changes, large migrations, repo-wide audits, and verification-heavy work where a resumable background workflow is a better fit than conversation-local subagents.
+
+The skill requires Claude Code v2.1.154+ with dynamic workflows enabled. Workflows can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`; when unavailable, Hyperflow falls back to `scope → dispatch`. Hyperflow does not set `/effort ultracode` or `xhigh` automatically. Use `/effort ultracode` yourself if you want Claude Code's session-wide automatic workflow selection.
+
 ## Memory that persists
 
 Learnings live at `.hyperflow/memory/` — plain markdown, committed with your repo, **never uploaded, never mixed across projects**.
@@ -147,13 +157,14 @@ Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](ht
 
 ## Skills
 
-Fourteen skills. Three chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
+Fifteen skills. Three chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
 | `spec` | `/hyperflow:spec` | Chain starter | Design-first analysis + alternatives; auto-chains to scope → dispatch |
 | `scope` | `/hyperflow:scope` | Chain starter | Decompose into parallel worker subtasks; auto-chains to dispatch |
 | `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
+| `workflow` | `/hyperflow:workflow` | Claude Code big-task | Dynamic workflow path for system-wide tasks, large migrations, repo-wide audits, and high-confidence verification |
 | `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
 | `amplify` | `/hyperflow:amplify` | Front door | Rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric), then hand off into the chain |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |

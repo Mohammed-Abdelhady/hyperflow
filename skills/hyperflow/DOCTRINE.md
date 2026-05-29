@@ -66,6 +66,7 @@ Scan every user message for these verbs/phrases. If matched, route immediately. 
 |---|---|---|
 | Design exploration | `brainstorm`, `design`, `explore`, `let's think about`, `what if`, `should we`, `how should`, `unsure about`, `not sure how to` | `/hyperflow:spec` |
 | Scope / plan | `scope`, `decompose`, `plan out`, `break down`, `create a plan`, `task graph`, `decompose into batches` | `/hyperflow:scope` |
+| Claude Code big-task workflow | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow`, `high-confidence verification` | `/hyperflow:workflow` in Claude Code v2.1.154+; otherwise `/hyperflow:scope` |
 | Implementation | `build`, `implement`, `add`, `create`, `make a`, `refactor`, `write the`, `wire up`, `extract`, `inline` | `/hyperflow:scope` (then auto-chains to dispatch) |
 | Debugging / fix | `debug`, `fix it`, `fix`, `solve`, `troubleshoot`, `investigate`, `root-cause`, `why is`, `X is broken`, `Y fails`, `Z throws`, stack trace pasted | `/hyperflow:trace` |
 | Review / audit | `audit`, `review`, `check for issues`, `look for bugs`, `any problems`, `code review`, `security check`, `scan the diff` | `/hyperflow:audit` |
