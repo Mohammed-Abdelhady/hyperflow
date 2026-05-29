@@ -73,6 +73,8 @@ export ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6
 
 **OpenCode config:** Models can also be set in `opencode.json` via `"model"` and `"small_model"` fields.
 
+**Big-task workflows:** `/hyperflow:workflow` uses Hyperflow's portable workflow adapter in OpenCode. It routes independent units through task/subagent dispatch when available, falls back to inline worker/reviewer phases, then runs adversarial verification, quality gates, and per-task commits. This is not native Claude Code dynamic workflow support.
+
 ---
 
 ## Codex
@@ -104,6 +106,8 @@ codex plugin add hyperflow@hyperflow-marketplace
 ```
 
 Codex reads project instructions from `AGENTS.md`; run `scripts/setup-detection.sh --tools codex <project>` to generate the project shim.
+
+**Big-task workflows:** `/hyperflow:workflow` uses Hyperflow's portable workflow adapter in Codex. It routes independent units through Codex subagents when exposed, falls back to inline worker/reviewer phases, then runs adversarial verification, quality gates, and per-task commits. This is not native Claude Code dynamic workflow support.
 
 ---
 

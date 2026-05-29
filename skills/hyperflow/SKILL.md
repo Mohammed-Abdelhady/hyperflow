@@ -26,7 +26,7 @@ Codex loads Hyperflow as skills, not as native Claude-style slash commands. Trea
 | `/hyperflow:spec`, `hyperflow spec`, `design with hyperflow` | `spec` |
 | `/hyperflow:scope`, `hyperflow scope`, `decompose with hyperflow` | `scope` |
 | `/hyperflow:dispatch`, `hyperflow dispatch`, `run the hyperflow plan` | `dispatch` |
-| `/hyperflow:workflow`, `hyperflow workflow`, `run a workflow` | `workflow` in Claude Code; otherwise `scope` |
+| `/hyperflow:workflow`, `hyperflow workflow`, `run a workflow` | `workflow` |
 | `/hyperflow:trace`, `hyperflow trace`, `debug with hyperflow` | `trace` |
 | `/hyperflow:audit`, `hyperflow audit`, `review with hyperflow` | `audit` |
 | `/hyperflow:deploy`, `hyperflow deploy`, `ship with hyperflow` | `deploy` |
@@ -52,6 +52,8 @@ When Codex exposes multi-agent tools, map Hyperflow agent dispatches to Codex su
 - Never request or default to `xhigh`.
 
 When Codex does not expose subagent tools in the current session, use the single-agent port above: execute worker/reviewer phases inline with clear labels and continue.
+
+For `/hyperflow:workflow`, use the Codex portable workflow adapter instead of falling back to `scope`: research and planning, `.hyperflow/tasks/` progress tracking when needed, parallel subagents when exposed, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task conventional commits, and final synthesis. Do not describe this as native Claude Code dynamic workflow support.
 
 Codex also may not expose Claude Code's `Skill` handoff tool. Treat every Hyperflow handoff as an inline auto-chain:
 
@@ -99,7 +101,7 @@ Use this fallback for every required clarification or structural gate: Amplify h
 |---|---|
 | `brainstorm`, `design`, `explore`, "should we" | Research first, ask material questions, then propose approaches |
 | `scope`, `decompose`, "plan out" | Map affected files, then write a task graph under `.hyperflow/tasks/` |
-| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | Use Claude Code dynamic workflow when available; otherwise decompose through `scope` |
+| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | Use the workflow skill: Claude Code native workflow, Codex/OpenCode portable adapter, otherwise decompose through `scope` |
 | `build`, `implement`, `add`, `refactor` | Decompose, execute batches, self-review, commit per task |
 | `debug`, `fix it`, "why is X failing" | Root-cause before patching |
 | `audit`, `review`, "check for issues" | Review findings first, then offer/apply fixes |

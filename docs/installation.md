@@ -11,8 +11,8 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | Environment | Works? | Notes |
 |---|---|---|
 | Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, skills, and Claude Code dynamic workflow routing are active |
-| Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, inline auto-chain fallback, and provider-aware model config are active |
-| OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention |
+| Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, portable workflow adapter, inline auto-chain fallback, and provider-aware model config are active |
+| OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention; portable workflow adapter uses task/subagent support when available and inline phases otherwise |
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch or tier split — the single agent runs every phase and self-reviews |
 | Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
 | claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
@@ -23,6 +23,8 @@ If `/hyperflow:spec` returns `isn't a recognized command here. Some commands onl
 In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow spec`, `hyperflow amplify`, and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
 
 Claude Code dynamic workflow support requires Claude Code v2.1.154 or later with workflows enabled. `/hyperflow:workflow` routes big tasks to the host dynamic workflow runtime; workflows may be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow never enables `/effort ultracode` or `xhigh` automatically; set `/effort ultracode` manually if you want session-wide automatic workflow selection.
+
+Codex and OpenCode do not get native Claude Code dynamic workflows. The same `/hyperflow:workflow` entry runs Hyperflow's portable adapter: research and planning, provider subagents/tasks where available, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task commits, and final synthesis.
 
 **Workarounds for Desktop / web users:**
 
@@ -55,11 +57,15 @@ codex plugin add hyperflow@hyperflow-marketplace
 
 Codex defaults to GPT-5.5 for thinking roles with task-adaptive reasoning and GPT-5.4 for workers in fast mode.
 
+For big tasks, `/hyperflow:workflow` uses the Codex portable workflow adapter. It dispatches through Codex subagents when exposed and otherwise runs the same worker/reviewer phases inline.
+
 ### OpenCode
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
+
+For big tasks, `/hyperflow:workflow` uses the OpenCode portable workflow adapter. It uses task/subagent dispatch when available and otherwise runs the same phases inline.
 
 ### What the installer does
 

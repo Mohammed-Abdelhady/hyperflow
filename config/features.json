@@ -103,8 +103,8 @@
     {
       "name": "workflow",
       "command": "/hyperflow:workflow",
-      "tagline": "Claude Code big-task path",
-      "purpose": "Create a Claude Code dynamic workflow for system-wide work, large migrations, repo-wide audits, and high-confidence verification",
+      "tagline": "Big-task workflow lane",
+      "purpose": "Use Claude Code native workflows or the Codex/OpenCode portable adapter for system-wide work, large migrations, repo-wide audits, and high-confidence verification",
       "chain": "standalone"
     },
     {
@@ -171,7 +171,8 @@
   ],
   "capabilities": [
     "Parallel worker dispatch (independent subtasks run simultaneously)",
-    "Claude Code dynamic workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
+    "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
+    "Codex/OpenCode portable workflow adapter for big tasks",
     "Thinking-tier review of every worker output (iron rule)",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
