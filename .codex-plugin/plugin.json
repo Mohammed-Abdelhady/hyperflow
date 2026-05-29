@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "4.25.0",
+  "version": "4.26.0",
   "description": "Autonomous orchestration for Codex App and CLI. Thinking models plan, triage, and review; worker models execute fast; every chain keeps project memory local.",
   "author": {
     "name": "Mohammed Abdelhady",

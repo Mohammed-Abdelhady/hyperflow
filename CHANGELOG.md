@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.26.0] — 2026-05-29
+
+### Added
+- Add portable workflow adapters
+- Add dynamic workflow routing
+
+
 ## [4.25.0] — 2026-05-28
 
 ### Added
@@ -835,7 +842,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.25.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.0...HEAD
+[4.26.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.25.0...v4.26.0
 [4.25.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.4...v4.25.0
 [4.24.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.3...v4.24.4
 [4.24.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.2...v4.24.3
