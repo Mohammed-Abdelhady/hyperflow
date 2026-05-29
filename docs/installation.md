@@ -10,7 +10,7 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 
 | Environment | Works? | Notes |
 |---|---|---|
-| Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, and skills are all active |
+| Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, skills, and Claude Code dynamic workflow routing are active |
 | Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, inline auto-chain fallback, and provider-aware model config are active |
 | OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention |
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch or tier split — the single agent runs every phase and self-reviews |
@@ -21,6 +21,8 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
 
 In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow spec`, `hyperflow amplify`, and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
+
+Claude Code dynamic workflow support requires Claude Code v2.1.154 or later with workflows enabled. `/hyperflow:workflow` routes big tasks to the host dynamic workflow runtime; workflows may be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow never enables `/effort ultracode` or `xhigh` automatically; set `/effort ultracode` manually if you want session-wide automatic workflow selection.
 
 **Workarounds for Desktop / web users:**
 

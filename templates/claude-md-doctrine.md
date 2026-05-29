@@ -21,6 +21,7 @@ Scan every user message. If a verb matches, follow the matching workflow — eve
 |---|---|
 | `brainstorm`, `design`, `explore`, "what if", "should we", "unsure about" | Read code → ask ≥2 questions → propose 2-3 approaches → design section-by-section with user approval per section |
 | `scope`, `decompose`, "plan out", "break down" | Map affected surface → produce batched task graph → write to `.hyperflow/tasks/<slug>.md` |
+| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | In Claude Code v2.1.154+, create a dynamic workflow; elsewhere use the build/scope route |
 | `build`, `implement`, `add`, `refactor`, "wire up" | Decompose into batches → dispatch parallel workers → per-batch reviewer → per-sub-task commits → final integration reviewer |
 | `debug`, `fix it`, `solve`, "why is X", "Y fails", stack trace | Systematic root-cause: 5 Whys + parallel hypothesis testing. Never blind-patch symptoms |
 | `audit`, `review`, "check for issues", "security check" | Multi-level review (L1 syntax → L5 exhaustive) → write findings to `.hyperflow/audits/<timestamp>.md` → ask fix-gate |

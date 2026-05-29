@@ -35,6 +35,7 @@ Codex loads Hyperflow as plugin skills, not as native Claude-style slash command
 | \`/hyperflow:spec\`, \`hyperflow spec\` | \`spec\` |
 | \`/hyperflow:scope\`, \`hyperflow scope\` | \`scope\` |
 | \`/hyperflow:dispatch\`, \`hyperflow dispatch\` | \`dispatch\` |
+| \`/hyperflow:workflow\`, \`hyperflow workflow\` | \`workflow\` (Claude Code dynamic workflow path; otherwise fall back to \`scope\`) |
 | \`/hyperflow:trace\`, \`hyperflow trace\` | \`trace\` |
 | \`/hyperflow:audit\`, \`hyperflow audit\` | \`audit\` |
 | \`/hyperflow:deploy\`, \`hyperflow deploy\` | \`deploy\` |
@@ -67,6 +68,7 @@ else
 | \`/hyperflow:spec\` | Design exploration before any code is written |
 | \`/hyperflow:scope\` | Decompose a task into a worker-friendly batch file in \`.hyperflow/tasks/\` |
 | \`/hyperflow:dispatch\` | Run a planned task: dispatch workers in parallel with thinking-tier reviews |
+| \`/hyperflow:workflow\` | Claude Code-only big-task path: create a dynamic workflow for system-wide work |
 | \`/hyperflow:trace\` | Systematic root-cause analysis for any bug or test failure |
 | \`/hyperflow:audit\` | Multi-level code review (L1–L5) on a diff, file, or PR |
 | \`/hyperflow:deploy\` | Pre-push gates + commit + release + push |
@@ -85,6 +87,12 @@ Start from any skill — chain-starters auto-advance forward through the chain (
 \`scaffold\` → \`spec\` → \`scope\` → \`dispatch\` → \`audit\` → \`deploy\`
 
 $DIRECT_ENTRIES
+
+## Claude Code dynamic workflows
+
+In Claude Code v2.1.154 or later, route big tasks to \`/hyperflow:workflow\`: \`flow=deep\`, \`flow=scientific\`, \`scope=system-wide\`, large migrations, repo-wide audits, high-confidence verification, or prompts that say \`run a workflow\` / \`dynamic workflow\` / \`big task\`. The workflow skill asks the Claude Code dynamic workflow runtime to create a background workflow with Hyperflow research, parallel implementation or investigation, adversarial verification, quality gates, and final synthesis. Do not set \`/effort ultracode\` or \`xhigh\` automatically; the user may enable \`/effort ultracode\` manually for session-wide automatic workflow selection.
+
+If the active runtime is not Claude Code, or workflows are disabled by \`/config\`, managed settings, \`~/.claude/settings.json\`, or \`CLAUDE_CODE_DISABLE_WORKFLOWS=1\`, use the normal \`scope → dispatch\` path instead.
 
 Shared doctrine (autonomy rules, model routing, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
 
@@ -230,7 +238,7 @@ if os.path.exists(path):
         sys.exit(0)
 labels = {
     "on":   "Auto-routing: ON (full sticky) — every task-shaped message routes through hyperflow.",
-    "auto": "Auto-routing: AUTO (default) — messages containing chain-starter verbs (audit, debug, fix, brainstorm, scope, deploy, review, …) auto-route.",
+    "auto": "Auto-routing: AUTO (default) — messages containing chain-starter verbs (audit, debug, fix, brainstorm, workflow, scope, deploy, review, …) auto-route.",
     "off":  "Auto-routing: OFF — only explicit /hyperflow:* slash commands route. Re-enable with /hyperflow:sticky auto.",
 }
 line_out = labels.get(state)
