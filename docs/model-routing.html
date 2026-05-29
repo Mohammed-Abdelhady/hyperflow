@@ -303,9 +303,11 @@
 &nbsp;&nbsp;&nbsp;&nbsp;"antigravity": { "thinking": "gemini-3-pro",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "worker": "gemini-3.5-flash",&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "models": { &hellip; }, "roles": { &hellip; } }<br />
 &nbsp;&nbsp;},<br />
 &nbsp;&nbsp;"security": { "enabled": true },<br />
-&nbsp;&nbsp;"memory":&nbsp;&nbsp; { "compactionThreshold": 300 }<br />
+&nbsp;&nbsp;"memory":&nbsp;&nbsp; { "compactionThreshold": 300 },<br />
+&nbsp;&nbsp;"context":&nbsp; { "windowTokens": 200000, "autoCompactMinPercent": 72 }<br />
 }</div>
         </div>
+        <p><code>context.windowTokens</code> and <code>context.autoCompactMinPercent</code> drive the smart PreCompact hook. Automatic compaction is blocked when the transcript estimate is confidently below the threshold; manual <code>/compact</code> and unknown-estimate compaction still pass.</p>
 
         <h3 style="margin-top:2rem;">Change default models</h3>
         <p>The minimal override — works if you only care about thinking / worker globally:</p>

@@ -188,7 +188,7 @@
     "Conventional commits + automated release versioning",
     "Task tracking with incomplete-task recovery across sessions",
     "Session-start update check (cached daily) with an in-session prompt to update",
-    "Pre-compaction snapshot + post-compaction recovery \u2014 task, decisions, and anti-patterns survive a context compact",
+    "Smart pre-compaction guard estimates context usage before automatic compact and snapshots recoverable state",
     "Auto-archive of stale .hyperflow/{tasks,audits,specs} \u2014 daily-gated, promotes Learnings/Decisions/Anti-patterns to memory before moving the file to .hyperflow/archive/<type>/YYYY-MM/"
   ],
   "detection": {

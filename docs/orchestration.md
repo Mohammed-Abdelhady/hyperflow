@@ -269,12 +269,15 @@ A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-up
 
 ## Surviving context compaction
 
-Long chains will eventually hit Claude Code's context limit and auto-compact (or you can `/compact` yourself sooner). Hyperflow doesn't lose the chain state across that squeeze:
+Long chains will eventually approach the host context limit. Hyperflow checks the current context estimate before letting an automatic compact happen:
 
+- Claude Code's PreCompact payload includes `transcript_path`, not a direct context percentage, so Hyperflow estimates usage from the transcript against `context.windowTokens` in `~/.hyperflow/config.json`.
+- Automatic compaction is allowed only at or above `context.autoCompactMinPercent` (default **72%**). If the estimate is lower, the hook blocks the auto compact and the session continues.
+- Manual `/compact` always passes. If the transcript or budget cannot be read, the hook stays permissive so true limit recovery is not made worse.
 - A `PreCompact` hook snapshots the volatile state to `.hyperflow/.precompact.md` right before compaction — active task file(s), structural decisions, hot anti-patterns, and the uncommitted `git diff --stat`.
 - The `SessionStart` hook (which also fires on the `compact` trigger) re-injects that snapshot immediately after, then consumes it. The orchestrator comes out of the compact still knowing the task, the decisions, and the quality rules.
 
-Neither hook blocks compaction or fails a session; if `.hyperflow/` isn't present the snapshot is skipped silently.
+The hook only blocks an automatic compact when the estimate is confidently below threshold. It does not block manual compaction, unknown-estimate compaction, or unscaffolded projects; if `.hyperflow/` isn't present the snapshot is skipped silently.
 
 ---
 
