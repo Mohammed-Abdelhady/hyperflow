@@ -574,9 +574,9 @@ Net effect: durable insight compounds in memory, and `.hyperflow/{tasks,audits,s
 
 ### Proactive `/compact`
 
-The context window is a resource. When a run has consumed roughly **two-thirds of the available budget** — typically a deep flow profile mid-batch with several reviewer round-trips already on the stack — the orchestrator suggests running `/compact` before the next batch instead of waiting for the auto-compact at the limit. The `PreCompact` hook will snapshot the active task, decisions, anti-patterns, and uncommitted diff so the chain state survives the squeeze. Surface the suggestion as a single status line, not a question; the user can accept or ignore.
+The context window is a resource. Before suggesting or accepting automatic `/compact`, first check measurable context usage when the host exposes a signal. Claude Code does not pass a direct percentage to hooks, so Hyperflow estimates it from the hook `transcript_path` against `context.windowTokens` in `~/.hyperflow/config.json` (default 200k). Automatic compaction is only allowed once usage is at or above `context.autoCompactMinPercent` (default 72%); below that, the PreCompact hook blocks the auto compact and tells the session to continue.
 
-This is a heuristic, not a hard trigger — Claude Code does not expose a precise budget signal to plugins. Cue on visible context indicators (long transcripts, prior compaction notices) and the inherent cost of the current flow profile.
+Manual `/compact` always passes. If the transcript or budget cannot be read, the hook stays permissive so true context-limit recovery is never made worse. When a compact does run, the `PreCompact` hook snapshots the active task, decisions, anti-patterns, and uncommitted diff so the chain state survives the squeeze. Surface proactive compaction as a single status line with the estimated percent, not a question; the user can accept or ignore.
 
 ## Skills
 
