@@ -534,17 +534,18 @@
         <p class="section-label">Compaction</p>
         <h2 id="compaction-heading">Chain state survives a context compact.</h2>
         <p>
-          Long chains eventually approach the host context limit. Hyperflow checks the current context estimate before letting an automatic compact happen:
+          Long chains eventually approach the host context limit. Hyperflow holds automatic compaction until dispatch reaches its end-of-chain gate, then checks the current context estimate before letting the compact happen:
         </p>
         <ul>
           <li>Claude Code&rsquo;s PreCompact payload includes <code>transcript_path</code>, not a direct context percentage, so Hyperflow estimates usage from the transcript against <code>context.windowTokens</code> in <code>~/.hyperflow/config.json</code>.</li>
+          <li>Dispatch writes a short-lived <code>.hyperflow/.dispatch-auto-compact-ready</code> marker only after wrap-up and the final usage summary. The marker expires after <code>context.autoCompactReadyTtlMinutes</code> (default <strong>30 minutes</strong>) and is consumed by the hook.</li>
           <li>Automatic compaction is allowed only at or above <code>context.autoCompactMinPercent</code> (default <strong>72%</strong>). If the estimate is lower, the hook blocks the auto compact and the session continues.</li>
-          <li>Manual <code>/compact</code> always passes. If the transcript or budget cannot be read, the hook stays permissive so true limit recovery is not made worse.</li>
+          <li>Manual <code>/compact</code> always passes. If dispatch has marked readiness but the transcript or budget cannot be read, the hook stays permissive so true limit recovery is not made worse.</li>
           <li>A <code>PreCompact</code> hook snapshots the volatile state to <code>.hyperflow/.precompact.md</code> right before compaction &mdash; active task file(s), structural decisions, hot anti-patterns, and the uncommitted <code>git diff --stat</code>.</li>
           <li>The <code>SessionStart</code> hook (which also fires on the <code>compact</code> trigger) re-injects that snapshot immediately after, then consumes it. The orchestrator comes out of the compact still knowing the task, the decisions, and the quality rules.</li>
         </ul>
         <p class="install-note">
-          The hook only blocks an automatic compact when the estimate is confidently below threshold. It does not block manual compaction, unknown-estimate compaction, or unscaffolded projects; if <code>.hyperflow/</code> isn&rsquo;t present the snapshot is skipped silently.
+          The hook blocks automatic compaction before dispatch end or when the estimate is confidently below threshold. It does not block manual compaction or unscaffolded projects; if <code>.hyperflow/</code> isn&rsquo;t present the snapshot is skipped silently.
         </p>
       </div>
     </section>

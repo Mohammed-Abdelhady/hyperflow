@@ -124,11 +124,11 @@ The installer detects every provider on your machine and writes a full block for
   },
   "security": { "enabled": true },
   "memory":   { "compactionThreshold": 300 },
-  "context":  { "windowTokens": 200000, "autoCompactMinPercent": 72 }
+  "context":  { "windowTokens": 200000, "autoCompactMinPercent": 72, "autoCompactReadyTtlMinutes": 30 }
 }
 ```
 
-`context.windowTokens` and `context.autoCompactMinPercent` drive the smart PreCompact hook. Automatic compaction is blocked when the transcript estimate is confidently below the threshold; manual `/compact` and unknown-estimate compaction still pass.
+`context.windowTokens`, `context.autoCompactMinPercent`, and `context.autoCompactReadyTtlMinutes` drive the smart PreCompact hook. Automatic compaction is blocked until dispatch writes a fresh end-of-chain readiness marker, then blocked again when the transcript estimate is confidently below the threshold. Manual `/compact` still passes.
 
 ### Codex reasoning
 

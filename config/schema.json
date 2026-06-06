@@ -131,6 +131,13 @@
           "default": 72,
           "minimum": 1,
           "maximum": 99
+        },
+        "autoCompactReadyTtlMinutes": {
+          "type": "integer",
+          "description": "How long a dispatch-end compact readiness marker remains valid for automatic compaction.",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 1440
         }
       },
       "additionalProperties": false

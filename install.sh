@@ -350,7 +350,7 @@ if provs:
     cfg["providers"] = provs
 cfg["security"] = {"enabled": sec == "true"}
 cfg["memory"]   = {"compactionThreshold": 300}
-cfg["context"]  = {"windowTokens": 200000, "autoCompactMinPercent": 72}
+cfg["context"]  = {"windowTokens": 200000, "autoCompactMinPercent": 72, "autoCompactReadyTtlMinutes": 30}
 
 with open(config_path, "w") as f:
     json.dump(cfg, f, indent=2)
