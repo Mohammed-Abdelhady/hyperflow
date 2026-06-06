@@ -304,10 +304,10 @@
 &nbsp;&nbsp;},<br />
 &nbsp;&nbsp;"security": { "enabled": true },<br />
 &nbsp;&nbsp;"memory":&nbsp;&nbsp; { "compactionThreshold": 300 },<br />
-&nbsp;&nbsp;"context":&nbsp; { "windowTokens": 200000, "autoCompactMinPercent": 72 }<br />
+&nbsp;&nbsp;"context":&nbsp; { "windowTokens": 200000, "autoCompactMinPercent": 72, "autoCompactReadyTtlMinutes": 30 }<br />
 }</div>
         </div>
-        <p><code>context.windowTokens</code> and <code>context.autoCompactMinPercent</code> drive the smart PreCompact hook. Automatic compaction is blocked when the transcript estimate is confidently below the threshold; manual <code>/compact</code> and unknown-estimate compaction still pass.</p>
+        <p><code>context.windowTokens</code>, <code>context.autoCompactMinPercent</code>, and <code>context.autoCompactReadyTtlMinutes</code> drive the smart PreCompact hook. Automatic compaction is blocked until dispatch writes a fresh end-of-chain readiness marker, then blocked again when the transcript estimate is confidently below the threshold. Manual <code>/compact</code> still passes.</p>
 
         <h3 style="margin-top:2rem;">Change default models</h3>
         <p>The minimal override — works if you only care about thinking / worker globally:</p>
