@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.26.2] — 2026-06-06
+
+### Fixed
+- Gate automatic compact at dispatch end
+
+
 ## [4.26.1] — 2026-05-29
 
 ### Fixed
@@ -848,7 +854,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.2...HEAD
+[4.26.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.1...v4.26.2
 [4.26.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.0...v4.26.1
 [4.26.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.25.0...v4.26.0
 [4.25.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.24.4...v4.25.0
