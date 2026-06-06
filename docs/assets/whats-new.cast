@@ -1,10 +1,10 @@
 {"version":2,"width":100,"height":30,"timestamp":1715760000,"title":"Hyperflow \u2014 What's New","env":{"SHELL":"/bin/zsh","TERM":"xterm-256color"}}
-[0.3,"o","\u001b[35m✨ What's New in v4.26.1\u001b[0m\r\n"]
-[0.55,"o","\u001b[90m2026-05-29\u001b[0m\r\n"]
+[0.3,"o","\u001b[35m✨ What's New in v4.26.2\u001b[0m\r\n"]
+[0.55,"o","\u001b[90m2026-06-06\u001b[0m\r\n"]
 [0.9,"o","\u001b[90m  1 commit · 1 fix\u001b[0m\r\n"]
 [1.7,"o","\u001b[90m\u001b[0m\r\n"]
 [1.7,"o","\u001b[33m[Fixed]\u001b[0m\r\n"]
-[2.0,"o","\u001b[90m  • \u001b[0mGate automatic compaction by context usage\r\n"]
+[2.0,"o","\u001b[90m  • \u001b[0mGate automatic compact at dispatch end\r\n"]
 [2.78,"o","\u001b[90m\u001b[0m\r\n"]
 [2.78,"o","\u001b[90m▸ Full changelog: \u001b[0mgithub.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md\r\n"]
 [3.03,"o","\u001b[90m▸ Install:  \u001b[0m\u001b[36m/plugin install hyperflow@hyperflow-marketplace\u001b[0m\r\n"]
