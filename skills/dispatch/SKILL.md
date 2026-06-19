@@ -1,7 +1,7 @@
 ---
 name: dispatch
 description: |
-  Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel Sonnet workers under per-batch Opus reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
+  Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel workers under per-batch Reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
 allowed-tools: Read, Write, Edit, Bash(git:*), Agent, AskUserQuestion
 argument-hint: "[task-file | handoff-slug] [session=one|two] [--phases=all|next] [--from-batch N] [--final-only] [--thorough]"
@@ -13,7 +13,7 @@ tags: [execution, parallel, review, multi-agent, orchestration]
 
 # Dispatch
 
-Workhorse phase. Picks up a task file from `/hyperflow:scope` and runs it through the orchestrator pattern with parallel worker dispatch and thinking-tier reviews.
+Workhorse phase. Picks up a task file from `/hyperflow:scope` and runs it through the orchestrator pattern with parallel worker dispatch and multi-level reviews.
 
 This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **Layer 6 (Project Memory)**, **Layer 8 (Git Workflow)**, and **Layer 9 (Security)** from the doctrine. Multi-level review (L1–L5) is applied per the triage's flow profile.
 
@@ -21,20 +21,20 @@ This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **
 
 Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool calls, no content generation, no decision-making, mechanically verifiable) MAY be performed inline by the orchestrator per §12.1. Non-trivial steps decompose into ≥ 2 named sub-phases per §12.2.
 
-| Step | Sub-phase | Worker tier | Thinking tier | Notes |
+| Step | Sub-phase | Workers | Reviewer | Notes |
 |---|---|---|---|---|
 | 0 — Mode confirm | — (exempt) | — | — | `AskUserQuestion` only |
 | 0.5 — Operational choices | — (exempt) | — | — | `AskUserQuestion` only |
 | 1 — Load task | — (atomic · §12.2.8) | — | — | Read + schema check = single mechanical decision; no parallel angles |
-| 2a — Pre-dispatch | Composer × N parallel (Sonnet) — one per sub-task; stitches persona + injects learnings | **Reviewer** (Sonnet) — reviews prompt set for completeness | Parallel worker prompts built before any fan-out fires |
-| 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel (Sonnet) | **Domain specialist Reviewer** (Sonnet · worker tier) — the `Specialist:`-matched agent, batched over full batch (P2) or per-sub-task fallback | One Reviewer call per batch · escalates to Opus under `--thorough`; security/correctness specialists Opus always |
-| 2c — Gate run | Worker (Sonnet) — runs lint/typecheck/tests on affected files | **Reviewer** (Sonnet) — judges gate output | Small focused diff; Sonnet sufficient |
-| 2d — Learnings + commit | Writer (Sonnet) — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; learnings appended to context |
-| 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** (Opus · thinking tier) — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
-| 4 — Wrap up | Writer (Sonnet) — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
+| 2a — Pre-dispatch | Composer × N parallel — one per sub-task; stitches persona + injects learnings | **Reviewer** — reviews prompt set for completeness | Parallel worker prompts built before any fan-out fires |
+| 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel | **Domain specialist Reviewer** — the `Specialist:`-matched agent, batched over full batch (P2) or per-sub-task fallback | One Reviewer call per batch; security/correctness specialists run with `--thorough` |
+| 2c — Gate run | Worker — runs lint/typecheck/tests on affected files | **Reviewer** — judges gate output | Small focused diff |
+| 2d — Learnings + commit | Writer — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; learnings appended to context |
+| 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
+| 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
 | 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy questions |
 
-Iron rule — `thinking agents ≥ batches + 1` (one batched Reviewer per batch + final integration when not skipped). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
+Iron rule — `review agents ≥ batches + 1` (one batched Reviewer per batch + final integration when not skipped). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
 
 ## Review Levels (scale by flow profile)
 
@@ -71,7 +71,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 - **`session=<one|two>`** — passed in by `/hyperflow:scope` (or read from a handoff package's `HANDOFF.md`). If absent, assume `one`. In a two-session build, `handoff=<review|deploy>` governs the end-of-build behavior at Step 5.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
-- **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch. Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on. When `--thorough` is passed, BOTH D5 (wrap-up Reviewer drop) and D7 (integration review skip) are disabled — the full pre-round-2 ceremony runs. D2 combined gate stays (no quality tradeoff), D6 default L1-L2 stays (cap can still be elevated by triage flags).
+- **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch, and always run the final integration review (D7 skip is disabled). Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on. When `--thorough` is passed, BOTH D5 (wrap-up Reviewer drop) and D7 (integration review skip) are disabled — the full pre-round-2 ceremony runs. D2 combined gate stays (no quality tradeoff), D6 default L1-L2 stays (cap can still be elevated by triage flags).
 
 ## Flow
 
@@ -168,35 +168,35 @@ Each Composer also reads the sub-task's `Specialist:` field from the task file a
 workers produce review-ready output for the specialist that will judge it (e.g. an `api-reviewer` sub-task tells the
 worker to document status codes + validation up front).
 
-After all Composers return, dispatch one **Reviewer** (Sonnet) over the full prompt set: confirms persona selection is correct, context block is well-formed, learnings are injected. Verdict: `PASS` / `NEEDS_REVISION`. NEEDS_REVISION re-dispatches only the affected Composer(s).
+After all Composers return, dispatch one **Reviewer** over the full prompt set: confirms persona selection is correct, context block is well-formed, learnings are injected. Verdict: `PASS` / `NEEDS_REVISION`. NEEDS_REVISION re-dispatches only the affected Composer(s).
 
 #### Step 2b — Worker fan-out (P1 · sequential after 2a · internal parallelism P1)
 
-Dispatch all N sub-task Workers in a **single message** with parallel `Agent` calls using the composed prompts from Step 2a. Workers are Implementer / Searcher / Writer (Sonnet) and run fully in parallel.
+Dispatch all N sub-task Workers in a **single message** with parallel `Agent` calls using the composed prompts from Step 2a. Workers are Implementer / Searcher / Writer and run fully in parallel.
 
-When all workers have returned, dispatch **one** batched per-batch **Reviewer** (Sonnet by default — `model: "<resolved-worker>"`) covering the entire batch (P2 — batched single-pass review):
-- **Dispatch as the matching domain specialist.** Read the batch's sub-task `Specialist:` fields (Brain-decided, from the task file). Dispatch the per-batch Reviewer **as that specialist agent** ([`../../agents/README.md`](../../agents/README.md)) — its charter + strict checklist + output contract injected on top of `reviewer-prompt-batched.md`. When the batch spans several surfaces, inject the **union** of the matching charters. Tier is unchanged (Sonnet per-batch; Opus under `--thorough`; `security-reviewer`/`vulnerability-reviewer`/`data-ml-reviewer`/`compliance-reviewer` are Opus even per-batch per DOCTRINE Layer 2). On a gated flow the specialist runs its web-research-first pass ([web-research.md](../hyperflow/web-research.md)) before the verdict.
+When all workers have returned, dispatch **one** batched per-batch **Reviewer** covering the entire batch (P2 — batched single-pass review):
+- **Dispatch as the matching domain specialist.** Read the batch's sub-task `Specialist:` fields (Brain-decided, from the task file). Dispatch the per-batch Reviewer **as that specialist agent** ([`../../agents/README.md`](../../agents/README.md)) — its charter + strict checklist + output contract injected on top of `reviewer-prompt-batched.md`. When the batch spans several surfaces, inject the **union** of the matching charters. On a gated flow the specialist runs its web-research-first pass ([web-research.md](../hyperflow/web-research.md)) before the verdict.
 - **Check level-cap homogeneity first.** If every sub-task shares the same review-level cap → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers.
-- **Also fall back to per-sub-task reviewers** when `--thorough` was passed (reviewers escalate to Opus under `--thorough`).
-- **Batched reviewer dispatch:** use [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) with `model: "<resolved-worker>"` (or `"<resolved-thinking>"` under `--thorough`). Print `**Reviewer** (Sonnet) — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. Returns one verdict per sub-task.
-- **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** (Sonnet) — reviewing <subtask> (L1–L<n>)`.
-- **Why Sonnet by default:** per-batch reviewers see one batch's diff (typically 2–8 files). L1 (syntax/format) and L2 (spec/naming/edges) are pattern-matching work Sonnet handles at near-Opus quality. The cross-cutting concerns Sonnet might miss (L3+ integration, architectural drift) are exactly what the Opus final integration Reviewer at Step 3 catches over the cumulative diff. Two-tier review covers more ground than two-Opus review at a fraction of the cost.
+- **Also fall back to per-sub-task reviewers** when `--thorough` was passed.
+- **Batched reviewer dispatch:** use [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md). Print `**Reviewer** — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. Returns one verdict per sub-task.
+- **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** — reviewing <subtask> (L1–L<n>)`.
+- **Per-batch vs final-integration split:** per-batch reviewers are anchored to one batch's diff and catch L1–L<n> issues there. The final integration Reviewer at Step 3 sees the cumulative diff across all batches and catches cross-batch contradictions no single batch-anchored reviewer could see. Running both passes covers more ground than running either alone.
 
 _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention. The asymmetric paths are intentional.)_
 
-**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate tier → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate (add a deeper review pass) → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
 
 Parse the per-sub-task verdicts:
 - `SECURITY_VIOLATION` — **halt the chain** immediately. Surface the finding; do not commit anything in the batch.
-- Worker returned `OVERSIZE: <reason>` with `SUGGESTED-SPLIT:` — do NOT proceed. Dispatch a Thinking Lead consultation: `**Thinking Lead — Planner (mid-flight split)** — split <sub-task-id> per Worker's OVERSIZE signal`. Pass the Worker's reason, suggested split, the original brief, and batch context. The Thinking Lead returns a final split plan (N new sub-tasks, each `complexity = low | medium`). Remove the original; dispatch the N new sub-tasks as a new sub-batch. The per-batch Reviewer fires after the new sub-batch completes. No user question — splitting an oversized brief is a mechanical reshape.
-- `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before escalating to a thinking-tier worker).
+- Worker returned `OVERSIZE: <reason>` with `SUGGESTED-SPLIT:` — do NOT proceed. Dispatch a Planner consultation: `**Planner — mid-flight split** — split <sub-task-id> per Worker's OVERSIZE signal`. Pass the Worker's reason, suggested split, the original brief, and batch context. The Planner returns a final split plan (N new sub-tasks, each `complexity = low | medium`). Remove the original; dispatch the N new sub-tasks as a new sub-batch. The per-batch Reviewer fires after the new sub-batch completes. No user question — splitting an oversized brief is a mechanical reshape.
+- `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before re-scoping the sub-task).
 - `PASS` — sub-task handed to Step 2d for commit.
 
 #### Step 2c — Gate run (P1 · sequential after 2b verdicts resolve)
 
 After all sub-tasks in the batch have passed review, run **Layer 5 quality gates** (lint / typecheck / tests on affected files) per [quality-gates.md](references/quality-gates.md).
 
-Dispatch one Worker (Sonnet) to run the gate commands. Dispatch one **Reviewer** (Sonnet) to judge the gate output. Verdict: `PASS` / `NEEDS_FIX`. On NEEDS_FIX the Worker applies fixes (never amending per-sub-task commits — fixes land as small additional commits) and the gate re-runs. Max 3 gate cycles before escalating.
+Dispatch one Worker to run the gate commands. Dispatch one **Reviewer** to judge the gate output. Verdict: `PASS` / `NEEDS_FIX`. On NEEDS_FIX the Worker applies fixes (never amending per-sub-task commits — fixes land as small additional commits) and the gate re-runs. Max 3 gate cycles before escalating.
 
 **Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When the per-batch Reviewer returns NEEDS_REVISION, retry the Worker once with a `## Learnings from review` injection. A second NEEDS_REVISION surfaces the sub-task as partial; the chain continues with the latest output marked partial — no third Worker dispatch.
 
@@ -206,7 +206,7 @@ For each sub-task whose verdict is `PASS`:
 - **Commit immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files that sub-task touched. Write a conventional commit (`feat(<scope>): <title>` derived from the task file). One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits, even though they were reviewed in a single batched Reviewer call.
 - **Update the task file's `## Status` block** after each commit lands: tick `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads for live progress.
 
-Dispatch one Writer (Sonnet) in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. The learnings are appended to the in-memory `Learnings from prior batches` context (injected at Step 2a of subsequent batches). Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
+Dispatch one Writer in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. The learnings are appended to the in-memory `Learnings from prior batches` context (injected at Step 2a of subsequent batches). Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
 
 The two activities (commits + learnings synthesis) run concurrently — the Writer synthesizes while commits land sequentially per the commit cadence arg.
 
@@ -225,15 +225,15 @@ If ANY of these conditions fails, the final integration review runs.
 
 > **Risk note:** the skip is the riskiest D-decision in round 2 — multi-batch cross-interaction bugs could slip. The guard conditions are deliberately strict (first-try PASS + no escalations + no security flags) to keep risk low. Pass `--thorough` to disable the skip and always run the integration review.
 
-> Atomic-exempt per §12.2.8 — this is a single Reviewer dispatch (Opus over the cumulative diff) with no parallel angles. No sub-phase decomposition warranted.
+> Atomic-exempt per §12.2.8 — this is a single Reviewer dispatch over the cumulative diff with no parallel angles. No sub-phase decomposition warranted.
 
-**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). If the Opus integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context (no higher tier exists — escalation here means re-dispatching Opus with the error visible). Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). If the integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context. Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
 
-Dispatch a thinking-tier **Reviewer** (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) over the full changed-file set across every batch (all sub-task commits from Step 2d). Dispatch it **as the broadest matching specialist(s)** from the task file's `Specialists` roster (Brain-decided) — when the diff spans several surfaces, inject the union of their charters so the integration pass carries the right domain lenses. Use the same level cap as the batch reviewers (per flow profile). On a gated flow the specialist runs web-research-first before the verdict.
+Dispatch a **Reviewer** over the full changed-file set across every batch (all sub-task commits from Step 2d). Dispatch it **as the broadest matching specialist(s)** from the task file's `Specialists` roster (Brain-decided) — when the diff spans several surfaces, inject the union of their charters so the integration pass carries the right domain lenses. Use the same level cap as the batch reviewers (per flow profile). On a gated flow the specialist runs web-research-first before the verdict.
 
-Print: `**Reviewer** (Opus) — final integration review (L1–L<n>)`
+Print: `**Reviewer** — final integration review (L1–L<n>)`
 
-The Opus Reviewer returns a single structured verdict with per-sub-task findings where applicable. This is the one pass that catches cross-batch contradictions — Sonnet per-batch reviewers are anchored to one batch's diff and cannot see cross-batch integration issues. Opus tier is mandatory here.
+The integration Reviewer returns a single structured verdict with per-sub-task findings where applicable. This is the one pass that catches cross-batch contradictions — per-batch reviewers are anchored to one batch's diff and cannot see cross-batch integration issues.
 
 Parse the verdict:
 - `PASS` → proceed to Step 4.
@@ -327,7 +327,7 @@ The orchestrator does **NOT** auto-invoke audit or deploy. Both gates wait for a
 
 ## Agent Label Style
 
-No icons, no brackets. Em-dash separator. Bold for thinking-tier roles:
+No icons, no brackets. Em-dash separator. Bold for Reviewer and Debugger roles:
 
 ```
 Implementer — creating auth middleware
@@ -364,14 +364,14 @@ Scope batches three operational pre-elections at its Step 0.5 and propagates the
 
 - **Failure recovery (rule 14).** Worker errors, malformed output, NEEDS_REVISION, and gate failures follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Retry → escalate → abort. Chain budget: 3 cumulative aborts.
 - Workers never review, never coordinate, never ask the user questions.
-- Every batch produces **one** per-batch Reviewer dispatch (Sonnet · worker tier) — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case. Escalates to Opus under `--thorough`.
-- Plus **one** final integration Reviewer at the end (Step 3 · Opus · thinking tier) **when not skipped per D7**. Always Opus regardless of flags — this is the one Reviewer that sees the cumulative diff across batches.
+- Every batch produces **one** per-batch Reviewer dispatch — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case.
+- Plus **one** final integration Reviewer at the end (Step 3) **when not skipped per D7** — this is the Reviewer that sees the cumulative diff across batches.
 - **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — delete task file + memory append + chore commit is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
-- Therefore — `thinking agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `thinking agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
+- Therefore — `review agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `review agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
 - **Usage summary fires ONLY at the very end of the chain — after Step 4 wrap-up. NEVER mid-batch. NEVER after partial sub-task completion.** Printing `── Hyperflow Usage ──` with "B1W1 only" or "<n>/<m> sub-tasks completed" while sub-tasks remain pending is a doctrine violation, not a status update. In `auto` mode, a usage summary is a terminal signal — it means the chain is finished. If you printed one with sub-tasks still pending, the chain is in a broken state.
 - **Automatic compact readiness is end-of-dispatch only.** `.hyperflow/.dispatch-auto-compact-ready` is written exactly once after Step 4 wrap-up and the final usage summary. The `PreCompact` hook blocks automatic compaction until this marker exists and is fresh; manual `/compact` still works at any time.
-- **Auto mode must complete every sub-task in every batch before producing any summary, transition, or end-of-chain artefact.** "To resume" instructions, partial usage tables, or "stopping here for now" prose are all forbidden in `auto` mode. The only legal terminations mid-chain are: (a) `SECURITY_VIOLATION`, (b) `ESCALATE: <reason>` crossing the irreversibility boundary, (c) a per-sub-task Reviewer returning `NEEDS_FIX` after 3 worker retries (escalates to thinking-tier worker; if that also fails, surfaces ESCALATE). If none of those fired and the chain stopped, surface as `ESCALATE: dispatch halted with N/M sub-tasks remaining — root cause unknown` and ask the user — do NOT print a partial usage summary as if the chain ended cleanly.
+- **Auto mode must complete every sub-task in every batch before producing any summary, transition, or end-of-chain artefact.** "To resume" instructions, partial usage tables, or "stopping here for now" prose are all forbidden in `auto` mode. The only legal terminations mid-chain are: (a) `SECURITY_VIOLATION`, (b) `ESCALATE: <reason>` crossing the irreversibility boundary, (c) a per-sub-task Reviewer returning `NEEDS_FIX` after 3 worker retries with no resolution. If none of those fired and the chain stopped, surface as `ESCALATE: dispatch halted with N/M sub-tasks remaining — root cause unknown` and ask the user — do NOT print a partial usage summary as if the chain ended cleanly.
 - **If batch dispatch is interrupted (token exhaustion, runtime crash, manual abort) — leave the task file's Status block intact with the partial `[x]` checkmarks, do NOT print a usage summary, do NOT print "To resume" hand-off instructions.** The user can re-invoke `/hyperflow:dispatch --from-batch <n> <slug>` on their own; the task file already reflects which sub-tasks completed. Hand-off instructions printed by a half-finished chain are themselves the bug — they make the user think the chain self-paused cleanly when it actually broke.
 
 ## Doctrine
@@ -382,15 +382,14 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute
 
 `/hyperflow:dispatch` is the workhorse phase — it reads a task file from `/hyperflow:scope` and executes it through the orchestrator pattern.
 
-Parallel Sonnet workers dispatched in a single message, per-batch Opus reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with both audit and deploy questions.
+Parallel workers dispatched in a single message, per-batch Reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with both audit and deploy questions.
 
-Doctrine floor: thinking agents ≥ batches + 1 (per-batch reviewer + final integration when not skipped per D7; wrap-up Reviewer dropped per D5 / §12.1).
+Doctrine floor: review agents ≥ batches + 1 (per-batch reviewer + final integration when not skipped per D7; wrap-up Reviewer dropped per D5 / §12.1).
 
 ## Prerequisites
 
 - A task file exists at `.hyperflow/tasks/<slug>.md` (produced by `/hyperflow:scope`).
 - `.hyperflow/profile.md`, `architecture.md`, `conventions.md` populated (Layer 0 context injected into worker prompts).
-- Model routing config supports both thinking (Opus) and worker (Sonnet) tiers.
 - Git repository for per-sub-task commits.
 - For Step 5: `AskUserQuestion` popup available, or Codex chat fallback available — required for audit + deploy gates. Headless mode with no interactive channel skips gates with explicit warning.
 
@@ -401,11 +400,11 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
 1. Resolve session context (inherited `session=` / handoff `HANDOFF.md` / default `one`) — dispatch is the build endpoint, no session question.
 2. Load task file from `.hyperflow/tasks/` — Read + schema check inline (atomic · §12.2.8).
 3. Per batch, run four sub-phases in sequence:
-   - **Step 2a** — Composer Workers in parallel build worker prompts; Sonnet Reviewer confirms prompt set.
-   - **Step 2b** — Worker fan-out (N parallel Workers); batched Sonnet Reviewer over the batch; parse verdicts (PASS / NEEDS_FIX / SECURITY_VIOLATION / OVERSIZE).
-   - **Step 2c** — Layer 5 quality gates via a Worker + Sonnet Reviewer.
+   - **Step 2a** — Composer Workers in parallel build worker prompts; Reviewer confirms prompt set.
+   - **Step 2b** — Worker fan-out (N parallel Workers); batched Reviewer over the batch; parse verdicts (PASS / NEEDS_FIX / SECURITY_VIOLATION / OVERSIZE).
+   - **Step 2c** — Layer 5 quality gates via a Worker + Reviewer.
    - **Step 2d** — Per-sub-task commits + learnings synthesis via Writer.
-4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Opus Reviewer dispatched over cumulative diff; verdict routes to Step 4 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
+4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 4 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
 5. Wrap-up (§12.1 inline) — orchestrator deletes task file + appends memory + makes `chore(memory):` commit, then writes `.hyperflow/.dispatch-auto-compact-ready` after the usage summary. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
 6. ONE combined `AskUserQuestion` gate with both audit and deploy questions — process answers in order.
 
@@ -415,13 +414,11 @@ Per-batch and per-sub-task agent labels print as they fire (`Implementer — cre
 
 ```
 ── Hyperflow Usage ──────────────────────
-Thinking (Opus 4.8)     4 agents   52.3k tokens  (3 batch reviewers + 1 final)
-Worker   (Sonnet 4.6)   7 agents  154.1k tokens  (5 implementers + 1 writer + 1 searcher)
-Total                  11 agents  206.4k tokens
+11 agents  206.4k tokens  (5 implementers + 1 writer + 1 searcher + 3 batch reviewers + 1 final)
 ─────────────────────────────────────────
 ```
 
-(Wrap-up Reviewer no longer appears in the Thinking row per D5. If the integration review skipped per D7, the Thinking count equals the batch count exactly.)
+(Wrap-up Reviewer no longer appears per D5. If the integration review skipped per D7, the review agent count equals the batch count exactly.)
 
 Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 
@@ -430,8 +427,8 @@ Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 | Failure | Behavior |
 |---|---|
 | No task file at `.hyperflow/tasks/` | Stop and suggest `/hyperflow:scope` first. |
-| Worker times out or returns nothing | Re-scope the sub-task into smaller pieces; redispatch. Max 2 re-scope attempts before escalating to a thinking-tier worker. |
-| Reviewer returns `NEEDS_FIX` | Re-dispatch worker with the fix list. Max 3 retries before escalating reviewer + worker pair to Opus + Opus. |
+| Worker times out or returns nothing | Re-scope the sub-task into smaller pieces; redispatch. Max 2 re-scope attempts before surfacing the failure. |
+| Reviewer returns `NEEDS_FIX` | Re-dispatch worker with the fix list. Max 3 retries before surfacing the failure to the user. |
 | Reviewer returns `SECURITY_VIOLATION` | **Halt the chain immediately.** Print finding; do not commit, do not auto-continue. User decides remediation. |
 | Layer 5 gate failure (lint/typecheck/test) | Worker fix + re-run. Max 3 gate cycles before escalating. |
 | Per-sub-task commit fails (hook rejects, conflict) | Stop; surface the hook error. Do NOT use `--no-verify`. Do NOT amend per-sub-task commits. |
@@ -447,9 +444,9 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
-- [worker-prompt.md](references/worker-prompt.md) — Sonnet implementer/searcher/writer template.
-- [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template (per-sub-task fallback).
-- [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — Opus batched reviewer template (P2).
+- [worker-prompt.md](references/worker-prompt.md) — implementer/searcher/writer template.
+- [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer template (per-sub-task fallback).
+- [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — batched reviewer template (P2).
 - [latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
 - [review-levels.md](references/review-levels.md) — L1-L5 checklist.
 - [memory-system.md](references/memory-system.md) — wrap-up memory append format.

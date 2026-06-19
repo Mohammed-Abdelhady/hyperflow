@@ -1,6 +1,6 @@
 # Batched Reviewer Prompt Template
 
-Use this template when dispatching a single Opus reviewer to evaluate N sibling worker outputs in one call (Pattern P2 — batched single-pass review). Collapses N sequential reviewer round-trips into one without changing the tier mix or the review floor.
+Use this template when dispatching a single Reviewer to evaluate N sibling worker outputs in one call (Pattern P2 — batched single-pass review). Collapses N sequential reviewer round-trips into one without changing the review floor.
 
 ## When to Use vs. When to Fall Back
 
@@ -111,7 +111,7 @@ GLOBAL VERDICT: NEEDS_FIX
 
 A single `SECURITY_VIOLATION` in any sibling stops the entire batch. The orchestrator does not re-dispatch failed siblings — it escalates to the user.
 
-On `NEEDS_FIX`: the orchestrator re-dispatches only the failed siblings (not all N). The passing siblings' outputs are accepted as-is. A single Opus re-review of just the fixed siblings follows (not another full batched pass unless the fix affects shared interfaces).
+On `NEEDS_FIX`: the orchestrator re-dispatches only the failed siblings (not all N). The passing siblings' outputs are accepted as-is. A single Reviewer re-review of just the fixed siblings follows (not another full batched pass unless the fix affects shared interfaces).
 
 ## Dispatch Example
 
@@ -120,7 +120,6 @@ Five design sections (Architecture, Data flow, Key decisions, Edge cases, File s
 ```
 Agent({
   description: "Batched review — 5 spec design sections (medium, L1–L3)",
-  model: "opus",
   prompt: `## Batched review scope
 Siblings: §1 Architecture, §2 Data flow, §3 Key decisions, §4 Edge cases, §5 File structure
 Shared input: Chosen approach — "Event-sourced task store with Redis fan-out"

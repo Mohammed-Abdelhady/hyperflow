@@ -77,15 +77,15 @@ Pattern: `<verb>-<short-description>.md` in kebab-case.
 ```
 User request
     |
-[Opus] RESEARCH — dispatch searchers to explore code
+[Orchestrator] RESEARCH — dispatch searchers to explore code
     |
-[Opus] PLAN — decompose based on research findings
+[Planner] PLAN — decompose based on research findings
     |
-[Opus] CREATE task files (comprehensive, with research findings)
+[Orchestrator] CREATE task files (comprehensive, with research findings)
     |
-[Opus] Dispatch workers
+[Orchestrator] Dispatch workers
     |
-[Opus] UPDATE task files dynamically:
+[Orchestrator] UPDATE task files dynamically:
     |   - Check off completed sub-tasks
     |   - Add new sub-tasks discovered during work
     |   - Remove sub-tasks that are unnecessary
@@ -93,8 +93,8 @@ User request
     |   - Append to Progress with timestamps
     |   - Add Learnings as discoveries happen
     |
-[Opus] Review → APPROVED → DELETE task file
-    |         → NEEDS_FIX → update task file, re-dispatch
+[Reviewer] Review → APPROVED → DELETE task file
+    |              → NEEDS_FIX → update task file, re-dispatch
 ```
 
 ## Dynamic Updates

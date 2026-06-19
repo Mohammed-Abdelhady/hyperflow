@@ -25,30 +25,30 @@ This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Proj
 
 Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivial steps per §12.1 may be performed inline by the orchestrator. Non-trivial Steps decompose into ≥ 2 named sub-phases per DOCTRINE rule 12.2.
 
-| Step | Sub-phase | Worker tier | Thinking tier | Notes |
+| Step | Sub-phase | Workers | Reviewers | Notes |
 |---|---|---|---|---|
 | 0 — Session strategy | — (atomic) | — | — | `AskUserQuestion` only; 12.2.8-exempt |
-| 0.4 — Triage (Classifier + Reviewer) | — (atomic) | Classifier (Sonnet) [if not inherited] | **Triage Reviewer** (Sonnet) [if not inherited + P4 conditions not met] | Skipped entirely when chained from spec (spec's validated triage is canonical); on direct invocation, dispatches its own Classifier then Triage Reviewer; skips Triage Reviewer on P4 conditions; 12.2.8-exempt |
+| 0.4 — Triage (Classifier + Reviewer) | — (atomic) | Classifier [if not inherited] | **Triage Reviewer** [if not inherited + P4 conditions not met] | Skipped entirely when chained from spec (spec's validated triage is canonical); on direct invocation, dispatches its own Classifier then Triage Reviewer; skips Triage Reviewer on P4 conditions; 12.2.8-exempt |
 | 0.5 — Ops choices | — (atomic) | — | — | Single `AskUserQuestion` batch; 12.2.8-exempt |
 | 1 — Route | — (atomic) | — | — | Single mechanical routing decision; 12.2.8-exempt |
 | 2 — Research | 2a + 2b + 2c (P1 parallel) | | | Sub-phase aggregate handed to Step 3 |
-| | 2a — Surface mapping | Searcher × 2 (glob discovery + import-graph traversal) | **Reviewer** (Sonnet) | P1; no inter-dependency with 2b/2c |
-| | 2b — Semantic indexing | Searcher × 2 (type-system probe + symbol-graph probe) | **Reviewer** (Sonnet) | P1; no inter-dependency with 2a/2c |
-| | 2c — Convention scan | Searcher × 1 (test patterns + lint config; single-angle justified: no independent probe angle for config) | **Reviewer** (Sonnet) | P1; single Worker per 12.2.3 exception |
+| | 2a — Surface mapping | Searcher × 2 (glob discovery + import-graph traversal) | **Reviewer** | P1; no inter-dependency with 2b/2c |
+| | 2b — Semantic indexing | Searcher × 2 (type-system probe + symbol-graph probe) | **Reviewer** | P1; no inter-dependency with 2a/2c |
+| | 2c — Convention scan | Searcher × 1 (test patterns + lint config; single-angle justified: no independent probe angle for config) | **Reviewer** | P1; single Worker per 12.2.3 exception |
 | 2.5 — Clarify | — (atomic) | — | — | At most one `AskUserQuestion`; 12.2.8-exempt |
 | 2.6 — Vestigial | — | — | — | Does nothing; number reserved for back-compat |
 | 3 — Decompose | 3a + 3b + 3c | | | 3a fires first; 3b/3c parallel after 3a |
-| | 3a — Batch graph | — | **Planner** × 1 (Opus; dependency analysis + parallel/sequential mapping; single-angle: canonical aggregation, no independent angle) + **Reviewer** (Sonnet · per-sub-phase: completeness + sane batch boundaries; verdict ∈ {PASS, NEEDS_REVISION, ESCALATE}) | Sequential synthesis; Planner justified single-Worker per 12.2.3; Reviewer required per 12.2.4 |
-| | 3b — Complexity sizing | Searcher × 2 (sub-task LOC estimation + subsystem cross-cut check) | **Reviewer** (Sonnet) | Parallel; depends on 3a output |
-| | 3c — Acceptance criteria | Writer × 2 (per-sub-task criteria + verification hooks) | **Reviewer** (Sonnet) | Parallel; depends on 3a output; 3b and 3c concurrent |
+| | 3a — Batch graph | — | **Planner** × 1 (dependency analysis + parallel/sequential mapping; single-angle: canonical aggregation, no independent angle) + **Reviewer** (per-sub-phase: completeness + sane batch boundaries; verdict ∈ {PASS, NEEDS_REVISION, ESCALATE}) | Sequential synthesis; Planner justified single-Worker per 12.2.3; Reviewer required per 12.2.4 |
+| | 3b — Complexity sizing | Searcher × 2 (sub-task LOC estimation + subsystem cross-cut check) | **Reviewer** | Parallel; depends on 3a output |
+| | 3c — Acceptance criteria | Writer × 2 (per-sub-task criteria + verification hooks) | **Reviewer** | Parallel; depends on 3a output; 3b and 3c concurrent |
 | 4 — Write task file | 4a + 4b + 4c (P3 concurrent with Step 6) | | | 4a fires first; 4b/4c parallel after 4a |
-| | 4a — Status + Goal + Why | Writer × 2 (status block draft + goal/why narrative) | **Reviewer** (Sonnet) | Sequential first sub-phase; anchors 4b/4c |
-| | 4b — Scope + Affected files | Writer × 2 (scope-at-a-glance table + affected-file listing) | **Reviewer** (Sonnet) | Parallel; depends on 4a output; runs concurrently with 4c |
-| | 4c — Execution plan + Batches + Verification | Writer × 2 (execution plan ASCII + batch checklist) | **Reviewer** (Sonnet) | Parallel; depends on 4a output; runs concurrently with 4b |
-| | 4d — Final task-file verification | — | **Reviewer** (Sonnet · per-step) verifies whole task file vs design | Fires after all sub-phases complete; ensures every design requirement maps to ≥1 sub-task and no orphan sub-tasks exist |
+| | 4a — Status + Goal + Why | Writer × 2 (status block draft + goal/why narrative) | **Reviewer** | Sequential first sub-phase; anchors 4b/4c |
+| | 4b — Scope + Affected files | Writer × 2 (scope-at-a-glance table + affected-file listing) | **Reviewer** | Parallel; depends on 4a output; runs concurrently with 4c |
+| | 4c — Execution plan + Batches + Verification | Writer × 2 (execution plan ASCII + batch checklist) | **Reviewer** | Parallel; depends on 4a output; runs concurrently with 4b |
+| | 4d — Final task-file verification | — | **Reviewer** (per-step) verifies whole task file vs design | Fires after all sub-phases complete; ensures every design requirement maps to ≥1 sub-task and no orphan sub-tasks exist |
 | 4+6 — parallel | — | Writer (Step 4) ∥ Writer (Step 6) fire after Step 3 (P3) | — | Concurrent dispatch; both wait on Step 3 aggregate |
 | 5 — Output | — (atomic) | — | — | Print only; §12.1-exempt |
-| 6 — Memory | — (atomic; single-angle) | Writer (Sonnet) appends to memory files | **Reviewer** (Sonnet) checks duplicates/contradictions | Single Worker → Reviewer with no independent angles; 12.2.8-exempt |
+| 6 — Memory | — (atomic; single-angle) | Writer appends to memory files | **Reviewer** checks duplicates/contradictions | Single Worker → Reviewer with no independent angles; 12.2.8-exempt |
 | 7 — Hand off | — (atomic) | — | — | `Skill` tool invocation; §12.1-exempt |
 
 **Latency flags:** `--thorough` disables P1 **in Step 4 only** (sequential Writer-internal section drafts instead of parallel). Step 2 sub-phases (also P1) are NOT affected — they stay parallel under all flag configurations because they are independent reads with no quality tradeoff. P3 (Steps 4 + 6 concurrent) is always on. See [`../spec/references/latency-patterns.md`](../spec/references/latency-patterns.md) for pattern definitions.
@@ -102,7 +102,7 @@ Then proceed to Step 0.5.
 
 **Path B — invoked directly (no inherited triage in chain args):** scope dispatches its own Classifier first, then (unless P4 conditions apply) validates it with the Triage Reviewer.
 
-1. Dispatch `Classifier — triaging request` (Sonnet). The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON mirroring spec Step 1's Classifier output. Persist and propagate forward via chain args as `triage=<base64-json>`.
+1. Dispatch `Classifier — triaging request`. The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON mirroring spec Step 1's Classifier output. Persist and propagate forward via chain args as `triage=<base64-json>`.
 
 2. **P4 skip (DOCTRINE §13.P4):** if ALL of the following hold — `triage.complexity == low`, `triage.ambiguity < 0.2`, `triage.scope ∈ {0-file, 1-file}`, `triage.risk != high` — skip the Triage Reviewer entirely and consume the Classifier output as-is. Print:
 
@@ -176,7 +176,7 @@ Pure routing decision — no clarification questions here. Clarification fires a
 
 ### Step 2 — Research (3 parallel sub-phases · P1)
 
-All three sub-phases (2a, 2b, 2c) dispatch in a **single message** — they share the same upstream task description and have no inter-dependency. Sub-phase Reviewers are Sonnet. Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, and `.hyperflow/memory/index.md` before dispatching to surface relevant past learnings. Step 2 output = union of sub-phase worker outputs + 3 sub-phase Reviewer verdicts, handed to Step 3.
+All three sub-phases (2a, 2b, 2c) dispatch in a **single message** — they share the same upstream task description and have no inter-dependency. Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, and `.hyperflow/memory/index.md` before dispatching to surface relevant past learnings. Step 2 output = union of sub-phase worker outputs + 3 sub-phase Reviewer verdicts, handed to Step 3.
 
 **Step 2a — Surface mapping**
 
@@ -257,7 +257,7 @@ The Planner produces, for each sub-task:
 
 Split target: each resulting sub-task is (a) reviewable in under 10 minutes of human time, (b) fits comfortably in a single Worker prompt + reasonable response, (c) has a single coherent purpose nameable in one conventional-commit subject line. The Planner never keeps `complexity = high` after the checklist — high-complexity work is decomposed until every piece is low/medium.
 
-Splitting is a **cost optimisation**, not just a quality one: three small sub-tasks dispatched to three Sonnet Workers in parallel cost less wall-clock AND less total tokens than one Worker chewing through an oversized brief (parallelism + focused prompts + fewer retries).
+Splitting is a **cost optimisation**, not just a quality one: three small sub-tasks dispatched to three Workers in parallel cost less wall-clock AND less total tokens than one Worker chewing through an oversized brief (parallelism + focused prompts + fewer retries).
 
 **Phase decomposition (Planner — flat vs. feature/phase mode).** After the batch graph, the Planner decides the
 **artefact mode** per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md):
@@ -293,7 +293,7 @@ Then dispatch `**Reviewer** — verifying acceptance criteria completeness` over
 
 **P3 — concurrent dispatch:** Step 4 (task file) and Step 6 (memory) are independent after Step 3 completes. Dispatch both in the same message immediately after Step 3 returns. Wait for both before advancing to Step 5.
 
-**Mode resolution (one-time per chain).** Before dispatching, run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and propagate the result via chain args (`mode=<default|lean|thorough>`) to downstream skills. When `mode=lean`, Writers render the **artefact-format minimum template** for small tasks (`triage.complexity == low` AND projected sub-tasks ≤ 5) — status table + Goal + per-task lines + cost table only. The full rich template auto-restores when the task graduates past 5 sub-tasks or any sub-task has `complexity != low`. Persona stitching, memory injection, reviewer model + template, clarification gates, and security blocklist remain unchanged regardless of mode.
+**Mode resolution (one-time per chain).** Before dispatching, run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and propagate the result via chain args (`mode=<default|lean|thorough>`) to downstream skills. When `mode=lean`, Writers render the **artefact-format minimum template** for small tasks (`triage.complexity == low` AND projected sub-tasks ≤ 5) — status table + Goal + per-task lines + cost table only. The full rich template auto-restores when the task graduates past 5 sub-tasks or any sub-task has `complexity != low`. Persona stitching, memory injection, reviewer template, clarification gates, and security blocklist remain unchanged regardless of mode.
 
 Sub-phase 4a fires first to anchor section numbering and the status block. Sub-phases 4b and 4c are independent of each other and run concurrently after 4a. A final per-Step Reviewer verifies the assembled task file vs the full design after all sub-phases complete.
 
@@ -350,7 +350,7 @@ Task-file template (flat mode) — follows [`artefact-format.md`](../hyperflow/a
 | Branch      | `<feat/slug or current branch>`                      |
 | Commits     | 0 since main · per-task cadence                      |
 | Wall-clock  | not started                                          |
-| Tokens      | thinking 0k · worker 0k · total 0k                   |
+| Tokens      | 0k total                                             |
 | Specialists | <Brain-decided responsible specialist agents across this task> |
 
 ## Goal
@@ -419,10 +419,10 @@ None. *(or numbered list if any remain)*
 
 ## Estimated cost
 
-| Tier      | Agents | Tokens   |
+| Role      | Agents | Tokens   |
 |-----------|-------:|---------:|
-| Thinking  |      N |     ~Nk  |
-| Worker    |      N |     ~Nk  |
+| Reviewers |      N |     ~Nk  |
+| Workers   |      N |     ~Nk  |
 | **Total** |  **N** | **~Nk**  |
 ```
 
@@ -438,7 +438,7 @@ Plan ready — .hyperflow/tasks/<slug>.md (3 batches, 7 sub-tasks)
 
 ### Step 6 — Memory (P3 concurrent with Step 4)
 
-Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
+Agents — `Writer` ⇒ **Reviewer**.
 
 **P3 — concurrent dispatch:** this step fires in parallel with Step 4 (see Step 4 above). Both Writers receive the Planner's output and are independent — the memory Writer does not need the task file to be written, and the task file Writer does not need memory to be updated. Both must complete before Step 5 output.
 
@@ -457,10 +457,10 @@ See [task-tracking.md](references/task-tracking.md) and [worker-prompt.md](refer
 Auto-chaining to /hyperflow:dispatch…
 ```
 
-**If `session=two`** — do NOT invoke dispatch. Write the committed handoff package, then STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)). Dispatch a `Writer — assembling handoff package for <slug>` (Sonnet), or do it inline when copy+commit is §12.1-trivial:
+**If `session=two`** — do NOT invoke dispatch. Write the committed handoff package, then STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)). Dispatch a `Writer — assembling handoff package for <slug>`, or do it inline when copy+commit is §12.1-trivial:
 
 1. Resolve the package dir from config (`handoff.packageDir`, default `.hyperflow-handoff`). Create `.hyperflow-handoff/<slug>/`:
-   - `HANDOFF.md` — manifest: slug, artefact type (flat|feature), artefact path, resolved chain args (`commit=/branch=/push=/triage=/mode=`), `on_complete=<handoff>` (review|deploy), originating provider (per [`../hyperflow/model-config.md`](../hyperflow/model-config.md) detection), originating commit (`git rev-parse HEAD`), the `Specialists` roster from the artefact status block, and the how-to-start-session-2 / return-path sections.
+   - `HANDOFF.md` — manifest: slug, artefact type (flat|feature), artefact path, resolved chain args (`commit=/branch=/push=/triage=/mode=`), `on_complete=<handoff>` (review|deploy), originating commit (`git rev-parse HEAD`), the `Specialists` roster from the artefact status block, and the how-to-start-session-2 / return-path sections.
    - `STATUS` — the single word `planned`.
    - `artefact/` — a **committed copy** of the gitignored original: `.hyperflow/tasks/<slug>.md` → `artefact/tasks/<slug>.md` (flat), or the whole `.hyperflow/features/<slug>/` tree → `artefact/features/<slug>/` (feature).
    - `context/` — copies of `.hyperflow/{conventions,profile,architecture}.md` + `.hyperflow/memory/index.md` (so the build env needs no scaffold).
@@ -485,7 +485,7 @@ Auto-chaining to /hyperflow:dispatch…
 
 ## Overview
 
-`/hyperflow:scope` decomposes a clear-enough task into a batched worker plan and writes it to `.hyperflow/tasks/<slug>.md`. Parallel Sonnet searchers map the affected surface, an Opus Planner produces the batch graph, and a Sonnet Writer emits the task file. Read-only with respect to source code. On completion: in `session=one` auto-chains into `/hyperflow:dispatch`; in `session=two` writes the committed `.hyperflow-handoff/` package and stops for a second-session build.
+`/hyperflow:scope` decomposes a clear-enough task into a batched worker plan and writes it to `.hyperflow/tasks/<slug>.md`. Parallel Searchers map the affected surface, a Planner produces the batch graph, and a Writer emits the task file. Read-only with respect to source code. On completion: in `session=one` auto-chains into `/hyperflow:dispatch`; in `session=two` writes the committed `.hyperflow-handoff/` package and stops for a second-session build.
 
 ## Prerequisites
 
@@ -500,7 +500,7 @@ The numbered steps live in [Step 0 — Choose session strategy](#step-0--choose-
 1. Ask `session` (one / two; + handoff follow-up when two) if not propagated from a prior chain-starter.
 2. Confirm the task is buildable, not a design question (else hand off to `/hyperflow:spec`).
 3. Step 2 sub-phases (2a surface mapping, 2b semantic indexing, 2c convention scan) in parallel.
-4. Step 3a Opus Planner produces batch graph; Sonnet Reviewer validates decomposition; 3b/3c (complexity sizing, acceptance criteria) in parallel after 3a.
+4. Step 3a Planner produces batch graph; Reviewer validates decomposition; 3b/3c (complexity sizing, acceptance criteria) in parallel after 3a.
 5. Step 4 sub-phases (4a status/goal/why, then 4b scope/files ∥ 4c execution/verification) emit `.hyperflow/tasks/<slug>.md`; final Reviewer verifies plan vs design.
 6. Append decisions to `.hyperflow/memory/decisions.md` (concurrent with Step 4 — P3).
 7. Hand off to `/hyperflow:dispatch` (auto or via confirmation gate).
@@ -583,6 +583,6 @@ right questions before any decomposition happens.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (Layer 7 task templates, rule 8 structural gates).
 - [task-templates.md](references/task-templates.md) — CRUD, API, UI, migration, refactor, bug-fix templates.
 - [task-tracking.md](references/task-tracking.md) — task file format and lifecycle.
-- [worker-prompt.md](references/worker-prompt.md) — what dispatch will inject into each Sonnet worker.
+- [worker-prompt.md](references/worker-prompt.md) — what dispatch will inject into each worker.
 - [output-style.md](references/output-style.md) — agent label format.
 - [../spec/references/latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency pattern definitions, wall-clock impact table, and `--thorough` disable rules.

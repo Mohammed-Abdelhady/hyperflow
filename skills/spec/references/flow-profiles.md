@@ -331,8 +331,6 @@ Each profile has a soft budget. The orchestrator tracks cumulative token usage p
 ```text
 ── Hyperflow Usage ──────────────────────
 Profile: deep (budget: 300k)
-Thinking (Opus 4.8)   4 agents   80k
-Worker   (Sonnet 4.6) 9 agents  220k
 Total                13 agents  300k  · within budget
 ─────────────────────────────────────────
 ```

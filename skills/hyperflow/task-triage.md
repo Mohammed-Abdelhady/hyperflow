@@ -10,15 +10,13 @@ Invoke on every user request that introduces new work — "build X", "fix Y", "r
 
 ## Classifier dispatch
 
-The Classifier is dispatched at **Haiku 4.5** tier — not Opus, not Sonnet.
+The Classifier is a fast, focused classification call — structured output against a fixed schema, not deep reasoning. Budget: 2k tokens.
 
-**Rationale:** triage is structured classification, not deep reasoning. Haiku 4.5 handles this task shape at near-Opus quality at ~10x lower latency and ~15x lower cost. Opus tier was overkill for producing a JSON object from a fixed schema against a short input.
-
-**Fallback path:** if Haiku returns malformed JSON output (failed schema validation), retry once at Haiku with the strict-JSON suffix (see Fallback rules). If the second attempt also fails, fall back to **Sonnet** — NOT Opus. Keep cost low even on the fallback path. Triage is on the chain critical path; graceful degradation matters more than peak quality on this single classification call.
+**Fallback path:** if the Classifier returns malformed JSON output (failed schema validation), retry once with the strict-JSON suffix (see Fallback rules). If the second attempt also fails, proceed with the safe default below.
 
 ## Triage prompt template
 
-Send verbatim to Haiku 4.5. Budget: 2k tokens. Do not add prose around it.
+Send verbatim to the Classifier. Budget: 2k tokens. Do not add prose around it.
 
 ```text
 You are a task classifier for a multi-agent orchestrator. Analyze the request below and return STRICT JSON ONLY — no prose, no markdown, no code fences.
@@ -352,13 +350,13 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
 
 ## Fallback rules
 
-If the Haiku 4.5 Classifier returns malformed output (invalid JSON, missing required fields, invalid enum values):
+If the Classifier returns malformed output (invalid JSON, missing required fields, invalid enum values):
 
-1. **Retry once at Haiku** — resend the same prompt with this suffix appended:
+1. **Retry once** — resend the same prompt with this suffix appended:
    ```text
    STRICT JSON ONLY. No prose. No markdown fences. Required fields: types, complexity, risk, scope, ambiguity, brainstormDepth, flow, personas, specialists, estimatedWorkers, estimatedBatches, budget, security, integration_risk, rationale.
    ```
-2. **If still malformed — fall back to Sonnet** (NOT Opus; keep cost low even on fallback). Resend at Sonnet tier. If Sonnet also returns malformed output, proceed with the safe default below:
+2. **If still malformed** — proceed with the safe default below:
    
    ```json
    {
@@ -381,7 +379,7 @@ If the Haiku 4.5 Classifier returns malformed output (invalid JSON, missing requ
    ```
 3. **Surface the issue** — print a single warning line before continuing:
    ```
-   WARNING: Triage malformed (Haiku retry + Sonnet failed) — falling back to safe defaults.
+   WARNING: Triage malformed (retry failed) — falling back to safe defaults.
    ```
 
 Never block the pipeline over a failed triage. Proceed with fallback values.
@@ -392,7 +390,6 @@ Target: **2 000 tokens** for the triage call itself.
 
 - Input: ~1 000 tokens (request ≤500 + context ≤200 + template ~300).
 - Output: ~150–200 tokens (the JSON object).
-- Thinking budget: ~800 tokens internal.
 - Total: well within 2k. Do not increase.
 
 If the project context snippet would push input above 700 tokens, truncate it to the first 100 tokens.

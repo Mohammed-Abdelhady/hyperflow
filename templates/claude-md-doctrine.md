@@ -35,15 +35,16 @@ Every distinct task or request produces its own commit. Never bundle two feature
 
 Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix:` / `docs:` / `refactor:` / `chore:` / `perf:` / `style:` / `test:`.
 
-## Model tier split
+## Roles
 
-- **Workers** (Implementer / Searcher / Writer) → **Sonnet** (worker tier)
-- **Per-batch / per-sub-task Reviewer** → **Sonnet** (worker tier — small diff, L1-L2 territory)
-- **Final integration Reviewer** (end-of-chain over cumulative diff) → **Opus** (thinking tier)
-- **Standalone Reviewer** (audit, security sweep, final sanity check) → **Opus**
-- **Debugger / Analyst / Planner / Brainstormer / Orchestrator** → **Opus**
+**Every agent runs on the current session model** — there is no model-tier routing and no model configuration. Roles differ by responsibility, not by model:
 
-Workers never review. Reviewers never coordinate. Triage stays on the thinking tier.
+- **Workers** (Implementer / Searcher / Writer) execute mechanical work.
+- **Per-batch / per-sub-task Reviewer** runs an anchored review of one batch's small diff (L1-L2 territory).
+- **Final integration Reviewer** (end-of-chain over cumulative diff) and **Standalone Reviewer** (audit, security sweep, final sanity check) are decision-agent passes.
+- **Debugger / Analyst / Planner / Brainstormer / Orchestrator** are decision agents.
+
+Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation.
 
 ## File-first artefacts
 

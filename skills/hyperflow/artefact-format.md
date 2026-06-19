@@ -15,7 +15,7 @@ Applies to every planning artefact the orchestrator produces. **All artefacts li
 | Project memory | `.hyperflow/memory/<category>.md` | `scope` Step 6 · `cache` CRUD |
 | Layer-0 analysis | `.hyperflow/profile.md`, `architecture.md`, etc. | `scaffold` |
 
-The `docs/` folder is reserved for polished end-user / contributor documentation (installation guide, provider setup, model-routing reference). Never put a working spec or task plan there.
+The `docs/` folder is reserved for polished end-user / contributor documentation (installation guide, provider setup). Never put a working spec or task plan there.
 
 ## Core conventions
 
@@ -41,7 +41,7 @@ A markdown table that summarises the artefact's current state. The user reads th
 | Branch     | `feat/<slug>`                                    |
 | Commits    | 7 since main · per-task cadence                  |
 | Wall-clock | 12m elapsed · ETA ~8m                            |
-| Tokens     | thinking 145k · worker 220k · total 365k         |
+| Tokens     | 30 agents · ~365k total                          |
 | Specialists| `api-reviewer, security-reviewer · debugger`     |
 ```
 
@@ -126,9 +126,9 @@ The `Skipped` section is mandatory when the spec lists files that the Planner co
 ## Cost table
 
 ```
-| Tier      | Agents | Tokens   |
+| Role      | Agents | Tokens   |
 |-----------|-------:|---------:|
-| Thinking  |     16 |     ~80k |
+| Reviewer  |     16 |     ~80k |
 | Worker    |     14 |    ~140k |
 | **Total** | **30** | **~220k**|
 ```

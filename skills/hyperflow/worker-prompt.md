@@ -1,6 +1,6 @@
 # Worker Prompt Template
 
-Use this template when dispatching Sonnet workers via the Agent tool. **Every section below is mandatory** — the Team Lead must fill each one before dispatch. A sparse / vague brief is a doctrine violation: the worker will fill the gaps with assumptions, and the per-batch Reviewer can't catch what wasn't asked for. Detail floor exists so the worker executes the right work, not a plausible-looking nearby alternative.
+Use this template when dispatching workers via the Agent tool. **Every section below is mandatory** — the Team Lead must fill each one before dispatch. A sparse / vague brief is a doctrine violation: the worker will fill the gaps with assumptions, and the per-batch Reviewer can't catch what wasn't asked for. Detail floor exists so the worker executes the right work, not a plausible-looking nearby alternative.
 
 ## Template
 
@@ -31,7 +31,7 @@ Use this template when dispatching Sonnet workers via the Agent tool. **Every se
 
 **Quality bar — every test case must demonstrate real domain understanding of THIS task. Formulaic placeholders are a doctrine violation.**
 
-The Thinking Lead writes test cases by thinking through:
+The orchestrator writes test cases by thinking through:
 
 1. **Domain logic** — what does this feature actually do in the user's world? What are the real inputs users provide (not toy examples)? What does success look like in production?
 2. **Domain edge cases** — boundary conditions specific to this surface. For a search bar: empty query, only-whitespace, single character, very long query (>1000 chars), special chars (`<`, `&`, `'`), Unicode (emoji, CJK, combining marks), RTL strings, no results, results truncated, debounce timing. For an auth flow: missing token, expired token, malformed token, token for deleted user, simultaneous logins from two devices, refresh during request. For a money calculation: zero, negative, rounding boundaries (.005 banker's rounding), currency-specific decimals (JPY has 0, KWD has 3), overflow at large values.
@@ -85,7 +85,7 @@ Project Context (load on demand):
 Workers in lean mode read these files via the `Read` tool when (and only when) their task actually needs the information. No quality regression — same content, lazy access. Saves ~2k tokens × N parallel workers per batch because the bundle isn't re-injected into every worker prompt.]
 
 ## Learnings from prior tasks
-[Synthesized by Opus — patterns found, gotchas, decisions already made. Omit section if first task.]
+[Synthesized by the orchestrator — patterns found, gotchas, decisions already made. Omit section if first task.]
 
 ## Constraints
 - Only modify files listed in scope
@@ -125,7 +125,6 @@ Return ONE of (no preamble, no postamble, no extra commentary — see Constraint
 ```
 Agent({
   description: "T3 Implementer · UserAvatar component",
-  model: "sonnet",
   prompt: `## Task
 Add a UserAvatar component that displays user initials over a deterministic colored background.
 

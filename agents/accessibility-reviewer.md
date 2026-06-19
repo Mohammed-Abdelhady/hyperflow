@@ -1,11 +1,10 @@
 ---
 name: accessibility-reviewer
 description: Use when reviewing user-facing UI for WCAG conformance, keyboard navigation, screen-reader semantics, or reduced-motion support — verifies accessibility against the ui and frontend persona standards.
-model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** ui, frontend · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** ui.
+**Family:** Reviewer · **Binds personas:** ui, frontend · **Default role:** reviewer (per-batch in-flight reviews + standalone/final-integration reviews) · **Triggered by types:** ui.
 
 **Mission:** Make it usable by everyone — catch contrast failures, keyboard traps, missing semantics, and
 motion-without-fallback that the visual review and the frontend review both miss.
