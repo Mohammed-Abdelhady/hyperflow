@@ -375,6 +375,13 @@ After the batched Reviewer approves: present the synthesis and approaches to the
 
 **Cross-section coherence benefit:** the batched Reviewer sees all sections simultaneously and catches conflicts that per-sub-phase passes miss (e.g., a contradiction between §1 Architecture and §5 File structure).
 
+**Responsible specialists (per section).** Each section Writer brief records a `Responsible specialist(s):` line —
+the [specialist agent(s)](../../agents/README.md) that will own that surface downstream, from the triage
+`specialists[]` finalized by the [Brain](../../agents/brain.md) and intersected with the section's concern (a design
+spanning several surfaces assigns **multiple** specialists across its sections). This roster is carried into the
+Step 8 status block so `scope`/`dispatch` inherit it — the Brain is consulted once, not re-derived per phase
+(DOCTRINE rule 17).
+
 #### Step 7a — Structural sections (Architecture + Data flow)
 
 Agents — `Writer` ×2 (Sonnet). Dispatched in parallel with Steps 7b and 7c.
@@ -449,11 +456,12 @@ The draft already lives at `.hyperflow/specs/<slug>.draft.md` (written progressi
 
 | Field    | Value                                          |
 |----------|------------------------------------------------|
-| Status   | approved                                       |
-| Sections | 5 / 5 approved                                 |
-| Date     | <YYYY-MM-DD>                                   |
-| Trigger  | `<slash command or trigger phrase>`            |
-| Approach | <one-line approach name from Step 6>           |
+| Status      | approved                                    |
+| Sections    | 5 / 5 approved                              |
+| Date        | <YYYY-MM-DD>                                |
+| Trigger     | `<slash command or trigger phrase>`         |
+| Approach    | <one-line approach name from Step 6>        |
+| Specialists | <Brain-decided responsible specialist agents, e.g. `api-reviewer, security-reviewer · analyst`> |
 
 ## TL;DR
 
