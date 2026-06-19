@@ -297,6 +297,32 @@ $sticky_line"
 ## Active Tasks (incomplete from prior sessions)
 $tlist"
 
+  # Pending two-session handoffs (committed .hyperflow-handoff/ packages). STATUS
+  # decides which side we're on: planned ⇒ build here; built ⇒ review here.
+  HANDOFF_DIR="$(dirname "$HF_DIR")/.hyperflow-handoff"
+  if [ -d "$HANDOFF_DIR" ]; then
+    hlist=""
+    for hp in "$HANDOFF_DIR"/*/; do
+      [ -f "${hp}STATUS" ] || continue
+      slug="$(basename "$hp")"
+      st="$(head -1 "${hp}STATUS" 2>/dev/null | tr -d '[:space:]')"
+      case "$st" in
+        planned) hlist="${hlist}- \`${slug}\` awaiting build — run \`/hyperflow:dispatch ${slug}\` (or \`/hyperflow:handoff pickup ${slug}\`)
+" ;;
+        built)
+          rng="$(grep -oE '[0-9a-f]{7,40}\.\.[0-9a-f]{7,40}' "${hp}COMPLETION.md" 2>/dev/null | head -1)"
+          hlist="${hlist}- \`${slug}\` built — run \`/hyperflow:audit ${rng}\` (or \`/hyperflow:handoff review ${slug}\`)
+" ;;
+        reviewed) hlist="${hlist}- \`${slug}\` reviewed — \`/hyperflow:handoff complete ${slug}\` to archive
+" ;;
+      esac
+    done
+    [ -n "$hlist" ] && CONTENT="$CONTENT
+
+## Handoff pending
+$hlist"
+  fi
+
   # Lean-mode situational summary (one line consolidating all state).
   # Emitted ONLY when mode=lean. Dedicated ## sections above continue to fire
   # when they have attention-needed content (memory compaction advisory, sticky
