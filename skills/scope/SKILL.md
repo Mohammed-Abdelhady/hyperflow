@@ -239,6 +239,10 @@ The Planner produces, for each sub-task:
 - Files to read / modify / create
 - Dependencies — parallel vs sequential
 - Complexity estimate (drives review level cap downstream)
+- **Responsible specialist(s)** — ≥ 1 [specialist agent](../../agents/README.md) that owns the sub-task's surface,
+  taken from the triage `specialists[]` finalized by the [Brain](../../agents/brain.md) (inherited from the spec
+  status block when the chain came through spec; otherwise the Planner derives it from the triage mapping and
+  consults the Brain on a gated flow). This is the reviewer `dispatch` will fire for that sub-task (DOCTRINE rule 17).
 
 **Oversize-split mandate (DOCTRINE Layer 3 · Thinking Lead — Planner).** Before finalising the batch graph, the Planner runs a split checklist on every candidate sub-task. Any sub-task that triggers ANY of these signals MUST be split into 2+ smaller sub-tasks (each at `complexity = low | medium`):
 
@@ -305,7 +309,7 @@ Dispatch in parallel:
 
 Then dispatch `**Reviewer** — verifying execution plan matches Step 3 batch graph` over both Writers. `NEEDS_REVISION` re-dispatches 4c only.
 
-**Step 4 final verify.** After all sub-phases complete, dispatch `**Reviewer** — verifying assembled task file vs design` to confirm every design requirement maps to at least one sub-task and no orphan sub-tasks exist. Writers write to `.hyperflow/tasks/<task-slug>.md` using the template below.
+**Step 4 final verify.** After all sub-phases complete, dispatch `**Reviewer** — verifying assembled task file vs design` to confirm every design requirement maps to at least one sub-task, no orphan sub-tasks exist, and **every sub-task names ≥ 1 responsible specialist** (`Specialist:` field) plus the `Specialists` status row is populated. Writers write to `.hyperflow/tasks/<task-slug>.md` using the template below.
 
 Task-file template — follows [`artefact-format.md`](../hyperflow/artefact-format.md). The Writer applies the full template by default; reduces to the `fast` variant only when triage classifies `complexity=low AND sub-tasks<=2`.
 
@@ -316,12 +320,13 @@ Task-file template — follows [`artefact-format.md`](../hyperflow/artefact-form
 
 | Field      | Value                                                 |
 |------------|-------------------------------------------------------|
-| Status     | pending                                               |
-| Progress   | `░░░░░░░░░░░░░░░░░░░░`  0 / <total> sub-tasks (0%)    |
-| Branch     | `<feat/slug or current branch>`                       |
-| Commits    | 0 since main · per-task cadence                       |
-| Wall-clock | not started                                           |
-| Tokens     | thinking 0k · worker 0k · total 0k                    |
+| Status      | pending                                              |
+| Progress    | `░░░░░░░░░░░░░░░░░░░░`  0 / <total> sub-tasks (0%)   |
+| Branch      | `<feat/slug or current branch>`                      |
+| Commits     | 0 since main · per-task cadence                      |
+| Wall-clock  | not started                                          |
+| Tokens      | thinking 0k · worker 0k · total 0k                   |
+| Specialists | <Brain-decided responsible specialist agents across this task> |
 
 ## Goal
 
@@ -371,9 +376,9 @@ Batch N — Final integration review      (1 sequential)
 ### Batch 1 — <theme> (<parallel|sequential>)
 
 - [ ] T1 — <Role> · <one-line task>
-       Read: `<file>` · Modify: `<file>` · Complexity: <low|medium|high>
+       Read: `<file>` · Modify: `<file>` · Complexity: <low|medium|high> · Specialist: <reviewer agent>
 - [ ] T2 — <Role> · <one-line task>
-       Create: `<file>` · Complexity: <low|medium|high>
+       Create: `<file>` · Complexity: <low|medium|high> · Specialist: <reviewer agent>
 
 ### Batch 2 — <theme> (depends on Batch 1)
 ...

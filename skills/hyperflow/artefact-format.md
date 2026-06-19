@@ -41,6 +41,7 @@ A markdown table that summarises the artefact's current state. The user reads th
 | Commits    | 7 since main · per-task cadence                  |
 | Wall-clock | 12m elapsed · ETA ~8m                            |
 | Tokens     | thinking 145k · worker 220k · total 365k         |
+| Specialists| `api-reviewer, security-reviewer · debugger`     |
 ```
 
 Field rules:
@@ -49,6 +50,7 @@ Field rules:
 - **Progress** — only on task files; spec files use `Section 4 / 5 approved` style; audit files omit the row (use Verdict instead — see audit additions below)
 - **Branch / Commits** — only on task files (omit rows on spec/audit files)
 - **Wall-clock / Tokens** — only when live (omit rows on completed-and-archived files; or replace with totals + `· final`)
+- **Specialists** — the Brain-decided responsible specialist agents ([`../../agents/README.md`](../../agents/README.md)) for this artefact; present on spec + task files so `dispatch`/`audit` inherit the roster (omit only when none apply)
 - Progress-bar string goes in backticks so the box-drawing characters render as inline code and don't trigger markdown italics on `*` or emphasis on `_`
 - Always exactly two columns (Field / Value). Markdown auto-pads to the widest cell — no character counting required
 
@@ -80,9 +82,9 @@ Each sub-task or section gets one checkbox line + one indented detail line. No m
 
 ```
 - [x] T1 — Writer · Author compaction protocol reference
-       Read: spec, cache/SKILL.md · Create: skills/cache/references/compaction.md · Complexity: medium
+       Read: spec, cache/SKILL.md · Create: skills/cache/references/compaction.md · Complexity: medium · Specialist: searcher
 - [ ] T2 — Implementer · Add memory.compactionThreshold to config/schema.json
-       Modify: config/schema.json · Complexity: low
+       Modify: config/schema.json · Complexity: low · Specialist: backend-reviewer
 ```
 
 The detail line is two spaces indented + the file path(s) + complexity. Long task descriptions move to the spec file.
