@@ -16,7 +16,6 @@
     "ai-coding",
     "multi-agent",
     "orchestration",
-    "model-routing",
     "code-review",
     "project-memory",
     "skills"
@@ -25,7 +24,7 @@
   "interface": {
     "displayName": "Hyperflow",
     "shortDescription": "Orchestrate Codex tasks with memory, routing, and review",
-    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, task decomposition, thinking-tier review, fast worker execution, persistent project memory, security guardrails, and release gates.",
+    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, task decomposition, Worker → Reviewer review at every step, parallel worker execution, persistent project memory, security guardrails, and release gates.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [

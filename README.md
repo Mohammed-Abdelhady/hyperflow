@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="docs/assets/hero-vertical.svg" />
-    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then the chain: amplify → spec → scope → dispatch → audit → deploy, with thinking/worker tiers and a Worker → Reviewer review at every step" width="100%" />
+    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then the chain: amplify → spec → scope → dispatch → audit → deploy, with a Worker → Reviewer review at every step" width="100%" />
   </picture>
 </p>
 
@@ -30,8 +30,6 @@
 <p align="center">
   <a href="https://mohammed-abdelhady.github.io/hyperflow/">Landing site</a> &middot;
   <a href="docs/installation.md">Installation</a> &middot;
-  <a href="docs/providers.md">Providers</a> &middot;
-  <a href="docs/model-routing.md">Model Routing</a> &middot;
   <a href="docs/orchestration.md">Orchestration</a> &middot;
   <a href="CHANGELOG.md">Changelog</a>
 </p>
@@ -47,7 +45,7 @@ Not just another orchestrator — three things set Hyperflow apart:
 - **Depth that adapts.** Triage classifies every task and picks a flow profile (fast → scientific), so a 5-line fix never triggers a 300k-token deep run.
 - **Compaction at the right boundary.** Automatic context compaction is held until dispatch reaches its end-of-chain gate, then checks estimated transcript usage and snapshots task state before compacting.
 
-Underneath: a structural thinking/worker model split (expensive models plan & review, fast models execute), 15 persona-stitched experts, intent auto-routing, and four auto-detected providers — all local, no daemon.
+Underneath: a structural role separation (decision agents plan & review, workers execute — all on your session model), 15 persona-stitched experts, intent auto-routing, and host-agnostic dispatch — all local, no daemon.
 
 ## The chain
 
@@ -105,24 +103,25 @@ hyperflow trace "tests fail after the auth refactor"
 
 Auto-routing is on by default — say "audit the diff" or "debug this test" and the right skill runs without the `/hyperflow:*` prefix.
 
-Setup, model routing, and per-provider notes → [Installation](docs/installation.md) · [Providers](docs/providers.md).
+Setup and host notes → [Installation](docs/installation.md).
 
 ## How it works
 
 Invoke a skill. Chain-starters auto-advance through the rest — no always-on orchestrator, no background process, everything in your terminal.
 
-### Thinking / worker split
+### Role separation
 
-The split is structural, not a setting — each tier does only what it's best at.
+The separation is structural, not a setting — each role does only what it's best at. **Every agent runs on your current session model** (whatever the host uses); roles differ by responsibility, not by model.
 
-| Tier | Models | Role |
-|------|--------|------|
-| **Thinking** | GPT-5.5 · Opus 4.8 · Gemini 3 Pro | Orchestrate, triage, brainstorm, review every output, run the final integration pass |
-| **Worker** | GPT-5.4 fast mode · Sonnet 4.6 · Gemini 3.5 Flash | Execute in parallel — implement, search, write |
+| Role | Does |
+|------|------|
+| **Orchestrator** | Coordinate workers, sequence dispatches, manage chain state |
+| **Decision agent** | Triage, brainstorm, decide, review every output, run the final integration pass |
+| **Worker** | Execute in parallel — implement, search, write |
 
 ### Review at every granularity
 
-Worker → Reviewer is an iron rule. Independent sub-tasks fan out in parallel; each worker feeds its own thinking-tier reviewer before the batch advances. Every non-trivial phase decomposes into named sub-phases (`2a`, `2b`, `2c`…), each with its own reviewer. Per-batch reviewers do L1–L2 spot-checks; a final integration reviewer runs once over the cumulative diff. Each reviewer returns a verdict — `APPROVE` or `NEEDS_REVISION` (retry once with findings injected).
+Worker → Reviewer is an iron rule. Independent sub-tasks fan out in parallel; each worker feeds its own reviewer before the batch advances. Every non-trivial phase decomposes into named sub-phases (`2a`, `2b`, `2c`…), each with its own reviewer. Per-batch reviewers do L1–L2 spot-checks; a final integration reviewer runs once over the cumulative diff. Each reviewer returns a verdict — `APPROVE` or `NEEDS_REVISION` (retry once with findings injected).
 
 Reviews and investigations are run by **domain specialists**, not a generic reviewer — see below.
 
@@ -132,9 +131,9 @@ Beyond the personas, Hyperflow ships a registry of **named, domain-specialized a
 
 - **Reviewers** — `frontend-reviewer`, `backend-reviewer`, `api-reviewer`, `database-reviewer`, `security-reviewer`, `vulnerability-reviewer`, `devops-reviewer`, `performance-reviewer`, `algorithm-reviewer` (Big-O & data-structure complexity), `accessibility-reviewer`, `mobile-reviewer`, `data-ml-reviewer`, `compliance-reviewer`.
 - **Investigators** — `searcher`, `debugger`, `analyst`, `researcher`.
-- **Brain** — a thinking-tier router consulted once after triage that decides *which* specialists are responsible, then writes that roster into the artefact so the whole chain inherits it. `amplify`/`spec`/`scope` announce the responsible specialists; `dispatch`/`audit`/`trace`/`deploy` dispatch them.
+- **Brain** — a decision-agent router consulted once after triage that decides *which* specialists are responsible, then writes that roster into the artefact so the whole chain inherits it. `amplify`/`spec`/`scope` announce the responsible specialists; `dispatch`/`audit`/`trace`/`deploy` dispatch them.
 
-Each specialist **binds** the matching persona for its standards and adds a strict charter, a **web-research-first** step (it looks up current best-practices / CVEs / framework docs before judging — on `deep`/`research`/`scientific`/`security` flows), and authority to fan out depth-capped sub-agents. Tiers are **provider-neutral** (`thinking`/`worker`) and resolve per provider — Opus/Sonnet, GPT-5.5/5.4, Gemini 3 Pro/Flash. See [`agents/README.md`](agents/README.md).
+Each specialist **binds** the matching persona for its standards and adds a strict charter, a **web-research-first** step (it looks up current best-practices / CVEs / framework docs before judging — on `deep`/`research`/`scientific`/`security` flows), and authority to fan out depth-capped sub-agents. Specialists run on the current session model like every other agent — they specialise the *role*, not the model. See [`agents/README.md`](agents/README.md).
 
 ### Triage picks the depth
 
@@ -219,19 +218,12 @@ Fifteen skills. Three chain-starters auto-advance through the chain; the rest ar
 
 ## Providers
 
-| Provider | Thinking | Worker |
-|----------|----------|--------|
-| Codex App/CLI | GPT-5.5 (adaptive reasoning) | GPT-5.4 (fast mode) |
-| Claude Code | Opus 4.8 | Sonnet 4.6 |
-| OpenCode | Claude Opus 4.8 | Sonnet 4.6 |
-| Antigravity | Gemini 3 Pro | Gemini 3.5 Flash |
-
-Auto-detected at session start. Override in `~/.hyperflow/config.json`. See [Model Routing](docs/model-routing.md).
+Hyperflow runs on whatever model your agent session uses — Claude Code, Codex, OpenCode, Antigravity, or any other host. Every dispatched agent inherits the current session model; there is no model configuration and nothing to set up. Roles (orchestrator, decision agent, worker, reviewer) differ by responsibility, not by model.
 
 ## Documentation
 
 - [Landing site](https://mohammed-abdelhady.github.io/hyperflow/) — the full overview
-- [Installation](docs/installation.md) · [Providers](docs/providers.md) · [Model Routing](docs/model-routing.md) · [Orchestration](docs/orchestration.md)
+- [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md)
 - [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · contributor guide in [`CLAUDE.md`](CLAUDE.md)
 
 ## License

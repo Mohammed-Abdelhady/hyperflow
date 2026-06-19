@@ -71,8 +71,8 @@ class Cast:
 
 RESET   = "\x1b[0m"
 BOLD    = "\x1b[1m"
-MAGENTA = "\x1b[35m"   # Orchestrator / banner
-CYAN    = "\x1b[36m"   # Workers / Sonnet
+MAGENTA = "\x1b[35m"   # Orchestrator / banner / decision + review roles
+CYAN    = "\x1b[36m"   # Workers
 GREEN   = "\x1b[32m"   # Success ✓
 RED     = "\x1b[31m"   # Failure ✗ / BLOCKED / SECURITY_VIOLATION
 YELLOW  = "\x1b[33m"   # Memory
@@ -90,20 +90,17 @@ def rb(s: str) -> str:   return RED + BOLD + s + RESET   # red bold
 
 # ---------------------------------------------------------------------------
 # Demo script — 8 scenes, ~32s total, driven by features.json
-# Elegant style: no ⚡, ✓, ✗ icons. Em-dash separators. Bold for thinking-tier.
+# Elegant style: no ⚡, ✓, ✗ icons. Em-dash separators. Bold for decision/review roles.
 # ---------------------------------------------------------------------------
 
 def script(features: dict) -> Cast:
     c = Cast()
 
     version    = features["version"]
-    providers  = features["providers"]
     memory_cfg = features["memory"]
 
-    first_provider = providers[0]
-
     # ── Scene 1 · Activation (0–7s raw) ──────────────────────────────────────
-    # Shows: startup, thinking/worker model split, memory loaded from prior session.
+    # Shows: startup, session-model note, memory loaded from prior session.
     # Target GIF playback at 1.6x: ~4.5s
     c.prompt("~/hyperflow-demo $ ")
     c.wait(0.50)
@@ -114,10 +111,7 @@ def script(features: dict) -> Cast:
 
     c.line(mg(f"Hyperflow v{version}"))
     c.wait(0.20)
-    c.line(
-        gr("Thinking: ") + mg(first_provider["thinking"]) +
-        gr("  ·  Worker: ") + worker(first_provider["worker"])
-    )
+    c.line(gr("Every agent runs on your session model — roles differ by responsibility"))
     c.wait(0.50)
     c.line(gr("Analyzing project — 4 searchers in parallel"))
     c.wait(1.20)
@@ -128,9 +122,9 @@ def script(features: dict) -> Cast:
     # Scene 1 ends ≈ 7s raw (≈ 4.4s at 1.6x)
 
     # ── Scene 2 · Full chain: spec → scope → dispatch ─────────────────────────
-    # Shows: chain-starter, triage, thinking-tier spec, worker-tier dispatch,
-    #        per-batch thinking-tier review, quality gates, wrap-up.
-    # Thinking/worker split legible via explicit tier labels on every Agent line.
+    # Shows: chain-starter, triage, spec, dispatch, per-batch review,
+    #        quality gates, wrap-up.
+    # Role split legible via explicit role labels on every Agent line.
     #
     # Claude Code real markers used:
     #   ⏺  filled-circle status bullet ("I'm doing X")
@@ -160,20 +154,20 @@ def script(features: dict) -> Cast:
     c.line(gr("   your choice: ") + worker("Auto"))
     c.wait(0.60)
 
-    # ── Triage — Thinking-tier Classifier ────────────────────────────────────
+    # ── Triage — Classifier (decision role) ──────────────────────────────────
     c.line(gr(""))
-    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Thinking") + gr(" — Classifier, triage)"))
+    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Decision") + gr(" — Classifier, triage)"))
     c.line(gr("  ⎿  Done (4 tool uses · 1.8k tokens · 6s)"))
     c.wait(0.30)
     c.line(gr("  types:[api, security, frontend] · flow: standard · ambiguity: 0.4 (light)"))
     c.wait(0.70)
 
-    # ── Spec phase: Thinking-tier Analyst + Worker Writers ────────────────────
+    # ── Spec phase: Analyst (decision role) + Worker Writers ──────────────────
     c.line(gr(""))
     c.line(mg("⏺") + gr(" ") + bo("Explore") + gr("(Map existing auth context)"))
     c.line(gr("  ⎿  Done (18 tool uses · 22.4k tokens · 32s)"))
     c.wait(0.30)
-    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Thinking") + gr(" — Reviewer, context coverage)"))
+    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Reviewer") + gr(" — context coverage)"))
     c.line(gr("  ⎿  Done (3 tool uses · 6.1k tokens · 9s) · ") + gn("PASS"))
     c.wait(0.60)
 
@@ -188,10 +182,10 @@ def script(features: dict) -> Cast:
     c.wait(0.60)
 
     c.line(gr(""))
-    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Thinking") + gr(" — Analyst, 6-dim exploration)"))
+    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Decision") + gr(" — Analyst, 6-dim exploration)"))
     c.line(gr("  ⎿  Done (6 tool uses · 14.8k tokens · 28s)"))
     c.wait(0.40)
-    c.line(mg("⏺") + gr(" 5 sections — each ") + worker("Worker") + gr(" Writer → ") + mg("Thinking") + gr(" Reviewer → approved"))
+    c.line(mg("⏺") + gr(" 5 sections — each ") + worker("Worker") + gr(" Writer → ") + mg("Reviewer") + gr(" → approved"))
     c.line(gr("  ⎿  Architecture · Data flow · Key decisions · Edge cases · File structure"))
     c.wait(0.50)
     c.line(mg("⏺") + gr(" ") + bo("Write") + gr("(.hyperflow/specs/auth.md)"))
@@ -200,7 +194,7 @@ def script(features: dict) -> Cast:
     c.line(mg("⏺") + gr(" Spec complete. Auto-chaining to ") + worker("/hyperflow:scope") + gr("."))
     c.wait(0.70)
 
-    # ── Scope: Thinking-tier Planner decomposes into batched task file ────────
+    # ── Scope: Planner (decision role) decomposes into batched task file ──────
     c.line(gr(""))
     c.line(mg("⏺") + gr(" ") + bo("Skill") + gr("(hyperflow:scope)"))
     c.line(gr("  ⎿  Successfully loaded skill"))
@@ -208,7 +202,7 @@ def script(features: dict) -> Cast:
     c.line(mg("⏺") + gr(" ") + bo("Explore") + gr("(Affected files + tests)"))
     c.line(gr("  ⎿  Done (12 tool uses · 18.6k tokens · 22s)"))
     c.wait(0.30)
-    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Thinking") + gr(" — Planner, batch graph)"))
+    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Decision") + gr(" — Planner, batch graph)"))
     c.line(gr("  ⎿  Done (4 tool uses · 9.2k tokens · 17s)"))
     c.wait(0.30)
     c.line(mg("⏺") + gr(" ") + bo("Write") + gr("(.hyperflow/tasks/auth.md)"))
@@ -228,7 +222,7 @@ def script(features: dict) -> Cast:
     c.line(gr("  Auto-chaining to ") + worker("/hyperflow:dispatch") + gr("."))
     c.wait(0.60)
 
-    # ── Dispatch: parallel Worker-tier agents, Thinking-tier reviewer ─────────
+    # ── Dispatch: parallel Worker agents, Reviewer ────────────────────────────
     c.line(gr(""))
     c.line(mg("⏺") + gr(" ") + bo("Skill") + gr("(hyperflow:dispatch)"))
     c.line(gr("  ⎿  Successfully loaded skill"))
@@ -243,7 +237,7 @@ def script(features: dict) -> Cast:
     c.line(gr("   └ T3: ") + worker("Implementer  ") + gr("[security + api]  · 22 tool uses · 48.7k tokens"))
     c.line(gr("     ⎿  Done"))
     c.wait(0.50)
-    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Thinking") + gr(" — Batch 1 reviewer, L1–L2)"))
+    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Reviewer") + gr(" — Batch 1, L1–L2)"))
     c.line(gr("  ⎿  Done (14 tool uses · 31.5k tokens · 51s) · ") + gn("PASS"))
     c.wait(0.30)
     c.line(gr("  learnings injected: JWT RS256 · zod validation · server sessions"))
@@ -260,7 +254,7 @@ def script(features: dict) -> Cast:
     c.line(gr("   └ T4: ") + worker("Implementer  ") + gr("[frontend + ui]   · 18 tool uses · 38.4k tokens"))
     c.line(gr("     ⎿  Done (batch 1 learnings injected)"))
     c.wait(0.40)
-    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Thinking") + gr(" — Final integration reviewer, L1–L2)"))
+    c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Reviewer") + gr(" — Final integration, L1–L2)"))
     c.line(gr("  ⎿  Done (11 tool uses · 24.3k tokens · 42s) · ") + gn("PASS"))
     c.wait(0.30)
     c.line(mg("⏺") + gr(" ") + bo("Bash") + gr("(pnpm vitest · tsc · build · lint)"))
@@ -279,11 +273,11 @@ def script(features: dict) -> Cast:
     c.line(gr(""))
     c.line(gr("── Hyperflow ──────────────────────────────────────────────────"))
     c.wait(0.20)
-    c.line(mg("Thinking") + gr(f"  ({first_provider['thinking']:10s})  14 agents  ") + yl("89.2k") + gr(" tokens"))
+    c.line(mg("Decision / review") + gr("   14 agents  ") + yl("89.2k") + gr(" tokens"))
     c.wait(0.20)
-    c.line(worker("Worker  ") + gr(f"  ({first_provider['worker']:10s})  13 agents  ") + yl("198.4k") + gr(" tokens"))
+    c.line(worker("Worker") + gr("              13 agents  ") + yl("198.4k") + gr(" tokens"))
     c.wait(0.20)
-    c.line(gr("Total                            29 agents  ") + yl("292.0k") + gr(" tokens"))
+    c.line(gr("Total               29 agents  ") + yl("292.0k") + gr(" tokens"))
     c.wait(0.30)
     c.line(gr("───────────────────────────────────────────────────────────────"))
     c.wait(0.50)

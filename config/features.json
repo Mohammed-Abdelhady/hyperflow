@@ -24,8 +24,8 @@
     },
     {
       "n": 2,
-      "name": "Model Routing",
-      "summary": "Configurable thinking/worker per provider + priority chain",
+      "name": "Role Dispatch",
+      "summary": "Every agent runs on the current session model; roles differ by responsibility, not model.",
       "color": "thinking"
     },
     {
@@ -97,7 +97,7 @@
       "name": "dispatch",
       "command": "/hyperflow:dispatch",
       "tagline": "Execute the batches",
-      "purpose": "Dispatch parallel workers + thinking-tier reviews + final integration review; endpoint of the chain",
+      "purpose": "Dispatch parallel workers + Worker → Reviewer review + final integration review; endpoint of the chain",
       "chain": "endpoint"
     },
     {
@@ -154,7 +154,7 @@
     "location": "agents/",
     "router": {
       "name": "brain",
-      "tier": "thinking",
+      "tier": "decision-maker",
       "role": "decision-maker",
       "focus": "Selects the responsible specialist roster after triage; decides web-research + fan-out (cheap pass-through on fast/standard flows)"
     },
@@ -165,7 +165,7 @@
           "frontend",
           "ui"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "backend-reviewer",
@@ -173,21 +173,21 @@
           "api",
           "architect"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "api-reviewer",
         "personas": [
           "api"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "database-reviewer",
         "personas": [
           "db"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "database-optimization-reviewer",
@@ -195,14 +195,14 @@
           "db",
           "performance"
         ],
-        "tier": "thinking"
+        "tier": "reviewer"
       },
       {
         "name": "security-reviewer",
         "personas": [
           "security"
         ],
-        "tier": "thinking"
+        "tier": "reviewer"
       },
       {
         "name": "vulnerability-reviewer",
@@ -210,21 +210,21 @@
           "security",
           "scientific"
         ],
-        "tier": "thinking"
+        "tier": "reviewer"
       },
       {
         "name": "devops-reviewer",
         "personas": [
           "devops"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "performance-reviewer",
         "personas": [
           "performance"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "algorithm-reviewer",
@@ -232,7 +232,7 @@
           "performance",
           "scientific"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "accessibility-reviewer",
@@ -240,7 +240,7 @@
           "ui",
           "frontend"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "mobile-reviewer",
@@ -249,7 +249,7 @@
           "ui",
           "performance"
         ],
-        "tier": "worker/thinking"
+        "tier": "reviewer"
       },
       {
         "name": "data-ml-reviewer",
@@ -257,7 +257,7 @@
           "scientific",
           "db"
         ],
-        "tier": "thinking"
+        "tier": "reviewer"
       },
       {
         "name": "compliance-reviewer",
@@ -265,7 +265,7 @@
           "security",
           "docs"
         ],
-        "tier": "thinking"
+        "tier": "reviewer"
       }
     ],
     "investigators": [
@@ -282,7 +282,7 @@
           "bugfix",
           "test"
         ],
-        "tier": "thinking"
+        "tier": "decision agent"
       },
       {
         "name": "analyst",
@@ -290,14 +290,14 @@
           "architect",
           "research"
         ],
-        "tier": "thinking"
+        "tier": "decision agent"
       },
       {
         "name": "researcher",
         "personas": [
           "research"
         ],
-        "tier": "thinking"
+        "tier": "decision agent"
       }
     ],
     "webResearch": {
@@ -313,26 +313,18 @@
   "providers": [
     {
       "name": "Claude Code",
-      "thinking": "Opus 4.8",
-      "worker": "Sonnet 4.6",
       "key": "claude-code"
     },
     {
       "name": "OpenCode",
-      "thinking": "Claude Opus 4.8",
-      "worker": "Sonnet 4.6",
       "key": "opencode"
     },
     {
       "name": "Codex",
-      "thinking": "GPT-5.5 (adaptive reasoning)",
-      "worker": "GPT-5.4 (fast mode)",
       "key": "codex"
     },
     {
       "name": "Antigravity",
-      "thinking": "Gemini 3 Pro",
-      "worker": "Gemini 3.5 Flash",
       "key": "antigravity"
     }
   ],
@@ -340,7 +332,7 @@
     "Parallel worker dispatch (independent subtasks run simultaneously)",
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
     "Codex/OpenCode portable workflow adapter for big tasks",
-    "Thinking-tier review of every worker output (iron rule)",
+    "Reviewer review of every worker output (iron rule)",
     "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
     "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
     "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
@@ -353,7 +345,7 @@
     "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
     "4 provider support (Claude Code, Codex, OpenCode, Antigravity)",
     "Auto-detect provider via env vars or folder presence",
-    "Configurable model routing per role",
+    "Every agent runs on the current session model; roles differ by responsibility",
     "Quality gates (lint, typecheck, build, tests)",
     "Security blocklists for sensitive files and destructive commands",
     "Conventional commits + automated release versioning",
