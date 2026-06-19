@@ -224,7 +224,7 @@ Debug is **off the auto-chain** — it's standalone. After Step 7 reviewer passe
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](references/DOCTRINE.md). See also [worker-prompt.md](references/worker-prompt.md) and [reviewer-prompt.md](references/reviewer-prompt.md).
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). See also [worker-prompt.md](references/worker-prompt.md) and [reviewer-prompt.md](references/reviewer-prompt.md).
 
 **Failure recovery (rule 14).** Worker errors and NEEDS_REVISION verdicts follow the canonical policy in `skills/hyperflow/failure-recovery.md`. For trace, a failed hypothesis test (Step 4) marks the hypothesis `INCONCLUSIVE` rather than aborting the chain — other hypotheses can still resolve the bug. A Searcher abort in Step 2 leaves incomplete evidence; flag the gap in the root-cause synthesis rather than proceeding as if coverage is full.
 
@@ -335,7 +335,7 @@ Searcher — looking for shared state between test files
 
 ## Resources
 
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #12 per-step agents).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #12 per-step agents).
 - [worker-prompt.md](references/worker-prompt.md) — Sonnet implementer prompt template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer prompt template.
 - [memory-system.md](references/memory-system.md) — pitfall entry format.

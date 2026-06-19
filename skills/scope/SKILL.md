@@ -580,7 +580,7 @@ right questions before any decomposition happens.
 
 ## Resources
 
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (Layer 7 task templates, rule 8 structural gates).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (Layer 7 task templates, rule 8 structural gates).
 - [task-templates.md](references/task-templates.md) — CRUD, API, UI, migration, refactor, bug-fix templates.
 - [task-tracking.md](references/task-tracking.md) — task file format and lifecycle.
 - [worker-prompt.md](references/worker-prompt.md) — what dispatch will inject into each Sonnet worker.

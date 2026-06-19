@@ -231,7 +231,7 @@ After successful ship, append to `.hyperflow/memory/patterns.md` if any new patt
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-style.md](references/output-style.md).
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-style.md](references/output-style.md).
 
 ## Overview
 
@@ -342,7 +342,7 @@ Halted before commit. Rotate the credential and remove the literal from source b
 
 ## Resources
 
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #8 push confirmation gate).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 push confirmation gate).
 - [quality-gates.md](references/quality-gates.md) — full lint/typecheck/build/test policy.
 - [security.md](references/security.md) — security sweep policy and blocklists.
 - [git-workflow.md](references/git-workflow.md) — branch/commit conventions, no AI attribution rule.

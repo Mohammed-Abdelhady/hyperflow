@@ -113,7 +113,7 @@ This skill **does not** auto-chain. Init is project setup, not feature work. Whe
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-style.md](references/output-style.md).
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-style.md](references/output-style.md).
 
 ## Overview
 
@@ -212,5 +212,5 @@ No files written.
 ## Resources
 
 - [project-analysis.md](references/project-analysis.md) — what each generated file captures.
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (Layer 0 project analysis).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (Layer 0 project analysis).
 - [output-style.md](references/output-style.md) — summary block formatting.

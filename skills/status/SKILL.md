@@ -308,4 +308,4 @@ Active tasks  (none)
 ## Resources
 
 - [output-style.md](references/output-style.md) — em-dash style, no decorative chars, plain status words.
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (status is exempt from per-step agent dispatch).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (status is exempt from per-step agent dispatch).

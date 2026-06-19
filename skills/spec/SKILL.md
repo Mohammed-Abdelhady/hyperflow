@@ -630,7 +630,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 
 - [brainstorming-advanced.md](references/brainstorming-advanced.md) — deeper question framework.
 - [memory-system.md](references/memory-system.md) — persistence format for decisions / pitfalls.
-- [DOCTRINE.md](references/DOCTRINE.md) — shared rules (especially #8 structural gates).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — shared rules (especially #8 structural gates).
 - [output-style.md](references/output-style.md) — elegant label format.
 - [task-triage.md](references/task-triage.md) — Classifier output schema.
 - [flow-profiles.md](references/flow-profiles.md) — fast/standard/deep/research/creative/scientific profiles.
