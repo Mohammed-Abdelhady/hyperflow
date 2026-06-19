@@ -73,7 +73,8 @@ Tier assignment:
 | [security-reviewer](security-reviewer.md) | security | **thinking** | authz, secrets, OWASP; halts on violation |
 | [vulnerability-reviewer](vulnerability-reviewer.md) | security, scientific | **thinking** | CVE / dependency / exploit-path |
 | [devops-reviewer](devops-reviewer.md) | devops | worker / thinking | CI, IaC, rollback, observability |
-| [performance-reviewer](performance-reviewer.md) | performance | worker / thinking | profiling, complexity, regression budgets |
+| [performance-reviewer](performance-reviewer.md) | performance | worker / thinking | profiling, caching, regression budgets |
+| [algorithm-reviewer](algorithm-reviewer.md) | performance, scientific | worker / thinking | Big-O complexity + data-structure choice; proposes lower-complexity algorithms |
 | [accessibility-reviewer](accessibility-reviewer.md) | ui, frontend | worker / thinking | WCAG, keyboard, screen-reader |
 | [mobile-reviewer](mobile-reviewer.md) | frontend, ui, performance | worker / thinking | mobile / responsive / native constraints |
 | [data-ml-reviewer](data-ml-reviewer.md) | scientific, db | **thinking** | reproducibility, numerical correctness, lineage |
