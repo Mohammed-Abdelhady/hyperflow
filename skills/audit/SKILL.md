@@ -30,9 +30,9 @@ This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. Afte
 | 2 — Gather context | 2b — Semantic indexing | Searcher × 2 (type-system + symbol-graph) | Sonnet Reviewer | Parallel |
 | 2 — Gather context | 2c — Convention scan | Searcher × 1 (test patterns + lint config) | Sonnet Reviewer | Justified single-angle |
 | 2 — Gather context | 2d — Aggregate coverage gate | — | **Reviewer** (Opus) verifies aggregate coverage | Thinking-tier coverage gate |
-| 3 — Review | 3a — L1+L2 (syntax/format/naming) | — | **Reviewer** (Opus) × 2 (different file groups) + Sonnet Reviewer aggregates verdicts | Parallel Opus pair; justified single-tier (Opus are the workers at L1-L2) |
-| 3 — Review | 3b — L3 (integration/security) | — | **Reviewer** (Opus) × 2 (integration + security) + Sonnet Reviewer aggregates verdicts | Parallel Opus pair; justified single-tier (L3 requires thinking-tier) |
-| 3 — Review | 3c — L4+L5 (perf/scale/a11y/UX) | — | **Reviewer** (Opus) × 2 (perf/scale + a11y/UX) + Sonnet Reviewer aggregates verdicts | Parallel Opus pair; justified single-tier (L4-L5 requires thinking-tier) |
+| 3 — Review | 3a — L1+L2 (syntax/format/naming) | — | **Domain specialist Reviewer** (Opus) × 2 (file groups, surface-matched) + Sonnet Reviewer aggregates | Parallel Opus pair dispatched as the matching domain specialists |
+| 3 — Review | 3b — L3 (integration/security) | — | **Reviewer** (Opus) × 2 — backend-reviewer + security-reviewer/vulnerability-reviewer + Sonnet Reviewer aggregates | Parallel Opus pair; security specialists web-research-first |
+| 3 — Review | 3c — L4+L5 (perf/scale/a11y/UX) | — | **Reviewer** (Opus) × 2 — performance-reviewer + accessibility-reviewer + Sonnet Reviewer aggregates | Parallel Opus pair dispatched as the matching specialists |
 | 4 — Findings synthesis | 4a — Critical findings | Writer × 2 (evidence probe + impact analysis) | Sonnet Reviewer | Parallel |
 | 4 — Findings synthesis | 4b — Important findings | Writer × 2 (root-cause probe + fix-path analysis) | Sonnet Reviewer | Parallel |
 | 4 — Findings synthesis | 4c — Suggestions + observations | Writer × 2 (pattern analysis + praise identification) | Sonnet Reviewer | Parallel |
@@ -75,7 +75,7 @@ Use the provided target or run `git diff HEAD` + `git diff --staged`. No agent d
 
 ### Step 2 — Gather context
 
-Sub-phases 2a, 2b, 2c run in parallel (P1). Step 2 output is the union of their worker outputs plus three sub-phase Reviewer verdicts, handed to an Opus aggregate coverage gate.
+Sub-phases 2a, 2b, 2c run in parallel (P1). Step 2 output is the union of their worker outputs plus three sub-phase Reviewer verdicts, handed to an Opus aggregate coverage gate. The Searchers also record **which surfaces the diff touches** (frontend / api / db / devops / mobile / data-ml / security) — this drives the domain-specialist selection in Step 3 ([`../../agents/README.md`](../../agents/README.md)).
 
 #### Step 2a — Surface mapping
 
@@ -108,19 +108,27 @@ After 2a + 2b + 2c complete, dispatch `**Reviewer** (Opus) — verifying aggrega
 
 Sub-phases 3a, 3b, 3c run in parallel (P1) — each ends with a Sonnet sub-phase aggregator before the next batch fires. Active sub-phases scale with `--level`: L1-L2 runs only 3a; L3 adds 3b; L4-L5 add 3c.
 
+**Specialist selection.** Step 2 detects which surfaces the diff touches (frontend, api, db, devops, mobile,
+data/ml, …). Step 3 dispatches each Opus reviewer **as the matching domain specialist**
+([`../../agents/README.md`](../../agents/README.md)) — its charter + strict checklist injected, and (audit is a
+gated flow) its web-research-first pass run for current best-practice / CVE currency. When the target has a
+spec/task file, its Brain-decided `Specialists` roster seeds the selection.
+
 #### Step 3a — L1+L2: syntax, formatting, naming
 
-Dispatch two Reviewer agents in parallel over different file groups (split by directory or feature boundary):
-- **Reviewer** (Opus) — L1+L2 review, file group A (syntax errors, obvious bugs, formatting, naming conventions)
-- **Reviewer** (Opus) — L1+L2 review, file group B (same checklist, different file group)
+Dispatch two Reviewer agents in parallel over different file groups (split by directory or feature boundary),
+each **as the domain specialist** matching that group's surface (`frontend-reviewer` / `backend-reviewer` /
+`api-reviewer` / `database-reviewer` / `devops-reviewer` / `mobile-reviewer` / `data-ml-reviewer`):
+- **Reviewer** (Opus, domain specialist) — L1+L2 review, file group A (syntax errors, obvious bugs, formatting, naming conventions)
+- **Reviewer** (Opus, domain specialist) — L1+L2 review, file group B (same checklist, different file group)
 
 Then dispatch `Sonnet Reviewer — 3a aggregation` to union the two verdicts and deduplicate overlapping findings. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-dispatch only 3a.
 
 #### Step 3b — L3: integration, security (L3+ only)
 
-Dispatch two Reviewer agents in parallel over different concern dimensions:
-- **Reviewer** (Opus) — L3 integration risks (cross-file consistency, API contract mismatches, race conditions, edge cases)
-- **Reviewer** (Opus) — L3 security scan (hardcoded secrets, injection, path traversal, XSS, missing validation — per [security.md](references/security.md))
+Dispatch two Reviewer agents in parallel over different concern dimensions — as the security specialists:
+- **Reviewer** (Opus) — `backend-reviewer` (or `api-reviewer`) — L3 integration risks (cross-file consistency, API contract mismatches, race conditions, edge cases)
+- **Reviewer** (Opus) — `security-reviewer` + `vulnerability-reviewer` — L3 security scan (hardcoded secrets, injection, path traversal, XSS, missing validation, known-CVE exposure — per [security.md](references/security.md), web-research-first on current advisories)
 
 If the security Reviewer emits `SECURITY_VIOLATION:` → halt immediately; skip the fix gate; surface the finding inline; user decides remediation.
 
@@ -128,9 +136,9 @@ Then dispatch `Sonnet Reviewer — 3b aggregation` to union the two verdicts. Ve
 
 #### Step 3c — L4+L5: performance, scalability, accessibility, UX (L4+ only)
 
-Dispatch two Reviewer agents in parallel:
-- **Reviewer** (Opus) — L4+L5 performance and scalability (algorithmic complexity, memory, bundle size, adversarial load)
-- **Reviewer** (Opus) — L4+L5 accessibility and UX (WCAG compliance, keyboard nav, screen-reader semantics, interaction design)
+Dispatch two Reviewer agents in parallel — as the matching specialists:
+- **Reviewer** (Opus) — `performance-reviewer` — L4+L5 performance and scalability (algorithmic complexity, memory, bundle size, adversarial load)
+- **Reviewer** (Opus) — `accessibility-reviewer` — L4+L5 accessibility and UX (WCAG compliance, keyboard nav, screen-reader semantics, interaction design)
 
 Then dispatch `Sonnet Reviewer — 3c aggregation` to union the two verdicts. Verdict as above.
 
