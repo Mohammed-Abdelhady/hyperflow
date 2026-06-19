@@ -25,7 +25,7 @@ Every substantive step dispatches at least one Agent. Atomic steps (DOCTRINE 12.
 
 | Step | Status | Worker tier | Thinking tier | Notes |
 |---|---|---|---|---|
-| 1 — Read intent | Atomic (12.2.8) | Searcher (Sonnet) — domain signals + project rules | **Analyst** (Opus) — triage + gap analysis + persona selection | Single Worker → Reviewer; reads `CLAUDE.md`, `AGENTS.md`, `.hyperflow/memory/*` |
+| 1 — Read intent | Atomic (12.2.8) | Searcher (Sonnet) — domain signals + project rules | **Analyst** (Opus) — triage + gap analysis + persona & specialist selection | Single Worker → Reviewer; reads `CLAUDE.md`, `AGENTS.md`, `.hyperflow/memory/*` |
 | 2 — Amplify | Atomic (12.2.8) | Writer (Sonnet) — draft the enhanced prompt | **Reviewer** (Opus) — rubric score, one targeted revision | Writer drafts → Opus scores against the 8-dim rubric → revise once if any dim < 4 |
 | 3 — Present + handoff | §12.1 inline | — | — | Print the amplified prompt + rationale; fire the handoff gate (`AskUserQuestion`) |
 
@@ -45,7 +45,7 @@ Atomic — a single Searcher → Analyst pair. No parallel angles: understanding
    - **Project rules** — read, when present: `CLAUDE.md`, `AGENTS.md`, `.hyperflow/memory/conventions.md`, `.hyperflow/memory/project-decisions.md`, `.hyperflow/memory/anti-patterns.md`. Extract any rule that should constrain the prompt.
    - **The raw prompt's gaps** — what a senior engineer would have to guess to act on it.
 
-2. Dispatch `**Analyst** — triaging intent + selecting personas` (Opus). It returns `{ domain[], intent, ambiguities[], personas[], project_rules[] }` — the matching hyperflow persona(s) from [`../hyperflow/personas-A.md`](../hyperflow/personas-A.md) / [`personas-B.md`](../hyperflow/personas-B.md), plus the project rules to layer on top.
+2. Dispatch `**Analyst** — triaging intent + selecting personas & specialists` (Opus). It returns `{ domain[], intent, ambiguities[], personas[], specialists[], project_rules[] }` — the matching hyperflow persona(s) from [`../hyperflow/personas-A.md`](../hyperflow/personas-A.md) / [`personas-B.md`](../hyperflow/personas-B.md), the responsible **specialist agents** ([`../../agents/README.md`](../../agents/README.md)) derived per the triage mapping (on a gated flow the Analyst consults the [Brain](../../agents/brain.md) to finalize the roster), plus the project rules to layer on top.
 
 If the prompt is too ambiguous to amplify without a decision the rewrite can't make (`ambiguity` high on a dimension that changes the deliverable), the Analyst flags it — Step 3's handoff gate surfaces it as a clarifying note rather than guessing.
 
@@ -66,7 +66,7 @@ The Reviewer also produces the **rationale** — a 2–4 line "what changed and 
 Trivial-inline — no Agent dispatch. The orchestrator prints, then gates.
 
 1. **Print the amplified prompt** in a single copy-ready fenced block.
-2. **Print the rationale** beneath it — what changed, which persona standards + project rules were injected, and any ambiguity the Analyst flagged.
+2. **Print the rationale** beneath it — what changed, which persona standards + project rules were injected, and any ambiguity the Analyst flagged. Include a `Responsible specialists:` line naming the specialist agent(s) that will own the work downstream (e.g. `Responsible specialists: api-reviewer, security-reviewer · debugger`), so the user sees who the chain will dispatch before they run it. Omit the line only when no specialist applies (e.g. a pure docs prompt).
 3. **Fire the handoff gate** — `AskUserQuestion`:
 
    > **Run this amplified prompt now?**
@@ -84,6 +84,7 @@ Trivial-inline — no Agent dispatch. The orchestrator prints, then gates.
 ## Iron Rules
 
 - **Amplify never writes code.** It produces a prompt; downstream skills execute it. If the user wanted code, the handoff gate routes there.
+- **Amplify names responsible specialists; it never runs their web-research step.** The `Responsible specialists:` line is an announcement only — each specialist's web-research-first pass fires later, inside the dispatched specialist agent on a gated flow, not in amplify. (Amplify's `allowed-tools` deliberately excludes `WebSearch`/`WebFetch`.)
 - **Project rules win on conflict.** A rule in `CLAUDE.md` / `AGENTS.md` / `.hyperflow/memory/` overrides the generic persona standard — it is the user's explicit instruction.
 - **Economy is mandatory (rubric dim 8).** Never inflate a trivial prompt. The rubric enhances to the task's level, not beyond.
 - **Failure recovery (rule 14).** Worker/Reviewer errors and the NEEDS_REVISION cadence follow [`../hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md).
