@@ -646,6 +646,7 @@ Hyperflow has no always-on entry. Each skill is invoked explicitly. Chain-starte
 | Audit | `/hyperflow:audit` | standalone | Multi-level code review (L1–L5) on uncommitted changes or a target |
 | Deploy | `/hyperflow:deploy` | standalone | Pre-push gates (lint, typecheck, build, tests) + commit + release + push |
 | Cache | `/hyperflow:cache` | standalone | CRUD on `.hyperflow/memory/` — show, search, add, prune, archive, clear |
+| Handoff | `/hyperflow:handoff` | standalone | Two-session handoff lifecycle — list / status / pickup / review / complete a committed `.hyperflow-handoff/<slug>/` package |
 
 All skills inherit this doctrine — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system. Each skill file is short (~80–150 lines) and references shared files in `skills/hyperflow/*.md`.
 
