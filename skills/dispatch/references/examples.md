@@ -131,5 +131,5 @@ Implementer — updating analytics config
 - [worker-prompt.md](references/worker-prompt.md) — implementer/searcher/writer template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer template (per-sub-task fallback).
 - [reviewer-prompt-batched.md](../../hyperflow/reviewer-prompt-batched.md) — batched reviewer template (P2).
-- [latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
+- [latency-patterns.md](../hyperflow/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
 - [review-levels.md](references/review-levels.md) — L1-L5 checklist.

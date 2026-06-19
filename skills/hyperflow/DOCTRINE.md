@@ -1,6 +1,6 @@
 # Hyperflow Doctrine
 
-> Shared reference for every Hyperflow skill. Not a registered skill itself — invoked indirectly by `/hyperflow:scaffold`, `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, and `/hyperflow:cache`.
+> Shared reference for every Hyperflow skill. Not a registered skill itself — invoked indirectly by `/hyperflow:scaffold`, `/hyperflow:plan`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, and `/hyperflow:cache`.
 
 You operate as an orchestrator coordinating worker and reviewer agents. Every agent runs on the current session model — there is no model-tier routing or model configuration; roles differ by responsibility, not model. Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
 
@@ -66,10 +66,10 @@ Scan every user message for these verbs/phrases. If matched, route immediately. 
 
 | Intent class | Verbs / phrases that trigger | Route to |
 |---|---|---|
-| Design exploration | `brainstorm`, `design`, `explore`, `let's think about`, `what if`, `should we`, `how should`, `unsure about`, `not sure how to` | `/hyperflow:spec` |
-| Scope / plan | `scope`, `decompose`, `plan out`, `break down`, `create a plan`, `task graph`, `decompose into batches` | `/hyperflow:scope` |
-| Big-task workflow | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow`, `high-confidence verification` | `/hyperflow:workflow` in Claude Code v2.1.154+, Codex, and OpenCode; otherwise `/hyperflow:scope` |
-| Implementation | `build`, `implement`, `add`, `create`, `make a`, `refactor`, `write the`, `wire up`, `extract`, `inline` | `/hyperflow:scope` (then auto-chains to dispatch) |
+| Design exploration | `brainstorm`, `design`, `explore`, `let's think about`, `what if`, `should we`, `how should`, `unsure about`, `not sure how to` | `/hyperflow:plan` |
+| Scope / plan | `scope`, `decompose`, `plan out`, `break down`, `create a plan`, `task graph`, `decompose into batches` | `/hyperflow:plan` |
+| Big-task workflow | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow`, `high-confidence verification` | `/hyperflow:workflow` in Claude Code v2.1.154+, Codex, and OpenCode; otherwise `/hyperflow:plan` |
+| Implementation | `build`, `implement`, `add`, `create`, `make a`, `refactor`, `write the`, `wire up`, `extract`, `inline` | `/hyperflow:plan` (then auto-chains to dispatch) |
 | Debugging / fix | `debug`, `fix it`, `fix`, `solve`, `troubleshoot`, `investigate`, `root-cause`, `why is`, `X is broken`, `Y fails`, `Z throws`, stack trace pasted | `/hyperflow:trace` |
 | Review / audit | `audit`, `review`, `check for issues`, `look for bugs`, `any problems`, `code review`, `security check`, `scan the diff` | `/hyperflow:audit` |
 | Shipping | `ship`, `push`, `release`, `deploy`, `let's deploy`, `ready to ship`, `cut a release`, `merge to main` | `/hyperflow:deploy` |
@@ -80,7 +80,7 @@ Scan every user message for these verbs/phrases. If matched, route immediately. 
 
 Verb-matching is case-insensitive and word-boundary-aware. Match the first verb encountered — don't try to find "the best" route by re-reading the whole message.
 
-**Tier 2 — `state: on` (full sticky):** every task-shaped user message routes, even without an intent verb. Useful when the user is in a sustained build session and wants every message — even short ones like "the dashboard component" — interpreted as work. Uses the message-shape heuristic from the original sticky contract (verb-led ambiguous → spec; verb-led concrete → scope; etc.).
+**Tier 2 — `state: on` (full sticky):** every task-shaped user message routes, even without an intent verb. Useful when the user is in a sustained build session and wants every message — even short ones like "the dashboard component" — interpreted as work. Uses the message-shape heuristic from the original sticky contract (verb-led → plan; etc.).
 
 **Activation:**
 
@@ -130,7 +130,7 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
      - Layer 4: Brainstorming — intent, constraints, assumptions, scope
    - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
    - **Structural gates** — session strategy (Step 0 — one / two sessions, + the two-session handoff follow-up), **operational choices (Step 0.5 — commit cadence + branch + push pre-elections batched into one `AskUserQuestion` call immediately after Step 0, so the user is interrupted exactly twice at startup and then not again until done; fires for both `session=one` and `session=two`)**, spec questions (floor 2), section approval (Spec Step 7), scope post-research clarify (Scope Step 2.5, when ambiguity remains), phase-dispatch scope (Dispatch Step 1.5 — next phase vs all phases, feature mode only), audit prompt (Dispatch Step 5), deploy prompt (Dispatch Step 5), audit fix-gate (Audit Step 6), push confirmation (Deploy Step 6, honors `push` pre-election from Step 0.5), commit-inclusion (Deploy Step 4), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope when invoked directly) MUST present the one/two-session choice via `AskUserQuestion`; defaulting to `one` without asking is a doctrine violation even if the user previously said "work without confirmations". (Dispatch is the build endpoint — it resolves session context rather than asking; see its Step 0.)
-   - **The session gate (one vs two) controls WHERE the chain runs, never clarification questions.** `session=one` runs the whole chain straight through in this session (no inter-phase pauses); `session=two` runs planning here (brain + amplify + spec + scope), stops at the dispatch boundary, and hands the build to a second session in another environment (see [`../../agents/README.md`](../../agents/README.md) for the Brain roster carried across, and `session-handoff.md` for the package). Every chain skill's dedicated clarification stage still fires regardless of the session choice: spec Step 4 (floor 2), scope Step 2.5, dispatch Step 2 (irreversible-boundary ambiguity), audit Step 6, deploy Step 4 + Step 6. `session=one` MUST NOT be read as "skip clarification questions." (The prior per-phase `manual` pause mode is removed; two-session's hard stop at the dispatch boundary covers the inspect-before-building case.)
+   - **The session gate (one vs two) controls WHERE the chain runs, never clarification questions.** `session=one` runs the whole chain straight through in this session (no inter-phase pauses); `session=two` runs planning here (brain + plan), stops at the dispatch boundary, and hands the build to a second session in another environment (see [`../../agents/README.md`](../../agents/README.md) for the Brain roster carried across, and `session-handoff.md` for the package). Every chain skill's dedicated clarification stage still fires regardless of the session choice: plan Step 5 (floor 2 on the design path), plan post-research clarify on the bounce path, dispatch Step 2 (irreversible-boundary ambiguity), audit Step 6, deploy Step 4 + Step 6. `session=one` MUST NOT be read as "skip clarification questions." (The prior per-phase `manual` pause mode is removed; two-session's hard stop at the dispatch boundary covers the inspect-before-building case.)
    - **Codex / single-agent fallback:** if the host does not expose `AskUserQuestion` as a popup UI, the structural gate still fires in chat. Print a compact `Hyperflow Question` block with the same question, numbered options, and `(Recommended)` marker where the doctrine requires one, then stop and wait for the user's reply. Never silently pick the recommendation, never downgrade the gate to a status update, and never treat the lack of popup UI as permission to skip required questions.
    - **File-first artefacts: long-form work product lives in files under `.hyperflow/`, never inline in chat and never scattered into other repo locations. Format per [`artefact-format.md`](artefact-format.md).** Every planning artefact the orchestrator produces — feature specs, design sections, task decompositions, audit findings, audit-fix specs, decision logs — MUST live under one of three canonical homes:
 
@@ -152,7 +152,7 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
      - **Documentation** = polished reference material maintained for end users / contributors over time. Stays in `docs/`, `README.md`, `CHANGELOG.md`, `PRIVACY.md`. Examples: installation guide, orchestration overview, public changelog.
 
      Approval / fix gates reference the file path, not the content. Files follow the structured template in `artefact-format.md`: markdown-table status block at top, TL;DR in 2–3 sentences, scope-at-a-glance table, dependency diagram, per-task/finding lines with file references inline. Goal: user opens the file in their editor and grasps the artefact in under 10 seconds. Inline content in chat is ephemeral (unscrollable, uneditable, lost across context compactions); a file is reviewable in the user's editor, diffable, persistent. **Concrete enforcement:**
-     - Spec section Writers write directly to `.hyperflow/specs/<slug>.draft.md` at H2 anchors. The Section Approval gate prints only the section roster + file path — not the section bodies. (See spec/SKILL.md Step 7.)
+     - Spec section Writers write directly to `.hyperflow/specs/<slug>.draft.md` at H2 anchors. The Section Approval gate prints only the section roster + file path — not the section bodies. (See plan/SKILL.md Step 7.)
      - Audit Reviewers write the full L1–L5 finding block to `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope-slug>.md`. The audit summary in chat is one short box: scope, level, verdict, severity counts, file path. (See audit/SKILL.md Step 5.)
      - Scope decomposition is already file-first (`.hyperflow/tasks/<slug>.md`). Dispatch reads the file; the user reads the file.
      - Audit-fix specs go to `.hyperflow/specs/audit-<date>-<slug>.md` — not pasted as fix bullets in chat.
@@ -169,7 +169,7 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
      The user picked auto. Auto means **finish the chain without check-ins**. Inventing a gate because the work feels big, the budget feels heavy, or the orchestrator wants social cover for a long run is a confirmation in clarification clothing. Just run. The user can interrupt anytime via Ctrl+C / Esc; that's the runtime's gate, not the orchestrator's. If genuine ambiguity arises mid-batch (e.g., a worker returns `ESCALATE: crosses irreversibility boundary`), that's a structural escalation gate (see `escalation.md`), not an invented one — fire it explicitly with that reason.
 
      Posting status updates is fine and encouraged ("Batch 1 done · 9/36 · next: B2 deps"). Posting status as a *question* with options is not.
-   - **Multi-option questions (3+ options) MUST mark a recommended choice. Binary questions (2 options) MUST NOT.** The recommended option goes **first** in the `options[]` array and its `label` ends with `(Recommended)`. The orchestrator picks the recommendation based on triage context, project conventions, prior memory entries, and the principle of least surprise. The user can still pick anything — the recommendation is guidance, not a default. **Binary action gates** — `Yes/No`, `Approve/Revise`, `Push/Hold`, `Include/Exclude`, `Continue/Stop`, `Fix/Skip`, `Run X / Skip X` and any other "do the action or don't" pair — MUST NOT pre-mark either option as recommended. Two-outcome framing is already symmetric; adding `(Recommended)` to one side biases a decision that the orchestrator should leave open. The recommendation marker exists to *guide* multi-path choices, not to *steer* binary actions. Examples: spec section approval (`Approve / Revise` — no marker), deploy push gate (`Push / Hold` — no marker), audit gate `Run /hyperflow:audit?` (`Yes / No` — no marker), the two-session handoff follow-up (`Return for review / Complete to deploy` — no marker), commit-inclusion (`Include / Exclude` — no marker). Multi-option choices keep the marker: audit fix-gate (`Fix all (Recommended) / Critical + Important / Critical only / No`), Scope Step 0.5 operational questions (4-option commit, 2-option but with named workflow paths — see exception below). **Exception for named workflow paths:** when both options name *distinct operational paths* rather than "do/don't" on a single action (e.g. `One session (Recommended) / Two sessions` for the Step 0 session gate — these are two different end-to-end workflows, not a single yes/no on one action), the recommendation marker is allowed because the orchestrator's analysis genuinely points at one workflow as the better fit for most cases. Scope Step 2.6 `Branch?` (`Create new / Stay on current`) is named-workflow-paths and keeps its marker; `Push at end?` (`Ask / Auto / Never` — 3 options) keeps its marker; `Commit cadence?` (4 options) keeps its marker.
+   - **Multi-option questions (3+ options) MUST mark a recommended choice. Binary questions (2 options) MUST NOT.** The recommended option goes **first** in the `options[]` array and its `label` ends with `(Recommended)`. The orchestrator picks the recommendation based on triage context, project conventions, prior memory entries, and the principle of least surprise. The user can still pick anything — the recommendation is guidance, not a default. **Binary action gates** — `Yes/No`, `Approve/Revise`, `Push/Hold`, `Include/Exclude`, `Continue/Stop`, `Fix/Skip`, `Run X / Skip X` and any other "do the action or don't" pair — MUST NOT pre-mark either option as recommended. Two-outcome framing is already symmetric; adding `(Recommended)` to one side biases a decision that the orchestrator should leave open. The recommendation marker exists to *guide* multi-path choices, not to *steer* binary actions. Examples: spec section approval (`Approve / Revise` — no marker), deploy push gate (`Push / Hold` — no marker), audit gate `Run /hyperflow:audit?` (`Yes / No` — no marker), the two-session handoff follow-up (`Return for review / Complete to deploy` — no marker), commit-inclusion (`Include / Exclude` — no marker). Multi-option choices keep the marker: audit fix-gate (`Fix all (Recommended) / Critical + Important / Critical only / No`), plan Step 0.5 operational questions (4-option commit, 2-option but with named workflow paths — see exception below). **Exception for named workflow paths:** when both options name *distinct operational paths* rather than "do/don't" on a single action (e.g. `One session (Recommended) / Two sessions` for the Step 0 session gate — these are two different end-to-end workflows, not a single yes/no on one action), the recommendation marker is allowed because the orchestrator's analysis genuinely points at one workflow as the better fit for most cases. plan Step 0.5 `Branch?` (`Create new / Stay on current`) is named-workflow-paths and keeps its marker; `Push at end?` (`Ask / Auto / Never` — 3 options) keeps its marker; `Commit cadence?` (4 options) keeps its marker.
    - **Option labels are short.** Each option's `label` is ≤ 12 words, one clause, no justification narrative. The `description` field carries the *what* (one short sentence). Neither field contains the orchestrator's reasoning for picking the recommendation — that reasoning was an input to the choice, not output for the user to read. *Bad* (paragraph of reasoning): `"No (Recommended) — Keep the 27 commits local. Several pre-commit fixes were needed (commitlint subject-case, max-lines, _opts unused-vars, react-hooks deps) and the audit caught a real bug that landed as a fix commit — eyeballing the diff before push is prudent. Manual push when ready."` *Good* (short clause): `label: "No (Recommended)"`, `description: "Keep commits local · push manually later"`. The user already saw the reviewer verdicts, gate results, and audit findings in scrollback; the gate label doesn't need to recap them.
    - **Never add a "Type something" / "Other" option manually.** `AskUserQuestion` auto-includes that affordance. Adding it as option 3 (or 4) is dead UI and pads the choice list.
 9. **Never reference the LLM as an actor in any artefact. Never bypass git hooks.** Two non-negotiable rules grouped because both are common temptations under time pressure:
@@ -188,7 +188,7 @@ Hyperflow runs three roles internally:
 2. **Orchestrator (Team Lead)** — the running session. Coordinates workers, sequences dispatches, parses return values, handles file IO, manages chain state, presents as the single point of contact to workers.
 3. **Decision agent** — takes every real decision: architecture choice, approach selection, multi-dim analysis, root-cause judgment, dispute resolution, quality verdict, escalation call. The orchestrator consults a decision agent at each decision point via a dispatched Agent call; it returns a one-shot decision and the orchestrator continues mechanical work.
 
-The named decision dispatches in this doctrine — Classifier (triage), Analyst (6-dim spec analysis), Planner (batch decomposition), final-integration Reviewer, standalone Reviewer (audit / deploy security sweep / spec Step 8), Debugger, Brainstormer — are all **decision-agent consultations**. The orchestrator dispatches them at the right moment with the right context; the decision agent decides; the orchestrator carries the decision forward.
+The named decision dispatches in this doctrine — Classifier (triage), Analyst (6-dim design analysis), Planner (batch decomposition), final-integration Reviewer, standalone Reviewer (audit / deploy security sweep / plan Step 8), Debugger, Brainstormer — are all **decision-agent consultations**. The orchestrator dispatches them at the right moment with the right context; the decision agent decides; the orchestrator carries the decision forward.
 
 | Role | Use for |
 |------|---------|
@@ -200,8 +200,8 @@ The named decision dispatches in this doctrine — Classifier (triage), Analyst 
 | **Decision agent — Brain (specialist router)** | Decide the responsible specialist roster + web-research + fan-out (once, after triage) — see [`../../agents/brain.md`](../../agents/brain.md) |
 | **Decision agent — Debugger** | Root-cause analysis, fix strategy (trace skill) |
 | **Decision agent — Final integration Reviewer** | End-of-chain cross-cutting review (dispatch Step 3) |
-| **Decision agent — Standalone Reviewer** | Audit Step 3, deploy security sweep, spec Step 8 final sanity |
-| **Per-batch / per-sub-task Reviewer** | In-flight reviews anchored to a single batch's diff (dispatch Step 2, spec Step 7 batched section review, scope Step 4 task-file check) |
+| **Decision agent — Standalone Reviewer** | Audit Step 3, deploy security sweep, plan Step 8 final sanity |
+| **Per-batch / per-sub-task Reviewer** | In-flight reviews anchored to a single batch's diff (dispatch Step 2, plan Step 7 batched section review, plan Step 10 task-file check) |
 | **Worker — Implementer** | Write code, edit files, create components |
 | **Worker — Searcher** | Explore codebase, search docs, find files |
 | **Worker — Writer** | Tests, docs, configs, boilerplate |
@@ -211,7 +211,7 @@ The named decision dispatches in this doctrine — Classifier (triage), Analyst 
 - **Team Lead (Orchestrator) coordinates; decision agents decide; Workers execute.** Three distinct roles. The Team Lead is the running session — it parses results, sequences dispatches, and presents to workers. A decision agent is dispatched as a fresh agent at every real decision point — design choice, architecture call, NEEDS_FIX-with-ambiguity, dispute between two workers, gate firing, security flag, root-cause judgment. Workers execute against a brief and never decide what to build. Each role stays in its lane.
 - **Per-batch / per-sub-task Reviewer is an anchored review.** Anchored to a single batch's diff (a few files at most). The Reviewer sees only the work product of one batch — small enough for L1 (syntax/format) + L2 (spec/naming/edges). Fires every batch in `standard` and above. NOT a decision-agent consultation — its scope is mechanical pattern-matching, not architectural judgment.
 - **Final integration Reviewer is a decision-agent consultation.** End-of-chain pass that sees the cumulative diff across all batches. This is where cross-batch contradictions, architectural drift, and L3+ integration risks surface. Fires once per multi-batch chain (skippable under D7 conditions).
-- **Standalone reviewers are decision-agent consultations.** Any reviewer dispatched outside a chain's batch context — audit Step 3, trace Debugger, deploy security sweep, spec Step 8 final sanity check — is itself a decision-agent consultation regardless of diff size.
+- **Standalone reviewers are decision-agent consultations.** Any reviewer dispatched outside a chain's batch context — audit Step 3, trace Debugger, deploy security sweep, plan Step 8 final sanity check — is itself a decision-agent consultation regardless of diff size.
 - **The decision agent is consulted, not constantly busy.** Each consultation is a dispatched Agent call with focused context: "given this brief / verdict / conflict / candidate fix, decide X." It returns a one-shot decision. The Team Lead carries the decision forward. A decision agent never coordinates dispatch — that's the Team Lead's job.
 - **Workers never coordinate.** A worker doing a batch review is reviewing one batch's diff against one fix list — not deciding which batch fires next, not opening gates. Coordination stays at the Team Lead layer.
 - **`--thorough` flag adds review depth.** It adds a standalone / final-integration review pass beyond the per-batch reviews. Users on high-risk surfaces (financial calc, crypto, regulatory) opt in. Default keeps the per-batch reviews only, to keep cost predictable.
@@ -239,10 +239,10 @@ fire a reviewer or investigator, they dispatch the **matching specialist** as th
 
 Dispatch every agent with **no `model:` parameter** — it inherits the current session model. Roles differ by *brief and responsibility*, not by model:
 - Workers (implementer / searcher / writer): dispatched with the worker brief.
-- **Per-batch / per-sub-task Reviewer** (dispatch Step 2, spec Step 7 batched section review, scope Step 4 task-file check): an anchored in-flight review of a small diff.
+- **Per-batch / per-sub-task Reviewer** (dispatch Step 2, plan Step 7 batched section review, plan Step 10 task-file check): an anchored in-flight review of a small diff.
 - **Final integration Reviewer** (dispatch Step 3): sees the cumulative diff.
-- **Standalone Reviewer** (audit Step 3, deploy Step 3 security sweep, spec Step 8 final sanity check): the buck-stops-here pass.
-- **Debugger / Analyst / Planner / Brainstormer** (trace Step 2, spec Step 3, scope Step 3, spec Step 1): pure decision work, no in-flight anchor.
+- **Standalone Reviewer** (audit Step 3, deploy Step 3 security sweep, plan Step 8 final sanity check): the buck-stops-here pass.
+- **Debugger / Analyst / Planner / Brainstormer** (trace Step 2, plan Step 4, plan Step 9, plan Step 1): pure decision work, no in-flight anchor.
 - `--thorough` flag: adds a standalone / final-integration review pass.
 
 ## Layer 3: Orchestrator Pattern
@@ -313,7 +313,7 @@ Every Worker dispatch must hit a mandatory detail floor in the brief. Sparse bri
 
 **A single Worker dispatch must never own more than one reviewable unit of work.** The decision agent splits oversized work into multiple parallel sub-tasks rather than handing one Worker a giant brief. Two enforcement points:
 
-**1. At planning (scope Step 3 · pre-dispatch).** The Planner (decision agent — Planner) MUST split any sub-task that meets ANY of these signals:
+**1. At planning (plan Step 9 · pre-dispatch).** The Planner (decision agent — Planner) MUST split any sub-task that meets ANY of these signals:
 
 | Signal | Threshold |
 |---|---|
@@ -416,13 +416,13 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
    3. **Multi-agent per sub-phase.** Each sub-phase dispatches **≥ 2 Worker Agents in parallel**, each exploring a different angle of the same concern (e.g., glob discovery + import-graph traversal + symbol-graph probe). Single-Worker sub-phases are allowed only when no independent angle exists (rare — and the sub-phase header must justify it: `Step 3a — Sequential synthesis (no parallel angle: single canonical aggregation)`).
    4. **Per-sub-phase Reviewer.** Each sub-phase dispatches **one Reviewer** over its workers' outputs. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. Counts toward the §13.P2 decision-agent floor but does NOT replace the per-batch and final-integration Reviewers — those still run at higher granularity over cumulative sub-phase outputs.
    5. **Aggregation.** The parent Step's output is the union of its sub-phases' worker outputs plus the per-sub-phase Reviewer verdicts. If a sub-phase Reviewer returns `NEEDS_REVISION`, the parent re-dispatches only that sub-phase (not the whole Step).
-   6. **Numbering.** Letter suffixes on the parent Step number (`2a`, `2b`, `2c`). Cross-skill references to the parent Step (`spec Step 4`, `scope Step 0.5`) remain valid and resolve to the sub-phase aggregate. Backwards-compatible.
+   6. **Numbering.** Letter suffixes on the parent Step number (`2a`, `2b`, `2c`). Cross-skill references to the parent Step (`plan Step 5`, `plan Step 0.5`) remain valid and resolve to the sub-phase aggregate. Backwards-compatible.
    7. **Floor.** A Step has either 0 sub-phases (atomic, exempt) OR ≥ 2 sub-phases. Never exactly 1 — that's just the Step with extra syntax.
    8. **Atomic exemption.** A Step is atomic when its entire body is one of: a single `AskUserQuestion` call · a single mechanical decision (file existence, git status, route choice) · a single Worker → Reviewer pair with no independent angles to fan out across. In all other cases, decompose into ≥ 2 sub-phases.
 
    **Cost.** Per parent Step with N sub-phases, +N Reviewer dispatches (one per sub-phase, ~5k tokens each for small diffs). A typical 5-substantive-Step chain skill with avg 3 sub-phases per Step adds ~15 reviews · ~75k tokens. Acceptable for the granular catch — sub-phase misses (e.g., the surface mapping Searcher missed a critical file) get caught BEFORE the parent Step's per-batch Reviewer aggregates the propagation downstream.
 
-   **Worked example — scope Step 2 (Research):**
+   **Worked example — plan Step 3 (Context):**
    - OLD: `Step 2 — Research (Searcher × 2 parallel)`
    - NEW:
      - `Step 2a — Surface mapping` — Searcher × 2 (glob discovery + import-graph traversal) → Reviewer
@@ -436,7 +436,7 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
    - **P1 — Parallelize sibling workers.** Sub-tasks that share a common upstream input and have no inter-dependency MUST be dispatched in a single message with parallel `Agent` calls. Never sequentialize siblings.
    - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect. The batched Reviewer counts as **one** Reviewer per batch toward the `decision agents ≥ batches + 1` floor, regardless of sub-task count. Floor lowered from +2 to +1: wrap-up Reviewer dropped per §12.1 (wrap-up is mechanical, trivial-eligible).
    - **P3 — Concurrent independent pre-conditions.** Steps whose outputs do not depend on each other are dispatched in the same message regardless of `--thorough`. Always on.
-   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.6 AND complexity != high`, optional design-exploration steps (spec §3, §6) may be skipped. When `ambiguity < 0.4 AND complexity == low`, spec bounces directly to scope. The 2-question floor (rule 8) is never skipped — it is non-negotiable; only the bounce path exits the spec phase. Thresholds and borderline rounding rules are in `skills/spec/references/latency-patterns.md` §P4.
+   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.6 AND complexity != high`, optional design-exploration steps (plan Step 4, Step 6) may be skipped. When `ambiguity < 0.4 AND complexity == low`, plan bounces past the design phase directly to decomposition (Step 9). The 2-question floor (rule 8) is never skipped — it is non-negotiable; only the bounce path exits the design phase. Thresholds and borderline rounding rules are in `skills/hyperflow/latency-patterns.md` §P4.
    - **P5 — Lean worker prompts via memory references.** Prefer `skills/hyperflow/worker-prompt-lean.md` for default dispatches. Workers `Read` only the `.hyperflow/memory/` files they need. Smaller prompts reduce time-to-first-token; context access is on-demand, not absent.
    - **Compatibility with §12.** §13 does NOT relax §12. Every substantive step still dispatches at least one Agent. §13 governs the structure of those dispatches (parallel vs sequential, batched vs per-sibling, lean vs full).
    - **Quality floor preserved.** Review depth is unchanged. Workers still face a dispatched review. What changes is when calls fire and in what grouping, not who reviews what.
@@ -452,14 +452,14 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
        - Per-batch Reviewer template: **unchanged** (full `reviewer-prompt-batched.md` with all L1-L<n> checklist examples)
        - Per-batch review: **unchanged** (fires every batch; `--thorough` adds a standalone / final-integration pass)
        - Final integration Reviewer: **unchanged** (always fires when D7 conditions not met)
-       - Clarification questions: **all gates fire as normal** — spec 2-question floor, scope post-research clarify, audit fix-gate, deploy commit-inclusion + push, section approvals
+       - Clarification questions: **all gates fire as normal** — plan 2-question floor (design path), plan post-research clarify (bounce path), audit fix-gate, deploy commit-inclusion + push, section approvals
        - Security blocklist enforcement: unchanged
        - SECURITY_VIOLATION halt: unchanged
      - **Incompatible flags:** `--lean` and `--thorough` are mutually exclusive. If both passed, refuse with a clear error rather than silently picking one.
      - **Persistent default:** set per-project via `.hyperflow/.mode` (`lean` / `default` / `thorough`); read at every chain start.
      - **What `--lean` does NOT do** (these were considered and rejected because they reduce quality): persona top-1 only, memory ≥2-tag-match filter, reviewer-template lean variant. The default behavior is the right behavior for review work; only the lazy-context optimisations qualify under "preserve quality".
 
-   See [latency-patterns.md](../spec/references/latency-patterns.md) for the full P1–P5 pattern catalogue. `--lean` is orthogonal to the P1–P5 latency optimisations (which target wall-clock); `--lean` targets token cost specifically.
+   See [latency-patterns.md](latency-patterns.md) for the full P1–P5 pattern catalogue. `--lean` is orthogonal to the P1–P5 latency optimisations (which target wall-clock); `--lean` targets token cost specifically.
 
 14. **Failure recovery — explicit retry/escalate/abort policy.** When a Worker errors out (tool failure, OOM, 5xx from a service, timeout, malformed output) or when a Quality Gate (Layer 5: lint/typecheck/build/tests/security) fails, the orchestrator follows the canonical policy in [failure-recovery.md](failure-recovery.md). Summary:
 
@@ -478,7 +478,7 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 
     - **PASS** → consume triage as-is, proceed to next Step.
     - **RECLASSIFY** → Reviewer returns a corrected classification with reasoning; orchestrator uses the corrected version, prints a one-line note to the user (`Triage reclassified: complexity high → medium · personas added: [security]`).
-    - **ESCALATE** → Reviewer can't decide; fall through to the user via a Smart Question early in spec Step 4 asking about the ambiguity.
+    - **ESCALATE** → Reviewer can't decide; fall through to the user via a Smart Question early in plan Step 5 asking about the ambiguity.
 
     Triage Reviewer cost: ~2k tokens per chain. Catches mis-classifications that would otherwise waste 100k+ tokens on the wrong flow. Net win.
 
@@ -498,9 +498,9 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
       the responsible roster, the per-specialist web-research decision, and fan-out approvals. On `fast`/`standard`
       non-security flows Brain is a cheap inline pass-through (no separate dispatch); on `deep`/`research`/`scientific`/`security`
       it actively reasons.
-    - **Decide once, inherit downstream.** Brain's decision is written into the artefact (spec status block → scope
+    - **Decide once, inherit downstream.** Brain's decision is written into the artefact (plan spec status block → plan
       task file) and consumed by every later phase. No skill re-derives the roster.
-    - `amplify`/`spec`/`scope` **announce** the responsible specialists; `dispatch`/`audit`/`trace`/`deploy`
+    - `plan` **announces** the responsible specialists; `dispatch`/`audit`/`trace`/`deploy`
       **dispatch** them. A per-batch reviewer is dispatched *as* the specialist matching that batch's surface, in the
       role in Layer 2 (per-batch in-flight review / standalone full review; always a full review pass for
       security/correctness specialists). A multi-surface batch gets the union of matching charters.
@@ -547,7 +547,7 @@ Background agents are an opt-in extension of Layer 3 dispatch. They run with `ru
 
 ## Layer 4: Adaptive Brainstorming
 
-**Summary:** runs on EVERY task — never skipped. Depth scales to triage `ambiguity` with a **hard floor of 2 questions per spec run** (the user always gets a structural place to course-correct). Light = 2Q · standard = 3Q + 2-3 alternatives · deep = 4-5Q + 6-dim analysis + section-by-section approval. `creative`/`architect`/`security`/`scientific` types force a minimum depth. `AskUserQuestion` is mandatory; "Should I proceed?" is banned.
+**Summary:** runs on EVERY task — never skipped. Depth scales to triage `ambiguity` with a **hard floor of 2 questions per design run** (the user always gets a structural place to course-correct). Light = 2Q · standard = 3Q + 2-3 alternatives · deep = 4-5Q + 6-dim analysis + section-by-section approval. `creative`/`architect`/`security`/`scientific` types force a minimum depth. `AskUserQuestion` is mandatory; "Should I proceed?" is banned.
 
 See [doctrine-extensions.md § Layer 4](doctrine-extensions.md#layer-4-adaptive-brainstorming) for the depth table, hard rules (section approval / minimum alternatives / no-code-before-design), and type-based depth overrides. Full framework in [adaptive-brainstorming.md](adaptive-brainstorming.md).
 
@@ -620,8 +620,7 @@ Hyperflow has no always-on entry. Each skill is invoked explicitly. Chain-starte
 | Skill | Invoke | Chain | When to use |
 |-------|--------|-------|-------------|
 | Scaffold | `/hyperflow:scaffold` | standalone | Set up `.hyperflow/`, install multi-tool shims, refresh analysis cache |
-| Spec | `/hyperflow:spec` | starter → scope | Specify the design before implementing — never writes code |
-| Scope | `/hyperflow:scope` | starter → dispatch | Decompose a task into worker subtasks; writes `.hyperflow/tasks/<slug>.md` |
+| Plan | `/hyperflow:plan` | starter → dispatch | Sharpen, design, and decompose into worker subtasks; writes `.hyperflow/tasks/<slug>.md` |
 | Dispatch | `/hyperflow:dispatch` | endpoint | Run a task file — parallel workers + reviews + final integration |
 | Trace | `/hyperflow:trace` | standalone | Systematic root-cause analysis for bugs and test failures |
 | Audit | `/hyperflow:audit` | standalone | Multi-level code review (L1–L5) on uncommitted changes or a target |
@@ -632,8 +631,7 @@ Hyperflow has no always-on entry. Each skill is invoked explicitly. Chain-starte
 All skills inherit this doctrine — they reuse the same worker/reviewer prompts, model routing, security policies, and memory system. Each skill file is short (~80–150 lines) and references shared files in `skills/hyperflow/*.md`.
 
 Hand-off pattern:
-- `/hyperflow:spec` → asks session strategy → produces a design → auto-invokes `/hyperflow:scope` (or stops at the dispatch boundary with a handoff package in `session=two`)
-- `/hyperflow:scope` → produces a task file → auto-invokes `/hyperflow:dispatch`
+- `/hyperflow:plan` → asks session strategy → sharpens, designs, and decomposes → produces a task file → auto-invokes `/hyperflow:dispatch` (or stops at the dispatch boundary with a handoff package in `session=two`)
 - `/hyperflow:dispatch` → runs batches + final review → suggests `/hyperflow:audit` or `/hyperflow:deploy` (no auto-push)
 - `/hyperflow:trace` → fixes the bug at root + adds regression test → user invokes `/hyperflow:deploy`
 

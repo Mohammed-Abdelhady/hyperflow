@@ -49,7 +49,7 @@ The per-phase bar uses the same parsing as the per-task-file section below (each
 
 ### In-flight work (per task file)
 
-For every `.hyperflow/tasks/*.md`, parse its `## Status` block (written by `/hyperflow:scope` at creation and updated by `/hyperflow:dispatch` after each sub-task PASS — see scope/SKILL.md Step 4):
+For every `.hyperflow/tasks/*.md`, parse its `## Status` block (written by `/hyperflow:plan` at creation and updated by `/hyperflow:dispatch` after each sub-task PASS — see plan/SKILL.md Step 10):
 
 | Field | Source | Behaviour |
 |-------|--------|----------|

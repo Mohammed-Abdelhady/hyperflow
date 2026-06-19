@@ -1,7 +1,7 @@
 ---
 name: audit
 description: |
-  Use when the user wants a code review on recent changes — quality, spec, security, or performance feedback. Triggers a multi-level (L1-L5) review with a standalone Reviewer; on NEEDS_FIX, offers to apply findings via /hyperflow:scope.
+  Use when the user wants a code review on recent changes — quality, spec, security, or performance feedback. Triggers a multi-level (L1-L5) review with a standalone Reviewer; on NEEDS_FIX, offers to apply findings via /hyperflow:plan.
   Trigger with /hyperflow:audit, "review this change", "review my PR", "audit the diff", "code review".
 allowed-tools: Read, Bash(git:*), Glob, Grep, Agent, AskUserQuestion
 argument-hint: "[target] [--level 1-5]"
@@ -15,7 +15,7 @@ tags: [code-review, quality, multi-level, multi-agent]
 
 Multi-level code review. All agents inherit the session model. Reviewers bold-labeled; Workers plain.
 
-This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. After the review prints, a **fix gate** asks the user whether to apply the findings — on `Yes`, audit auto-invokes `/hyperflow:scope` with the findings as the spec, which then chains to `/hyperflow:dispatch`.
+This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. After the review prints, a **fix gate** asks the user whether to apply the findings — on `Yes`, audit auto-invokes `/hyperflow:plan` with the findings as the spec, which then chains to `/hyperflow:dispatch`.
 
 ## Iron Rules
 
@@ -245,7 +245,7 @@ After the summary prints, the audit skill **MUST** ask the user via `AskUserQues
 ```
 ?  Audit findings written to .hyperflow/audits/<timestamp>-<slug>.md — apply fixes?
 
-   Fix all (Recommended)   — Critical + Important + Suggestions via /hyperflow:scope → /hyperflow:dispatch
+   Fix all (Recommended)   — Critical + Important + Suggestions via /hyperflow:plan → /hyperflow:dispatch
    Critical + Important    — skip Suggestions, fix the rest
    Critical only           — fix the must-haves, defer the nice-to-haves
    No, leave as-is         — stop; you'll handle manually
@@ -259,15 +259,15 @@ Recommended option scales with finding mix:
 **On any "Fix …" choice:**
 
 1. Build a spec file from the chosen findings at `.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md`. Each finding becomes a numbered fix section with: file:line, the issue, the reviewer's suggested fix (or "design needed" if no Fix: was provided), and the commit message stub. The spec file is the chain-driving artefact; do NOT paste fix bullets into chat.
-2. Invoke `Skill` with `skill: scope` and `args: "session=one spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md"`.
-3. `/hyperflow:scope` will decompose into batches; `/hyperflow:dispatch` will execute them — same per-sub-task commit cadence and per-batch L1–L<n> review as any other chain run.
+2. Invoke `Skill` with `skill: plan` and `args: "session=one spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md"`.
+3. `/hyperflow:plan` will decompose into batches; `/hyperflow:dispatch` will execute them — same per-sub-task commit cadence and per-batch L1–L<n> review as any other chain run.
 
 **On "No":**
 
 Print one line and stop:
 
 ```
-Audit complete — N findings recorded, no fixes applied. Re-run /hyperflow:audit later or invoke /hyperflow:scope manually if you change your mind.
+Audit complete — N findings recorded, no fixes applied. Re-run /hyperflow:audit later or invoke /hyperflow:plan manually if you change your mind.
 ```
 
 If `AskUserQuestion` cannot be presented as a popup, use the Codex fallback: print the fix gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print the findings and an error line — never silently auto-fix or silently exit.
@@ -352,7 +352,7 @@ Written:  .hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md
 ## Hand-off
 
 - **PASS** (no findings worth fixing) — print `Audit clean`. Suggest `/hyperflow:deploy` if the user is ready to release. Do not auto-ship.
-- **NEEDS_FIX** — fix gate fires (Step 6). On `Yes …` → auto-chain to `/hyperflow:scope`. On `No` → stop with findings printed.
+- **NEEDS_FIX** — fix gate fires (Step 6). On `Yes …` → auto-chain to `/hyperflow:plan`. On `No` → stop with findings printed.
 - **SECURITY_VIOLATION** — halt. Skip the fix gate. User decides remediation path.
 
 ## Doctrine
@@ -361,7 +361,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Overview
 
-`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. Searchers gather context; a standalone Reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — `Yes` auto-chains to `/hyperflow:scope` → `/hyperflow:dispatch`; `No` leaves the diff alone.
+`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. Searchers gather context; a standalone Reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — `Yes` auto-chains to `/hyperflow:plan` → `/hyperflow:dispatch`; `No` leaves the diff alone.
 
 ## Prerequisites
 

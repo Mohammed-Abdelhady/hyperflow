@@ -33,7 +33,7 @@ Session starts
 3. **Commit immediately after the per-sub-task reviewer returns `PASS`.** Order within a batch: worker writes → reviewer approves → commit that sub-task's files only → move on. Quality gates run once at the end of the batch over the cumulative state; if gates fail, fix-commits sit on top (don't amend earlier per-task commits).
 4. **Follow project commit conventions.** Read CLAUDE.md / commitlint config for message format. Default to conventional commits (`feat:`, `fix:`, `refactor:`, etc.) — type chosen from the sub-task's nature.
 5. **No LLM attribution anywhere in the artefact.** Never add "Co-Authored-By: Claude" (or any LLM trailer). Never reference "Claude" / "AI" / "assistant" / "the LLM" as a subject performing an action in commit messages, PR descriptions, rebase notes, code comments, doc prose, or skill bodies. Describe what changed, not who made it. Product names used as named tools (`claude` CLI, `Claude Code` platform, `CLAUDE.md` filename) are fine — banned use is only as a *narrative subject*. See DOCTRINE rule 9 for the full statement.
-6. **Stage only the files this sub-task touched.** Use `git add <specific-files>` — never `git add -A` or `git add .`. The Planner's per-sub-task file list (from `/hyperflow:scope`) IS the staging list.
+6. **Stage only the files this sub-task touched.** Use `git add <specific-files>` — never `git add -A` or `git add .`. The Planner's per-sub-task file list (from `/hyperflow:plan`) IS the staging list.
 7. **Don't push automatically.** Commit locally. Push is gated by an explicit `AskUserQuestion` in `/hyperflow:deploy` Step 6.
 
 ## Auto-Commit Toggle

@@ -80,17 +80,10 @@
       "chain": "standalone"
     },
     {
-      "name": "spec",
-      "command": "/hyperflow:spec",
-      "tagline": "Specify the design",
-      "purpose": "Multi-dimensional analysis + alternatives \u2014 refuses to code before approval; auto-chains to scope",
-      "chain": "starter"
-    },
-    {
-      "name": "scope",
-      "command": "/hyperflow:scope",
-      "tagline": "Decompose the work",
-      "purpose": "Decompose into parallel worker subtasks; writes task file; auto-chains to dispatch",
+      "name": "plan",
+      "command": "/hyperflow:plan",
+      "tagline": "Design + decompose",
+      "purpose": "Amplify the prompt, design the approach, and decompose into a batched task file \u2014 skips whichever phase the request doesn't need; auto-chains to dispatch",
       "chain": "starter"
     },
     {
@@ -133,13 +126,6 @@
       "command": "/hyperflow:cache",
       "tagline": "Memory CRUD",
       "purpose": "Show, search, add, edit, prune, archive, clear, stats, migrate, off, compact",
-      "chain": "standalone"
-    },
-    {
-      "name": "amplify",
-      "command": "/hyperflow:amplify",
-      "tagline": "Enhance a prompt",
-      "purpose": "Rewrite a rough prompt into the single strongest version \u2014 domain-aware persona standards + project rules, scored against an 8-dimension rubric, then a handoff into the chain",
       "chain": "standalone"
     },
     {

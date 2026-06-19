@@ -2,19 +2,19 @@
 
 ## Purpose
 
-Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine additional levers (L1–L9, round 2) applied across `spec`, `scope`, and `dispatch`. Round 1 patterns change *when* and *how* calls fire, not the agent count. Round 2 patterns reduce call *count* and eliminate unnecessary review passes — acknowledging that review ceremony around mechanical orchestration steps costs wall-clock without quality return.
+Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine additional levers (L1–L9, round 2) applied across `plan` and `dispatch`. Round 1 patterns change *when* and *how* calls fire, not the agent count. Round 2 patterns reduce call *count* and eliminate unnecessary review passes — acknowledging that review ceremony around mechanical orchestration steps costs wall-clock without quality return.
 
 ## Wall-clock impact
 
 | Pattern | Applies to | Wall-clock win |
 |---|---|---|
-| P1 — Parallel sibling drafts | spec §7, scope Step 2 (research Searchers) + Step 4 (Writer-internal section parallelism) | ~5x on section work |
-| P2 — Batched single-pass review | spec §7, scope, dispatch | ~5x reviewer calls collapsed |
-| P3 — Concurrent independent pre-conditions | spec §1+§2, §5+§6, all skills | ~2x on independent steps |
-| P4 — Triage-driven step skipping | spec §3, §6 | up to 100% on low-ambiguity |
+| P1 — Parallel sibling drafts | plan Step 7, plan Step 3 (context Searchers) + Step 10 (Writer-internal section parallelism) | ~5x on section work |
+| P2 — Batched single-pass review | plan Step 7, plan decomposition (Step 9), dispatch | ~5x reviewer calls collapsed |
+| P3 — Concurrent independent pre-conditions | plan Step 1+Step 3, Step 5+Step 6, all skills | ~2x on independent steps |
+| P4 — Triage-driven step skipping | plan Step 4, Step 6 | up to 100% on low-ambiguity |
 | P5 — Lean worker prompts via memory references | all skills | ~30% TTFT reduction |
 
-**Median spec run (round 1):** ~16 sequential round-trips before → ~6 after. ~60% wall-clock reduction, zero change to which roles review what.
+**Median plan design-phase run (round 1):** ~16 sequential round-trips before → ~6 after. ~60% wall-clock reduction, zero change to which roles review what.
 
 **Dispatch (workhorse, round 1):** P2 alone collapses N per-sub-task Reviewer calls into 1 batched review per batch. On a 3-batch task with 4 sub-tasks per batch: 12 reviewer calls → 3. ~75% reviewer-phase latency reduction.
 
@@ -22,32 +22,32 @@ Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine addition
 
 | Phase | Round 1 | Round 2 | Cut |
 |---|---|---|---|
-| Spec | 30-45s | 18-28s | ~40% additional |
+| Plan (design phase) | 30-45s | 18-28s | ~40% additional |
 | Dispatch (per-batch) | 25-40s | 18-28s | ~30% additional |
 | Wrap-up | 8-15s | 1-2s (inline) | ~85% |
 | End-of-chain gates | 2 round-trips | 1 round-trip | -50% |
 
 **Median chain wall-clock:** round 1 ~90-130s → round 2 ~55-80s. ~35-40% additional reduction on top of round 1's ~50-60%. Cumulative vs pre-round-1 baseline: ~70-75% faster end-to-end.
 
-**Reviewer call count (median chain):** round 1 5-7 calls → round 2 3-4 calls (drop wrap-up Reviewer, skip integration review when green, drop spec coverage Reviewer).
+**Reviewer call count (median chain):** round 1 5-7 calls → round 2 3-4 calls (drop wrap-up Reviewer, skip integration review when green, drop plan context coverage Reviewer).
 
 ---
 
 ## P1 — Parallel sibling drafts
 
-**What it is:** Draft multiple independent sections simultaneously by dispatching all sibling workers in a single message with parallel `Agent` calls — the same pattern `dispatch` uses for batch workers, applied back to `spec` §7 and `scope` decomposition.
+**What it is:** Draft multiple independent sections simultaneously by dispatching all sibling workers in a single message with parallel `Agent` calls — the same pattern `dispatch` uses for batch workers, applied back to `plan` Step 7 and `plan` decomposition (Step 9).
 
 **When siblings qualify:**
 - No inter-dependencies (section A's output is not an input to section B)
 - All share the same upstream input (e.g., a single approved approach feeds all 5 design sections)
-- Sibling count matches the natural structure: 5 spec sections (Architecture, Data flow, Key decisions, Edge cases, File structure); do not artificially split to inflate parallelism
+- Sibling count matches the natural structure: 5 plan design sections (Architecture, Data flow, Key decisions, Edge cases, File structure); do not artificially split to inflate parallelism
 
 **Dispatch pattern:** Fire all sibling Worker agents in one message. Wait for all to return before advancing to the Reviewer step.
 
 **Example:**
 
 ```
-[spec §7] approved approach → single message →
+[plan Step 7] approved approach → single message →
   Worker §A (Architecture)    ↘
   Worker §B (Data flow)        → all parallel
   Worker §C (Key decisions)    →
@@ -58,18 +58,18 @@ Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine addition
 
 **Why quality is preserved:** The Reviewer still reviews every section. Parallelizing the draft phase does not touch the review phase.
 
-**When to disable:** `--thorough` / `depth=max` flag disables P1 for steps where a prior section's output could meaningfully shape a later section's approach (rare in spec §7, common in narrative prose).
+**When to disable:** `--thorough` / `depth=max` flag disables P1 for steps where a prior section's output could meaningfully shape a later section's approach (rare in plan Step 7, common in narrative prose).
 
-**Scope-specific carve-out (critical):** `--thorough` does NOT disable P1 for scope Step 2's parallel Searchers. Those two Searchers are independent reads — neither's output is an input to the other — so sequencing them provides no quality benefit regardless of flag. `--thorough` only disables P1 where section-order dependency is plausible:
-- Step 4 Writer-internal section parallelism (spec §7 and scope's Writer step)
+**Plan-specific carve-out (critical):** `--thorough` does NOT disable P1 for plan Step 3's parallel context Searchers. Those two Searchers are independent reads — neither's output is an input to the other — so sequencing them provides no quality benefit regardless of flag. `--thorough` only disables P1 where section-order dependency is plausible:
+- Step 7 design-section drafts and Step 10 task-file section drafts
 - Anywhere else sibling content could cross-influence
 
-**Scope P1 surface under `--thorough`:**
+**Plan P1 surface under `--thorough`:**
 
-| Scope step | P1 under default | P1 under `--thorough` |
+| Plan step | P1 under default | P1 under `--thorough` |
 |---|---|---|
-| Step 2 — parallel research Searchers | On | **On** (independent reads, no tradeoff) |
-| Step 4 — Writer-internal section parallelism | On | **Off** (serialized for section coherence) |
+| Step 3 — parallel context Searchers | On | **On** (independent reads, no tradeoff) |
+| Step 7/10 — Writer section parallelism | On | **Off** (serialized for section coherence) |
 
 If in doubt about whether siblings are truly independent, keep P1 on — the Reviewer catches cross-section conflicts.
 
@@ -112,12 +112,12 @@ For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single re-
 
 **Identifying independence:** Step A and Step B are independent if the output of A is not an input to B and the output of B is not an input to A. Both may share an upstream input without losing independence.
 
-**Examples (spec flow):**
+**Examples (plan flow):**
 
 | Concurrent pair | Why independent |
 |---|---|
-| Step 1 Classifier ∥ Step 2 Searcher | Searcher maps existing context; does not need triage output to begin |
-| Step 5 Synthesis Writer ∥ Step 6 Approaches Writer | Both depend on Step 4 answers, but neither depends on the other's output |
+| Step 1 Classifier ∥ Step 3 context Searcher | Searcher maps existing context; does not need triage output to begin |
+| Step 6 synthesis ∥ Step 6 approaches | Step 5 answers feed both Step 6 synthesis and Step 6 approach drafting; neither sub-part depends on the other's output |
 
 **Dispatch pattern:** Fire both in one message; wait for both before advancing to the dependent step.
 
@@ -132,18 +132,18 @@ For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single re-
 
 ## P4 — Triage-driven step skipping
 
-**What it is:** Skip spec ceremony steps that add no value when the request is already clear and unambiguous.
+**What it is:** Skip plan ceremony steps that add no value when the request is already clear and unambiguous.
 
 **Thresholds (round 2 — updated by D8/L8):**
 
 | Condition | Steps skipped | Rationale |
 |---|---|---|
-| `ambiguity < 0.6 AND complexity != high` | Step 3 (6-dim analysis) + Step 6 (2–3 approach proposals) | Nothing ambiguous to analyze; one clear approach exists |
-| `ambiguity < 0.4 AND complexity == low` | Entire spec skill | Bounce directly to `scope` — spec ceremony adds no value |
+| `ambiguity < 0.6 AND complexity != high` | Step 4 (6-dim analysis) + Step 6 (approach proposals) | Nothing ambiguous to analyze; one clear approach exists |
+| `ambiguity < 0.4 AND complexity == low` | Design phase (Steps 6-8) | Bounce directly to decomposition (Step 9) — design ceremony adds no value |
 
 **Steps always kept regardless of triage:**
 - Step 7 sections (the design walk-through is the deliverable)
-- Step 4 questions (2-question floor is a structural gate per DOCTRINE rule 8)
+- Step 5 questions (2-question floor is a structural gate per DOCTRINE rule 8)
 
 **Borderline rounding rule:** When `ambiguity` lands at or near the threshold (e.g., 0.39, 0.41), **round up** — run the optional steps. The latency win matters on the clearly unambiguous cases; borderline cases keep the full ceremony. Never skip on the fence.
 
@@ -195,7 +195,7 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L1 — Lightweight Classifier (D1)
 
-**What it is:** Triage Classifier (spec Step 1) dispatched with a lean, structured-output-only prompt.
+**What it is:** Triage Classifier (plan Step 1) dispatched with a lean, structured-output-only prompt.
 
 **When applicable:** Always — triage produces structured JSON (`types[], complexity, risk, ambiguity, flow, personas[]`). Structured classification requires less reasoning depth than open-ended generation; a focused prompt reduces latency. Inherits the session model like all other agents.
 
@@ -223,13 +223,13 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ---
 
-### L4 — Drop spec Searcher coverage Reviewer (D4)
+### L4 — Drop plan context-Searcher coverage Reviewer (D4)
 
-**What it is:** Remove the Reviewer that reviewed the spec Step 2 Searcher output for coverage completeness.
+**What it is:** Remove the Reviewer that reviewed the plan Step 3 Searcher output for coverage completeness.
 
 **When applicable:** Always — in 95%+ of runs, the Reviewer passed with "coverage looks complete". Fallback: if a downstream Writer flags `MISSING CONTEXT: <subsystem>`, redispatch the Searcher with the gap before continuing. Slower on the 5% bad-case path; faster on the 95% good-case path.
 
-**`--thorough` behavior:** RESTORES the coverage Reviewer. Step 2 reverts to Worker + Reviewer pattern for coverage validation.
+**`--thorough` behavior:** RESTORES the coverage Reviewer. Step 3 reverts to Worker + Reviewer pattern for coverage validation.
 
 ---
 
@@ -265,7 +265,7 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L8 — Aggressive P4 thresholds (D8)
 
-**What it is:** P4 triage thresholds tightened — skip multi-dim Analyst at `ambiguity < 0.6` (was 0.4); bounce to scope at `ambiguity < 0.4` (was 0.2). Requests at ambiguity 0.4-0.6 operationally rarely benefit from multi-dim analysis. The 2-question floor (Step 4) is preserved non-negotiably.
+**What it is:** P4 triage thresholds tightened — skip multi-dim Analyst at `ambiguity < 0.6` (was 0.4); bounce to decomposition at `ambiguity < 0.4` (was 0.2). Requests at ambiguity 0.4-0.6 operationally rarely benefit from multi-dim analysis. The 2-question floor (Step 5) is preserved non-negotiably.
 
 **When applicable:** Whenever `ambiguity < 0.6 AND complexity != high` (skip multi-dim) or `ambiguity < 0.4 AND complexity == low` (bounce). Borderline rounding rule unchanged: round up on the fence — never skip on ambiguous boundary cases.
 
@@ -275,7 +275,7 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L9 — DOCTRINE §12.1 trivial inline (D9)
 
-**What it is:** §12.1 amendment to DOCTRINE §12 — trivial steps (≤ 2 tool calls, no content generation, no decision-making, no review needed, orchestrator is the natural executor) may be performed inline by the orchestrator without an Agent dispatch wrapper. Examples: dispatch Step 4 wrap-up (delete + memory append + commit), scope hand-off invocations, spec hand-off.
+**What it is:** §12.1 amendment to DOCTRINE §12 — trivial steps (≤ 2 tool calls, no content generation, no decision-making, no review needed, orchestrator is the natural executor) may be performed inline by the orchestrator without an Agent dispatch wrapper. Examples: dispatch Step 4 wrap-up (delete + memory append + commit), plan hand-off invocations.
 
 **When applicable:** Only when ALL five §12.1 criteria are met. Non-trivial steps (any code/doc generation, multi-file change, cross-file consistency reasoning, research/Read of unfamiliar context, Reviewer-eligible output) remain Agent-dispatched per §12. Trivial-eligibility is checked at step-start; if the orchestrator discovers mid-step that the work needs generation/research, it MUST abort the inline path and dispatch an Agent.
 
@@ -294,7 +294,7 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 P3 and P5 are always on because they carry no quality tradeoff. P1, P2, and P4 restructure dispatch shape and skip steps; `--thorough` restores sequential drafts, per-section reviews, and full step execution.
 
-**Exception within P1:** scope Step 2's parallel Searchers stay on even under `--thorough`. They are independent reads with no ordering dependency, so serializing them yields no quality gain. Only P1 surfaces with plausible section-order coupling are serialized by `--thorough` (spec §7 Writer sections, scope Step 4 Writer-internal sections).
+**Exception within P1:** plan Step 3's parallel context Searchers stay on even under `--thorough`. They are independent reads with no ordering dependency, so serializing them yields no quality gain. Only P1 surfaces with plausible section-order coupling are serialized by `--thorough` (Step 7 design sections, Step 10 task-file sections).
 
 ### Round 2 levers
 
@@ -303,7 +303,7 @@ P3 and P5 are always on because they carry no quality tradeoff. P1, P2, and P4 r
 | L1 — Lightweight Classifier | On (lean structured-output prompt) | No change — lean prompt stays |
 | L2 — Combined audit+deploy gate | On (1 round-trip) | No change — combined gate stays |
 | L3 — Session-cached context | On (bundle) | No change — bundle stays |
-| L4 — Drop spec Searcher coverage Reviewer | On (no Reviewer) | Step 2 coverage Reviewer restored |
+| L4 — Drop plan context-Searcher coverage Reviewer | On (no Reviewer) | Step 3 coverage Reviewer restored |
 | L5 — Drop dispatch wrap-up Reviewer | On (inline only) | Wrap-up Reviewer restored; iron rule reverts to `≥ batches + 2` |
 | L6 — Default L1-L2 cap | On (L1-L2 default) | Cap elevated to L1-L3 default |
 | L7 — Conditional integration review | On (skippable when all green) | Integration review always runs |
@@ -332,7 +332,7 @@ What round 2 does NOT change:
 - Implementation work still hits a per-batch Reviewer (L5 drops the wrap-up Reviewer, not the batch Reviewer)
 - Per-sub-task commit cadence — preserved unconditionally
 - SECURITY_VIOLATION halt — preserved unconditionally
-- 2-question spec floor (Step 4) — preserved unconditionally even when P4/L8 skip other ceremony
+- 2-question plan floor (Step 5) — preserved unconditionally even when P4/L8 skip other ceremony
 - Borderline rounding rule — preserved (round up on ambiguity boundary; never skip on the fence)
 
 What round 2 relaxes:

@@ -1,6 +1,6 @@
 # Prompt-Quality Rubric
 
-The scorecard the Reviewer applies in Step 2. Eight dimensions, each scored 1–5. The rubric gate passes only when **every dimension ≥ 4**. Any dimension below 4 returns targeted revisions; the Writer revises once, then the best version ships regardless (no infinite loop — see `failure-recovery.md` NEEDS_REVISION rule).
+The scorecard the Reviewer applies in **Step 2 (Amplify)**. Eight dimensions, each scored 1–5. The rubric gate passes only when **every dimension ≥ 4**. Any dimension below 4 returns targeted revisions; the Writer revises once, then the best version ships regardless (no infinite loop — see `../../hyperflow/failure-recovery.md` NEEDS_REVISION rule).
 
 | # | Dimension | Scores 5 when… | Scores 1 when… |
 |---|-----------|----------------|----------------|
@@ -15,7 +15,7 @@ The scorecard the Reviewer applies in Step 2. Eight dimensions, each scored 1–
 
 ## Domain doctrine injection (dimension 5)
 
-Step 1 detects the prompt's domain and selects the matching hyperflow persona(s) (`personas-A.md` / `personas-B.md`). The enhanced prompt must carry that persona's **mandatory** standards as explicit constraints. Representative standards per domain:
+Triage (Step 1) detects the prompt's domain and selects the matching hyperflow persona(s) (`../../hyperflow/personas-A.md` / `personas-B.md`). The enhanced prompt must carry that persona's **mandatory** standards as explicit constraints. Representative standards per domain:
 
 | Domain | Mandatory constraints to inject |
 |--------|--------------------------------|
@@ -29,7 +29,7 @@ Step 1 detects the prompt's domain and selects the matching hyperflow persona(s)
 
 ## Project-rule overlay
 
-After the persona standards, Step 1 reads — when present — `CLAUDE.md`, `AGENTS.md`, and `.hyperflow/memory/*` (especially `conventions.md`, `project-decisions.md`, `anti-patterns.md`). Any project-specific rule found there is layered on top of the persona standards and injected into the enhanced prompt as a constraint. Project rules win on conflict — they are the user's explicit instructions.
+After the persona standards, the amplify pass reads — when present — `CLAUDE.md`, `AGENTS.md`, and `.hyperflow/memory/*` (especially `conventions.md`, `project-decisions.md`, `anti-patterns.md`). Any project-specific rule found there is layered on top of the persona standards and injected into the enhanced prompt as a constraint. Project rules win on conflict — they are the user's explicit instructions.
 
 ## What the enhanced prompt looks like
 

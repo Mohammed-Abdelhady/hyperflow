@@ -43,7 +43,7 @@ builds the batches, writes `COMPLETION.md` + `STATUS=built`, and then deploys or
    flow in `HANDOFF.md` was `scientific` or `security`). The audit dispatches the matching domain specialist
    reviewers over the second session's diff.
 4. On audit clean pass → fire the deploy gate (`AskUserQuestion` — `Run /hyperflow:deploy? Yes / No`, binary, no
-   marker). On `NEEDS_FIX` → the audit fix-gate (`Yes` → `/hyperflow:scope` → `/hyperflow:dispatch`) handles it.
+   marker). On `NEEDS_FIX` → the audit fix-gate (`Yes` → `/hyperflow:plan` → `/hyperflow:dispatch`) handles it.
 5. Set `STATUS=reviewed` once the review is accepted.
 
 ### `complete <slug>`
