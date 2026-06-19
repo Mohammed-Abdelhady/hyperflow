@@ -141,6 +141,61 @@
         }
       },
       "additionalProperties": false
+    },
+    "specialists": {
+      "description": "Specialist agent registry settings (agents/*.md). Specialists reuse existing model roles (reviewer/debugger/searcher/decision-maker) — no new role keys. Tiers resolve per provider via model-config.md.",
+      "type": "object",
+      "properties": {
+        "brain": {
+          "description": "The Brain specialist router that selects the responsible roster after triage.",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the Brain router. When false, the triage specialists[] derivation is used directly without the reasoned pass. Default: true.",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "webResearch": {
+          "description": "Web-research-first protocol settings (skills/hyperflow/web-research.md). Runs only on gated flows.",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable the web-research-first step for specialists on gated flows. Default: true.",
+              "default": true
+            },
+            "maxSources": {
+              "type": "integer",
+              "description": "Max sources a specialist consults per research pass. Security/vuln specialists floor at 5.",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 20
+            },
+            "recencyMonths": {
+              "type": "integer",
+              "description": "Preferred source recency window in months (CVE/security prefer 6).",
+              "default": 18,
+              "minimum": 1
+            },
+            "offlineSkip": {
+              "type": "boolean",
+              "description": "When offline or WebSearch is unavailable, skip web-research gracefully (logged) instead of blocking. Default: true.",
+              "default": true
+            },
+            "flowGate": {
+              "description": "Flow profiles on which web-research-first is allowed to run.",
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["deep", "research", "scientific", "security"]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["defaults"],

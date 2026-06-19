@@ -143,6 +143,35 @@
       "chain": "standalone"
     }
   ],
+  "specialists": {
+    "location": "agents/",
+    "router": { "name": "brain", "tier": "thinking", "role": "decision-maker", "focus": "Selects the responsible specialist roster after triage; decides web-research + fan-out (cheap pass-through on fast/standard flows)" },
+    "reviewers": [
+      { "name": "frontend-reviewer", "personas": ["frontend", "ui"], "tier": "worker/thinking" },
+      { "name": "backend-reviewer", "personas": ["api", "architect"], "tier": "worker/thinking" },
+      { "name": "api-reviewer", "personas": ["api"], "tier": "worker/thinking" },
+      { "name": "database-reviewer", "personas": ["db"], "tier": "worker/thinking" },
+      { "name": "security-reviewer", "personas": ["security"], "tier": "thinking" },
+      { "name": "vulnerability-reviewer", "personas": ["security", "scientific"], "tier": "thinking" },
+      { "name": "devops-reviewer", "personas": ["devops"], "tier": "worker/thinking" },
+      { "name": "performance-reviewer", "personas": ["performance"], "tier": "worker/thinking" },
+      { "name": "algorithm-reviewer", "personas": ["performance", "scientific"], "tier": "worker/thinking" },
+      { "name": "accessibility-reviewer", "personas": ["ui", "frontend"], "tier": "worker/thinking" },
+      { "name": "mobile-reviewer", "personas": ["frontend", "ui", "performance"], "tier": "worker/thinking" },
+      { "name": "data-ml-reviewer", "personas": ["scientific", "db"], "tier": "thinking" },
+      { "name": "compliance-reviewer", "personas": ["security", "docs"], "tier": "thinking" }
+    ],
+    "investigators": [
+      { "name": "searcher", "personas": ["research"], "tier": "worker" },
+      { "name": "debugger", "personas": ["bugfix", "test"], "tier": "thinking" },
+      { "name": "analyst", "personas": ["architect", "research"], "tier": "thinking" },
+      { "name": "researcher", "personas": ["research"], "tier": "thinking" }
+    ],
+    "webResearch": {
+      "gatedFlows": ["deep", "research", "scientific", "security"],
+      "note": "Specialists research current best-practices/CVEs before judging on gated flows; cited, cached to memory, skipped offline"
+    }
+  },
   "providers": [
     {
       "name": "Claude Code",
@@ -174,6 +203,9 @@
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
     "Codex/OpenCode portable workflow adapter for big tasks",
     "Thinking-tier review of every worker output (iron rule)",
+    "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
+    "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
+    "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
     "Project-scoped persistent memory with tag taxonomy",
