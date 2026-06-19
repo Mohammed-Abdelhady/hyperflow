@@ -4,7 +4,7 @@ description: |
   Use when the user has a clear-enough task and wants it decomposed into batched worker sub-tasks before any code is written. Writes a flat task file under .hyperflow/tasks/ — or, for multi-phase work, a feature folder under .hyperflow/features/<slug>/ with encapsulated phase sub-folders — and auto-chains into /hyperflow:dispatch.
   Trigger with /hyperflow:scope, "plan this", "decompose this task", "break this down", "write the task file".
 allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, AskUserQuestion
-argument-hint: "<task description> [chain-mode=auto|manual]"
+argument-hint: "<task description> [session=one|two] [handoff=review|deploy]"
 version: 3.1.2
 license: MIT
 compatibility: Designed for Claude Code
@@ -13,7 +13,7 @@ tags: [planning, decomposition, task-graph, multi-agent]
 
 # Scope
 
-Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/features/`, `.hyperflow/memory/`, and `.hyperflow/specs/`. When the task file (or feature folder) is ready, hand off to `dispatch` (auto or with a gate, depending on chain mode) passing the artefact path.
+Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/features/`, `.hyperflow/memory/`, `.hyperflow/specs/`, and (in two-session mode) the committed `.hyperflow-handoff/` package. When the task file (or feature folder) is ready: in `session=one` hand off to `dispatch` here; in `session=two` write the committed handoff package and stop at the dispatch boundary.
 
 This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Project Memory)** for past-learning surfacing, and **Layer 7 (Task Templates)** for decomposition patterns. It also inherits the triage classification from `/hyperflow:spec` to size each batch correctly.
 
@@ -27,7 +27,7 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 
 | Step | Sub-phase | Worker tier | Thinking tier | Notes |
 |---|---|---|---|---|
-| 0 — Chain mode | — (atomic) | — | — | `AskUserQuestion` only; 12.2.8-exempt |
+| 0 — Session strategy | — (atomic) | — | — | `AskUserQuestion` only; 12.2.8-exempt |
 | 0.4 — Triage (Classifier + Reviewer) | — (atomic) | Classifier (Sonnet) [if not inherited] | **Triage Reviewer** (Sonnet) [if not inherited + P4 conditions not met] | Skipped entirely when chained from spec (spec's validated triage is canonical); on direct invocation, dispatches its own Classifier then Triage Reviewer; skips Triage Reviewer on P4 conditions; 12.2.8-exempt |
 | 0.5 — Ops choices | — (atomic) | — | — | Single `AskUserQuestion` batch; 12.2.8-exempt |
 | 1 — Route | — (atomic) | — | — | Single mechanical routing decision; 12.2.8-exempt |
@@ -57,35 +57,36 @@ Every substantive step dispatches at least one Agent per DOCTRINE rule 12. Trivi
 
 | Gate | When | Format |
 |---|---|---|
-| Chain mode | Step 0, only if invoked directly | `AskUserQuestion` — auto / manual |
+| Session strategy | Step 0, only if invoked directly | `AskUserQuestion` — one / two sessions (+ handoff when two) |
 | Decomposition sanity | Step 4, after writing the task file | Print the batch summary; user reads it |
 | Phase advance (if `manual` mode) | Step 7, before invoking `dispatch` | `AskUserQuestion` — continue / stop |
 
 ## Flow
 
-### Step 0 — Choose chain mode (FIRST tool call · STRUCTURAL GATE)
+### Step 0 — Choose session strategy (FIRST tool call · STRUCTURAL GATE)
 
-This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the skill is invoked directly. "No clarifying questions" / "auto-pilot" / "always-on" / any other autonomy directive does NOT skip it. Defaulting to `auto` without asking is a doctrine violation.
+This is a **structural gate** per DOCTRINE rule 8. It MUST fire every time the skill is invoked directly. "No clarifying questions" / "auto-pilot" / "always-on" / any other autonomy directive does NOT skip it. Defaulting to `one` without asking is a doctrine violation.
 
 **Latency arg:** `--thorough` (or `depth=max`) disables P1 **in Step 4 only** (sequential Writer-internal section drafts instead of parallel). The Step 2 parallel Searchers are NOT affected — they stay parallel under all flag configurations because they are independent reads with no quality tradeoff. P3 (Step 4 + Step 6 concurrent dispatch) stays on always. If the user passes `--thorough`, note it and apply to Step 4 dispatch only.
 
-If invoked with a `chain-mode=<auto|manual>` arg (from `/hyperflow:spec` or a prior skill), skip this step — the previous chain-starter already asked.
+If invoked with a `session=<one|two>` arg (from `/hyperflow:spec` or a prior skill), skip this step — the previous chain-starter already asked.
 
-Otherwise, **before research**, ask via `AskUserQuestion`. Per DOCTRINE rule 8, the recommended option goes first with `(Recommended)`:
+Otherwise, **before research**, ask via `AskUserQuestion` the same gate spec uses (see [spec/SKILL.md § Step 0](../spec/SKILL.md#step-0--choose-session-strategy-first-tool-call--structural-gate) for the canonical Q1 + Q2 text):
 
 ```
-How should I advance through the chain after this phase?
+How should I run this chain?
 
-  Auto (Recommended)  — chain forward through scope → dispatch with no gate.
-                        Fewer interruptions, faster end-to-end.
+  One session (Recommended)  — run the whole chain here, straight through:
+                               scope → dispatch → audit/deploy, no pauses.
 
-  Manual              — pause between phases and ask before advancing.
-                        More control, more confirmations.
+  Two sessions               — this session plans only (scope), then STOPS and writes a
+                               committed handoff package; a second session (another
+                               environment, e.g. Codex/Gemini) runs the build.
 ```
 
-Wait for the user's answer. Do not proceed without it. Save the chosen mode and propagate via `args: "chain-mode=<mode>"` when invoking dispatch.
+When the user picks `Two sessions`, fire the conditional **Q2** follow-up (`Return for review` (default) / `Complete to deploy`) — no `(Recommended)` marker (binary action gate). Wait for the answer(s). Save and propagate via `args: "session=<one|two>"` (and `handoff=<review|deploy>` when two). See [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md).
 
-If the agent cannot present `AskUserQuestion` as a popup, use the Codex fallback: print the same gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print an error and stop — never silently default.
+If the agent cannot present `AskUserQuestion` as a popup, use the Codex fallback: print the same gate(s) as a `Hyperflow Question` chat block with numbered options, then stop and wait. If no interactive channel is available at all: error and stop on Q1; default `Return for review` on Q2 only.
 
 ### Step 0.4 — Triage (Classifier + Reviewer) (DOCTRINE rule 15 · atomic-exempt)
 
@@ -128,12 +129,11 @@ Then proceed to Step 0.5.
 
 Cost (Path B, non-P4): ~2k tokens for Classifier + ~2k for Triage Reviewer. Catches mis-classifications that would otherwise cascade into the wrong flow profile, wrong personas, and a botched batch graph — silently.
 
-### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
+### Step 0.5 — Operational Choices (STRUCTURAL GATE · fires immediately after Step 0)
 
-When the user picks `Auto` at Step 0 AND operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision the chain needs. After this batch, the chain runs silently until the end-of-chain audit + deploy gates — the user is interrupted exactly twice at startup (chain-mode in Step 0, ops in Step 0.5) and then not again until done.
+When operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision the chain needs. After this batch, the chain runs silently until the end-of-chain audit + deploy gates — the user is interrupted exactly twice at startup (session strategy in Step 0, ops in Step 0.5) and then not again until done. Fires for **both** `session=one` and `session=two` — in two-session mode the handoff package must carry resolved `commit=/branch=/push=` so the build session honors them.
 
-Skip this step when:
-- `chain-mode=manual` — manual users review every phase, so operational choices defer to per-phase gates
+Skip this step only when:
 - Operational args already propagated (`commit=…`, `branch=…`, `push=…` in chain args) — re-asking is an invented-gate violation per DOCTRINE rule 8
 
 The 3-question batch:
@@ -218,7 +218,7 @@ The 2-question floor from `/hyperflow:spec` does NOT apply to scope. Scope asks 
 
 ### Step 2.6 — Operational Choices (MOVED to Step 0.5)
 
-This step has been moved to Step 0.5 (immediately after Step 0 chain-mode) so operational decisions are batched with the only other startup question — the user is interrupted once at chain start, then the chain runs silently. Step 2.6 is preserved as a NUMBER for backward-reference only; it intentionally does nothing.
+This step has been moved to Step 0.5 (immediately after Step 0 session strategy) so operational decisions are batched with the only other startup question — the user is interrupted once at chain start, then the chain runs silently. Step 2.6 is preserved as a NUMBER for backward-reference only; it intentionally does nothing.
 
 If propagation from a prior chain-starter failed and operational args are missing at this point in scope, fall through to Step 3 with default values (`commit=per-task branch=new push=ask`) rather than firing an invented mid-chain gate. The orchestrator MUST NOT fire `AskUserQuestion` here — Step 0.5 is the only correct location for this question batch.
 
@@ -468,24 +468,24 @@ Auto-chaining to /hyperflow:dispatch…
 - Skipping the research step
 - Single-batch plans for multi-file work
 - Omitting the verification plan
-- Pausing for "should I execute?" when `chain-mode=auto` — that was already answered at Step 0
-- Asking the chain-mode question again when a `chain-mode=<…>` arg was passed in
+- Pausing for "should I execute?" when `session=one` — that was already answered at Step 0
+- Asking the session-strategy question again when a `session=<…>` arg was passed in
 
 ## Overview
 
-`/hyperflow:scope` decomposes a clear-enough task into a batched worker plan and writes it to `.hyperflow/tasks/<slug>.md`. Parallel Sonnet searchers map the affected surface, an Opus Planner produces the batch graph, and a Sonnet Writer emits the task file. Read-only with respect to source code — only `.hyperflow/tasks/`, `.hyperflow/memory/`, and `.hyperflow/specs/` are written. On completion, auto-chains into `/hyperflow:dispatch` (or asks first if `chain-mode=manual`).
+`/hyperflow:scope` decomposes a clear-enough task into a batched worker plan and writes it to `.hyperflow/tasks/<slug>.md`. Parallel Sonnet searchers map the affected surface, an Opus Planner produces the batch graph, and a Sonnet Writer emits the task file. Read-only with respect to source code. On completion: in `session=one` auto-chains into `/hyperflow:dispatch`; in `session=two` writes the committed `.hyperflow-handoff/` package and stops for a second-session build.
 
 ## Prerequisites
 
 - A clear-enough description of what to build. If ambiguous, scope will redirect to `/hyperflow:spec` and stop.
 - `.hyperflow/` cache (recommended — improves planning context). Run `/hyperflow:scaffold` first if missing.
-- Optional: prior `/hyperflow:spec` output passed via `chain-mode` arg propagates triage classification and recommended flow profile.
+- Optional: prior `/hyperflow:spec` output passed via `session`/`triage` args propagates triage classification and recommended flow profile.
 
 ## Instructions
 
-The numbered steps live in [Step 0 — Choose chain mode](#step-0--choose-chain-mode-first-tool-call--structural-gate) through [Step 7 — Hand off to /hyperflow:dispatch](#step-7--hand-off-to-hyperflowdispatch) above. Summary:
+The numbered steps live in [Step 0 — Choose session strategy](#step-0--choose-session-strategy-first-tool-call--structural-gate) through [Step 7 — Hand off to /hyperflow:dispatch](#step-7--hand-off-to-hyperflowdispatch) above. Summary:
 
-1. Ask `chain-mode` (auto / manual) if not propagated from a prior chain-starter.
+1. Ask `session` (one / two; + handoff follow-up when two) if not propagated from a prior chain-starter.
 2. Confirm the task is buildable, not a design question (else hand off to `/hyperflow:spec`).
 3. Step 2 sub-phases (2a surface mapping, 2b semantic indexing, 2c convention scan) in parallel.
 4. Step 3a Opus Planner produces batch graph; Sonnet Reviewer validates decomposition; 3b/3c (complexity sizing, acceptance criteria) in parallel after 3a.
@@ -512,22 +512,22 @@ The written task file follows the template in [Step 4](#step-4--write-task-file)
 | Searcher returns empty (no affected files found) | Reviewer flags missing scope; redispatch with broader query. Max 2 retries. |
 | Planner produces single-batch plan for multi-file work | Reviewer rejects; redispatch Planner with feedback to split into parallel + sequential batches. |
 | Task file write fails (path locked, disk full) | Abort with explicit error; do not auto-chain. User retries after fix. |
-| `chain-mode` arg malformed | Refuse and re-ask via `AskUserQuestion`. Never silently default. |
+| `session` arg malformed | Refuse and re-ask via `AskUserQuestion`. Never silently default. |
 | `AskUserQuestion` popup unavailable in Codex | Print the gate as a `Hyperflow Question` chat block and wait for the user's answer. |
-| No interactive channel at all | Print error stating chain-mode gate cannot fire; exit. |
+| No interactive channel at all | Print error stating the session-strategy gate cannot fire; exit. |
 
 ## Examples
 
-### Direct invocation (asks chain-mode first)
+### Direct invocation (asks session strategy first)
 
 ```
 /hyperflow:scope add a rate-limit middleware: token bucket, per-IP, env-configurable
 
-?  How should I advance through the chain after this phase?
-   Auto (Recommended)  — chain forward through scope → dispatch with no gate.
-   Manual              — pause between phases and ask before advancing.
+?  How should I run this chain?
+   One session (Recommended)  — run the whole chain here, straight through.
+   Two sessions               — plan here; a second session (another env) builds.
 
-[user picks Auto]
+[user picks One session]
 
 Step 2a: Searcher — glob discovery · Searcher — import-graph traversal → **Reviewer**
 Step 2b: Searcher — type-system probe · Searcher — symbol-graph probe → **Reviewer**
@@ -546,10 +546,10 @@ Plan ready — .hyperflow/tasks/rate-limit-middleware.md (3 batches, 7 sub-tasks
 Auto-chaining to /hyperflow:dispatch...
 ```
 
-### Propagated from spec (no chain-mode prompt)
+### Propagated from spec (no session-strategy prompt)
 
 ```
-[Invoked from /hyperflow:spec with args: chain-mode=auto triage=<base64>]
+[Invoked from /hyperflow:spec with args: session=one triage=<base64>]
 
 Searcher — mapping affected files
 ...

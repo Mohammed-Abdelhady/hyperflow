@@ -4,7 +4,7 @@ description: |
   Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel Sonnet workers under per-batch Opus reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
 allowed-tools: Read, Write, Edit, Bash(git:*), Agent, AskUserQuestion
-argument-hint: "[task-file] [chain-mode=auto|manual] [--from-batch N] [--final-only] [--thorough]"
+argument-hint: "[task-file | handoff-slug] [session=one|two] [--from-batch N] [--final-only] [--thorough]"
 version: 3.1.2
 license: MIT
 compatibility: Designed for Claude Code
@@ -38,7 +38,7 @@ Iron rule — `thinking agents ≥ batches + 1` (one batched Reviewer per batch 
 
 ## Review Levels (scale by flow profile)
 
-Every batch reviewer and the final integration reviewer uses the level set below. Profile comes from `/hyperflow:spec` triage and is propagated via the `chain-mode` args.
+Every batch reviewer and the final integration reviewer uses the level set below. Profile comes from `/hyperflow:spec` triage and is propagated via the chain args (`triage=`).
 
 | Profile | Levels | Workers | Reviewers |
 |---|---|---|---|
@@ -57,7 +57,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 
 | Gate | When | Format |
 |---|---|---|
-| Chain mode | Step 0, only if invoked directly | `AskUserQuestion` — auto / manual |
+| Session context | Step 0, resolved (not asked) | inherited `session=` / handoff `HANDOFF.md` / default `one` |
 | Inter-batch (manual mode only) | After each batch's gates pass | `AskUserQuestion` — continue / stop. **Auto mode fires NO inter-batch question** — see DOCTRINE rule 8 (invented gates banned). |
 | Hard halt | Any `SECURITY_VIOLATION` from a reviewer | Stop the chain, surface the finding |
 | **Audit prompt** | Step 5, after wrap-up | `AskUserQuestion` — run `/hyperflow:audit`? (yes/no, recommended toggles with flow profile) |
@@ -66,35 +66,26 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 ## Inputs
 
 - **Task artefact** — positional arg (slug or path): either a flat `.hyperflow/tasks/<slug>.md` **or** a feature folder `.hyperflow/features/<slug>/` (see [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md)). Default — the most-recently-modified of either.
-- **`chain-mode=<auto|manual>`** — passed in by `/hyperflow:scope`. Controls whether to pause for confirmation after the final integration review. If absent, assume `auto`.
+- **`session=<one|two>`** — passed in by `/hyperflow:scope` (or read from a handoff package's `HANDOFF.md`). If absent, assume `one`. In a two-session build, `handoff=<review|deploy>` governs the end-of-build behavior at Step 5.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
 - **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch. Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on. When `--thorough` is passed, BOTH D5 (wrap-up Reviewer drop) and D7 (integration review skip) are disabled — the full pre-round-2 ceremony runs. D2 combined gate stays (no quality tradeoff), D6 default L1-L2 stays (cap can still be elevated by triage flags).
 
 ## Flow
 
-### Step 0 — Choose mode (only if invoked directly · STRUCTURAL GATE)
+### Step 0 — Resolve session context (only if invoked directly)
 
-This is a **structural gate** per DOCTRINE rule 8. When dispatch is invoked directly (no `chain-mode` arg from `scope`), it MUST fire. "No clarifying questions" / "auto-pilot" / any autonomy directive does NOT skip it. Defaulting silently is a doctrine violation.
+Dispatch is the **build endpoint** — it is on the far side of the planning→build split, so it does **not** ask the one/two-session question (that decision is made upstream at spec/scope, or carried inside a handoff package). It resolves the session context instead:
 
-If a `chain-mode` arg was passed, skip this step — the chain-starter already asked.
+- A `session=<one|two>` arg was propagated (from scope) → use it.
+- Invoked directly on a **handoff package** (slug resolving to `.hyperflow-handoff/<slug>/`) → read `session`/`handoff`/chain args from its `HANDOFF.md`; this is a second-session build (see [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)).
+- Invoked directly on a plain task file with no `session=` arg → default `session=one` (build here, then offer the audit/deploy gates at Step 5). No session question fires — there is nothing left to split.
 
-Otherwise, ask via `AskUserQuestion`. Per DOCTRINE rule 8, the recommended option goes first with `(Recommended)`:
+### Step 0.5 — Operational Choices (STRUCTURAL GATE · fires immediately after Step 0)
 
-```
-How should I handle progress through the batches?
+When operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter or a handoff package, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision dispatch needs. After this batch, dispatch runs silently until the end-of-chain audit + deploy gates.
 
-  Auto (Recommended)  — run all batches + final review and stop. Print next-step suggestions.
-  Manual              — pause between batches and ask before continuing.
-```
-
-Wait for the user's answer. Do not proceed without it. If `AskUserQuestion` cannot be presented as a popup, use the Codex fallback: print the same gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print an error and stop — never silently default.
-
-### Step 0.5 — Operational Choices (auto-mode only · STRUCTURAL GATE · fires immediately after Step 0)
-
-When the user picks `Auto` at Step 0 AND operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision dispatch needs. After this batch, dispatch runs silently until the end-of-chain audit + deploy gates.
-
-Skip when `chain-mode=manual` (per-batch pauses cover ops decisions) OR when operational args are already propagated (re-asking is an invented-gate violation).
+Skip when operational args are already propagated (re-asking is an invented-gate violation).
 
 The 3-question batch is identical to scope Step 0.5 — see [scope/SKILL.md § Step 0.5](../scope/SKILL.md#step-05--operational-choices-auto-mode-only--structural-gate--fires-immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Spec, scope, dispatch share one canonical definition; whoever fires first owns the batch, the others see the args propagated and skip.
 
@@ -115,8 +106,7 @@ Confirm structural completeness: batches/tasks non-empty, each task has `id`, `t
 ### Step 1.5 — Phase loop (feature mode only)
 
 In **feature mode**, Step 2 runs **once per phase, in roster order**. A phase does not start until its `Depends on`
-phase is `completed` (auto in `auto` chain-mode; an inter-phase gate fires in `manual` mode, same shape as the
-inter-batch gate). For each phase:
+phase is `completed`. For each phase:
 1. Run Step 2 over that phase's batches (parallel inside the phase, exactly as flat mode).
 2. On all-tasks-PASS + exit criteria met → set `phase.md` status `completed`, advance `feature.md`'s Phases bar,
    and append the phase's `decisions.md` learnings to `.hyperflow/memory/` (Step 2d learnings synthesis writes here).
@@ -193,7 +183,7 @@ Dispatch one Writer (Sonnet) in parallel to synthesize per-batch learnings from 
 
 The two activities (commits + learnings synthesis) run concurrently — the Writer synthesizes while commits land sequentially per the commit cadence arg.
 
-After Step 2d, print a one-line status update — *"Batch 1 done · 9/36 sub-tasks · next: B2 deps"* — then proceed to the next batch immediately in `auto` mode. Per DOCTRINE rule 8, "transparency checkpoints" / "midway sanity checks" / "scope re-confirmations" / "cost heads-ups" are banned. The only inter-batch gates are: (a) `chain-mode=manual` → pause and ask before the next batch fires; (b) `SECURITY_VIOLATION` → hard halt; (c) `ESCALATE: <reason>` crossing the irreversibility boundary → fire the escalation gate per [escalation.md](../hyperflow/escalation.md). If none apply, the next batch fires immediately.
+After Step 2d, print a one-line status update — *"Batch 1 done · 9/36 sub-tasks · next: B2 deps"* — then proceed to the next batch immediately. Per DOCTRINE rule 8, "transparency checkpoints" / "midway sanity checks" / "scope re-confirmations" / "cost heads-ups" are banned. The only inter-batch gates are: (a) `SECURITY_VIOLATION` → hard halt; (b) `ESCALATE: <reason>` crossing the irreversibility boundary → fire the escalation gate per [escalation.md](../hyperflow/escalation.md). If none apply, the next batch fires immediately.
 
 ### Step 3 — Final Integration Review
 
@@ -312,9 +302,9 @@ Writer — generating API documentation
 **Debugger** — investigating test failure in auth.test.ts
 ```
 
-## Operational Args (from Scope Step 2.6 · auto-mode pre-elections)
+## Operational Args (from Scope Step 0.5 pre-elections)
 
-When `chain-mode=auto`, scope batches three operational pre-elections at its Step 2.6 and propagates them as chain args. Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults.
+Scope batches three operational pre-elections at its Step 0.5 and propagates them as chain args (or, in two-session mode, embeds them in the handoff package's `HANDOFF.md`). Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults.
 
 | Arg | Values | Default | Honored at |
 |---|---|---|---|
@@ -373,7 +363,7 @@ Doctrine floor: thinking agents ≥ batches + 1 (per-batch reviewer + final inte
 
 The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if-invoked-directly--structural-gate) through [Step 5 — End of Auto-Chain](#step-5--end-of-auto-chain--audit--deploy-gates) above. Summary:
 
-1. Ask `chain-mode` (auto / manual) if invoked directly — structural gate.
+1. Resolve session context (inherited `session=` / handoff `HANDOFF.md` / default `one`) — dispatch is the build endpoint, no session question.
 2. Load task file from `.hyperflow/tasks/` — Read + schema check inline (atomic · §12.2.8).
 3. Per batch, run four sub-phases in sequence:
    - **Step 2a** — Composer Workers in parallel build worker prompts; Sonnet Reviewer confirms prompt set.
