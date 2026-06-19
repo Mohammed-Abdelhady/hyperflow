@@ -167,6 +167,15 @@ Small work is decomposed into a single flat task file (`.hyperflow/tasks/<slug>.
 
 Phases run in dependency order; the tasks inside a phase run in parallel batches as usual. `scope` picks flat-vs-feature during decomposition; `dispatch` executes phase by phase; `/hyperflow:status` shows per-phase progress. See [`skills/hyperflow/feature-phases.md`](skills/hyperflow/feature-phases.md).
 
+### One session, or two
+
+At the start of a chain you choose **how** to run it (this replaces the old auto/manual gate):
+
+- **One session** — plan, build, and review all here, straight through.
+- **Two sessions** — this session plans (brain routing + amplify + spec + scope), then **stops at the dispatch boundary** and writes a **git-committed handoff package** (`.hyperflow-handoff/<slug>/`). A second session in another environment — Codex, Gemini/Antigravity, OpenCode, even another machine — runs `/hyperflow:dispatch <slug>` to build, then either deploys or returns the diff for review. You come back to the first session and `/hyperflow:audit` the build. The Brain-decided specialist roster, triage, and chain args all travel inside the package. Manage the lifecycle with `/hyperflow:handoff` (`list` / `status` / `pickup` / `review` / `complete`). See [`skills/hyperflow/session-handoff.md`](skills/hyperflow/session-handoff.md).
+
+For multi-phase features, `/hyperflow:dispatch` also asks whether to build **all phases** straight through or **phase by phase** (stop after each phase for review).
+
 ### Workflows for big tasks
 
 Hyperflow routes very large tasks to `/hyperflow:workflow` instead of forcing everything through turn-by-turn dispatch. Use it for system-wide changes, large migrations, repo-wide audits, and verification-heavy work.
@@ -201,6 +210,7 @@ Fifteen skills. Three chain-starters auto-advance through the chain; the rest ar
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
 | `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |
 | `cache` | `/hyperflow:cache` | Standalone | Memory CRUD — show, search, add, prune, archive, compact |
+| `handoff` | `/hyperflow:handoff` | Standalone | Two-session handoff — list / status / pickup / review / complete a committed package |
 | `status` | `/hyperflow:status` | Standalone | Read-only snapshot — version, memory count, live per-task progress |
 | `background` | `/hyperflow:background` | Standalone | List, show, cancel, prune task-level background agents |
 | `sticky` | `/hyperflow:sticky` | Standalone | `on` / `auto` / `off` — per-project auto-routing mode |
