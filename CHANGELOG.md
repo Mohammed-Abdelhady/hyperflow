@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.30.0] — 2026-06-19
+
+### Added
+- Sync two-session handoff into antigravity, codex, and opencode artefacts
+- Add handoff transport settings
+- Accept a git diff-range target for handoff review
+- Surface pending two-session handoffs at session start
+- Add /hyperflow:handoff operator skill
+- Ask phase-by-phase vs all-phases for multi-phase features
+- Pick up handoff package and write build-complete marker
+- Write committed handoff package on two-session split
+- Replace chain-mode auto/manual with one/two-session gate
+- Add session-handoff reference and package contract
+
+### Fixed
+- Update remaining chain-mode references to session in audit and feature-phases
+
+### Changed
+- Document two-session handoff and /hyperflow:handoff
+
+
 ## [4.29.0] — 2026-06-19
 
 ### Added
@@ -946,7 +967,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.29.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.30.0...HEAD
+[4.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.29.0...v4.30.0
 [4.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.28.0...v4.29.0
 [4.28.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.27.0...v4.28.0
 [4.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v4.27.0

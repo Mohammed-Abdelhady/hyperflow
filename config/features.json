@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "4.29.0",
+  "version": "4.30.0",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
   "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
   "layers": [
@@ -344,7 +344,7 @@
     "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
     "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
     "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
-    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode), review back — via a git-committed handoff package",
+    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode), review back \u2014 via a git-committed handoff package",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
     "Project-scoped persistent memory with tag taxonomy",
