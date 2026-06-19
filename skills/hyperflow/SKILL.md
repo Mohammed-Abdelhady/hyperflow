@@ -47,8 +47,7 @@ When Codex exposes multi-agent tools, map Hyperflow agent dispatches to Codex su
 - Hyperflow `Agent` worker/searcher/writer calls map to Codex worker or explorer subagents.
 - If the callable tool is named `multi_agent_v1.spawn_agent`, use `agent_type: worker` for implementer/writer execution and `agent_type: explorer` for search/codebase-research tasks, then collect results before review.
 - Spawn independent sibling workers together when the runtime supports parallel subagent calls.
-- Worker roles use `gpt-5.4` with `low` reasoning in fast mode when model overrides are available and Hyperflow Codex defaults are active.
-- Thinking roles stay in the foreground on `gpt-5.5` with task-adaptive reasoning: `low` for trivial docs/config checks, `medium` for normal planning/review, and `high` for debugging, architecture, security, or final integration review.
+- Every agent runs on the current session model — do not switch models per role. Match reasoning effort to task complexity: `low` for trivial docs/config checks, `medium` for normal planning/review, `high` for debugging, architecture, security, or final integration review.
 - Never request or default to `xhigh`.
 
 When Codex does not expose subagent tools in the current session, use the single-agent port above: execute worker/reviewer phases inline with clear labels and continue.
@@ -79,11 +78,10 @@ Hyperflow Question
 
 Use this fallback for every required clarification or structural gate: Amplify handoff, Spec chain mode, Spec brainstorming questions, Scope ambiguity questions, Dispatch audit/deploy gates, Audit fix gate, Deploy commit-inclusion and push gates, and any security/irreversibility escalation. It is still banned to ask invented confirmation questions such as "should I proceed?".
 
-## Codex Model Policy
+## Codex Reasoning Policy
 
-- Thinking roles use `gpt-5.5`.
-- Worker roles use `gpt-5.4` in fast mode.
-- Resolve thinking reasoning by task/profile: `low` for trivial docs/config checks, `medium` for normal planning/review, and `high` for debugging, architecture, security, and final integration.
+- Every agent runs on the current session model — there is no per-role model selection.
+- Resolve reasoning effort by task/profile: `low` for trivial docs/config checks, `medium` for normal planning/review, and `high` for debugging, architecture, security, and final integration.
 - Never default Codex reasoning to `xhigh`.
 
 ## Core Rules

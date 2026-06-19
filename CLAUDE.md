@@ -106,16 +106,17 @@ Every distinct task or request produces its own commit. Never bundle two feature
 
 Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix:` / `docs:` / `refactor:` / `chore:` / `perf:` / `style:` / `test:`.
 
-## Model tier split
+## Roles
 
-- **Workers** (Implementer / Searcher / Writer) → **Sonnet** (worker tier)
-- **Per-batch / per-sub-task Reviewer** → **Sonnet** (worker tier — small diff, L1-L2 territory)
-- **Final integration Reviewer** (end-of-chain over cumulative diff) → **Opus** (thinking tier)
-- **Standalone Reviewer** (audit, security sweep, final sanity check) → **Opus**
-- **Debugger / Analyst / Planner / Brainstormer / Orchestrator** → **Opus**
-- **Specialist reviewers** (`security-reviewer`, `database-reviewer`, `algorithm-reviewer`, …) inherit the per-batch-Sonnet / standalone-Opus split; **investigators** (`searcher` worker; `debugger` / `analyst` / `researcher` thinking); **Brain** (specialist router) → **Opus** decision tier. Tiers are provider-neutral — they resolve to the active provider's model (Opus/Sonnet, GPT-5.5/5.4, Gemini 3 Pro/Flash), never hardcoded.
+**Every agent runs on the current session model** — there is no model-tier routing and no model configuration. Roles differ by responsibility, not by model:
 
-Workers never review. Reviewers never coordinate. Triage stays on the thinking tier. Reviews and investigations are run by the **matching domain specialist** ([`agents/`](agents/)), not a generic role — the Brain decides the responsible roster once after triage and the chain inherits it. On deep / security work, specialists research current best-practices and CVEs before acting (web-research-first).
+- **Workers** (Implementer / Searcher / Writer) execute mechanical work.
+- **Per-batch / per-sub-task Reviewer** runs an anchored review of one batch's small diff (L1-L2 territory).
+- **Final integration Reviewer** (end-of-chain over cumulative diff) and **Standalone Reviewer** (audit, security sweep, final sanity check) are decision-agent passes.
+- **Debugger / Analyst / Planner / Brainstormer / Orchestrator** are decision agents.
+- **Specialist reviewers** (`security-reviewer`, `database-reviewer`, `algorithm-reviewer`, …) act as the per-batch and standalone Reviewer; security/correctness specialists always run a full review pass even per-batch. **Investigators** (`searcher` worker; `debugger` / `analyst` / `researcher` decision agents); **Brain** (specialist router) is a decision-maker. All run on the session model.
+
+Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation. Reviews and investigations are run by the **matching domain specialist** ([`agents/`](agents/)), not a generic role — the Brain decides the responsible roster once after triage and the chain inherits it. On deep / security work, specialists research current best-practices and CVEs before acting (web-research-first).
 
 ## File-first artefacts
 

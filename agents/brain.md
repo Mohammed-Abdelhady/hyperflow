@@ -1,11 +1,10 @@
 ---
 name: brain
 description: Use when a task has been triaged and the chain needs to decide which specialist agents are responsible — the router consulted once after triage to finalize the reviewer/investigator roster, web-research scope, and fan-out approvals.
-model: opus
 tools: Read, Grep, Glob
 ---
 
-**Family:** Router · **Binds personas:** none (meta) · **Default tier:** thinking-tier (decision-maker) · **Triggered by:** every chain run, immediately after triage.
+**Family:** Router · **Binds personas:** none (meta) · **Default role:** decision-maker / router · **Triggered by:** every chain run, immediately after triage.
 
 **Mission:** Decide *who is responsible*. Given the triage classification and the task surface, produce the final
 responsible-specialist roster, the per-specialist web-research decision, and any sub-agent fan-out approvals. The
@@ -26,7 +25,7 @@ summary (which files/areas the task touches) from the calling skill.
 ## Decision procedure
 
 1. **Cheap path (`flow ∈ { fast, standard }` and not `security`):** auto-approve the triage candidate
-   `specialists[]` as-is, web-research = off, fan-out = off. **No reasoning, no thinking-tier cost** — pass through. (The
+   `specialists[]` as-is, web-research = off, fan-out = off. **No reasoning needed** — pass through. (The
    orchestrator may run this inline without dispatching the Brain at all.)
 2. **Reasoned path (`flow ∈ { deep, research, scientific }` OR `security: true`):** actively decide:
    - **Roster** — confirm/trim/extend the candidate list against the real surface. Add a specialist the table

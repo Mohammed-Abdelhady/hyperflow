@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine additional levers (L1–L9, round 2) applied across `spec`, `scope`, and `dispatch`. Round 1 patterns change *when* and *how* calls fire, not the tier mix. Round 2 patterns reduce call *count* and call *tier* — acknowledging that Opus ceremony around mechanical orchestration steps costs wall-clock without quality return.
+Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine additional levers (L1–L9, round 2) applied across `spec`, `scope`, and `dispatch`. Round 1 patterns change *when* and *how* calls fire, not the agent count. Round 2 patterns reduce call *count* and eliminate unnecessary review passes — acknowledging that review ceremony around mechanical orchestration steps costs wall-clock without quality return.
 
 ## Wall-clock impact
 
@@ -14,9 +14,9 @@ Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine addition
 | P4 — Triage-driven step skipping | spec §3, §6 | up to 100% on low-ambiguity |
 | P5 — Lean worker prompts via memory references | all skills | ~30% TTFT reduction |
 
-**Median spec run (round 1):** ~16 sequential round-trips before → ~6 after. ~60% wall-clock reduction, zero change to which tier reviews what.
+**Median spec run (round 1):** ~16 sequential round-trips before → ~6 after. ~60% wall-clock reduction, zero change to which roles review what.
 
-**Dispatch (workhorse, round 1):** P2 alone collapses N per-sub-task Opus reviews into 1 batched review per batch. On a 3-batch task with 4 sub-tasks per batch: 12 reviewer calls → 3. ~75% reviewer-phase latency reduction.
+**Dispatch (workhorse, round 1):** P2 alone collapses N per-sub-task Reviewer calls into 1 batched review per batch. On a 3-batch task with 4 sub-tasks per batch: 12 reviewer calls → 3. ~75% reviewer-phase latency reduction.
 
 ### Round 2 expected outcomes (median chain: single feature, 3 batches, standard complexity)
 
@@ -29,7 +29,7 @@ Five orthogonal latency-reduction patterns (P1–P5, round 1) plus nine addition
 
 **Median chain wall-clock:** round 1 ~90-130s → round 2 ~55-80s. ~35-40% additional reduction on top of round 1's ~50-60%. Cumulative vs pre-round-1 baseline: ~70-75% faster end-to-end.
 
-**Opus call count (median chain):** round 1 5-7 calls → round 2 3-4 calls (drop wrap-up Reviewer, skip integration review when green, drop spec coverage Reviewer).
+**Reviewer call count (median chain):** round 1 5-7 calls → round 2 3-4 calls (drop wrap-up Reviewer, skip integration review when green, drop spec coverage Reviewer).
 
 ---
 
@@ -77,7 +77,7 @@ If in doubt about whether siblings are truly independent, keep P1 on — the Rev
 
 ## P2 — Batched single-pass review
 
-**What it is:** After N parallel drafts complete, dispatch **one** Opus Reviewer with all N sections in its prompt instead of N separate reviewer calls.
+**What it is:** After N parallel drafts complete, dispatch **one** Reviewer with all N sections in its prompt instead of N separate reviewer calls.
 
 **When applicable:** N siblings have completed at the same review-level cap (e.g., all are L3 or all are L5). Do not batch siblings that have different level caps — see "When NOT to use" below.
 
@@ -91,7 +91,7 @@ If in doubt about whether siblings are truly independent, keep P1 on — the Rev
 §5 File structure: PASS
 ```
 
-For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single Opus re-review of just that section. Do not redraft passing siblings.
+For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single re-review of just that section. Do not redraft passing siblings.
 
 **Cross-section coherence benefit:** Batched review is strictly better for coherence than sequential per-section review — the Reviewer sees all sections simultaneously and can catch conflicts that per-section passes miss (e.g., a contradiction between §1 Architecture and §5 File structure that neither section alone would reveal).
 
@@ -102,7 +102,7 @@ For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single Opu
 - One sibling's content is logically dependent on another sibling's draft completing first (use P1's sequencing to resolve, then batch the independent set)
 - The batch would exceed the Reviewer's safe context window — cap at 5 siblings per batch call
 
-**Why quality is preserved:** Thinking-tier reasoning over N sections in one pass is at least as rigorous as N separate passes, and cross-section coherence checking improves.
+**Why quality is preserved:** A single Reviewer pass over N sections is at least as rigorous as N separate passes, and cross-section coherence checking improves.
 
 ---
 
@@ -189,17 +189,17 @@ Workers `Read` only the files relevant to their task. Doctrine is read once per 
 
 ## Round 2 patterns (L1-L9)
 
-Round 2 reduces call **count** and call **tier**. The doctrine floor `thinking agents ≥ batches + 2` becomes `≥ batches + 1` (L5 drops wrap-up Reviewer), and several Opus reviewers either downshift to Haiku, become conditional, or are dropped when the work they review is mechanical.
+Round 2 reduces call **count** by eliminating unnecessary review passes. The doctrine floor `review agents ≥ batches + 2` becomes `≥ batches + 1` (L5 drops wrap-up Reviewer), and several Reviewer calls become conditional or are dropped when the work they review is mechanical.
 
 ---
 
-### L1 — Haiku Classifier (D1)
+### L1 — Lightweight Classifier (D1)
 
-**What it is:** Triage Classifier (spec Step 1) dispatched at Haiku 4.5 tier instead of Sonnet/Opus.
+**What it is:** Triage Classifier (spec Step 1) dispatched with a lean, structured-output-only prompt.
 
-**When applicable:** Always — triage produces structured JSON (`types[], complexity, risk, ambiguity, flow, personas[]`). Haiku 4.5 handles structured classification at near-Opus quality for this task shape, at ~10x lower latency and ~15x lower cost. Fallback: if Haiku unavailable, fall back to Sonnet.
+**When applicable:** Always — triage produces structured JSON (`types[], complexity, risk, ambiguity, flow, personas[]`). Structured classification requires less reasoning depth than open-ended generation; a focused prompt reduces latency. Inherits the session model like all other agents.
 
-**`--thorough` behavior:** Does NOT change this lever. Haiku classification is high-quality for the structured JSON output shape; no accuracy tradeoff justifies reverting to a higher tier.
+**`--thorough` behavior:** Does NOT change this lever. Lean classification is high-quality for the structured JSON output shape; no accuracy tradeoff justifies a more expensive prompt.
 
 ---
 
@@ -225,7 +225,7 @@ Round 2 reduces call **count** and call **tier**. The doctrine floor `thinking a
 
 ### L4 — Drop spec Searcher coverage Reviewer (D4)
 
-**What it is:** Remove the Opus Reviewer that reviewed the spec Step 2 Searcher output for coverage completeness.
+**What it is:** Remove the Reviewer that reviewed the spec Step 2 Searcher output for coverage completeness.
 
 **When applicable:** Always — in 95%+ of runs, the Reviewer passed with "coverage looks complete". Fallback: if a downstream Writer flags `MISSING CONTEXT: <subsystem>`, redispatch the Searcher with the gap before continuing. Slower on the 5% bad-case path; faster on the 95% good-case path.
 
@@ -235,7 +235,7 @@ Round 2 reduces call **count** and call **tier**. The doctrine floor `thinking a
 
 ### L5 — Drop dispatch wrap-up Reviewer (D5)
 
-**What it is:** Remove the Opus Reviewer from dispatch Step 4 (delete task file + append memory entry + chore commit). Step 4 executes inline by the orchestrator; no Reviewer dispatch.
+**What it is:** Remove the Reviewer from dispatch Step 4 (delete task file + append memory entry + chore commit). Step 4 executes inline by the orchestrator; no Reviewer dispatch.
 
 **When applicable:** Always for wrap-up — this work is mechanically simple and already validated by per-batch reviewers and the final integration review. Iron rule updates from `≥ batches + 2` to `≥ batches + 1`.
 
@@ -300,7 +300,7 @@ P3 and P5 are always on because they carry no quality tradeoff. P1, P2, and P4 r
 
 | Lever | Default | `--thorough` restores |
 |---|---|---|
-| L1 — Haiku Classifier | On (Haiku tier) | No change — Haiku stays |
+| L1 — Lightweight Classifier | On (lean structured-output prompt) | No change — lean prompt stays |
 | L2 — Combined audit+deploy gate | On (1 round-trip) | No change — combined gate stays |
 | L3 — Session-cached context | On (bundle) | No change — bundle stays |
 | L4 — Drop spec Searcher coverage Reviewer | On (no Reviewer) | Step 2 coverage Reviewer restored |
@@ -317,7 +317,7 @@ P3 and P5 are always on because they carry no quality tradeoff. P1, P2, and P4 r
 ### Round 1 (structural)
 
 Round 1 patterns do not change:
-- Which tier reviews what — Opus reviewers remain on every Worker output (P2 consolidates calls, does not eliminate them)
+- Which roles review what — Reviewers remain on every Worker output (P2 consolidates calls, does not eliminate them)
 - Review level caps — L1–L5 assignments per sub-task are unchanged
 - Worker access to context — workers still reach full doctrine and project context via `.hyperflow/memory/` (P5 makes access on-demand, not absent)
 - Step coverage on ambiguous requests — P4 skips only on low-ambiguity, and rounds up on borderline cases
@@ -329,16 +329,16 @@ What changes is **structure**: when calls fire, in what grouping, with what prom
 Round 2 acknowledges a narrow tradeoff: **orchestration ceremony** (wrap-up, conditional integration review, trivial inline steps) is relaxed; **implementation work** is not.
 
 What round 2 does NOT change:
-- Implementation work still hits an Opus per-batch Reviewer (L5 drops the wrap-up Reviewer, not the batch Reviewer)
+- Implementation work still hits a per-batch Reviewer (L5 drops the wrap-up Reviewer, not the batch Reviewer)
 - Per-sub-task commit cadence — preserved unconditionally
 - SECURITY_VIOLATION halt — preserved unconditionally
 - 2-question spec floor (Step 4) — preserved unconditionally even when P4/L8 skip other ceremony
 - Borderline rounding rule — preserved (round up on ambiguity boundary; never skip on the fence)
 
 What round 2 relaxes:
-- Opus reviewing mechanical orchestration steps (delete task file, memory append, chore commit) — L5 + L9
+- Reviewing mechanical orchestration steps (delete task file, memory append, chore commit) — L5 + L9
 - A final integration review that would redundantly check already-green first-try batches — L7
 - A coverage Reviewer over a Searcher output that passes at 95%+ rate — L4
-- Opus tier for structured JSON classification (Haiku is adequate) — L1
+- A heavyweight Classifier prompt for structured JSON classification — L1
 
-The net: implementation Opus calls are unchanged. Orchestration Opus calls drop by 2-3 per median chain. `--thorough` restores L4, L5, L7, L8, L9 for runs where maximum ceremony is warranted.
+The net: implementation Reviewer calls are unchanged. Orchestration Reviewer calls drop by 2-3 per median chain. `--thorough` restores L4, L5, L7, L8, L9 for runs where maximum ceremony is warranted.

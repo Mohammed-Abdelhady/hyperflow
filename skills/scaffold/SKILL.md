@@ -117,7 +117,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Overview
 
-`/hyperflow:scaffold` is one-shot project setup. It analyzes the codebase via 6 parallel Sonnet searchers, builds the `.hyperflow/` cache (profile, architecture, conventions, dependencies, testing, git-workflow), seeds the memory skeleton, and optionally writes detection shims (CLAUDE.md for Claude Code, AGENTS.md for OpenCode). Does not start the spec → scope → dispatch chain — invoke `/hyperflow:spec` (ambiguous scope) or `/hyperflow:scope` (clear spec) when ready.
+`/hyperflow:scaffold` is one-shot project setup. It analyzes the codebase via 6 parallel searchers, builds the `.hyperflow/` cache (profile, architecture, conventions, dependencies, testing, git-workflow), seeds the memory skeleton, and optionally writes detection shims (CLAUDE.md for Claude Code, AGENTS.md for OpenCode). Does not start the spec → scope → dispatch chain — invoke `/hyperflow:spec` (ambiguous scope) or `/hyperflow:scope` (clear spec) when ready.
 
 ## Prerequisites
 

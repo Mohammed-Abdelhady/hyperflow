@@ -123,10 +123,10 @@ On a handoff pickup, before dispatch Step 1:
 
 ## Provider notes
 
-The build session may run under any provider (Codex, Gemini/Antigravity, OpenCode). The chain args (triage, flow
+The build session may run under any provider (Codex, Antigravity, OpenCode). The chain args (triage, flow
 profile, commit/branch/push, Brain specialist roster) travel inside `HANDOFF.md`, so the build runs structurally —
-no Q1/Q2 gate fires on the build side. Tiers resolve to the build environment's models via
-[`model-config.md`](model-config.md). `HANDOFF.md` records the originating provider for traceability.
+no Q1/Q2 gate fires on the build side. All agents inherit the session model of the build environment.
+`HANDOFF.md` records the originating provider for traceability.
 
 ## Transport & config
 

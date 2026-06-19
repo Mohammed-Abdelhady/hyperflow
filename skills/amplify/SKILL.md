@@ -15,7 +15,7 @@ tags: [prompt-engineering, enhancement, quality, personas, multi-agent]
 
 Turn a rough prompt into a high-signal one. Detect the domain, inject the standards that domain demands, score it against a rubric — then offer to run it.
 
-Dispatcher and reviewer — Opus 4.8 (thinking-tier). Searcher/Writer — Sonnet 4.6 (worker-tier).
+Dispatcher and Reviewer roles inherit the session model. Worker roles (Searcher, Writer) also inherit the session model.
 
 Amplify does **one** thing well: it rewrites the prompt you give it into the single strongest version, then hands it off. It does not write code itself — it produces a prompt other skills (or you) execute.
 
@@ -23,10 +23,10 @@ Amplify does **one** thing well: it rewrites the prompt you give it into the sin
 
 Every substantive step dispatches at least one Agent. Atomic steps (DOCTRINE 12.2.8) are a single Worker → Reviewer pair with no independent angles to fan out.
 
-| Step | Status | Worker tier | Thinking tier | Notes |
+| Step | Status | Worker | Reviewer | Notes |
 |---|---|---|---|---|
-| 1 — Read intent | Atomic (12.2.8) | Searcher (Sonnet) — domain signals + project rules | **Analyst** (Opus) — triage + gap analysis + persona & specialist selection | Single Worker → Reviewer; reads `CLAUDE.md`, `AGENTS.md`, `.hyperflow/memory/*` |
-| 2 — Amplify | Atomic (12.2.8) | Writer (Sonnet) — draft the enhanced prompt | **Reviewer** (Opus) — rubric score, one targeted revision | Writer drafts → Opus scores against the 8-dim rubric → revise once if any dim < 4 |
+| 1 — Read intent | Atomic (12.2.8) | Searcher — domain signals + project rules | **Analyst** — triage + gap analysis + persona & specialist selection | Single Worker → Reviewer; reads `CLAUDE.md`, `AGENTS.md`, `.hyperflow/memory/*` |
+| 2 — Amplify | Atomic (12.2.8) | Writer — draft the enhanced prompt | **Reviewer** — rubric score, one targeted revision | Writer drafts → Reviewer scores against the 8-dim rubric → revise once if any dim < 4 |
 | 3 — Present + handoff | §12.1 inline | — | — | Print the amplified prompt + rationale; fire the handoff gate (`AskUserQuestion`) |
 
 ## Inputs
@@ -40,12 +40,12 @@ Every substantive step dispatches at least one Agent. Atomic steps (DOCTRINE 12.
 
 Atomic — a single Searcher → Analyst pair. No parallel angles: understanding one prompt is one scope.
 
-1. Dispatch `Searcher — detecting prompt domain + gathering project rules` (Sonnet). It returns:
+1. Dispatch `Searcher — detecting prompt domain + gathering project rules`. It returns:
    - **Domain signals** — does the prompt concern frontend/ui/creative, api/db backend, mobile, security, performance, refactor/bugfix/test, devops, docs? (A prompt can span several.)
    - **Project rules** — read, when present: `CLAUDE.md`, `AGENTS.md`, `.hyperflow/memory/conventions.md`, `.hyperflow/memory/project-decisions.md`, `.hyperflow/memory/anti-patterns.md`. Extract any rule that should constrain the prompt.
    - **The raw prompt's gaps** — what a senior engineer would have to guess to act on it.
 
-2. Dispatch `**Analyst** — triaging intent + selecting personas & specialists` (Opus). It returns `{ domain[], intent, ambiguities[], personas[], specialists[], project_rules[] }` — the matching hyperflow persona(s) from [`../hyperflow/personas-A.md`](../hyperflow/personas-A.md) / [`personas-B.md`](../hyperflow/personas-B.md), the responsible **specialist agents** ([`../../agents/README.md`](../../agents/README.md)) derived per the triage mapping (on a gated flow the Analyst consults the [Brain](../../agents/brain.md) to finalize the roster), plus the project rules to layer on top.
+2. Dispatch `**Analyst** — triaging intent + selecting personas & specialists`. It returns `{ domain[], intent, ambiguities[], personas[], specialists[], project_rules[] }` — the matching hyperflow persona(s) from [`../hyperflow/personas-A.md`](../hyperflow/personas-A.md) / [`personas-B.md`](../hyperflow/personas-B.md), the responsible **specialist agents** ([`../../agents/README.md`](../../agents/README.md)) derived per the triage mapping (on a gated flow the Analyst consults the [Brain](../../agents/brain.md) to finalize the roster), plus the project rules to layer on top.
 
 If the prompt is too ambiguous to amplify without a decision the rewrite can't make (`ambiguity` high on a dimension that changes the deliverable), the Analyst flags it — Step 3's handoff gate surfaces it as a clarifying note rather than guessing.
 
@@ -53,9 +53,9 @@ If the prompt is too ambiguous to amplify without a decision the rewrite can't m
 
 Atomic — a single Writer → Reviewer pair with a one-shot revision loop.
 
-1. Dispatch `Writer — drafting the amplified prompt` (Sonnet) with the Step 1 output. The Writer rewrites the raw prompt into the single strongest version following the skeleton in [`references/prompt-rubric.md`](references/prompt-rubric.md): role framing · precise task · context · constraints (persona doctrine + project rules) · output spec · out-of-scope. **Economy is a constraint** — enhance to the level the task warrants, never inflate a one-line ask into a spec.
+1. Dispatch `Writer — drafting the amplified prompt` with the Step 1 output. The Writer rewrites the raw prompt into the single strongest version following the skeleton in [`references/prompt-rubric.md`](references/prompt-rubric.md): role framing · precise task · context · constraints (persona doctrine + project rules) · output spec · out-of-scope. **Economy is a constraint** — enhance to the level the task warrants, never inflate a one-line ask into a spec.
 
-2. Dispatch `**Reviewer** — scoring against the prompt-quality rubric` (Opus) with the draft. It scores all 8 dimensions (see [`references/prompt-rubric.md`](references/prompt-rubric.md)) 1–5. Verdict:
+2. Dispatch `**Reviewer** — scoring against the prompt-quality rubric` with the draft. It scores all 8 dimensions (see [`references/prompt-rubric.md`](references/prompt-rubric.md)) 1–5. Verdict:
    - **All dimensions ≥ 4** → `PASS`. Ship the draft.
    - **Any dimension < 4** → `NEEDS_REVISION` with the specific dimensions + what's missing. The Writer revises **once** with the findings injected, then the result ships regardless (no infinite loop — DOCTRINE rule 14 NEEDS_REVISION cadence: surface after the second pass).
 
