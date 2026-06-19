@@ -198,6 +198,7 @@ The named decision dispatches in this doctrine — Classifier (triage), Analyst 
 | **Thinking Lead — Analyst** | **Opus 4.8** | thinking | Spec Step 3 multi-dimensional analysis |
 | **Thinking Lead — Planner** | **Opus 4.8** | thinking | Scope Step 3 batch graph decomposition |
 | **Thinking Lead — Decision-maker / Brainstormer** | **Opus 4.8** | thinking | Architecture, approach selection, trade-offs, design exploration |
+| **Thinking Lead — Brain (specialist router)** | **Opus 4.8** | thinking | Decide the responsible specialist roster + web-research + fan-out (once, after triage) — see [`../../agents/brain.md`](../../agents/brain.md) |
 | **Thinking Lead — Debugger** | **Opus 4.8** | thinking | Root-cause analysis, fix strategy (trace skill) |
 | **Thinking Lead — Final integration Reviewer** | **Opus 4.8** | thinking | End-of-chain cross-cutting review (dispatch Step 3) |
 | **Thinking Lead — Standalone Reviewer** | **Opus 4.8** | thinking | Audit Step 3, deploy security sweep, spec Step 8 final sanity |
@@ -217,6 +218,24 @@ The named decision dispatches in this doctrine — Classifier (triage), Analyst 
 - **`--thorough` flag elevates per-batch Reviewer to Opus** (effectively promoting it from anchored-review to Thinking Lead consultation). Users on high-risk surfaces (financial calc, crypto, regulatory) opt in. Default remains Sonnet to keep cost predictable.
 - **Triage (Layer 0.5) stays on Thinking Lead tier** — Haiku 4.5 by default for the structured classification, Opus on fallback. Never delegate triage to a Worker.
 - **If the usage summary shows `Thinking: 0 agents` on a multi-batch chain**, the task was done wrong — the Team Lead must at minimum consult the Thinking Lead at the final integration pass, plus whichever decision-laden steps the chain visited (triage, analyst, planner, etc.).
+
+### Specialist agents (Layer 2 extension)
+
+The named decision/review/investigation roles above are realised as **specialist agents** —
+[`../../agents/README.md`](../../agents/README.md). Specialists add **no new tier**; they inherit the routing above:
+
+- **Reviewer specialists** (`frontend-reviewer`, `database-reviewer`, `devops-reviewer`, …) inherit the per-batch
+  Reviewer tier (**Sonnet** per-batch, **Opus** standalone / final-integration, `--thorough` → Opus per-batch).
+  `security-reviewer`, `vulnerability-reviewer`, `data-ml-reviewer`, `compliance-reviewer` default **Opus even
+  per-batch** (security/correctness review is Thinking-Lead territory — "if security present, never fast").
+- **Investigator specialists** inherit: `searcher` → **Sonnet** (worker); `debugger` / `analyst` / `researcher` →
+  **Opus** (Thinking Lead).
+- **Brain** is a Thinking-Lead **decision-maker** consultation (Opus) — but on `fast`/`standard` non-security flows
+  the orchestrator runs Brain's cheap-path pass-through *inline* (no Opus call), matching today's cost.
+
+A specialist **binds** its persona(s) for domain standards and adds only mission · web-research-first · fan-out ·
+output contract (the persona-binding DRY rule lives in `agents/README.md`). When dispatch / audit / trace / deploy
+fire a reviewer or investigator, they dispatch the **matching specialist** at the tier above — not a generic one.
 
 ### Config loading (session start)
 
@@ -489,6 +508,37 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
     - **Banned in agent input:** padding the Why section past 3 sentences when 1 suffices, listing every nearby file under Related context when only 1-2 matter, inlining `.hyperflow/conventions.md` content into Context when the worker can `Read` it on demand under `mode=lean`, restating the security blocklist in full prose when the enumerated block already does the job.
     - **Why it matters.** Every padded prompt and every padded response burns tokens that don't move the task forward, and inflates the cumulative budget shown in the usage summary. The detail floor exists so the work is reviewable; token economy exists so the work is affordable. Both apply simultaneously.
 
+17. **Brain specialist dispatch.** Reviews and investigations are performed by the **matching specialist agent**
+    ([`../../agents/README.md`](../../agents/README.md)), not a generic role. The flow:
+    - Triage emits a candidate `specialists[]` from `types[]` (fixed derivation table in [task-triage.md](task-triage.md)).
+    - The **Brain** ([`../../agents/brain.md`](../../agents/brain.md)) is consulted **once** after triage to finalize
+      the responsible roster, the per-specialist web-research decision, and fan-out approvals. On `fast`/`standard`
+      non-security flows Brain is a cheap inline pass-through (no Opus call); on `deep`/`research`/`scientific`/`security`
+      it actively reasons.
+    - **Decide once, inherit downstream.** Brain's decision is written into the artefact (spec status block → scope
+      task file) and consumed by every later phase. No skill re-derives the roster.
+    - `amplify`/`spec`/`scope` **announce** the responsible specialists; `dispatch`/`audit`/`trace`/`deploy`
+      **dispatch** them. A per-batch reviewer is dispatched *as* the specialist matching that batch's surface, at the
+      tier in Layer 2 (Sonnet per-batch / Opus standalone / Opus-always for security/correctness specialists). A
+      multi-surface batch gets the union of matching charters.
+    - **Specialist-aware review-skip (extends D7).** When a single specialist covered the whole batch surface and it
+      PASSed first-try, the final integration pass is redundant → skip it. When several specialists touched disjoint
+      surfaces, keep the Opus final pass to catch cross-surface contradictions. The `thinking ≥ batches + 1` floor is
+      thus adaptive to surface overlap, not a flat count.
+    - **Web-research-first** ([web-research.md](web-research.md)) runs only on gated flows (`deep`/`research`/`scientific`/`security`,
+      and `audit`/`deploy`); specialists cite current sources for best-practice/CVE claims.
+
+18. **Sub-agent fan-out.** A specialist may fan out its own sub-workers, bounded:
+    - **Who:** only specialists whose charter sets fan-out `allowed` — investigators (`debugger`/`analyst`/`researcher`)
+      and standalone/final reviewers. Per-batch Sonnet reviewers may **not** (anchored to one small diff).
+    - **Depth cap = 1.** Sub-workers may not spawn further sub-agents (no background-of-background).
+    - **Budget:** ≤ 3 parallel sub-workers (≤ 5 for `vulnerability-reviewer`/`researcher`); sub-agent tokens roll into
+      the parent's usage line tagged `(N sub-agents)`; the chain `budget` is the ceiling.
+    - **When:** only when genuinely independent parallel angles exist (researcher comparing 4 libraries; debugger
+      testing 3 hypotheses). Single-angle work never fans out (mirrors §12.2.3).
+    - Sub-workers are worker-tier (Sonnet); the specialist synthesizes. Sub-workers never review or decide. No fan-out
+      from background agents. One label line per sub-worker; the parent verdict notes the count.
+
 ### Sub-phase × flag interactions (clarification of §12.2)
 
 **`--thorough` × sub-phases.** Sub-phases are SEMANTIC decomposition (named units inside a Step), not execution mode. The default behavior is sub-phases run in parallel (P1) because they typically have no inter-dependency. `--thorough` disables P1 sibling Worker parallelism within a sub-phase — i.e., the ≥ 2 parallel Workers inside a single sub-phase serialize. But the sub-phases THEMSELVES still run in parallel under `--thorough` because they are not a P1 sibling-Worker construct; they are §12.2 structural decomposition. Skill bodies do NOT need to add `--thorough` clauses per sub-phase; the rule is: sub-phase boundaries always parallel, intra-sub-phase Workers serialize under `--thorough`.
@@ -621,6 +671,10 @@ Hand-off pattern:
 - Execute a task yourself instead of dispatching a Sonnet worker
 - Skip the thinking-tier review after a worker completes
 - Dispatch a reviewer with the worker-tier model instead of the thinking-tier model
+- Dispatch a generic reviewer/investigator when a domain specialist matches the surface (rule 17) — use the named `agents/<name>.md` specialist
+- Let a specialist fan out past depth 1, spawn sub-agents from a per-batch reviewer, or fan out from a background agent (rule 18)
+- Run web-research-first outside a gated flow (`deep`/`research`/`scientific`/`security`/`audit`/`deploy`), or let a specialist assert a best-practice/CVE claim without citing a current source (web-research.md)
+- Skip the Brain decision on a `deep`/`security` flow, or re-derive the specialist roster in a later phase instead of inheriting Brain's decision from the artefact (rule 17)
 - Finish a task with `Thinking: 0 agents` in the usage summary
 - Show `0.0k tokens` for thinking agents (means you reviewed inline instead of dispatching)
 - Skip the final integration review (separate from batch reviews) in `deep`/`scientific` profiles
