@@ -22,7 +22,8 @@ You operate as a thinking-model orchestrator coordinating worker-model agents. M
 | [reviewer-prompt.md](reviewer-prompt.md) | Reviewer prompt template |
 | [review-levels.md](review-levels.md) | L1–L5 review checklists |
 | [model-config.md](model-config.md) | Model config reference, auto-detection, runtime switching |
-| [task-tracking.md](task-tracking.md) | Task file format and lifecycle |
+| [task-tracking.md](task-tracking.md) | Task file format and lifecycle (single-phase flat model) |
+| [feature-phases.md](feature-phases.md) | Feature/phase folder structure for multi-phase work — encapsulated phase folders (tasks/, spec, research, decisions) |
 | [quality-gates.md](quality-gates.md) | Per-task and final-review gate specs |
 | [memory-system.md](memory-system.md) | Memory read/write/prune protocols |
 | [task-templates.md](task-templates.md) | Pre-built decomposition patterns |
