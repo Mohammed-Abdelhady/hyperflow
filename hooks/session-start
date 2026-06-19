@@ -116,6 +116,19 @@ $(cat "$HF_DIR/.precompact.md" 2>/dev/null || true)"
   fi
   rm -f "$HF_DIR/.precompact.md" 2>/dev/null || true
 
+  # Migrate an older .hyperflow/ cache forward to the current plugin version
+  # (idempotent, non-blocking; fast no-op when already current). Runs before
+  # archival so the cache structure is current first.
+  if [ -f "$PLUGIN_ROOT/scripts/migrate-cache.py" ]; then
+    mig="$(python3 "$PLUGIN_ROOT/scripts/migrate-cache.py" "$HF_DIR" "$HYPERFLOW_VERSION" --plugin-root "$PLUGIN_ROOT" 2>>"$HF_DIR/.session-start.log" || true)"
+    if [ -n "$mig" ]; then
+      CONTENT="$CONTENT
+
+## Hyperflow cache migrated
+$mig"
+    fi
+  fi
+
   # Auto-archive stale artefacts and promote learnings to memory (daily-gated,
   # non-blocking; controlled by cleanup.* in ~/.hyperflow/config.json).
   if [ -x "$PLUGIN_ROOT/scripts/archive-artefacts.py" ]; then
