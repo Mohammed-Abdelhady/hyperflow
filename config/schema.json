@@ -142,6 +142,28 @@
       },
       "additionalProperties": false
     },
+    "handoff": {
+      "description": "Two-session handoff transport settings (skills/hyperflow/session-handoff.md). Controls the committed handoff package written on a session=two scope run.",
+      "type": "object",
+      "properties": {
+        "autoPush": {
+          "type": "boolean",
+          "description": "Push the package commit (and the build-complete commit) automatically. On failure the exact git push command is surfaced; the commit always lands locally. Default: true.",
+          "default": true
+        },
+        "remote": {
+          "type": "string",
+          "description": "Git remote to push/pull the handoff package. Default: origin.",
+          "default": "origin"
+        },
+        "packageDir": {
+          "type": "string",
+          "description": "Committed directory (repo-root, sibling to gitignored .hyperflow/) holding handoff packages. Default: .hyperflow-handoff.",
+          "default": ".hyperflow-handoff"
+        }
+      },
+      "additionalProperties": false
+    },
     "specialists": {
       "description": "Specialist agent registry settings (agents/*.md). Specialists reuse existing model roles (reviewer/debugger/searcher/decision-maker) — no new role keys. Tiers resolve per provider via model-config.md.",
       "type": "object",
