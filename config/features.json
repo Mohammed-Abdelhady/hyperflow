@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "4.31.1",
+  "version": "4.31.2",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
   "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
   "layers": [
@@ -97,7 +97,7 @@
       "name": "dispatch",
       "command": "/hyperflow:dispatch",
       "tagline": "Execute the batches",
-      "purpose": "Dispatch parallel workers + Worker → Reviewer review + final integration review; endpoint of the chain",
+      "purpose": "Dispatch parallel workers + Worker \u2192 Reviewer review + final integration review; endpoint of the chain",
       "chain": "endpoint"
     },
     {
