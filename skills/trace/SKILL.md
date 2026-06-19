@@ -24,8 +24,8 @@ Every substantive step dispatches at least one Agent. Atomic steps (per DOCTRINE
 | Step | Status | Worker tier | Thinking tier | Notes |
 |---|---|---|---|---|
 | 1 — Reproduce | Atomic (12.2.8) | Searcher (Sonnet) | **Reviewer** (Opus) | Runs if repro missing; single Worker→Reviewer pair |
-| 2 — Gather evidence | Atomic (12.2.8) | Searcher × 3 (Sonnet) | **Reviewer** (Opus) | 3 parallel Searchers → single Reviewer; one Worker-group→Reviewer pair |
-| 3 — Hypothesize | Atomic (12.2.8) | **Debugger** (Opus) | **Reviewer** (Opus) | Single Debugger (5 Whys + ranked hypotheses in one pass) → Reviewer |
+| 2 — Gather evidence | Atomic (12.2.8) | `searcher` specialist × 3 (Sonnet) | **Reviewer** (Opus) | 3 parallel Searchers → single Reviewer; one Worker-group→Reviewer pair |
+| 3 — Hypothesize | Atomic (12.2.8) | **`debugger` specialist** (Opus) | **Reviewer** (Opus) | Single Debugger (5 Whys + ranked hypotheses); may fan out Step 4 across hypotheses (rule 18) |
 | 4 — Verify | 2 sub-phases | Implementer × N (Sonnet) | **Debugger** (Opus) · **Reviewer** (Sonnet) | 4a: parallel Implementers → Sonnet Reviewer; 4b: Debugger re-evaluation → Reviewer |
 | 5 — Fix at root | Atomic (12.2.8) | Implementer × N (Sonnet) | **Reviewer** (Opus) | N Implementers (one per file) → Opus Reviewer; single Worker-group→Reviewer pair |
 | 6 — Regression test | Atomic (12.2.8) | Writer (Sonnet) | **Reviewer** (Opus) | Single Writer → single Reviewer; no parallel angle |
@@ -52,7 +52,7 @@ If environmental (CI-only, intermittent, time-dependent) — flag explicitly bef
 
 ## Step 2 — Gather Evidence
 
-Atomic — one Worker-group (3 parallel Searchers) → single Reviewer pair (DOCTRINE 12.2.8). The three Searchers are parallel angles inside one sub-phase, not independent sub-phases.
+Atomic — one Worker-group (3 parallel Searchers) → single Reviewer pair (DOCTRINE 12.2.8). The three Searchers are parallel angles inside one sub-phase, not independent sub-phases. They are dispatched as the [`searcher`](../../agents/searcher.md) specialist — path-anchored evidence, read-only, no fan-out.
 
 Dispatch simultaneously in a single message:
 - `Searcher — reading error stack traces and logs` (Sonnet)
@@ -71,7 +71,7 @@ Reviewer confirms the three Searchers actually triangulate the failure surface. 
 
 Atomic — single Debugger → Reviewer pair (DOCTRINE 12.2.8). 5 Whys and hypothesis ranking are a single sequential reasoning task; one Debugger call produces both in one pass.
 
-Dispatch `**Debugger** — 5 Whys + hypothesis ranking: <bug-summary>` (Opus).
+Dispatch `**Debugger** — 5 Whys + hypothesis ranking: <bug-summary>` (Opus) — the [`debugger`](../../agents/debugger.md) specialist agent, carrying its charter (root-before-symptom, written 5-Whys chain, web-research-first on a gated flow for known-issue/changelog lookups). When ≥ 2 hypotheses are genuinely independent, the debugger may **fan out** Step 4 verification across them (depth 1, ≤ 3 sub-workers — DOCTRINE rule 18); a single-hypothesis bug never fans out.
 
 Single call produces:
 

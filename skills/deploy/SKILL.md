@@ -26,8 +26,8 @@ No gate skipped, no failure ignored. If any gate fails, halt and report. Never `
 | 2a | Lint + typecheck (parallel) | Worker A (linter), Worker B (formatter), Worker C (tsc) | Sonnet | Step 3 (Security Sweep) runs in parallel with Step 2 at orchestrator level; 2a halts chain on any failure before 2b |
 | 2b | Build gate | Worker A (prod build), Worker B (dev build) | Sonnet | Depends on 2a PASS |
 | 2c | Test gate | Worker A (unit), Worker B (integration/E2E) | Sonnet | Parallel (P1); depends on 2b PASS |
-| 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **Opus** | Runs in parallel with Step 2 (pre-build; read-only) |
-| 3b | Dependency audit | Worker A (CVE audit), Worker B (license check) | Sonnet | — |
+| 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **thinking · `security-reviewer`** | Runs in parallel with Step 2 (pre-build; read-only) |
+| 3b | Dependency audit | Worker A (CVE audit), Worker B (license check) | **thinking · `vulnerability-reviewer`** (web-research-first) | — |
 | 4 | Commit | single Worker | Sonnet | atomic-exempt (DOCTRINE 12.2) |
 | 5a | Release execution | single Worker | Sonnet | atomic-exempt (DOCTRINE 12.2) |
 | 5b | Version sync | Worker A (manifests), Worker B (changelog) | Sonnet | — |
@@ -116,7 +116,7 @@ Two Workers in parallel:
 - Worker A — Pattern scan staged + recent diff for hardcoded secrets: API keys, private keys, connection strings, tokens. Use `git diff HEAD~1..HEAD` as scan surface.
 - Worker B — File-level scan of files modified in this changeset for common secret patterns (SG., sk-, ghp_, AKIA, BEGIN RSA PRIVATE KEY, etc.).
 
-**Reviewer** — Opus security sweep — aggregate findings from 3a Workers. If any secret found → halt immediately with `SECURITY_VIOLATION: <file>:<line> — <pattern>`. No auto-remediation — user must rotate + remove.
+**Reviewer** — thinking-tier security sweep, dispatched as the [`security-reviewer`](../../agents/security-reviewer.md) specialist — aggregate findings from 3a Workers. If any secret found → halt immediately with `SECURITY_VIOLATION: <file>:<line> — <pattern>`. No auto-remediation — user must rotate + remove. (Add [`compliance-reviewer`](../../agents/compliance-reviewer.md) when the changeset touches PII / regulated data.)
 
 ### Step 3b — Dependency audit
 
@@ -125,7 +125,7 @@ Two Workers in parallel:
 - Worker A — `npm audit --audit-level=high` / `pnpm audit` / `pip-audit` / `cargo audit`. Report critical and high CVEs only.
 - Worker B — License check: scan new dependencies added in this changeset for prohibited licenses (GPL in a proprietary project, etc.) if `.hyperflow/profile.md` declares a license policy.
 
-Sonnet Reviewer — verdict:
+Reviewer — dispatched as the [`vulnerability-reviewer`](../../agents/vulnerability-reviewer.md) specialist (thinking-tier; deploy is a gated flow → web-research-first on current advisories, proving each CVE's applicability to the pinned versions) — verdict:
 - `PASS` — no critical/high CVEs; no license violations
 - `NEEDS_REVISION` — critical CVE found → halt and surface CVE IDs
 - `ESCALATE` — audit tool absent → skip silently (not a failure); missing license policy → skip
