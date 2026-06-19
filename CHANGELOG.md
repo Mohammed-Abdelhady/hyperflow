@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.28.0] — 2026-06-19
+
+### Added
+- Add database-optimization-reviewer for query and index performance
+
+
 ## [4.27.0] — 2026-06-19
 
 ### Added
@@ -927,7 +933,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.27.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.28.0...HEAD
+[4.28.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.27.0...v4.28.0
 [4.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v4.27.0
 [4.26.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.1...v4.26.2
 [4.26.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.0...v4.26.1
