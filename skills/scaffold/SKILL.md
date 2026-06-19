@@ -37,6 +37,7 @@ Compute SHA256 of tracked config files, compare against `.hyperflow/.checksums`.
 
 **After analysis:**
 - Write `.hyperflow/.checksums` (SHA256 of `package.json`, `tsconfig.json`, eslint/biome config, etc.)
+- Write `.hyperflow/.version` (the current plugin version from `skills/hyperflow/VERSION`) so the cache is stamped current. The session-start migrator (`scripts/migrate-cache.py`) reads this marker on later sessions and brings an older cache forward when the plugin version moves — a missing/older marker triggers an idempotent, additive migration (new memory files, refreshed doctrine copy).
 - Append to `.gitignore` if `.hyperflow/` is not already excluded
 
 ## Step 2 — Memory Skeleton
