@@ -65,7 +65,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 
 ## Inputs
 
-- **Task file** — positional arg (slug or path). Default — most-recently-modified file in `.hyperflow/tasks/`.
+- **Task artefact** — positional arg (slug or path): either a flat `.hyperflow/tasks/<slug>.md` **or** a feature folder `.hyperflow/features/<slug>/` (see [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md)). Default — the most-recently-modified of either.
 - **`chain-mode=<auto|manual>`** — passed in by `/hyperflow:scope`. Controls whether to pause for confirmation after the final integration review. If absent, assume `auto`.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
@@ -100,9 +100,31 @@ The 3-question batch is identical to scope Step 0.5 — see [scope/SKILL.md § S
 
 ### Step 1 — Load the task (atomic · §12.2.8)
 
-Read `.hyperflow/tasks/<slug>.md`. Extract batches, sub-tasks, flow-profile, and operational args. Confirm the task file is structurally complete: batches array non-empty, each sub-task has `id`, `title`, `files`, `complexity`. If absent or malformed, stop and suggest `/hyperflow:scope` first.
+Detect the artefact mode:
+- **Flat** — `.hyperflow/tasks/<slug>.md`. Read it; extract batches, sub-tasks, flow-profile, and operational args.
+- **Feature (multi-phase)** — `.hyperflow/features/<slug>/`. Read `feature.md` for the **ordered phase roster** +
+  dependency graph + `Specialists`. Each `phase-<n>-<name>/` is executed **as if it were a task file**: its
+  `phase.md` carries the batch/task roster and its `tasks/T*.md` are the sub-tasks. Also read each phase's `spec.md`
+  / `research.md` (when present) and inject them as the phase's design context into Step 2a Composers.
 
-> Atomic-exempt per §12.2.8 — file existence check + schema validation is a single mechanical decision with no parallel angles. No Worker or Reviewer dispatched.
+Confirm structural completeness: batches/tasks non-empty, each task has `id`, `title`, `files`, `complexity`,
+`Specialist`. If absent or malformed, stop and suggest `/hyperflow:scope` first.
+
+> Atomic-exempt per §12.2.8 — file/folder existence + schema validation is a single mechanical decision with no parallel angles. No Worker or Reviewer dispatched.
+
+### Step 1.5 — Phase loop (feature mode only)
+
+In **feature mode**, Step 2 runs **once per phase, in roster order**. A phase does not start until its `Depends on`
+phase is `completed` (auto in `auto` chain-mode; an inter-phase gate fires in `manual` mode, same shape as the
+inter-batch gate). For each phase:
+1. Run Step 2 over that phase's batches (parallel inside the phase, exactly as flat mode).
+2. On all-tasks-PASS + exit criteria met → set `phase.md` status `completed`, advance `feature.md`'s Phases bar,
+   and append the phase's `decisions.md` learnings to `.hyperflow/memory/` (Step 2d learnings synthesis writes here).
+3. Run Step 3 (final integration review) **per phase** over that phase's cumulative diff (D7 + single-specialist
+   skip apply per phase). After the **last** phase, also run one feature-level integration pass over the full diff
+   when ≥ 2 phases touched disjoint surfaces.
+
+In **flat mode**, skip Step 1.5 — Step 2 runs once over the single task file's batches as before.
 
 ### Step 2 — For each batch
 
@@ -167,7 +189,7 @@ For each sub-task whose verdict is `PASS`:
 - **Commit immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files that sub-task touched. Write a conventional commit (`feat(<scope>): <title>` derived from the task file). One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits, even though they were reviewed in a single batched Reviewer call.
 - **Update the task file's `## Status` block** after each commit lands: tick `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads for live progress.
 
-Dispatch one Writer (Sonnet) in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. The learnings are appended to the in-memory `Learnings from prior batches` context (injected at Step 2a of subsequent batches). Writer also checks off the batch in the task file.
+Dispatch one Writer (Sonnet) in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. The learnings are appended to the in-memory `Learnings from prior batches` context (injected at Step 2a of subsequent batches). Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
 
 The two activities (commits + learnings synthesis) run concurrently — the Writer synthesizes while commits land sequentially per the commit cadence arg.
 
@@ -206,7 +228,9 @@ Parse the verdict:
 Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task file + memory append + chore commit. The per-batch reviewers and final integration review (when not skipped per D7) already validated the substantive changes.
 
 **Nominal path (inline orchestrator):** perform the following directly without an Agent dispatch wrapper:
-1. Delete the completed task file from `.hyperflow/tasks/`.
+1. **Flat mode** — delete the completed task file from `.hyperflow/tasks/`. **Feature mode** — set `feature.md`
+   status `completed` (do not delete mid-feature); when every phase is `completed`, the feature folder becomes
+   eligible for archival to `.hyperflow/archive/features/YYYY-MM/<slug>/` (the session-start archiver moves it).
 2. Before appending: `grep -F` the proposed entry's first-line title against `.hyperflow/memory/*.md` files (inline dedup-check — replaces the dropped Reviewer dedup pass). If a match exists, edit the existing entry rather than append a duplicate.
 3. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
 4. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
