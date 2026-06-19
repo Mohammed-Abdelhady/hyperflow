@@ -13,7 +13,7 @@ tags: [execution, parallel, review, multi-agent, orchestration]
 
 # Dispatch
 
-Workhorse phase. Picks up a task file from `/hyperflow:scope` and runs it through the orchestrator pattern with parallel worker dispatch and multi-level reviews.
+Workhorse phase. Picks up a task file from `/hyperflow:plan` and runs it through the orchestrator pattern with parallel worker dispatch and multi-level reviews.
 
 This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **Layer 6 (Project Memory)**, **Layer 8 (Git Workflow)**, and **Layer 9 (Security)** from the doctrine. Multi-level review (L1–L5) is applied per the triage's flow profile.
 
@@ -38,7 +38,7 @@ Iron rule — `review agents ≥ batches + 1` (one batched Reviewer per batch + 
 
 ## Review Levels (scale by flow profile)
 
-Every batch reviewer and the final integration reviewer uses the level set below. Profile comes from `/hyperflow:spec` triage and is propagated via the chain args (`triage=`).
+Every batch reviewer and the final integration reviewer uses the level set below. Profile comes from `/hyperflow:plan` triage and is propagated via the chain args (`triage=`).
 
 | Profile | Levels | Workers | Reviewers |
 |---|---|---|---|
@@ -68,7 +68,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 
 - **Task artefact** — positional arg (slug or path): either a flat `.hyperflow/tasks/<slug>.md` **or** a feature folder `.hyperflow/features/<slug>/` (see [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md)). Default — the most-recently-modified of either.
 - **Handoff package** — a positional slug/path resolving to `.hyperflow-handoff/<slug>/` (see [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)). When present, dispatch is a **second-session build**: it rehydrates `artefact/` into `.hyperflow/` (Step 1.0) and reads `session`/`handoff`/chain args from `HANDOFF.md`. `on_complete` (review|deploy) governs Step 5.
-- **`session=<one|two>`** — passed in by `/hyperflow:scope` (or read from a handoff package's `HANDOFF.md`). If absent, assume `one`. In a two-session build, `handoff=<review|deploy>` governs the end-of-build behavior at Step 5.
+- **`session=<one|two>`** — passed in by `/hyperflow:plan` (or read from a handoff package's `HANDOFF.md`). If absent, assume `one`. In a two-session build, `handoff=<review|deploy>` governs the end-of-build behavior at Step 5.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
 - **`--thorough`** — disable P2 batched reviews; fall back to per-sub-task reviewers for every sub-task in every batch, and always run the final integration review (D7 skip is disabled). Use when belt-and-suspenders depth is required on a high-risk run. P3 (concurrent pre-conditions) and P5 (lean worker prompts) remain on. When `--thorough` is passed, BOTH D5 (wrap-up Reviewer drop) and D7 (integration review skip) are disabled — the full pre-round-2 ceremony runs. D2 combined gate stays (no quality tradeoff), D6 default L1-L2 stays (cap can still be elevated by triage flags).
@@ -89,7 +89,7 @@ When operational args (`commit=`, `branch=`, `push=`) were NOT already propagate
 
 Skip when operational args are already propagated (re-asking is an invented-gate violation).
 
-The 3-question batch is identical to scope Step 0.5 — see [scope/SKILL.md § Step 0.5](../scope/SKILL.md#step-05--operational-choices-auto-mode-only--structural-gate--fires-immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Spec, scope, dispatch share one canonical definition; whoever fires first owns the batch, the others see the args propagated and skip.
+The 3-question batch is identical to plan Step 0.5 — see [plan/SKILL.md § Step 0.5](../plan/SKILL.md#step-05--operational-choices-structural-gate--immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Plan and dispatch share one canonical definition; whoever fires first owns the batch, the other sees the args propagated and skips.
 
 ### Step 1.0 — Handoff rehydration (handoff pickup only)
 
@@ -111,7 +111,7 @@ Detect the artefact mode:
   / `research.md` (when present) and inject them as the phase's design context into Step 2a Composers.
 
 Confirm structural completeness: batches/tasks non-empty, each task has `id`, `title`, `files`, `complexity`,
-`Specialist`. If absent or malformed, stop and suggest `/hyperflow:scope` first.
+`Specialist`. If absent or malformed, stop and suggest `/hyperflow:plan` first.
 
 > Atomic-exempt per §12.2.8 — file/folder existence + schema validation is a single mechanical decision with no parallel angles. No Worker or Reviewer dispatched.
 
@@ -307,7 +307,7 @@ The following are **NOT** "marginal" signals and MUST NOT flip the recommendatio
 | Signal | Why it's fine |
 |---|---|
 | Pre-commit hook auto-fixed style (commitlint subject-case, prettier, eslint --fix) | These are commit-time linters at the editor layer, not Hyperflow quality gates. Hooks fixing themselves is normal. |
-| `/hyperflow:audit` was run and applied fixes through `/hyperflow:scope → :dispatch` | This is the audit fix-gate working as designed. The code is now *better* than before audit. Strong positive signal. |
+| `/hyperflow:audit` was run and applied fixes through `/hyperflow:plan → :dispatch` | This is the audit fix-gate working as designed. The code is now *better* than before audit. Strong positive signal. |
 | Quality gates passed on first try (or after one auto-fix retry) | First-pass green is the happy path. |
 | Single-batch dispatch with no escalations | Simpler runs trend cleaner, not more suspect. |
 | Many sub-tasks (e.g. 27 commits) without any of the concrete-signal failures above | Volume is not a risk signal on its own. |
@@ -376,11 +376,11 @@ Scope batches three operational pre-elections at its Step 0.5 and propagates the
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute phase invoked at the end of `/hyperflow:scope`.
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute phase invoked at the end of `/hyperflow:plan`.
 
 ## Overview
 
-`/hyperflow:dispatch` is the workhorse phase — it reads a task file from `/hyperflow:scope` and executes it through the orchestrator pattern.
+`/hyperflow:dispatch` is the workhorse phase — it reads a task file from `/hyperflow:plan` and executes it through the orchestrator pattern.
 
 Parallel workers dispatched in a single message, per-batch Reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with both audit and deploy questions.
 
@@ -388,7 +388,7 @@ Doctrine floor: review agents ≥ batches + 1 (per-batch reviewer + final integr
 
 ## Prerequisites
 
-- A task file exists at `.hyperflow/tasks/<slug>.md` (produced by `/hyperflow:scope`).
+- A task file exists at `.hyperflow/tasks/<slug>.md` (produced by `/hyperflow:plan`).
 - `.hyperflow/profile.md`, `architecture.md`, `conventions.md` populated (Layer 0 context injected into worker prompts).
 - Git repository for per-sub-task commits.
 - For Step 5: `AskUserQuestion` popup available, or Codex chat fallback available — required for audit + deploy gates. Headless mode with no interactive channel skips gates with explicit warning.
@@ -426,7 +426,7 @@ Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 
 | Failure | Behavior |
 |---|---|
-| No task file at `.hyperflow/tasks/` | Stop and suggest `/hyperflow:scope` first. |
+| No task file at `.hyperflow/tasks/` | Stop and suggest `/hyperflow:plan` first. |
 | Worker times out or returns nothing | Re-scope the sub-task into smaller pieces; redispatch. Max 2 re-scope attempts before surfacing the failure. |
 | Reviewer returns `NEEDS_FIX` | Re-dispatch worker with the fix list. Max 3 retries before surfacing the failure to the user. |
 | Reviewer returns `SECURITY_VIOLATION` | **Halt the chain immediately.** Print finding; do not commit, do not auto-continue. User decides remediation. |
@@ -447,7 +447,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 - [worker-prompt.md](references/worker-prompt.md) — implementer/searcher/writer template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer template (per-sub-task fallback).
 - [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — batched reviewer template (P2).
-- [latency-patterns.md](../spec/references/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
+- [latency-patterns.md](../hyperflow/latency-patterns.md) — P1–P5 latency patterns; P2 dispatch win ~75% reviewer-phase latency.
 - [review-levels.md](references/review-levels.md) — L1-L5 checklist.
 - [memory-system.md](references/memory-system.md) — wrap-up memory append format.
 - [quality-gates.md](references/quality-gates.md) — Layer 5 lint/typecheck/test policy.

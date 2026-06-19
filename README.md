@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="docs/assets/hero-vertical.svg" />
-    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then the chain: amplify → spec → scope → dispatch → audit → deploy, with a Worker → Reviewer review at every step" width="100%" />
+    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then the chain: plan → dispatch → audit → deploy, with a Worker → Reviewer review at every step" width="100%" />
   </picture>
 </p>
 
@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <code>amplify</code> → <code>spec</code> → <code>scope</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
+  <code>plan</code> → <code>dispatch</code> → <code>audit</code> → <code>deploy</code><br/>
   Start anywhere. Auto-advance forward. Memory persists across sessions.
 </p>
 
@@ -53,15 +53,13 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 
 | # | Skill | What it does |
 |---|-------|--------------|
-| 1 | `amplify` | **Front door** — rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric), then hand off into the chain |
-| 2 | `spec` | Design-first — multi-dimensional analysis + alternatives; refuses to code before you approve |
-| 3 | `scope` | Decompose the approved design into a parallel task graph |
-| 4 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
-| 5 | `workflow` | Big-task lane — native Claude Code workflows, custom Codex/OpenCode adapter |
-| 6 | `audit` | L1–L5 review on the result |
-| 7 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
+| 1 | `plan` | **Front door** — sharpen the prompt (persona standards + 8-dim rubric), design the approach (multi-dimensional analysis + alternatives, refuses to code before you approve), and decompose it into a parallel task graph; skips whichever phase the request doesn't need |
+| 2 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
+| 3 | `workflow` | Big-task lane — native Claude Code workflows, custom Codex/OpenCode adapter |
+| 4 | `audit` | L1–L5 review on the result |
+| 5 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
 
-`amplify` hands off to `spec`, then `spec → scope → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `spec` for design-first work, `scope` when the approach is clear, `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
+`plan → dispatch` auto-chains; `audit` and `deploy` are gates that fire at the end. Enter at `plan` for anything from a rough idea to a clear task — it bounces straight to decomposition when the approach is already clear — or at `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
 `workflow` is the big-task lane. Hyperflow routes deep/scientific/system-wide work, large migrations, repo-wide audits, and high-confidence verification prompts to `/hyperflow:workflow`. In Claude Code v2.1.154+, it asks the native dynamic workflow runtime to create a background workflow with research, parallel execution, adversarial verification, quality gates, and final synthesis. In Codex and OpenCode, it runs the same phases through a portable workflow adapter using provider subagents/tasks when available and inline worker/reviewer phases otherwise.
 
@@ -85,8 +83,7 @@ First initialize the project (once), then invoke any skill:
 
 ```text
 /hyperflow:scaffold                                        # first: set up the project (once per repo)
-/hyperflow:amplify "make a login page"                     # turn a rough idea into a strong prompt
-/hyperflow:spec "add user auth with login + middleware"    # design → scope → dispatch
+/hyperflow:plan "add user auth with login + middleware"    # sharpen → design → decompose → dispatch
 /hyperflow:workflow "large migration across the repo"      # big-task workflow lane
 /hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
 /hyperflow:deploy                                          # pre-push gates + ship
@@ -96,7 +93,7 @@ Codex-safe equivalent:
 
 ```text
 hyperflow scaffold
-hyperflow amplify "make a login page"
+hyperflow plan "add user auth with login + middleware"
 hyperflow workflow "large migration across the repo"
 hyperflow trace "tests fail after the auth refactor"
 ```
@@ -131,7 +128,7 @@ Beyond the personas, Hyperflow ships a registry of **named, domain-specialized a
 
 - **Reviewers** — `frontend-reviewer`, `backend-reviewer`, `api-reviewer`, `database-reviewer`, `security-reviewer`, `vulnerability-reviewer`, `devops-reviewer`, `performance-reviewer`, `algorithm-reviewer` (Big-O & data-structure complexity), `accessibility-reviewer`, `mobile-reviewer`, `data-ml-reviewer`, `compliance-reviewer`.
 - **Investigators** — `searcher`, `debugger`, `analyst`, `researcher`.
-- **Brain** — a decision-agent router consulted once after triage that decides *which* specialists are responsible, then writes that roster into the artefact so the whole chain inherits it. `amplify`/`spec`/`scope` announce the responsible specialists; `dispatch`/`audit`/`trace`/`deploy` dispatch them.
+- **Brain** — a decision-agent router consulted once after triage that decides *which* specialists are responsible, then writes that roster into the artefact so the whole chain inherits it. `plan` announces the responsible specialists; `dispatch`/`audit`/`trace`/`deploy` dispatch them.
 
 Each specialist **binds** the matching persona for its standards and adds a strict charter, a **web-research-first** step (it looks up current best-practices / CVEs / framework docs before judging — on `deep`/`research`/`scientific`/`security` flows), and authority to fan out depth-capped sub-agents. Specialists run on the current session model like every other agent — they specialise the *role*, not the model. See [`agents/README.md`](agents/README.md).
 
@@ -164,14 +161,14 @@ Small work is decomposed into a single flat task file (`.hyperflow/tasks/<slug>.
   phase-3-ui/          phase.md · tasks/ · …
 ```
 
-Phases run in dependency order; the tasks inside a phase run in parallel batches as usual. `scope` picks flat-vs-feature during decomposition; `dispatch` executes phase by phase; `/hyperflow:status` shows per-phase progress. See [`skills/hyperflow/feature-phases.md`](skills/hyperflow/feature-phases.md).
+Phases run in dependency order; the tasks inside a phase run in parallel batches as usual. `plan` picks flat-vs-feature during decomposition; `dispatch` executes phase by phase; `/hyperflow:status` shows per-phase progress. See [`skills/hyperflow/feature-phases.md`](skills/hyperflow/feature-phases.md).
 
 ### One session, or two
 
 At the start of a chain you choose **how** to run it (this replaces the old auto/manual gate):
 
 - **One session** — plan, build, and review all here, straight through.
-- **Two sessions** — this session plans (brain routing + amplify + spec + scope), then **stops at the dispatch boundary** and writes a **git-committed handoff package** (`.hyperflow-handoff/<slug>/`). A second session in another environment — Codex, Gemini/Antigravity, OpenCode, even another machine — runs `/hyperflow:dispatch <slug>` to build, then either deploys or returns the diff for review. You come back to the first session and `/hyperflow:audit` the build. The Brain-decided specialist roster, triage, and chain args all travel inside the package. Manage the lifecycle with `/hyperflow:handoff` (`list` / `status` / `pickup` / `review` / `complete`). See [`skills/hyperflow/session-handoff.md`](skills/hyperflow/session-handoff.md).
+- **Two sessions** — this session plans (brain routing + `plan`), then **stops at the dispatch boundary** and writes a **git-committed handoff package** (`.hyperflow-handoff/<slug>/`). A second session in another environment — Codex, Gemini/Antigravity, OpenCode, even another machine — runs `/hyperflow:dispatch <slug>` to build, then either deploys or returns the diff for review. You come back to the first session and `/hyperflow:audit` the build. The Brain-decided specialist roster, triage, and chain args all travel inside the package. Manage the lifecycle with `/hyperflow:handoff` (`list` / `status` / `pickup` / `review` / `complete`). See [`skills/hyperflow/session-handoff.md`](skills/hyperflow/session-handoff.md).
 
 For multi-phase features, `/hyperflow:dispatch` also asks whether to build **all phases** straight through or **phase by phase** (stop after each phase for review).
 
@@ -189,22 +186,20 @@ Learnings live at `.hyperflow/memory/` — plain markdown, committed with your r
 
 - **Three tiers** — `hot` (≤7 days, always injected), `warm` (8–30 days, tag-matched), `cold` (30+ days, on-demand, compressed).
 - **Lazy injection** — only tag-matched entries load for a given task, so injection cost stays bounded.
-- **Auto-written by the chain** — `audit` records recurring findings to `anti-patterns.md` (hot); `spec` records structural answers to `project-decisions.md`, so the same questions aren't asked twice.
+- **Auto-written by the chain** — `audit` records recurring findings to `anti-patterns.md` (hot); `plan` records structural answers to `project-decisions.md`, so the same questions aren't asked twice.
 
 Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](https://mohammed-abdelhady.github.io/hyperflow/).
 
 ## Skills
 
-Fifteen skills. Three chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
+Thirteen skills. One chain-starter auto-advances through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
-| `spec` | `/hyperflow:spec` | Chain starter | Design-first analysis + alternatives; auto-chains to scope → dispatch |
-| `scope` | `/hyperflow:scope` | Chain starter | Decompose into parallel worker subtasks; auto-chains to dispatch |
+| `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt (8-dim rubric), design the approach (analysis + alternatives), and decompose into a parallel task graph; auto-chains to dispatch |
 | `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
 | `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; custom Codex/OpenCode adapter for migrations, audits, and verification-heavy work |
 | `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
-| `amplify` | `/hyperflow:amplify` | Front door | Rewrite a rough prompt into the strongest version (persona standards + 8-dim rubric), then hand off into the chain |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
 | `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |

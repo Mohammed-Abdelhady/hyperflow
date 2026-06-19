@@ -22,9 +22,7 @@ Codex loads Hyperflow as skills, not as native Claude-style slash commands. Trea
 
 | User says | Run |
 |---|---|
-| `/hyperflow:amplify`, `hyperflow amplify`, `use hyperflow amplify` | `amplify` |
-| `/hyperflow:spec`, `hyperflow spec`, `design with hyperflow` | `spec` |
-| `/hyperflow:scope`, `hyperflow scope`, `decompose with hyperflow` | `scope` |
+| `/hyperflow:plan`, `hyperflow plan`, `design with hyperflow`, `decompose with hyperflow` | `plan` |
 | `/hyperflow:dispatch`, `hyperflow dispatch`, `run the hyperflow plan` | `dispatch` |
 | `/hyperflow:workflow`, `hyperflow workflow`, `run a workflow` | `workflow` |
 | `/hyperflow:trace`, `hyperflow trace`, `debug with hyperflow` | `trace` |

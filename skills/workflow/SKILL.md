@@ -18,9 +18,9 @@ Big-task path for work that is too large for normal turn-by-turn orchestration: 
 - In Claude Code, use the host dynamic workflow runtime.
 - In Codex, run the portable workflow adapter with Codex subagents when exposed; otherwise run the same phases inline in the current thread.
 - In OpenCode, run the portable workflow adapter with Task/subagent dispatch when exposed; otherwise run the same phases inline in the current session.
-- In Antigravity, Desktop/web bridge mode, or any host that cannot preserve the adapter phases, say so in one line and route to `/hyperflow:scope` with `chain-mode=auto`.
+- In Antigravity, Desktop/web bridge mode, or any host that cannot preserve the adapter phases, say so in one line and route to `/hyperflow:plan` with `chain-mode=auto`.
 
-Claude Code dynamic workflows require Claude Code v2.1.154 or later and can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. When disabled, use the portable adapter if the host is Codex or OpenCode; otherwise route to `/hyperflow:scope` with `chain-mode=auto`.
+Claude Code dynamic workflows require Claude Code v2.1.154 or later and can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. When disabled, use the portable adapter if the host is Codex or OpenCode; otherwise route to `/hyperflow:plan` with `chain-mode=auto`.
 
 ## Routing Rules
 
