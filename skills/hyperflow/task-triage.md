@@ -39,6 +39,7 @@ You are a task classifier for a multi-agent orchestrator. Analyze the request be
   "brainstormDepth": string,  // light | standard | deep (silent removed per DOCTRINE 2-question floor)
   "flow": string,             // fast | standard | deep | research | creative | scientific
   "personas": string[],       // subset of types — persona template names to compose
+  "specialists": string[],    // derived from types[] (+ security/integration_risk flags) per the mapping in task-triage.md — candidate responsible specialist agents; Brain finalizes
   "estimatedWorkers": number,
   "estimatedBatches": number,
   "budget": number,           // token budget integer
@@ -62,6 +63,7 @@ Return only valid JSON. No explanation before or after.
   "brainstormDepth": "light",
   "flow": "standard",
   "personas": ["frontend", "api"],
+  "specialists": ["frontend-reviewer", "api-reviewer", "backend-reviewer"],
   "estimatedWorkers": 2,
   "estimatedBatches": 1,
   "budget": 100000,
@@ -83,6 +85,7 @@ Return only valid JSON. No explanation before or after.
 | `brainstormDepth` | `string` | Derived from `ambiguity` (see derivation table below). |
 | `flow` | `string` | Execution profile for Layer 3. Determined by the mapping rules below. |
 | `personas` | `string[]` | Subset of `types`. Names of persona template files (no path, no extension) to compose into worker prompts. |
+| `specialists` | `string[]` | Candidate responsible specialist agents (`agents/<name>.md`), derived from `types[]` + the `security`/`integration_risk` flags via the mapping table below. Not free-chosen — the table is deterministic. The **Brain** finalizes this roster after triage; `dispatch`/`audit`/`trace`/`deploy` dispatch the matching specialist as reviewer/investigator. |
 | `estimatedWorkers` | `number` | Expected total parallel worker count across all batches. |
 | `estimatedBatches` | `number` | Expected number of dispatch batches. |
 | `budget` | `number` | Soft token budget for the full task. Used in usage summary to flag overruns. |
@@ -166,6 +169,38 @@ When multiple types are present:
 3. **Flow profile** is the STRICTEST implied by any single type. Example: if any type implies `deep`, the flow is `deep` even if other types alone would yield `standard`. If `security` is present, flow is never `fast`.
 4. **`personas`** equals `types` unless a type has no persona template file — omit those.
 
+## `specialists[]` derivation (types → specialist agents)
+
+`specialists[]` is computed from `types[]` the same way `personas[]` is — a fixed table, not a free choice. The
+Classifier pre-fills it; the **Brain** ([`../../agents/brain.md`](../../agents/brain.md)) finalizes it after triage.
+Registry: [`../../agents/README.md`](../../agents/README.md).
+
+| `type` | Reviewer specialist(s) | Default investigator |
+|--------|------------------------|----------------------|
+| `frontend` | `frontend-reviewer` | `searcher` |
+| `ui` | `frontend-reviewer`, `accessibility-reviewer` | `searcher` |
+| `api` | `api-reviewer`, `backend-reviewer` | `searcher` |
+| `db` | `database-reviewer` | `searcher` |
+| `security` | `security-reviewer`, `vulnerability-reviewer` | `researcher` |
+| `scientific` | `data-ml-reviewer` | `analyst` |
+| `architect` | `backend-reviewer` | `analyst` |
+| `performance` | `performance-reviewer` | `debugger` |
+| `devops` | `devops-reviewer` | `searcher` |
+| `refactor` | surface-matched | `searcher` |
+| `bugfix` | surface-matched | `debugger` |
+| `test` | surface-matched | `debugger` |
+| `docs` | — (docs persona suffices) | `researcher` |
+| `research` | — | `researcher` |
+| `creative` | `frontend-reviewer` | `researcher` |
+
+**Flag overrides (applied after the table, then de-dup the list):**
+- `security: true` → always add `security-reviewer` + `vulnerability-reviewer`.
+- `integration_risk: true` → add `backend-reviewer` (or `api-reviewer` if `api` ∈ `types`).
+- Add `compliance-reviewer` only when `security: true` AND the rationale flags PII / regulated data.
+- Add `mobile-reviewer` only when a mobile/responsive/native surface is detected.
+
+The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivation alongside `personas[]`.
+
 ## Examples
 
 ### Example 1 — rename a function
@@ -182,6 +217,7 @@ When multiple types are present:
   "brainstormDepth": "light",
   "flow": "fast",
   "personas": ["refactor"],
+  "specialists": ["searcher"],
   "estimatedWorkers": 1,
   "estimatedBatches": 1,
   "budget": 30000,
@@ -205,6 +241,7 @@ When multiple types are present:
   "brainstormDepth": "light",
   "flow": "creative",
   "personas": ["frontend", "ui"],
+  "specialists": ["frontend-reviewer", "accessibility-reviewer", "searcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 150000,
@@ -227,6 +264,7 @@ When multiple types are present:
   "brainstormDepth": "light",
   "flow": "deep",
   "personas": ["api", "db", "security"],
+  "specialists": ["api-reviewer", "backend-reviewer", "database-reviewer", "security-reviewer", "vulnerability-reviewer", "researcher"],
   "estimatedWorkers": 4,
   "estimatedBatches": 3,
   "budget": 300000,
@@ -249,6 +287,7 @@ When multiple types are present:
   "brainstormDepth": "standard",
   "flow": "research",
   "personas": ["bugfix", "devops"],
+  "specialists": ["devops-reviewer", "debugger"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 80000,
@@ -272,6 +311,7 @@ When multiple types are present:
   "brainstormDepth": "standard",
   "flow": "research",
   "personas": ["architect", "db"],
+  "specialists": ["backend-reviewer", "database-reviewer", "analyst", "researcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 80000,
@@ -295,6 +335,7 @@ When multiple types are present:
   "brainstormDepth": "standard",
   "flow": "creative",
   "personas": ["frontend", "ui", "creative"],
+  "specialists": ["frontend-reviewer", "accessibility-reviewer", "researcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 150000,
@@ -310,7 +351,7 @@ If the Haiku 4.5 Classifier returns malformed output (invalid JSON, missing requ
 
 1. **Retry once at Haiku** — resend the same prompt with this suffix appended:
    ```text
-   STRICT JSON ONLY. No prose. No markdown fences. Required fields: types, complexity, risk, scope, ambiguity, brainstormDepth, flow, personas, estimatedWorkers, estimatedBatches, budget, security, integration_risk, rationale.
+   STRICT JSON ONLY. No prose. No markdown fences. Required fields: types, complexity, risk, scope, ambiguity, brainstormDepth, flow, personas, specialists, estimatedWorkers, estimatedBatches, budget, security, integration_risk, rationale.
    ```
 2. **If still malformed — fall back to Sonnet** (NOT Opus; keep cost low even on fallback). Resend at Sonnet tier. If Sonnet also returns malformed output, proceed with the safe default below:
    
@@ -324,6 +365,7 @@ If the Haiku 4.5 Classifier returns malformed output (invalid JSON, missing requ
      "brainstormDepth": "light",
      "flow": "standard",
      "personas": [],
+     "specialists": [],
      "estimatedWorkers": 1,
      "estimatedBatches": 1,
      "budget": 100000,
