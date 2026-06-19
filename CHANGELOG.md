@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.27.0] — 2026-06-19
+
+### Added
+- Register specialists, Brain, and web-research defaults
+- Add algorithm-reviewer for Big-O complexity and data-structure analysis
+- Wire debugger and security specialist agents
+- Dispatch domain specialist reviewers
+- Assign responsible specialists per section and sub-task
+- Name responsible specialists in the rationale
+- Add specialists[] field and types-to-specialists mapping
+- Add Brain dispatch and sub-agent fan-out rules
+- Add specialist agent folder and Brain router
+- Add web-research-first protocol reference
+- Add portable workflow adapters
+- Add dynamic workflow routing
+- Default Claude thinking to Opus 4.8
+- Add codex app and cli support
+- Token-economy directive for workers and reviewers
+- On-completion archive + proactive-compact doctrine
+- Auto-archive stale artefacts and promote learnings to memory
+- Preserve chain state across context compaction
+- Prompt to update when a newer version is available
+- Single-agent skill + workflow templates
+- Add brutalist HTML doc pages + link them from the landing
+
+### Fixed
+- Gate automatic compact at dispatch end
+- Gate automatic compaction by context usage
+- Resolve hyperflow hook paths across hosts
+- Use relative hook commands
+- Route hyperflow aliases and subagents
+- Correct dispatch escalation link
+- Preserve hyperflow question gates
+- Bump codex plugin manifest
+- Hero install command actually installs
+- Write all detected providers to config.json
+- Keep the hero chain-hint on one line on desktop
+- Wrap footer links on mobile
+- Two-line install on mobile, no x-scroll, tier-bracket hero
+- Mobile overflow, accessibility, and SEO
+- Detect and install hyperflow into antigravity
+
+### Changed
+- Document the specialist registry and Brain
+- State specialist tiers provider-neutrally (thinking/worker)
+- V4.26.2
+- V4.26.1
+- V4.26.0
+- V4.25.0
+- V4.24.4
+- V4.24.3
+- Add codex agent instructions
+- V4.24.2
+- V4.24.1
+- V4.24.0
+- V4.23.0
+- V4.22.0
+- Full installer-written config + compaction recovery
+- Show the whole system — review loop, sub-phases, cross-session memory
+- Start the flow from amplify across website, README, and docs
+- Correct skills path and add changelog entry
+- Expand from minimal to a full overview
+- Embed portable doctrine subset for non-CLI surfaces
+- V4.21.0
+- Sharpen positioning to lead with what's unique
+- Enrich memory diagram with session flow + auto-written files
+- Refresh plugin + marketplace descriptions to current state
+- Frame amplify + operational utilities in the skills section
+- Recolor diagrams to light brutalist + enrich chain/review flow
+- Extract brutalist styles into shared stylesheet
+- Redraw hero.svg generator in the brutalist style system
+
+
 ## [4.26.2] — 2026-06-06
 
 ### Fixed
@@ -854,7 +927,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.27.0...HEAD
+[4.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v4.27.0
 [4.26.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.1...v4.26.2
 [4.26.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.0...v4.26.1
 [4.26.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.25.0...v4.26.0

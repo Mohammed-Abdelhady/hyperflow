@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "4.26.2",
+  "version": "4.27.0",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
   "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
   "layers": [
@@ -145,30 +145,153 @@
   ],
   "specialists": {
     "location": "agents/",
-    "router": { "name": "brain", "tier": "thinking", "role": "decision-maker", "focus": "Selects the responsible specialist roster after triage; decides web-research + fan-out (cheap pass-through on fast/standard flows)" },
+    "router": {
+      "name": "brain",
+      "tier": "thinking",
+      "role": "decision-maker",
+      "focus": "Selects the responsible specialist roster after triage; decides web-research + fan-out (cheap pass-through on fast/standard flows)"
+    },
     "reviewers": [
-      { "name": "frontend-reviewer", "personas": ["frontend", "ui"], "tier": "worker/thinking" },
-      { "name": "backend-reviewer", "personas": ["api", "architect"], "tier": "worker/thinking" },
-      { "name": "api-reviewer", "personas": ["api"], "tier": "worker/thinking" },
-      { "name": "database-reviewer", "personas": ["db"], "tier": "worker/thinking" },
-      { "name": "security-reviewer", "personas": ["security"], "tier": "thinking" },
-      { "name": "vulnerability-reviewer", "personas": ["security", "scientific"], "tier": "thinking" },
-      { "name": "devops-reviewer", "personas": ["devops"], "tier": "worker/thinking" },
-      { "name": "performance-reviewer", "personas": ["performance"], "tier": "worker/thinking" },
-      { "name": "algorithm-reviewer", "personas": ["performance", "scientific"], "tier": "worker/thinking" },
-      { "name": "accessibility-reviewer", "personas": ["ui", "frontend"], "tier": "worker/thinking" },
-      { "name": "mobile-reviewer", "personas": ["frontend", "ui", "performance"], "tier": "worker/thinking" },
-      { "name": "data-ml-reviewer", "personas": ["scientific", "db"], "tier": "thinking" },
-      { "name": "compliance-reviewer", "personas": ["security", "docs"], "tier": "thinking" }
+      {
+        "name": "frontend-reviewer",
+        "personas": [
+          "frontend",
+          "ui"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "backend-reviewer",
+        "personas": [
+          "api",
+          "architect"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "api-reviewer",
+        "personas": [
+          "api"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "database-reviewer",
+        "personas": [
+          "db"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "security-reviewer",
+        "personas": [
+          "security"
+        ],
+        "tier": "thinking"
+      },
+      {
+        "name": "vulnerability-reviewer",
+        "personas": [
+          "security",
+          "scientific"
+        ],
+        "tier": "thinking"
+      },
+      {
+        "name": "devops-reviewer",
+        "personas": [
+          "devops"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "performance-reviewer",
+        "personas": [
+          "performance"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "algorithm-reviewer",
+        "personas": [
+          "performance",
+          "scientific"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "accessibility-reviewer",
+        "personas": [
+          "ui",
+          "frontend"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "mobile-reviewer",
+        "personas": [
+          "frontend",
+          "ui",
+          "performance"
+        ],
+        "tier": "worker/thinking"
+      },
+      {
+        "name": "data-ml-reviewer",
+        "personas": [
+          "scientific",
+          "db"
+        ],
+        "tier": "thinking"
+      },
+      {
+        "name": "compliance-reviewer",
+        "personas": [
+          "security",
+          "docs"
+        ],
+        "tier": "thinking"
+      }
     ],
     "investigators": [
-      { "name": "searcher", "personas": ["research"], "tier": "worker" },
-      { "name": "debugger", "personas": ["bugfix", "test"], "tier": "thinking" },
-      { "name": "analyst", "personas": ["architect", "research"], "tier": "thinking" },
-      { "name": "researcher", "personas": ["research"], "tier": "thinking" }
+      {
+        "name": "searcher",
+        "personas": [
+          "research"
+        ],
+        "tier": "worker"
+      },
+      {
+        "name": "debugger",
+        "personas": [
+          "bugfix",
+          "test"
+        ],
+        "tier": "thinking"
+      },
+      {
+        "name": "analyst",
+        "personas": [
+          "architect",
+          "research"
+        ],
+        "tier": "thinking"
+      },
+      {
+        "name": "researcher",
+        "personas": [
+          "research"
+        ],
+        "tier": "thinking"
+      }
     ],
     "webResearch": {
-      "gatedFlows": ["deep", "research", "scientific", "security"],
+      "gatedFlows": [
+        "deep",
+        "research",
+        "scientific",
+        "security"
+      ],
       "note": "Specialists research current best-practices/CVEs before judging on gated flows; cited, cached to memory, skipped offline"
     }
   },
