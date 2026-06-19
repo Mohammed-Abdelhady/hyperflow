@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.31.0] — 2026-06-19
+
+### Added
+- Sync two-session handoff into antigravity, codex, and opencode artefacts
+- Add handoff transport settings
+- Accept a git diff-range target for handoff review
+- Surface pending two-session handoffs at session start
+- Add /hyperflow:handoff operator skill
+- Ask phase-by-phase vs all-phases for multi-phase features
+- Pick up handoff package and write build-complete marker
+- Write committed handoff package on two-session split
+- Replace chain-mode auto/manual with one/two-session gate
+- Add session-handoff reference and package contract
+- Auto-migrate old .hyperflow cache forward on session start
+- Surface and archive multi-phase features
+- Execute multi-phase feature folders phase by phase
+- Decompose multi-phase features into encapsulated phase folders
+- Add feature/phase folder structure for multi-phase work
+- Add database-optimization-reviewer for query and index performance
+- Register specialists, Brain, and web-research defaults
+- Add algorithm-reviewer for Big-O complexity and data-structure analysis
+- Wire debugger and security specialist agents
+- Dispatch domain specialist reviewers
+- Assign responsible specialists per section and sub-task
+- Name responsible specialists in the rationale
+- Add specialists[] field and types-to-specialists mapping
+- Add Brain dispatch and sub-agent fan-out rules
+- Add specialist agent folder and Brain router
+- Add web-research-first protocol reference
+
+### Fixed
+- Update remaining chain-mode references to session in audit and feature-phases
+
+### Changed
+- Repoint bundled DOCTRINE links to canonical, drop drifted copies
+- V4.30.0
+- Document two-session handoff and /hyperflow:handoff
+- V4.29.0
+- Document the feature/phase task structure
+- V4.28.0
+- V4.27.0
+- Document the specialist registry and Brain
+- State specialist tiers provider-neutrally (thinking/worker)
+
+
 ## [4.30.0] — 2026-06-19
 
 ### Added
@@ -967,7 +1012,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.30.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.0...HEAD
+[4.31.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.2...v4.31.0
 [4.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.29.0...v4.30.0
 [4.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.28.0...v4.29.0
 [4.28.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.27.0...v4.28.0
