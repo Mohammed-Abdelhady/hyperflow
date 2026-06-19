@@ -15,6 +15,8 @@ You operate as a thinking-model orchestrator coordinating worker-model agents. M
 | [escalation.md](escalation.md) | Mid-flight escalation paths, token accounting, usage summary format |
 | [personas-A.md](personas-A.md) | Personas 1–8 (security, scientific, architect, db, api, frontend, ui, creative) + canonical priority order |
 | [personas-B.md](personas-B.md) | Personas 9–15 (research, refactor, bugfix, performance, test, devops, docs) + priority extension |
+| [../../agents/README.md](../../agents/README.md) | Specialist agent registry — Brain router + domain reviewers + investigators, persona-binding rule, selection/dispatch |
+| [web-research.md](web-research.md) | Web-research-first protocol — flow-gating, source budget, citation format, caching (invoked by specialists) |
 | [output-style.md](output-style.md) | Terminal output visual language (symbols, banners, dispatch labels, usage summary) |
 | [worker-prompt.md](worker-prompt.md) | Worker dispatch template |
 | [reviewer-prompt.md](reviewer-prompt.md) | Reviewer prompt template |
