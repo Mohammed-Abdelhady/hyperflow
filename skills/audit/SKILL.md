@@ -357,7 +357,7 @@ Written:  .hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](references/DOCTRINE.md). Output style in [output-style.md](references/output-style.md). Per-step agent dispatching follows rule 12.
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-style.md](references/output-style.md). Per-step agent dispatching follows rule 12.
 
 ## Overview
 
@@ -401,7 +401,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 
 ## Resources
 
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
 - [review-levels.md](references/review-levels.md) — full checklist for L1-L5.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template.
 - [security.md](references/security.md) — security scan policy (mandatory at L3+).

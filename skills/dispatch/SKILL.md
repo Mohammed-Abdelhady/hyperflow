@@ -376,7 +376,7 @@ Scope batches three operational pre-elections at its Step 0.5 and propagates the
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](references/DOCTRINE.md). This skill is the execute phase invoked at the end of `/hyperflow:scope`.
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute phase invoked at the end of `/hyperflow:scope`.
 
 ## Overview
 
@@ -446,7 +446,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 
 ## Resources
 
-- [DOCTRINE.md](references/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
+- [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
 - [worker-prompt.md](references/worker-prompt.md) — Sonnet implementer/searcher/writer template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — Opus reviewer template (per-sub-task fallback).
 - [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — Opus batched reviewer template (P2).
