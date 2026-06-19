@@ -141,11 +141,12 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
      | In-progress spec draft (Step 7) | `.hyperflow/specs/<slug>.draft.md` |
      | Audit-fix spec (audit Step 6 chain trigger) | `.hyperflow/specs/audit-<YYYY-MM-DD>-<slug>.md` |
      | Task decomposition (scope output) | `.hyperflow/tasks/<slug>.md` |
+     | Multi-phase feature (scope output) | `.hyperflow/features/<slug>/` (see [feature-phases.md](feature-phases.md)) |
      | Audit finding report | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` |
      | Project memory entries | `.hyperflow/memory/<category>.md` |
      | Layer-0 project analysis cache | `.hyperflow/profile.md`, `.hyperflow/architecture.md`, etc. |
 
-     **Banned locations** for any planning artefact: repo root (no `PLAN.md`, `DESIGN.md`, `TODO.md`, `ROADMAP.md`, `SPEC.md`), `docs/` (reserved for polished user-facing documentation), `notes/` or any ad-hoc folder. If the orchestrator produces a planning artefact and is tempted to place it anywhere outside `.hyperflow/<canonical>`, that's a doctrine violation.
+     **Banned locations** for any planning artefact: repo root (no `PLAN.md`, `DESIGN.md`, `TODO.md`, `ROADMAP.md`, `SPEC.md`), `docs/` (reserved for polished user-facing documentation), `notes/` or any ad-hoc folder. If the orchestrator produces a planning artefact and is tempted to place it anywhere outside `.hyperflow/<canonical>`, that's a doctrine violation. **One carve-out:** the two-session handoff package `.hyperflow-handoff/<slug>/` (see [session-handoff.md](session-handoff.md)) lives at the repo root and **is committed** — it is a transport artefact, not a chat-vs-file planning doc, and git is the required cross-environment channel. It is the single committed exception.
 
      **Artefact vs documentation:** the distinction is *who* the file is for and *when* it was written.
      - **Artefacts** = working documents the orchestrator produces *during* a chain run, primarily for the orchestrator and the immediate user to reason about the work in flight. They go in `.hyperflow/`. Examples: feature spec for an in-progress decomposition, task file for the currently-dispatched batch graph, audit findings from a one-time review.

@@ -449,17 +449,29 @@ Agents — `Writer` (Sonnet) ⇒ **Reviewer** (Opus).
 
 See [task-tracking.md](references/task-tracking.md) and [worker-prompt.md](references/worker-prompt.md).
 
-### Step 7 — Hand off to `/hyperflow:dispatch`
+### Step 7 — Hand off to `/hyperflow:dispatch` (or write the handoff package)
 
-This step is trivial-inline per §12.1: one Skill tool invocation, no generation, no review needed. The orchestrator invokes the dispatch skill directly without an Agent dispatch wrapper.
-
-**If `chain-mode=auto`** — immediately invoke `Skill` with `skill: dispatch` and `args: "chain-mode=auto <task-slug>"`. Print:
+**If `session=one`** — trivial-inline per §12.1: immediately invoke `Skill` with `skill: dispatch` and `args: "session=one <task-slug> commit=… branch=… push=… triage=… mode=…"`. Print:
 
 ```
 Auto-chaining to /hyperflow:dispatch…
 ```
 
-**If `chain-mode=manual`** — ask via `AskUserQuestion`: "Plan done. Continue to /hyperflow:dispatch?" → yes / no / stop. On yes, invoke `Skill` with `skill: dispatch` and `args: "chain-mode=manual <task-slug>"`.
+**If `session=two`** — do NOT invoke dispatch. Write the committed handoff package, then STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)). Dispatch a `Writer — assembling handoff package for <slug>` (Sonnet), or do it inline when copy+commit is §12.1-trivial:
+
+1. Resolve the package dir from config (`handoff.packageDir`, default `.hyperflow-handoff`). Create `.hyperflow-handoff/<slug>/`:
+   - `HANDOFF.md` — manifest: slug, artefact type (flat|feature), artefact path, resolved chain args (`commit=/branch=/push=/triage=/mode=`), `on_complete=<handoff>` (review|deploy), originating provider (per [`../hyperflow/model-config.md`](../hyperflow/model-config.md) detection), originating commit (`git rev-parse HEAD`), the `Specialists` roster from the artefact status block, and the how-to-start-session-2 / return-path sections.
+   - `STATUS` — the single word `planned`.
+   - `artefact/` — a **committed copy** of the gitignored original: `.hyperflow/tasks/<slug>.md` → `artefact/tasks/<slug>.md` (flat), or the whole `.hyperflow/features/<slug>/` tree → `artefact/features/<slug>/` (feature).
+   - `context/` — copies of `.hyperflow/{conventions,profile,architecture}.md` + `.hyperflow/memory/index.md` (so the build env needs no scaffold).
+2. `git add .hyperflow-handoff/<slug>/` + commit `chore(handoff): plan <slug> for second-session build`.
+3. If `handoff.autoPush` (default true) AND `push != never` → push the current branch (`handoff.remote`, default `origin`). On failure, surface the exact `git push -u origin <branch>` — the commit is already local.
+4. STOP. Print:
+   ```
+   Planning complete — handoff package committed at .hyperflow-handoff/<slug>/
+   Start session 2 (any environment): git pull, then /hyperflow:dispatch <slug>
+   This session will surface the build for review when you return.
+   ```
 
 ## Anti-patterns
 
