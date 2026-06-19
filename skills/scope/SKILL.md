@@ -1,7 +1,7 @@
 ---
 name: scope
 description: |
-  Use when the user has a clear-enough task and wants it decomposed into batched worker sub-tasks before any code is written. Writes a task file under .hyperflow/tasks/ and auto-chains into /hyperflow:dispatch.
+  Use when the user has a clear-enough task and wants it decomposed into batched worker sub-tasks before any code is written. Writes a flat task file under .hyperflow/tasks/ — or, for multi-phase work, a feature folder under .hyperflow/features/<slug>/ with encapsulated phase sub-folders — and auto-chains into /hyperflow:dispatch.
   Trigger with /hyperflow:scope, "plan this", "decompose this task", "break this down", "write the task file".
 allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, AskUserQuestion
 argument-hint: "<task description> [chain-mode=auto|manual]"
@@ -13,7 +13,7 @@ tags: [planning, decomposition, task-graph, multi-agent]
 
 # Scope
 
-Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/memory/`, and `.hyperflow/specs/`. When the task file is ready, hand off to `dispatch` (auto or with a gate, depending on chain mode).
+Decompose, don't build. Read-only with respect to source code. The only writes are to `.hyperflow/tasks/`, `.hyperflow/features/`, `.hyperflow/memory/`, and `.hyperflow/specs/`. When the task file (or feature folder) is ready, hand off to `dispatch` (auto or with a gate, depending on chain mode) passing the artefact path.
 
 This skill exercises **Layer 0 (Project Analysis)** for context, **Layer 6 (Project Memory)** for past-learning surfacing, and **Layer 7 (Task Templates)** for decomposition patterns. It also inherits the triage classification from `/hyperflow:spec` to size each batch correctly.
 
@@ -259,6 +259,20 @@ Split target: each resulting sub-task is (a) reviewable in under 10 minutes of h
 
 Splitting is a **cost optimisation**, not just a quality one: three small sub-tasks dispatched to three Sonnet Workers in parallel cost less wall-clock AND less total tokens than one Worker chewing through an oversized brief (parallelism + focused prompts + fewer retries).
 
+**Phase decomposition (Planner — flat vs. feature/phase mode).** After the batch graph, the Planner decides the
+**artefact mode** per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md):
+- **Flat task file** (default) — one coherent unit, single milestone, all batches complete in one pass → write the
+  single `.hyperflow/tasks/<slug>.md` (Step 4 below, unchanged).
+- **Feature with phases** — when **≥ 2 sequential stages** with dependencies/milestones exist (e.g. data layer →
+  API → UI; `complexity = complex` or `scope ∈ {cross-cutting, system-wide}` with ≥ 2 milestones). The Planner
+  groups the batches into ordered **phases**, names each `phase-<n>-<kebab-name>`, and records each phase's goal,
+  exit criteria, `Depends on`, and which batches/tasks belong to it. A phase contains ≥ 1 batch; phases run
+  sequentially, batches inside a phase run in parallel as usual.
+
+The Planner emits a `mode: flat | feature` field + (when `feature`) the phase list. The Step 3a Reviewer validates
+the choice — a 1-phase "feature" is a flat task file; ceremonial phase-splitting of a single coherent unit is
+`NEEDS_REVISION`.
+
 **Step 3b — Complexity sizing (parallel with 3c · depends on 3a)**
 
 Dispatch in parallel:
@@ -309,9 +323,20 @@ Dispatch in parallel:
 
 Then dispatch `**Reviewer** — verifying execution plan matches Step 3 batch graph` over both Writers. `NEEDS_REVISION` re-dispatches 4c only.
 
-**Step 4 final verify.** After all sub-phases complete, dispatch `**Reviewer** — verifying assembled task file vs design` to confirm every design requirement maps to at least one sub-task, no orphan sub-tasks exist, and **every sub-task names ≥ 1 responsible specialist** (`Specialist:` field) plus the `Specialists` status row is populated. Writers write to `.hyperflow/tasks/<task-slug>.md` using the template below.
+**Step 4 final verify.** After all sub-phases complete, dispatch `**Reviewer** — verifying assembled task file vs design` to confirm every design requirement maps to at least one sub-task, no orphan sub-tasks exist, and **every sub-task names ≥ 1 responsible specialist** (`Specialist:` field) plus the `Specialists` status row is populated.
 
-Task-file template — follows [`artefact-format.md`](../hyperflow/artefact-format.md). The Writer applies the full template by default; reduces to the `fast` variant only when triage classifies `complexity=low AND sub-tasks<=2`.
+**Mode branch (per Step 3a `mode`):**
+- **`flat`** → Writers write the single `.hyperflow/tasks/<task-slug>.md` using the template below (unchanged).
+- **`feature`** → Writers create the feature tree per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md):
+  `.hyperflow/features/<slug>/feature.md` (status + phase roster + dependency graph), then one
+  `phase-<n>-<name>/` folder per phase, each with `phase.md` (status + goal + exit criteria + task roster) and a
+  `tasks/` folder holding one `T<n>-<slug>.md` per task. Seed `spec.md` / `research.md` from the design where the
+  phase has content (omit empty ones). The status/goal/why/scope sub-phases above map onto `feature.md` +
+  per-`phase.md`; each phase's task lines carry the same Role · Read/Modify/Create · Complexity · Specialist shape.
+  The final-verify Reviewer additionally checks: phases are ordered, each `Depends on` references an earlier phase,
+  and every task lives under exactly one phase's `tasks/`. The hand-off line points at `feature.md`.
+
+Task-file template (flat mode) — follows [`artefact-format.md`](../hyperflow/artefact-format.md). The Writer applies the full template by default; reduces to the `fast` variant only when triage classifies `complexity=low AND sub-tasks<=2`.
 
 ```markdown
 # <Name>
