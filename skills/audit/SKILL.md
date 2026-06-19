@@ -73,6 +73,8 @@ Security scan (hardcoded secrets, injection, path traversal, XSS, missing valida
 
 Use the provided target or run `git diff HEAD` + `git diff --staged`. No agent dispatched (read-only git).
 
+**Targets accepted:** a path/glob, an explicit file list, or a **git range `<base>..<head>`**. The range form is how a two-session **handoff review** runs — `/hyperflow:handoff review <slug>` reads the build's `COMPLETION.md` diff range and invokes audit as `Skill audit "<base>..<head> level=<n>"`, so the review covers exactly the second session's commits (`git diff <base>..<head>`). See [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md).
+
 ### Step 2 — Gather context
 
 Sub-phases 2a, 2b, 2c run in parallel (P1). Step 2 output is the union of their worker outputs plus three sub-phase Reviewer verdicts, handed to an Opus aggregate coverage gate. The Searchers also record **which surfaces the diff touches** (frontend / api / db / devops / mobile / data-ml / security) — this drives the domain-specialist selection in Step 3 ([`../../agents/README.md`](../../agents/README.md)).
