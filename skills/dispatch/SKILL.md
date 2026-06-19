@@ -4,7 +4,7 @@ description: |
   Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel Sonnet workers under per-batch Opus reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
 allowed-tools: Read, Write, Edit, Bash(git:*), Agent, AskUserQuestion
-argument-hint: "[task-file | handoff-slug] [session=one|two] [--from-batch N] [--final-only] [--thorough]"
+argument-hint: "[task-file | handoff-slug] [session=one|two] [--phases=all|next] [--from-batch N] [--final-only] [--thorough]"
 version: 3.1.2
 license: MIT
 compatibility: Designed for Claude Code
@@ -58,6 +58,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 | Gate | When | Format |
 |---|---|---|
 | Session context | Step 0, resolved (not asked) | inherited `session=` / handoff `HANDOFF.md` / default `one` |
+| Phase-dispatch scope | Step 1.5, feature mode with ≥ 2 incomplete phases | `AskUserQuestion` — all phases / phase by phase |
 | Inter-batch (manual mode only) | After each batch's gates pass | `AskUserQuestion` — continue / stop. **Auto mode fires NO inter-batch question** — see DOCTRINE rule 8 (invented gates banned). |
 | Hard halt | Any `SECURITY_VIOLATION` from a reviewer | Stop the chain, surface the finding |
 | **Audit prompt** | Step 5, after wrap-up | `AskUserQuestion` — run `/hyperflow:audit`? (yes/no, recommended toggles with flow profile) |
@@ -116,6 +117,20 @@ Confirm structural completeness: batches/tasks non-empty, each task has `id`, `t
 
 ### Step 1.5 — Phase loop (feature mode only)
 
+**Phase-dispatch scope gate (STRUCTURAL GATE · feature mode, ≥ 2 incomplete phases).** Before the loop, fire ONE `AskUserQuestion` — a named-workflow choice, so the recommended option goes first with `(Recommended)`:
+
+```
+This feature has <N> phases. How should I build them?
+
+  All phases (Recommended)  — build every phase in order, straight through to the end.
+
+  Phase by phase            — build only the NEXT phase, then stop so you can review it
+                              before the next one starts. Re-run /hyperflow:dispatch
+                              <slug> to continue with the following phase.
+```
+
+Skip the gate (default `all`) when: only one phase is incomplete; `--phases=all|next` was passed; or this is an `on_complete=deploy` two-session build (fully autonomous — `all`). Codex/no-popup → `Hyperflow Question` chat-block fallback; no channel at all → default `All phases`. Propagate the choice as `--phases=<all|next>`.
+
 In **feature mode**, Step 2 runs **once per phase, in roster order**. A phase does not start until its `Depends on`
 phase is `completed`. For each phase:
 1. Run Step 2 over that phase's batches (parallel inside the phase, exactly as flat mode).
@@ -124,6 +139,7 @@ phase is `completed`. For each phase:
 3. Run Step 3 (final integration review) **per phase** over that phase's cumulative diff (D7 + single-specialist
    skip apply per phase). After the **last** phase, also run one feature-level integration pass over the full diff
    when ≥ 2 phases touched disjoint surfaces.
+4. **If `--phases=next`** — STOP after this phase completes. Print: `Phase <name> done (<k>/<N>). Review it, then run /hyperflow:dispatch <slug> to build the next phase.` Do NOT advance to the next phase. **If `--phases=all`** — continue to the next phase immediately.
 
 In **flat mode**, skip Step 1.5 — Step 2 runs once over the single task file's batches as before.
 
