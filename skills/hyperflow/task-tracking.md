@@ -2,6 +2,11 @@
 
 Persist active task state across sessions as individual files in `.hyperflow/tasks/`. One file per task. Created AFTER research, BEFORE implementation. Dynamic — updated throughout execution. Deleted on completion.
 
+> **Two modes.** This flat one-file-per-task model is used for **single-phase work**. Work large enough to split
+> into **≥ 2 sequential phases** uses the **feature/phase folder structure** instead — a `.hyperflow/features/<slug>/`
+> tree whose phase sub-folders each encapsulate their own `tasks/`, design, research, and decisions. See
+> [feature-phases.md](feature-phases.md). The Planner (scope Step 3) picks the mode during decomposition.
+
 ## Task File Format
 
 ```markdown

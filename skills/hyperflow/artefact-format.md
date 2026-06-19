@@ -6,7 +6,8 @@ Applies to every planning artefact the orchestrator produces. **All artefacts li
 
 | Artefact | Path | Written by |
 |---|---|---|
-| Task decomposition | `.hyperflow/tasks/<slug>.md` | `scope` Step 4 |
+| Task decomposition (single-phase) | `.hyperflow/tasks/<slug>.md` | `scope` Step 4 |
+| Feature (multi-phase) | `.hyperflow/features/<slug>/feature.md` + `phase-<n>-<name>/` folders | `scope` Step 4 — see [feature-phases.md](feature-phases.md) |
 | Spec (final) | `.hyperflow/specs/<slug>.md` | `spec` Step 8 |
 | Spec (in-progress draft) | `.hyperflow/specs/<slug>.draft.md` | `spec` Step 7 progressive |
 | Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` | `audit` Step 5 |
