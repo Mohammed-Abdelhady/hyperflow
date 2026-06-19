@@ -180,7 +180,7 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 | `frontend` | `frontend-reviewer` | `searcher` |
 | `ui` | `frontend-reviewer`, `accessibility-reviewer` | `searcher` |
 | `api` | `api-reviewer`, `backend-reviewer` | `searcher` |
-| `db` | `database-reviewer` | `searcher` |
+| `db` | `database-reviewer`, `database-optimization-reviewer` | `searcher` |
 | `security` | `security-reviewer`, `vulnerability-reviewer` | `researcher` |
 | `scientific` | `data-ml-reviewer` | `analyst` |
 | `architect` | `backend-reviewer` | `analyst` |
@@ -201,6 +201,8 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 - Add `algorithm-reviewer` whenever the diff contains non-trivial algorithms, nested loops, recursion, or
   data-structure choices on a hot path — even when `performance` is not in `types` (the Brain detects this from the
   surface and adds it).
+- Add `database-optimization-reviewer` whenever the diff contains queries, indexes, or data-access paths whose
+  performance matters (`database-reviewer` still owns migration correctness; the optimization specialist owns speed).
 
 The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivation alongside `personas[]`.
 

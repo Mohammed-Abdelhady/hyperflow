@@ -183,6 +183,14 @@
         "tier": "worker/thinking"
       },
       {
+        "name": "database-optimization-reviewer",
+        "personas": [
+          "db",
+          "performance"
+        ],
+        "tier": "thinking"
+      },
+      {
         "name": "security-reviewer",
         "personas": [
           "security"

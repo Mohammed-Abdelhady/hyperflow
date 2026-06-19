@@ -69,7 +69,8 @@ Tier assignment:
 | [frontend-reviewer](frontend-reviewer.md) | frontend, ui | worker / thinking | render, state, component correctness |
 | [backend-reviewer](backend-reviewer.md) | api, architect | worker / thinking | service layer + module boundaries |
 | [api-reviewer](api-reviewer.md) | api | worker / thinking | contract, status codes, validation |
-| [database-reviewer](database-reviewer.md) | db | worker / thinking | migrations, indexes, query plans |
+| [database-reviewer](database-reviewer.md) | db | worker / thinking | migration correctness, reversibility, schema safety |
+| [database-optimization-reviewer](database-optimization-reviewer.md) | db, performance | **thinking** | query optimization, indexing strategy, plan-level "better solution?" |
 | [security-reviewer](security-reviewer.md) | security | **thinking** | authz, secrets, OWASP; halts on violation |
 | [vulnerability-reviewer](vulnerability-reviewer.md) | security, scientific | **thinking** | CVE / dependency / exploit-path |
 | [devops-reviewer](devops-reviewer.md) | devops | worker / thinking | CI, IaC, rollback, observability |
