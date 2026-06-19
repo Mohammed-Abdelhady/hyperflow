@@ -151,6 +151,6 @@ Reviewer that detects a security violation reports `SECURITY_VIOLATION:` — hal
 
 ---
 
-> **Not in this block** (need the terminal CLI): `/hyperflow:*` slash commands, plugin skill files, chain-mode Step-0 question, operational pre-elections, background agents, sticky mode, status skill, cache skill, adaptive flow profiles. Run hyperflow in the terminal CLI for the full chain.
+> **Not in this block** (need the terminal CLI): `/hyperflow:*` slash commands, plugin skill files, session-strategy Step-0 question (one/two sessions + cross-environment handoff), operational pre-elections, background agents, sticky mode, status skill, cache skill, handoff skill, adaptive flow profiles. Run hyperflow in the terminal CLI for the full chain.
 
 <!-- hyperflow:doctrine:end -->
