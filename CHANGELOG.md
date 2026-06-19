@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.29.0] — 2026-06-19
+
+### Added
+- Auto-migrate old .hyperflow cache forward on session start
+- Surface and archive multi-phase features
+- Execute multi-phase feature folders phase by phase
+- Decompose multi-phase features into encapsulated phase folders
+- Add feature/phase folder structure for multi-phase work
+
+### Changed
+- Document the feature/phase task structure
+
+
 ## [4.28.0] — 2026-06-19
 
 ### Added
@@ -933,7 +946,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.28.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.29.0...HEAD
+[4.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.28.0...v4.29.0
 [4.28.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.27.0...v4.28.0
 [4.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v4.27.0
 [4.26.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.1...v4.26.2
