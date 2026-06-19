@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hyperflow — Premium multi-agent orchestration for Codex, Claude Code, OpenCode &amp; Antigravity</title>
-  <meta name="description" content="Premium multi-agent orchestration for Codex, Claude Code, OpenCode & Antigravity. Thinking models plan and review every step, fast workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions, never uploaded, never mixed across repos." />
+  <meta name="description" content="Premium multi-agent orchestration for Codex, Claude Code, OpenCode & Antigravity. Decision agents plan and review every step, workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions, never uploaded, never mixed across repos." />
   <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta name="theme-color" content="#14110C" />
 
@@ -12,7 +12,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hyperflow" />
   <meta property="og:title" content="Hyperflow — premium multi-agent orchestration that reviews every step and remembers across sessions" />
-  <meta property="og:description" content="Thinking models plan and review every step, fast workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions." />
+  <meta property="og:description" content="Decision agents plan and review every step, workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions." />
   <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/hero.svg" />
   <meta property="og:image:alt" content="Hyperflow — the chain: amplify, spec, scope, dispatch, audit, deploy" />
@@ -39,7 +39,7 @@
       <a href="#hero" class="nav-wordmark">Hyperflow</a>
       <ul class="nav-links" role="list">
         <li><a href="#chain">Chain</a></li>
-        <li><a href="#tiers">Tiers</a></li>
+        <li><a href="#roles">Roles</a></li>
         <li><a href="#sub-phases">Sub-phases</a></li>
         <li><a href="#skills">Skills</a></li>
         <li><a href="#memory">Memory</a></li>
@@ -60,7 +60,7 @@
 
         <p class="hero-positioning">
           Premium orchestration that reviews every step, sizes effort to the task, and learns as it works.
-          Thinking models plan and review; fast workers execute in parallel.
+          Decision agents plan and review; workers execute in parallel.
           Learnings persist in local, per-project memory &mdash; carried into every future session, never uploaded, never mixed across repos.
         </p>
 
@@ -102,11 +102,11 @@
         Chain-starting skills auto-advance through the rest of the chain. Skip to any entry point — the orchestrator picks up and runs forward.
       </p>
 
-      <div class="chain-diagram" role="img" aria-label="Chain flow: amplify (front door) hands off to spec (thinking-tier), which auto-chains to scope (thinking-tier) and dispatch (worker-tier), with audit and deploy gates at the end">
+      <div class="chain-diagram" role="img" aria-label="Chain flow: amplify (front door) hands off to spec (plan stage), which auto-chains to scope (plan stage) and dispatch (execute stage), with audit and deploy gates at the end">
         <div class="chain-svg-wrap">
           <svg viewBox="0 0 960 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
-            <!-- ─────────── Thinking-tier bracket ─────────── -->
-            <text x="479" y="20" font-size="10.5" letter-spacing="0.18em" fill="#7C3AED" text-anchor="middle">THINKING TIER</text>
+            <!-- ─────────── Plan-stage bracket ─────────── -->
+            <text x="479" y="20" font-size="10.5" letter-spacing="0.18em" fill="#7C3AED" text-anchor="middle">PLAN STAGE</text>
             <text x="479" y="34" font-size="9" fill="#6B6456" text-anchor="middle">orchestrates every phase · triages the task · reviews every output</text>
             <path d="M40 52 V46 H918 V52" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5" />
             <line x1="479" y1="46" x2="479" y2="40" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5" />
@@ -124,7 +124,7 @@
             <rect x="190" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
             <rect x="190" y="72" width="128" height="4" rx="2" fill="#7C3AED" />
             <text x="254" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">spec</text>
-            <text x="254" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">THINKING</text>
+            <text x="254" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">PLAN</text>
             <line x1="206" y1="122" x2="302" y2="122" stroke="#C9C2AE" stroke-width="1" />
             <text x="254" y="137" font-size="9" fill="#6B6456" text-anchor="middle">design + approval</text>
 
@@ -132,7 +132,7 @@
             <rect x="340" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
             <rect x="340" y="72" width="128" height="4" rx="2" fill="#7C3AED" />
             <text x="404" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">scope</text>
-            <text x="404" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">THINKING</text>
+            <text x="404" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">PLAN</text>
             <line x1="356" y1="122" x2="452" y2="122" stroke="#C9C2AE" stroke-width="1" />
             <text x="404" y="137" font-size="9" fill="#6B6456" text-anchor="middle">decompose → task file</text>
 
@@ -140,7 +140,7 @@
             <rect x="490" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
             <rect x="490" y="72" width="128" height="4" rx="2" fill="#14B8A6" />
             <text x="554" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">dispatch</text>
-            <text x="554" y="114" font-size="8" letter-spacing="0.1em" fill="#14B8A6" text-anchor="middle">WORKER · ENDPOINT</text>
+            <text x="554" y="114" font-size="8" letter-spacing="0.1em" fill="#14B8A6" text-anchor="middle">EXECUTE · ENDPOINT</text>
             <line x1="506" y1="122" x2="602" y2="122" stroke="#C9C2AE" stroke-width="1" />
             <text x="554" y="137" font-size="9" fill="#6B6456" text-anchor="middle">parallel build + review</text>
 
@@ -193,10 +193,10 @@
             <line x1="779" y1="182" x2="779" y2="187" stroke="#6B6456" stroke-width="1" stroke-opacity="0.5" />
             <text x="779" y="200" font-size="8.5" fill="#6B6456" text-anchor="middle">gates fire after dispatch — batched into one ask</text>
 
-            <!-- ─────────── Worker-tier bracket ─────────── -->
+            <!-- ─────────── Execute-stage bracket ─────────── -->
             <path d="M40 220 V226 H918 V220" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5" />
             <line x1="479" y1="226" x2="479" y2="232" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5" />
-            <text x="479" y="248" font-size="10.5" letter-spacing="0.18em" fill="#14B8A6" text-anchor="middle">WORKER TIER</text>
+            <text x="479" y="248" font-size="10.5" letter-spacing="0.18em" fill="#14B8A6" text-anchor="middle">EXECUTE STAGE</text>
             <text x="479" y="262" font-size="9" fill="#6B6456" text-anchor="middle">executes in parallel — persona-stitched per task</text>
 
             <!-- ─────────── Review-pair layer ─────────── -->
@@ -214,21 +214,21 @@
 
   <hr style="margin-top: var(--section-gap);" />
 
-  <!-- ── Thinking / Worker split ──────────────────────────────────────── -->
-  <section id="tiers" aria-labelledby="tiers-heading">
+  <!-- ── Plan / Execute roles ─────────────────────────────────────────── -->
+  <section id="roles" aria-labelledby="roles-heading">
     <div class="container">
-      <p class="section-label">The thinking / worker split</p>
-      <h2 id="tiers-heading">The whole product in one idea.</h2>
+      <p class="section-label">The plan / execute split</p>
+      <h2 id="roles-heading">The whole product in one idea.</h2>
       <p>
-        Expensive thinking models handle what they're best at: planning, questioning, and reviewing. Fast worker models handle what they're best at: writing code. The split is structural — not a setting.
+        Decision agents handle planning, questioning, and reviewing. Workers handle writing code. The split is structural — a separation of roles, not a setting. Every agent runs on whatever model your session uses.
       </p>
 
       <div class="tiers-grid">
-        <!-- Thinking card -->
+        <!-- Plan card -->
         <div class="tier-card">
           <div class="tier-accent-bar" style="background:#7C3AED;"></div>
-          <div class="tier-title">Thinking tier</div>
-          <div class="tier-models mono">Opus 4.8 &nbsp;·&nbsp; Gemini 3 Pro</div>
+          <div class="tier-title">Plan &amp; review</div>
+          <div class="tier-models mono">decision &middot; orchestration</div>
           <p class="tier-desc">Orchestrates the chain. Triages every task. Asks clarifying questions — after reading the code, never before. Reviews every worker output. Runs the final integration pass over the cumulative diff.</p>
           <div class="tier-roles">
             <span class="tier-role-chip">Orchestrator</span>
@@ -239,11 +239,11 @@
             <span class="tier-role-chip">Planner</span>
           </div>
         </div>
-        <!-- Worker card -->
+        <!-- Execute card -->
         <div class="tier-card">
           <div class="tier-accent-bar" style="background:#14B8A6;"></div>
-          <div class="tier-title">Worker tier</div>
-          <div class="tier-models mono">Sonnet 4.6 &nbsp;·&nbsp; Gemini 3.5 Flash</div>
+          <div class="tier-title">Execute</div>
+          <div class="tier-models mono">parallel &middot; persona-stitched</div>
           <p class="tier-desc">Executes the tasks. Searches, writes, implements — in parallel wherever tasks are independent. Each worker receives a stitched persona block — expert-level guidance for the exact work in front of it.</p>
           <div class="tier-roles">
             <span class="tier-role-chip">Implementer</span>
@@ -263,7 +263,7 @@
               <!-- Worker node -->
               <rect x="0" y="16" width="140" height="40" rx="4" fill="#FBFAF4" stroke="#14B8A6" stroke-opacity="0.55" />
               <text x="22" y="34" font-family="Hanken Grotesk,sans-serif" font-size="10" font-weight="600" fill="#14B8A6" letter-spacing="0.06em">WORKER</text>
-              <text x="22" y="49" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#6B6456">Sonnet / Flash</text>
+              <text x="22" y="49" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#6B6456">executes</text>
 
               <!-- Arrow -->
               <line x1="142" y1="36" x2="210" y2="36" stroke="#14110C" stroke-width="1" />
@@ -273,14 +273,14 @@
               <!-- Reviewer node -->
               <rect x="220" y="16" width="160" height="40" rx="4" fill="#FBFAF4" stroke="#7C3AED" stroke-opacity="0.55" />
               <text x="242" y="34" font-family="Hanken Grotesk,sans-serif" font-size="10" font-weight="600" fill="#7C3AED" letter-spacing="0.06em">REVIEWER</text>
-              <text x="242" y="49" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#6B6456">Opus / Gemini Pro</text>
+              <text x="242" y="49" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#6B6456">validates</text>
 
-              <!-- Thinking badge + label -->
-              <text x="400" y="40" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#6B6456">&#x2190; thinking-tier; validates, scores, blocks bad output</text>
+              <!-- review label -->
+              <text x="400" y="40" font-family="Hanken Grotesk,sans-serif" font-size="10" fill="#6B6456">&#x2190; validates, scores, blocks bad output</text>
             </svg>
           </div>
           <p style="font-size:0.8125rem;color:var(--text-secondary);margin-top:0.75rem;max-width:none;">
-            Per-batch Sonnet reviewers do L1&ndash;L2 spot-checks. The final integration reviewer (Opus) runs over the cumulative diff. Every non-trivial phase also decomposes into named sub-phases, each with its own Sonnet reviewer — so review happens at every granularity.
+            Per-batch reviewers do L1&ndash;L2 spot-checks. The final integration reviewer runs over the cumulative diff. Every non-trivial phase also decomposes into named sub-phases, each with its own reviewer — so review happens at every granularity.
           </p>
         </div>
       </div>
@@ -293,9 +293,9 @@
   <section id="worker-reviewer" aria-labelledby="wr-heading">
     <div class="container">
       <p class="section-label">The core loop</p>
-      <h2 id="wr-heading">Every worker output reviewed by a thinking-tier model. No exceptions.</h2>
+      <h2 id="wr-heading">Every worker output reviewed by a Reviewer. No exceptions.</h2>
       <p>
-        Independent sub-tasks fan out in parallel — three files with no shared state means three workers in one batch. Each parallel worker feeds its own thinking-tier reviewer before the batch advances. Reviews collapse synchronously at the end of each batch; no output reaches the next batch unreviewed.
+        Independent sub-tasks fan out in parallel — three files with no shared state means three workers in one batch. Each parallel worker feeds its own Reviewer before the batch advances. Reviews collapse synchronously at the end of each batch; no output reaches the next batch unreviewed.
       </p>
 
       <div class="wr-diagram-wrap" role="img" aria-label="Parallel worker fan-out: three worker nodes (teal) running simultaneously, each with an arrow to its own reviewer node (purple), all feeding into a batch synthesis step">
@@ -306,7 +306,7 @@
             <rect x="0" y="104" width="130" height="52" rx="6" fill="#FBFAF4" stroke="#14110C" />
             <rect x="0" y="104" width="130" height="3" rx="1.5" fill="#7C3AED" />
             <text x="65" y="128" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#14110C" text-anchor="middle">Orchestrator</text>
-            <text x="65" y="143" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">THINKING TIER</text>
+            <text x="65" y="143" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">PLAN STAGE</text>
 
             <!-- dispatch fan-out lines -->
             <line x1="130" y1="130" x2="158" y2="100" stroke="#14110C" stroke-width="1" />
@@ -346,19 +346,19 @@
             <rect x="386" y="74" width="145" height="52" rx="6" fill="#FBFAF4" stroke="#7C3AED" stroke-opacity="0.6" />
             <rect x="386" y="74" width="145" height="3" rx="1.5" fill="#7C3AED" />
             <text x="458" y="99" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#14110C" text-anchor="middle">Reviewer 1</text>
-            <text x="458" y="114" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">THINKING TIER</text>
+            <text x="458" y="114" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
             <!-- Reviewer 2 -->
             <rect x="386" y="104" width="145" height="52" rx="6" fill="#FBFAF4" stroke="#7C3AED" stroke-opacity="0.6" />
             <rect x="386" y="104" width="145" height="3" rx="1.5" fill="#7C3AED" />
             <text x="458" y="129" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#14110C" text-anchor="middle">Reviewer 2</text>
-            <text x="458" y="144" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">THINKING TIER</text>
+            <text x="458" y="144" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
             <!-- Reviewer 3 -->
             <rect x="386" y="134" width="145" height="52" rx="6" fill="#FBFAF4" stroke="#7C3AED" stroke-opacity="0.6" />
             <rect x="386" y="134" width="145" height="3" rx="1.5" fill="#7C3AED" />
             <text x="458" y="159" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#14110C" text-anchor="middle">Reviewer 3</text>
-            <text x="458" y="174" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">THINKING TIER</text>
+            <text x="458" y="174" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
             <!-- reviewer → batch synthesis collect lines -->
             <line x1="531" y1="100" x2="559" y2="130" stroke="#14110C" stroke-width="1" />
@@ -392,7 +392,7 @@
 
             <!-- review-tiers band -->
             <rect x="0" y="256" width="860" height="30" rx="4" fill="#ECE7D7" stroke="#C9C2AE" stroke-dasharray="3 3" />
-            <text x="430" y="270" font-size="9" fill="#6B6456" text-anchor="middle">per-batch reviewers run L1–L2 spot-checks · the final integration reviewer (thinking-tier) runs once over the cumulative diff</text>
+            <text x="430" y="270" font-size="9" fill="#6B6456" text-anchor="middle">per-batch reviewers run L1–L2 spot-checks · the final integration reviewer runs once over the cumulative diff</text>
             <text x="430" y="282" font-size="8.5" fill="#6B6456" text-anchor="middle">batch-N+1 workers receive batch-N discoveries via automatic learning injection</text>
 
           </svg>
@@ -400,7 +400,7 @@
       </div>
 
       <p class="wr-explainer">
-        Per-batch worker-tier reviewers handle L1&ndash;L2 spot-checks on small diffs. The final integration reviewer (thinking-tier) runs once at the end over the cumulative diff. Batch-2 workers receive batch-1 discoveries via automatic learning injection &mdash; so later batches always know what earlier batches found.
+        Per-batch reviewers handle L1&ndash;L2 spot-checks on small diffs. The final integration reviewer runs once at the end over the cumulative diff. Batch-2 workers receive batch-1 discoveries via automatic learning injection &mdash; so later batches always know what earlier batches found.
       </p>
     </div>
   </section>
@@ -413,10 +413,10 @@
       <p class="section-label">Sub-phase decomposition</p>
       <h2 id="sp-heading">Every non-trivial phase fans into named sub-phases.</h2>
       <p>
-        DOCTRINE &sect;12.2: each Step that can be parallelized decomposes into numbered sub-phases (Step 2a, 2b, 2c&hellip;). Each sub-phase runs independent workers in parallel and ends with its own worker-tier reviewer. The per-batch and final integration reviews still run on top &mdash; review happens at every granularity.
+        DOCTRINE &sect;12.2: each Step that can be parallelized decomposes into numbered sub-phases (Step 2a, 2b, 2c&hellip;). Each sub-phase runs independent workers in parallel and ends with its own reviewer. The per-batch and final integration reviews still run on top &mdash; review happens at every granularity.
       </p>
 
-      <div class="sp-diagram-wrap" role="img" aria-label="Sub-phase fan-out: Step 2 splits into sub-phases 2a, 2b, and 2c. Each sub-phase has two parallel workers and its own worker-tier reviewer. All sub-phase outputs converge into the batch synthesis.">
+      <div class="sp-diagram-wrap" role="img" aria-label="Sub-phase fan-out: Step 2 splits into sub-phases 2a, 2b, and 2c. Each sub-phase has two parallel workers and its own reviewer. All sub-phase outputs converge into the batch synthesis.">
         <div class="sp-svg-wrap">
           <svg viewBox="0 0 900 310" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
 
@@ -454,7 +454,7 @@
             <rect x="382" y="34" width="130" height="46" rx="5" fill="#FBFAF4" stroke="#14B8A6" stroke-opacity="0.45" />
             <rect x="382" y="34" width="130" height="2.5" rx="1.25" fill="#14B8A6" stroke-opacity="0.45" />
             <text x="447" y="56" font-family="JetBrains Mono,monospace" font-size="10" fill="#14110C" text-anchor="middle">Reviewer 2a</text>
-            <text x="447" y="70" font-size="7.5" fill="#6B6456" text-anchor="middle">WORKER TIER</text>
+            <text x="447" y="70" font-size="7.5" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
             <!-- ── Sub-phase 2b ── (y=130) -->
             <text x="144" y="126" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="start">STEP 2b</text>
@@ -475,7 +475,7 @@
             <rect x="382" y="130" width="130" height="46" rx="5" fill="#FBFAF4" stroke="#14B8A6" stroke-opacity="0.45" />
             <rect x="382" y="130" width="130" height="2.5" rx="1.25" fill="#14B8A6" stroke-opacity="0.45" />
             <text x="447" y="152" font-family="JetBrains Mono,monospace" font-size="10" fill="#14110C" text-anchor="middle">Reviewer 2b</text>
-            <text x="447" y="166" font-size="7.5" fill="#6B6456" text-anchor="middle">WORKER TIER</text>
+            <text x="447" y="166" font-size="7.5" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
             <!-- ── Sub-phase 2c ── (y=226) -->
             <text x="144" y="222" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="start">STEP 2c</text>
@@ -496,7 +496,7 @@
             <rect x="382" y="226" width="130" height="46" rx="5" fill="#FBFAF4" stroke="#14B8A6" stroke-opacity="0.45" />
             <rect x="382" y="226" width="130" height="2.5" rx="1.25" fill="#14B8A6" stroke-opacity="0.45" />
             <text x="447" y="248" font-family="JetBrains Mono,monospace" font-size="10" fill="#14110C" text-anchor="middle">Reviewer 2c</text>
-            <text x="447" y="262" font-size="7.5" fill="#6B6456" text-anchor="middle">WORKER TIER</text>
+            <text x="447" y="262" font-size="7.5" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
             <!-- converge lines from reviewers to batch synthesis -->
             <line x1="512" y1="57"  x2="554" y2="155" stroke="#14110C" stroke-width="1" />
@@ -516,7 +516,7 @@
             <rect x="736" y="129" width="164" height="52" rx="6" fill="#FBFAF4" stroke="#7C3AED" stroke-opacity="0.6" />
             <rect x="736" y="129" width="164" height="3" rx="1.5" fill="#7C3AED" />
             <text x="818" y="153" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#14110C" text-anchor="middle">Batch Reviewer</text>
-            <text x="818" y="168" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">THINKING TIER</text>
+            <text x="818" y="168" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">REVIEWER</text>
 
           </svg>
         </div>
@@ -571,7 +571,7 @@
             <tr>
               <td><strong>dispatch</strong></td>
               <td><code>/hyperflow:dispatch</code></td>
-              <td>Dispatch parallel workers + thinking-tier reviews + final integration review; endpoint of the chain</td>
+              <td>Dispatch parallel workers + reviews at every step + final integration review; endpoint of the chain</td>
               <td><span class="chain-badge endpoint">Endpoint</span></td>
             </tr>
             <tr>
@@ -894,7 +894,7 @@
         <div class="fr-status-block">
           <span class="fr-retry">[retry 1/3 &middot; Implementer &middot; tool-error]</span><br />
           <span class="fr-retry">[retry 2/3 &middot; Writer &middot; malformed-output]</span><br />
-          <span class="fr-escalate">[escalate &rarr; thinking-tier &middot; Searcher &middot; timeout]</span><br />
+          <span class="fr-escalate">[escalate &middot; Searcher &middot; timeout]</span><br />
           <span class="fr-abort">[abort &middot; Reviewer &middot; 5xx &middot; chain budget 2/3]</span>
         </div>
       </div>
@@ -903,7 +903,7 @@
       <div class="fr-rule-list">
         <div class="fr-rule">
           <div class="fr-rule-name">Worker error</div>
-          <div class="fr-rule-desc">Retry once with identical prompt &rarr; escalate to thinking-tier (with prior-attempt block injected) &rarr; abort batch on third failure</div>
+          <div class="fr-rule-desc">Retry once with identical prompt &rarr; escalate (with prior-attempt block injected) &rarr; abort batch on third failure</div>
         </div>
         <div class="fr-rule">
           <div class="fr-rule-name">Malformed output</div>
@@ -937,7 +937,7 @@
       <p class="section-label">Examples</p>
       <h2 id="examples-heading">Four flows. From quick fix to ambiguous design.</h2>
       <p class="examples-intro">
-        These are representative transcripts showing how the orchestrator selects a profile, fans out workers, and routes through review. Labels follow the output-style spec: bold for thinking-tier, plain for worker-tier.
+        These are representative transcripts showing how the orchestrator selects a profile, fans out workers, and routes through review. Labels follow the output-style spec: bold for decision and review roles, plain for workers.
       </p>
 
       <div class="examples-grid">
@@ -955,9 +955,9 @@
             <span class="ex-dim">            Decompose: SearchBar + useDebounce + wire up</span><br /><br />
             <span class="ex-worker">  Worker 1  Implementer &mdash; SearchBar component</span>&nbsp;&nbsp;<span class="ex-dim">&#x250C;</span><br />
             <span class="ex-worker">  Worker 2  Implementer &mdash; useDebounce hook</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="ex-dim">&#x251C; parallel</span><br /><br />
-            <span class="ex-thinking">  Reviewer  batch review L1&ndash;L2 &mdash; worker tier</span><br />
+            <span class="ex-thinking">  Reviewer  batch review L1&ndash;L2</span><br />
             <span class="ex-worker">  Worker    wires SearchBar into Dashboard</span><br />
-            <span class="ex-thinking">  Reviewer  final integration &mdash; thinking tier</span>
+            <span class="ex-thinking">  Reviewer  final integration</span>
           </div>
         </div>
 
@@ -988,13 +988,13 @@
           </div>
           <div class="example-body">
             <span class="ex-cmd">/hyperflow:trace "Tests failing after auth refactor"</span><br /><br />
-            <span class="ex-thinking">  Debugger  5-Whys &middot; 3 independent broken files &mdash; thinking tier</span><br /><br />
+            <span class="ex-thinking">  Debugger  5-Whys &middot; 3 independent broken files</span><br /><br />
             <span class="ex-worker">  Searcher  auth-middleware.test.ts</span>&nbsp;&nbsp;<span class="ex-dim">&#x250C;</span><br />
             <span class="ex-worker">  Searcher  login-flow.test.ts</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ex-dim">&#x251C; parallel</span><br />
             <span class="ex-worker">  Searcher  session-handler.test.ts</span>&nbsp;&nbsp;&nbsp;<span class="ex-dim">&#x2514;</span><br /><br />
             <span class="ex-worker">  Implementer  root-cause fix</span><br />
             <span class="ex-worker">  Writer       regression test</span><br />
-            <span class="ex-thinking">  Reviewer     validates fix + test &mdash; thinking tier</span>
+            <span class="ex-thinking">  Reviewer     validates fix + test</span>
           </div>
         </div>
 
@@ -1008,7 +1008,7 @@
             <span class="ex-cmd">/hyperflow:scope "Rename Button to PrimaryButton"</span><br /><br />
             <span class="ex-dim">  Triage    fast flow &middot; 1 file &middot; ambiguity 0.0</span><br /><br />
             <span class="ex-worker">  Implementer  rename + update all imports</span><br />
-            <span class="ex-thinking">  Reviewer     inline self-review (fast) &mdash; worker tier</span><br /><br />
+            <span class="ex-thinking">  Reviewer     inline self-review (fast)</span><br /><br />
             <span class="ex-dim">  Done. No batch reviewer needed at this depth.</span>
           </div>
         </div>
@@ -1064,9 +1064,9 @@
             <tr>
               <td><span class="layer-num">L2</span></td>
               <td>
-                <span class="layer-color-dot" style="background:#7C3AED;"></span>Model Routing
+                <span class="layer-color-dot" style="background:#7C3AED;"></span>Role Dispatch
               </td>
-              <td>Configurable thinking/worker per provider + priority chain</td>
+              <td>Routes each phase to the right role — decision agents plan and review, workers execute</td>
             </tr>
             <tr>
               <td><span class="layer-num">L3</span></td>
@@ -1129,43 +1129,28 @@
   <section id="providers" aria-labelledby="providers-heading">
     <div class="container">
       <p class="section-label">Providers</p>
-      <h2 id="providers-heading">One config. Auto-detected.</h2>
+      <h2 id="providers-heading">Runs everywhere. Auto-detected.</h2>
       <p class="providers-intro">
-        Provider is detected at session start from environment variables and folder presence. Override any model in <code>~/.hyperflow/config.json</code> or switch mid-session.
+        The active provider is detected at session start from environment variables and folder presence. Hyperflow runs on whatever model your agent session uses &mdash; there is no model configuration.
       </p>
 
       <div class="providers-grid">
         <div class="provider-card">
           <div class="provider-name">Claude Code</div>
           <div class="provider-model-row">
-            <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
-            <span class="provider-model-name">Opus 4.8</span>
-          </div>
-          <div class="provider-model-row">
-            <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
-            <span class="provider-model-name">Sonnet 4.6</span>
+            <span class="provider-model-name">Runs on the current session model</span>
           </div>
         </div>
         <div class="provider-card">
           <div class="provider-name">OpenCode</div>
           <div class="provider-model-row">
-            <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
-            <span class="provider-model-name">Claude Opus 4.8</span>
-          </div>
-          <div class="provider-model-row">
-            <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
-            <span class="provider-model-name">Sonnet 4.6</span>
+            <span class="provider-model-name">Runs on the current session model</span>
           </div>
         </div>
         <div class="provider-card">
           <div class="provider-name">Antigravity</div>
           <div class="provider-model-row">
-            <span class="provider-tier-label badge-thinking" style="font-family:var(--font-sans);">Thinking</span>
-            <span class="provider-model-name">Gemini 3 Pro</span>
-          </div>
-          <div class="provider-model-row">
-            <span class="provider-tier-label badge-worker" style="font-family:var(--font-sans);">Worker</span>
-            <span class="provider-model-name">Gemini 3.5 Flash</span>
+            <span class="provider-model-name">Runs on the current session model</span>
           </div>
         </div>
       </div>
@@ -1270,8 +1255,6 @@
       <div class="footer-links">
         <a href="installation.html">Install</a>
         <a href="orchestration.html">Orchestration</a>
-        <a href="providers.html">Providers</a>
-        <a href="model-routing.html">Routing</a>
         <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
       </div>

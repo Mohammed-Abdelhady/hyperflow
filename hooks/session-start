@@ -52,7 +52,7 @@ Never answer that \`/hyperflow:*\` is an unknown command in Codex. Strip the ali
 
 ## Codex subagents and auto-chain
 
-If the runtime exposes Codex multi-agent tools, map Hyperflow \`Agent\` calls to Codex subagents: worker/searcher/writer roles use worker or explorer subagents, independent sibling workers run in parallel where possible, and Hyperflow Codex defaults use \`gpt-5.4\` with \`low\` reasoning for worker fast mode. If the callable tool is named \`multi_agent_v1.spawn_agent\`, use \`agent_type: worker\` for implementer/writer execution and \`agent_type: explorer\` for search/codebase research. Thinking roles remain \`gpt-5.5\` with adaptive \`low\` / \`medium\` / \`high\` reasoning. Never default to \`xhigh\`.
+If the runtime exposes Codex multi-agent tools, map Hyperflow \`Agent\` calls to Codex subagents: worker/searcher/writer roles use worker or explorer subagents, and independent sibling workers run in parallel where possible. If the callable tool is named \`multi_agent_v1.spawn_agent\`, use \`agent_type: worker\` for implementer/writer execution and \`agent_type: explorer\` for search/codebase research. Every agent runs on the current session model — there is no thinking/worker model split.
 
 If subagent tools are unavailable in this session, emulate worker/reviewer phases inline with clear labels and continue.
 
@@ -70,7 +70,7 @@ else
 | \`/hyperflow:scaffold\` | First-time setup — analyze project, build \`.hyperflow/\` cache, install shims |
 | \`/hyperflow:spec\` | Design exploration before any code is written |
 | \`/hyperflow:scope\` | Decompose a task into a worker-friendly batch file in \`.hyperflow/tasks/\` |
-| \`/hyperflow:dispatch\` | Run a planned task: dispatch workers in parallel with thinking-tier reviews |
+| \`/hyperflow:dispatch\` | Run a planned task: dispatch workers in parallel with reviews at every step |
 | \`/hyperflow:workflow\` | Big-task workflow lane: Claude Code native workflows; Codex/OpenCode portable adapter |
 | \`/hyperflow:trace\` | Systematic root-cause analysis for any bug or test failure |
 | \`/hyperflow:audit\` | Multi-level code review (L1–L5) on a diff, file, or PR |
@@ -97,7 +97,7 @@ Route big tasks to \`/hyperflow:workflow\`: \`flow=deep\`, \`flow=scientific\`, 
 
 In Codex and OpenCode, \`/hyperflow:workflow\` runs the portable workflow adapter instead of native dynamic workflows. It keeps the same phases, uses provider subagents/tasks when exposed, falls back to inline worker/reviewer phases, runs quality gates, and commits each accepted unit separately. If the active runtime cannot preserve those phases, use the normal \`scope → dispatch\` path instead.
 
-Shared doctrine (autonomy rules, model routing, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
+Shared doctrine (autonomy rules, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
 
 if [ -n "$HF_DIR" ]; then
   # Resolve active mode (default | lean | thorough) via the central helper.

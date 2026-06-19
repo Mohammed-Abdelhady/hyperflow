@@ -20,8 +20,6 @@
         <li><a href="index.html#chain">Chain</a></li>
         <li><a href="installation.html">Install</a></li>
         <li><a href="orchestration.html">Orchestration</a></li>
-        <li><a href="providers.html">Providers</a></li>
-        <li><a href="model-routing.html">Routing</a></li>
         <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
       </ul>
     </div>
@@ -35,7 +33,7 @@
         <p class="section-label">Installation</p>
         <h2 id="installation-heading">Get Hyperflow running in Codex and terminal CLIs.</h2>
         <p>
-          Covers quick install, platform compatibility, model configuration, security, and verification.
+          Covers quick install, platform compatibility, security, and verification.
         </p>
       </div>
     </section>
@@ -69,7 +67,7 @@
               <tr>
                 <td><strong>Codex App / CLI</strong> (<code>codex</code> binary)</td>
                 <td>yes</td>
-                <td>Loads plugins from Codex marketplaces into <code>~/.codex/plugins/cache/</code>; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, inline auto-chain fallback, and provider-aware model config are active</td>
+                <td>Loads plugins from Codex marketplaces into <code>~/.codex/plugins/cache/</code>; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, and inline auto-chain fallback are active</td>
               </tr>
               <tr>
                 <td><strong>OpenCode CLI</strong> (<code>opencode</code> binary)</td>
@@ -143,7 +141,7 @@
         </div>
 
         <p class="install-note">
-          Works immediately with defaults (Opus 4.8 / Sonnet 4.6, security on). To customize models or security, run the setup wizard:
+          Works immediately out of the box (security on). Hyperflow runs on whatever model your agent session uses &mdash; there is no model configuration. To customize security, run the setup wizard:
         </p>
 
         <div class="install-block" style="margin-top:1rem;">
@@ -178,10 +176,6 @@
           </div>
         </div>
 
-        <p class="install-note">
-          Codex defaults to GPT-5.5 for thinking roles with task-adaptive reasoning and GPT-5.4 for workers in fast mode.
-        </p>
-
         <!-- OpenCode -->
         <h3 style="margin-top:2.5rem;margin-bottom:1rem;">OpenCode</h3>
 
@@ -205,10 +199,13 @@
           <li>Clones the repo to <code>~/.hyperflow/repo/</code></li>
           <li>Detects which providers are installed (Codex, OpenCode, Antigravity)</li>
           <li>Installs or links the provider integration where needed</li>
-          <li>Asks you to pick thinking and worker models from your provider's catalog, or applies provider defaults where the host owns model selection</li>
           <li>Asks whether to enable the security layer</li>
           <li>Writes your choices to <code>~/.hyperflow/config.json</code></li>
         </ol>
+
+        <p class="install-note">
+          Hyperflow runs on whatever model your agent session uses &mdash; there is no model configuration step.
+        </p>
 
         <div class="install-block">
           <div class="install-block-header">
@@ -220,21 +217,6 @@
             <span class="comment">&gt; Detected: OpenCode</span><br />
             <br />
             &nbsp;&nbsp;OpenCode &mdash; linked<br />
-            <br />
-            Model Configuration &mdash; OpenCode<br />
-            <br />
-            Thinking model (orchestrator, reviewer, debugger):<br />
-            &nbsp;&nbsp;[1] Claude Opus 4.8 &mdash; Hyperflow default<br />
-            &nbsp;&nbsp;[2] Claude Opus 4.7 &mdash; Previous Opus<br />
-            &nbsp;&nbsp;[3] Claude Opus 4.6 &mdash; Legacy Opus<br />
-            <br />
-            &nbsp;&nbsp;Choice [1]: 1<br />
-            <br />
-            Worker model (implementer, searcher, writer):<br />
-            &nbsp;&nbsp;[1] Claude Sonnet 4.6 &mdash; Hyperflow default<br />
-            &nbsp;&nbsp;[2] Claude Haiku 4.5 &mdash; Fast and cheap<br />
-            <br />
-            &nbsp;&nbsp;Choice [1]: 1<br />
             <br />
             Security<br />
             <br />
@@ -254,7 +236,6 @@
             &nbsp;&nbsp;Config:&nbsp;&nbsp;&nbsp;&nbsp;~/.hyperflow/config.json<br />
             &nbsp;&nbsp;Update:&nbsp;&nbsp;&nbsp;&nbsp;git -C ~/.hyperflow/repo pull<br />
             <br />
-            &nbsp;&nbsp;Models:&nbsp;&nbsp;&nbsp;&nbsp;thinking=anthropic/claude-opus-4-8&nbsp;&nbsp;worker=anthropic/claude-sonnet-4-6<br />
             &nbsp;&nbsp;Security:&nbsp;&nbsp;enabled
           </div>
         </div>
@@ -320,7 +301,6 @@
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"mcp__*"<br />
             &nbsp;&nbsp;&nbsp;&nbsp;]<br />
             &nbsp;&nbsp;},<br />
-            &nbsp;&nbsp;"model": "claude-opus-4-8",<br />
             &nbsp;&nbsp;"effortLevel": "high",<br />
             &nbsp;&nbsp;"skipDangerousModePermissionPrompt": true,<br />
             &nbsp;&nbsp;"skipAutoPermissionPrompt": true<br />
@@ -329,158 +309,8 @@
         </div>
 
         <p class="install-note">
-          This eliminates all permission prompts and pins the main session to Opus 4.8.
+          This eliminates all permission prompts. Hyperflow runs on whatever model your agent session uses &mdash; there is no model configuration.
         </p>
-      </div>
-    </section>
-
-    <hr style="margin-top: var(--section-gap);" />
-
-    <!-- ── Model configuration ────────────────────────────────────────── -->
-    <section id="model-configuration" aria-labelledby="model-config-heading">
-      <div class="container">
-        <p class="section-label">Model configuration</p>
-        <h2 id="model-config-heading">Edit config directly or re-run the installer.</h2>
-        <p>
-          The install script creates <code>~/.hyperflow/config.json</code> with your model choices. Edit it manually or re-run the installer at any time.
-        </p>
-        <p>
-          See <a href="model-routing.html">model-routing</a> for how Hyperflow decides which model handles which role, and <a href="providers.html">providers</a> for the full model list per platform.
-        </p>
-
-        <!-- Manual configuration -->
-        <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">Manual configuration</h3>
-
-        <div class="install-block">
-          <div class="install-block-header">
-            <span class="install-block-title">CONFIG — MINIMAL</span>
-            <button
-              class="copy-btn"
-              aria-label="Copy minimal config JSON"
-              onclick="copyBlock('block-config-min', this)"
-            >copy</button>
-          </div>
-          <div class="install-code" id="block-config-min">
-            {<br />
-            &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
-            &nbsp;&nbsp;}<br />
-            }
-          </div>
-        </div>
-
-        <!-- Multi-provider setup -->
-        <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">Multi-provider setup</h3>
-        <p>If you use more than one platform, configure each one:</p>
-
-        <div class="install-block" style="margin-top:1rem;">
-          <div class="install-block-header">
-            <span class="install-block-title">CONFIG — MULTI-PROVIDER</span>
-            <button
-              class="copy-btn"
-              aria-label="Copy multi-provider config JSON"
-              onclick="copyBlock('block-config-multi', this)"
-            >copy</button>
-          </div>
-          <div class="install-code" id="block-config-multi">
-            {<br />
-            &nbsp;&nbsp;"activeProvider": null,<br />
-            &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
-            &nbsp;&nbsp;},<br />
-            &nbsp;&nbsp;"providers": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {}<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;},<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"opencode": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "anthropic/claude-opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "anthropic/claude-sonnet-4-6",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {}<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;}<br />
-            &nbsp;&nbsp;}<br />
-            }
-          </div>
-        </div>
-
-        <p class="install-note">
-          Set <code>activeProvider</code> to force a specific platform, or leave <code>null</code> for auto-detection.
-        </p>
-
-        <!-- Role overrides -->
-        <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">Role overrides</h3>
-        <p>Override the model for a specific role within a provider:</p>
-
-        <div class="install-block" style="margin-top:1rem;">
-          <div class="install-block-header">
-            <span class="install-block-title">CONFIG — ROLE OVERRIDES</span>
-            <button
-              class="copy-btn"
-              aria-label="Copy role overrides config JSON"
-              onclick="copyBlock('block-config-roles', this)"
-            >copy</button>
-          </div>
-          <div class="install-code" id="block-config-roles">
-            {<br />
-            &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
-            &nbsp;&nbsp;},<br />
-            &nbsp;&nbsp;"providers": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"claude-code": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"roles": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reviewer": "opus-4-7",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"searcher": "haiku-4-5"<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;}<br />
-            &nbsp;&nbsp;}<br />
-            }
-          </div>
-        </div>
-
-        <!-- Environment variable overrides -->
-        <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">Environment variable overrides</h3>
-        <p>Override models per-session without editing config:</p>
-
-        <div class="install-block" style="margin-top:1rem;">
-          <div class="install-block-header">
-            <span class="install-block-title">ENV VARS</span>
-            <button
-              class="copy-btn"
-              aria-label="Copy environment variable overrides"
-              onclick="copyBlock('block-env', this)"
-            >copy</button>
-          </div>
-          <div class="install-code" id="block-env">
-            <span class="comment"># Force a specific provider</span><br />
-            HYPERFLOW_PROVIDER=claude-code claude<br />
-            <br />
-            <span class="comment"># Override models for this session</span><br />
-            HYPERFLOW_THINKING_MODEL=opus-4-8 claude<br />
-            HYPERFLOW_WORKER_MODEL=haiku-4-5 claude
-          </div>
-        </div>
-
-        <!-- Runtime switching -->
-        <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">Runtime switching</h3>
-        <p>Change models during a conversation:</p>
-
-        <div class="install-block" style="margin-top:1rem;">
-          <div class="install-block-header">
-            <span class="install-block-title">RUNTIME COMMANDS</span>
-          </div>
-          <div class="install-code">
-            hyperflow: thinking opus-4-8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Switch thinking model</span><br />
-            hyperflow: worker haiku-4-5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Switch worker model</span><br />
-            hyperflow: models&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Show current config</span><br />
-            hyperflow: reset models&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Revert to config defaults</span>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -510,10 +340,6 @@
           </div>
           <div class="install-code" id="block-security">
             {<br />
-            &nbsp;&nbsp;"defaults": {<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"thinking": "opus-4-8",<br />
-            &nbsp;&nbsp;&nbsp;&nbsp;"worker": "sonnet-4-6"<br />
-            &nbsp;&nbsp;},<br />
             &nbsp;&nbsp;"security": {<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"enabled": true,<br />
             &nbsp;&nbsp;&nbsp;&nbsp;"blockedFiles": {<br />
@@ -652,7 +478,7 @@
         </p>
 
         <p class="install-note" style="margin-top:1.5rem;">
-          To change models or security settings, re-run the installer:
+          To change security settings, re-run the installer:
         </p>
 
         <div class="install-block" style="margin-top:0.75rem;">

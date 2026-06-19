@@ -32,7 +32,7 @@ Four skills sit outside the chain:
 
 ## Layer 0.5 — triage
 
-Every chain-starter begins with a thinking-tier **Classifier** dispatch (Layer 0.5 in the doctrine). It returns:
+Every chain-starter begins with a **Classifier** dispatch (Layer 0.5 in the doctrine). It returns:
 
 ```json
 {
@@ -70,8 +70,8 @@ On Codex App/CLI, `/hyperflow:*` messages are skill aliases rather than native s
 Then:
 
 1. **Classifier** — triage JSON (see above)
-2. **Searcher** (worker) + **Reviewer** (thinking-tier) — context exploration
-3. **Analyst** (thinking-tier) — 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives
+2. **Searcher** (worker) + **Reviewer** — context exploration
+3. **Analyst** — 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives
 4. **`AskUserQuestion`** ×N — design questions, floor 2, scaled by ambiguity; every option list marks a `(Recommended)` choice
 5. **Writer** + **Reviewer** — requirement synthesis
 6. **Writer** + **Reviewer** — 2–3 alternative approaches with trade-offs
@@ -85,7 +85,7 @@ Every step that produces output dispatches at least one Agent (DOCTRINE rule 12)
 
 1. Chain-mode check (skipped if invoked by `spec` with the arg already set)
 2. **Searcher × 2** (parallel) + **Reviewer** — research: affected files, related tests, conventions
-3. **Planner** (thinking-tier) — produces the batch graph
+3. **Planner** — produces the batch graph
 4. **Writer** + **Reviewer** — emits `.hyperflow/tasks/<slug>.md` with the expanded `## Status` block that `dispatch` will keep updating and `status` will read
 5. **Writer** + **Reviewer** — appends decisions to `.hyperflow/memory/`
 6. Hand off to `dispatch`
@@ -97,7 +97,7 @@ The workhorse. Per batch:
 1. Print the batch header — `Batch N — parallel:K` or `serial:K`
 2. Dispatch all K sub-tasks of the batch **in a single message** with K parallel `Agent` tool calls. The runtime executes them concurrently. (Calls across separate messages run serial — see Parallelism below.)
 3. As each worker returns:
-   - **Reviewer** (thinking-tier) — reviews at L1–L<n> based on flow profile
+   - **Reviewer** — reviews at L1–L<n> based on flow profile
    - On `PASS` → commit this sub-task immediately, then update the task file's `## Status` block (tick `[ ]` → `[x]`, increment `done/total`, add tokens, refresh wall-clock + ETA)
    - On `NEEDS_FIX` → re-dispatch worker with the fix list (max 3 retries)
    - On `SECURITY_VIOLATION` → halt the chain immediately
@@ -105,7 +105,7 @@ The workhorse. Per batch:
 
 After all batches complete:
 
-5. **Final integration review** (thinking-tier, separate from per-batch reviewers, over the cumulative diff)
+5. **Final integration review** (separate from per-batch reviewers, over the cumulative diff)
 6. **Writer** + **Reviewer** wrap-up — delete task file, append memory, `chore(memory):` commit
 7. **`AskUserQuestion`** — *"Run /hyperflow:audit?"* (Yes/No, recommended toggles with flow profile)
 8. **`AskUserQuestion`** — *"Run /hyperflow:deploy?"* (Yes/No, recommended toggles with gate state)
@@ -164,7 +164,7 @@ If the user said `Yes` to the deploy prompt — or invoked `/hyperflow:deploy` d
 | B — Typecheck | Type correctness | No |
 | C — Build | Production build | No |
 | D — Tests | Full test suite (not just affected) | No |
-| Security sweep | Staged + recent changes (thinking-tier Reviewer) | No |
+| Security sweep | Staged + recent changes (Reviewer) | No |
 
 Then:
 
@@ -196,8 +196,8 @@ And the usage summary at task end:
 Triage                          1 agent     1.8k tokens
 Spec depth: standard            1 agent     3.2k tokens
 Profile: deep                   —           —
-Thinking  (Opus 4.8  )          4 agents   52.1k tokens  (3 batch · 1 final)
-Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
+Reviews                         4 agents   52.1k tokens  (3 batch · 1 final)
+Workers                         8 agents  186.0k tokens  (4 implementer · 3 searcher · 1 writer)
 Wall-clock                      3m 47s
 Cumulative                     14m 22s    (ratio 0.26 — parallel)
 Escalations                     0
@@ -234,7 +234,7 @@ Task:         implement-auth
   Last done   T7: Reset email worker
   Running     T8: Login UI (Implementer · 14s elapsed)
   Pending     6 sub-tasks
-  Tokens      thinking 89.2k · worker 142.0k · total 231.2k
+  Tokens      total 231.2k
   Wall-clock  4m 22s elapsed
   ETA         ~3m 16s remaining   (avg 32s/sub-task · 6 left)
 ─────────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-up
 
 | Signal | Behavior |
 |---|---|
-| `NEEDS_FIX` | Same worker re-dispatched with the reviewer's fix list — max 3 retries before escalating to a thinking-tier worker |
+| `NEEDS_FIX` | Same worker re-dispatched with the reviewer's fix list — max 3 retries before escalating |
 | `BLOCKED:` | Worker hit a security blocklist entry (`.env`, `*.pem`, `~/.ssh/*`, etc.); chain halts, surfaces the blocked resource, lets the user decide |
 | `ESCALATE: <reason>` | Task complexity exceeded the chosen flow profile; orchestrator upgrades the profile per `escalation.md` (fast → standard → deep), re-plans with completed work preserved as context, and continues. If the escalation crosses the risk threshold, `AskUserQuestion` fires first for explicit consent. |
 | `SECURITY_VIOLATION:` | A reviewer caught a hard security issue; chain halts immediately, no auto-continue |
@@ -323,4 +323,4 @@ Net effect: durable learnings compound in memory, the working folders only ever 
 | `skills/hyperflow/personas-A.md`, `personas-B.md` | All 15 persona definitions |
 | `skills/hyperflow/review-levels.md` | L1–L5 checklist |
 | `skills/hyperflow/git-workflow.md` | Per-sub-task commit cadence and audit/deploy gate spec |
-| `skills/hyperflow/output-style.md` | Visual language — no decorative icons; em-dash separators; bold for thinking-tier; wall-clock / cumulative / ratio formatting |
+| `skills/hyperflow/output-style.md` | Visual language — no decorative icons; em-dash separators; bold for decision/review roles; wall-clock / cumulative / ratio formatting |

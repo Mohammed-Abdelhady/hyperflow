@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate the README/landing hero from config/features.json.
 
-A brutalist tier-bracketed chain diagram: warm-paper card, hard 2px ink borders,
-solid offset shadows, mono skill names, tier-color bars, and the thinking/worker
-tiers shown as brackets around the chain with a Worker -> Reviewer review note.
+A brutalist chain diagram: warm-paper card, hard 2px ink borders,
+solid offset shadows, mono skill names, stage-color bars, and the plan and
+execute stages shown as brackets around the chain with a Worker -> Reviewer review note.
 
 Two variants render well at any width:
   - docs/assets/hero.svg          — horizontal banner (desktop)
@@ -122,15 +122,15 @@ def render_horizontal(features, version):
     W, H, PAD = 1200, 470, 48
     cv = Canvas(W, H, f"Hyperflow v{version}",
                 f"{tagline} — first init once with scaffold, then the chain: "
-                f"amplify, spec, scope, dispatch, audit, deploy, with thinking/worker tiers and a Worker to Reviewer review at every step.")
+                f"amplify, spec, scope, dispatch, audit, deploy, with plan and execute stages and a Worker to Reviewer review at every step.")
     cv.frame()
     cv.wordmark(PAD, 64, 38)
     cv.badge(W - PAD, 40, version)
     cv.text(PAD, 92, (tagline if len(tagline) <= 70 else tagline[:67] + "…"), size=12.5, fill=MUTED, mono=True)
     cv.text(PAD, 116, "INIT ONCE  ·  scaffold sets up the project + .hyperflow/ cache", size=11, fill=INK, mono=True)
 
-    # thinking-tier bracket
-    cv.text(W / 2, 150, "THINKING TIER", size=11, fill=THINK, anchor="middle", ls="0.18em")
+    # plan-stage bracket
+    cv.text(W / 2, 150, "PLAN STAGE", size=11, fill=THINK, anchor="middle", ls="0.18em")
     cv.text(W / 2, 164, "orchestrates every phase · triages · reviews every output", size=9, fill=MUTED, anchor="middle")
     cv.line(PAD, 182, W - PAD, 182, stroke=THINK, sw=1.25, op=0.5)
     cv.line(PAD, 182, PAD, 176, stroke=THINK, sw=1.25, op=0.5)
@@ -155,12 +155,12 @@ def render_horizontal(features, version):
         if i < n - 1:
             cv.line(nx + cw + 4, cy + ch / 2, nx + cw + gap - 4, cy + ch / 2, marker="arr")
 
-    # worker-tier bracket
+    # execute-stage bracket
     by = cy + ch + 18
     cv.line(PAD, by, W - PAD, by, stroke=WORK, sw=1.25, op=0.5)
     cv.line(PAD, by, PAD, by + 6, stroke=WORK, sw=1.25, op=0.5)
     cv.line(W - PAD, by, W - PAD, by + 6, stroke=WORK, sw=1.25, op=0.5)
-    cv.text(W / 2, by + 22, "WORKER TIER", size=11, fill=WORK, anchor="middle", ls="0.18em")
+    cv.text(W / 2, by + 22, "EXECUTE STAGE", size=11, fill=WORK, anchor="middle", ls="0.18em")
     cv.text(W / 2, by + 36, "executes in parallel — persona-stitched per task", size=9, fill=MUTED, anchor="middle")
 
     # review note
@@ -183,7 +183,7 @@ def render_vertical(features, version):
     W, H, PAD = 760, 880, 44
     cv = Canvas(W, H, f"Hyperflow v{version}",
                 f"{tagline} — first init once with scaffold, then the chain stacked top to bottom: "
-                f"amplify, spec, scope, dispatch, audit, deploy, every step reviewed by a thinking-tier model.")
+                f"amplify, spec, scope, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.")
     cv.frame()
     cv.wordmark(PAD, 92, 56)
     cv.badge(W - PAD, 50, version)
@@ -191,9 +191,9 @@ def render_vertical(features, version):
     cv.text(PAD, 160, "INIT ONCE · scaffold sets up the project", size=11.5, fill=INK, mono=True)
 
     cv.rect(PAD, 178, 12, 12, fill=THINK)
-    cv.text(PAD + 22, 188, "thinking · plans + reviews every step", size=11, fill=INK, mono=True)
+    cv.text(PAD + 22, 188, "plan · plans + reviews every step", size=11, fill=INK, mono=True)
     cv.rect(PAD, 200, 12, 12, fill=WORK)
-    cv.text(PAD + 22, 210, "worker · executes in parallel", size=11, fill=INK, mono=True)
+    cv.text(PAD + 22, 210, "execute · runs in parallel", size=11, fill=INK, mono=True)
 
     cv.text(PAD, 250, "THE CHAIN", size=11, fill=MUTED, weight=700, ls="2", mono=True)
     rx, rw, rh, gap, y0 = PAD, W - 2 * PAD, 70, 18, 266

@@ -14,8 +14,6 @@
       <li><a href="index.html#chain">Chain</a></li>
       <li><a href="installation.html">Install</a></li>
       <li><a href="orchestration.html">Orchestration</a></li>
-      <li><a href="providers.html">Providers</a></li>
-      <li><a href="model-routing.html">Routing</a></li>
       <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
   </div></nav>
@@ -93,7 +91,7 @@
         <h2 id="triage-heading">Layer 0.5 &mdash; triage</h2>
 
         <p>
-          Every chain-starter begins with a thinking-tier <strong>Classifier</strong> dispatch (Layer 0.5 in the doctrine). It returns:
+          Every chain-starter begins with a <strong>Classifier</strong> dispatch (Layer 0.5 in the doctrine). It returns:
         </p>
 
         <div class="install-block">
@@ -169,8 +167,8 @@
 
         <ul>
           <li><strong>Classifier</strong> &mdash; triage JSON (see above)</li>
-          <li><strong>Searcher</strong> (worker) + <strong>Reviewer</strong> (thinking-tier) &mdash; context exploration</li>
-          <li><strong>Analyst</strong> (thinking-tier) &mdash; 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives</li>
+          <li><strong>Searcher</strong> (worker) + <strong>Reviewer</strong> &mdash; context exploration</li>
+          <li><strong>Analyst</strong> &mdash; 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives</li>
           <li><strong><code>AskUserQuestion</code></strong> &times;N &mdash; design questions, floor 2, scaled by ambiguity; every option list marks a <code>(Recommended)</code> choice</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; requirement synthesis</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; 2&ndash;3 alternative approaches with trade-offs</li>
@@ -189,7 +187,7 @@
         <ul>
           <li>Chain-mode check (skipped if invoked by <code>spec</code> with the arg already set)</li>
           <li><strong>Searcher &times; 2</strong> (parallel) + <strong>Reviewer</strong> &mdash; research: affected files, related tests, conventions</li>
-          <li><strong>Planner</strong> (thinking-tier) &mdash; produces the batch graph</li>
+          <li><strong>Planner</strong> &mdash; produces the batch graph</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; emits <code>.hyperflow/tasks/&lt;slug&gt;.md</code> with the expanded <code>## Status</code> block that <code>dispatch</code> will keep updating and <code>status</code> will read</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; appends decisions to <code>.hyperflow/memory/</code></li>
           <li>Hand off to <code>dispatch</code></li>
@@ -206,7 +204,7 @@
           <li>
             As each worker returns:
             <ul>
-              <li><strong>Reviewer</strong> (thinking-tier) &mdash; reviews at L1&ndash;L&lt;n&gt; based on flow profile</li>
+              <li><strong>Reviewer</strong> &mdash; reviews at L1&ndash;L&lt;n&gt; based on flow profile</li>
               <li>On <code>PASS</code> &rarr; commit this sub-task immediately, then update the task file&rsquo;s <code>## Status</code> block (tick <code>[ ]</code> &rarr; <code>[x]</code>, increment <code>done/total</code>, add tokens, refresh wall-clock + ETA)</li>
               <li>On <code>NEEDS_FIX</code> &rarr; re-dispatch worker with the fix list (max 3 retries)</li>
               <li>On <code>SECURITY_VIOLATION</code> &rarr; halt the chain immediately</li>
@@ -218,7 +216,7 @@
         <p>After all batches complete:</p>
 
         <ul>
-          <li><strong>Final integration review</strong> (thinking-tier, separate from per-batch reviewers, over the cumulative diff)</li>
+          <li><strong>Final integration review</strong> (separate from per-batch reviewers, over the cumulative diff)</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> wrap-up &mdash; delete task file, append memory, <code>chore(memory):</code> commit</li>
           <li><strong><code>AskUserQuestion</code></strong> &mdash; <em>&ldquo;Run /hyperflow:audit?&rdquo;</em> (Yes/No, recommended toggles with flow profile)</li>
           <li><strong><code>AskUserQuestion</code></strong> &mdash; <em>&ldquo;Run /hyperflow:deploy?&rdquo;</em> (Yes/No, recommended toggles with gate state)</li>
@@ -322,7 +320,7 @@
               </tr>
               <tr>
                 <td>Security sweep</td>
-                <td>Staged + recent changes (thinking-tier Reviewer)</td>
+                <td>Staged + recent changes (Reviewer)</td>
                 <td>No</td>
               </tr>
             </tbody>
@@ -378,8 +376,8 @@
             Triage                          1 agent     1.8k tokens<br />
             Spec depth: standard            1 agent     3.2k tokens<br />
             Profile: deep                   &mdash;           &mdash;<br />
-            Thinking  (Opus 4.8  )          4 agents   52.1k tokens  (3 batch &middot; 1 final)<br />
-            Worker    (Sonnet 4.6)          8 agents  186.0k tokens  (4 implementer &middot; 3 searcher &middot; 1 writer)<br />
+            Reviews                         4 agents   52.1k tokens  (3 batch &middot; 1 final)<br />
+            Workers                         8 agents  186.0k tokens  (4 implementer &middot; 3 searcher &middot; 1 writer)<br />
             Wall-clock                      3m 47s<br />
             Cumulative                     14m 22s    (ratio 0.26 &mdash; parallel)<br />
             Escalations                     0<br />
@@ -449,7 +447,7 @@
             &nbsp;&nbsp;Last done   T7: Reset email worker<br />
             &nbsp;&nbsp;Running     T8: Login UI (Implementer &middot; 14s elapsed)<br />
             &nbsp;&nbsp;Pending     6 sub-tasks<br />
-            &nbsp;&nbsp;Tokens      thinking 89.2k &middot; worker 142.0k &middot; total 231.2k<br />
+            &nbsp;&nbsp;Tokens      total 231.2k<br />
             &nbsp;&nbsp;Wall-clock  4m 22s elapsed<br />
             &nbsp;&nbsp;ETA         ~3m 16s remaining   (avg 32s/sub-task &middot; 6 left)<br />
             &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
@@ -506,7 +504,7 @@
             <tbody>
               <tr>
                 <td><code>NEEDS_FIX</code></td>
-                <td>Same worker re-dispatched with the reviewer&rsquo;s fix list &mdash; max 3 retries before escalating to a thinking-tier worker</td>
+                <td>Same worker re-dispatched with the reviewer&rsquo;s fix list &mdash; max 3 retries before escalating</td>
               </tr>
               <tr>
                 <td><code>BLOCKED:</code></td>
@@ -628,7 +626,7 @@
               </tr>
               <tr>
                 <td><code>skills/hyperflow/output-style.md</code></td>
-                <td>Visual language &mdash; no decorative icons; em-dash separators; bold for thinking-tier; wall-clock / cumulative / ratio formatting</td>
+                <td>Visual language &mdash; no decorative icons; em-dash separators; bold for decision/review roles; wall-clock / cumulative / ratio formatting</td>
               </tr>
             </tbody>
           </table>
