@@ -139,7 +139,7 @@ All phases completed → feature.md status = completed → archive the feature f
 ```
 
 Phases run **sequentially** by dependency; tasks **inside** a phase run in parallel batches exactly as today.
-A phase does not start until its `Depends on` phase is `completed` (auto in `auto` chain-mode; gated in `manual`).
+A phase does not start until its `Depends on` phase is `completed` (the dispatch phase-scope gate decides whether phases run all-at-once or phase-by-phase).
 
 ## Status rollup
 
