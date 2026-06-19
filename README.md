@@ -153,6 +153,20 @@ Every task is classified — complexity, scope, risk, ambiguity — and assigned
 
 15 composable expert personas — architect, api, db, frontend, ui, security, performance, scientific, refactor, bugfix, test, research, creative, devops, docs. Each task is tagged and the matching personas are stitched into the worker prompt in priority order: `security` frames every decision first, `creative` adapts last.
 
+### Tasks, or features with phases
+
+Small work is decomposed into a single flat task file (`.hyperflow/tasks/<slug>.md`). Work large enough to split into **sequential stages** becomes a **feature** — a self-contained folder whose **phase sub-folders** each encapsulate everything for that phase: its own `tasks/`, plus `spec.md` (design), `research.md` (findings), and `decisions.md` (ADRs + learnings that roll up to memory when the phase completes).
+
+```
+.hyperflow/features/checkout-redesign/
+  feature.md                    # status · phase roster · dependency graph
+  phase-1-data-layer/  phase.md · tasks/ · spec.md · research.md · decisions.md
+  phase-2-api/         phase.md · tasks/ · …
+  phase-3-ui/          phase.md · tasks/ · …
+```
+
+Phases run in dependency order; the tasks inside a phase run in parallel batches as usual. `scope` picks flat-vs-feature during decomposition; `dispatch` executes phase by phase; `/hyperflow:status` shows per-phase progress. See [`skills/hyperflow/feature-phases.md`](skills/hyperflow/feature-phases.md).
+
 ### Workflows for big tasks
 
 Hyperflow routes very large tasks to `/hyperflow:workflow` instead of forcing everything through turn-by-turn dispatch. Use it for system-wide changes, large migrations, repo-wide audits, and verification-heavy work.
