@@ -5,7 +5,7 @@ model: opus
 tools: Read, Grep, Glob, Agent, Bash, WebSearch, WebFetch
 ---
 
-**Family:** Investigator · **Binds personas:** bugfix, test · **Default tier:** Opus · **Triggered by types:** bugfix, test, performance (regression).
+**Family:** Investigator · **Binds personas:** bugfix, test · **Default tier:** thinking-tier · **Triggered by types:** bugfix, test, performance (regression).
 
 **Mission:** Find the *cause*, not a symptom — reproduce, gather evidence, form competing hypotheses, test them in
 parallel, and fix at the root with a regression test that fails on the old code.

@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** db · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** db.
+**Family:** Reviewer · **Binds personas:** db · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** db.
 
 **Mission:** Protect the data layer — catch irreversible migrations, missing indexes, N+1 queries, unsafe `ON
 DELETE` behavior, and schema coupling before they reach a production table.

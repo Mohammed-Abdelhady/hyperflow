@@ -28,9 +28,9 @@ Selection is **not** free-chosen by each skill. The flow is:
 
 1. **Triage** (Haiku) emits a candidate `specialists[]` from `types[]` via the fixed derivation table in
    [`../skills/hyperflow/task-triage.md`](../skills/hyperflow/task-triage.md).
-2. **[Brain](brain.md)** (Opus, decision-maker tier) is consulted **once** after triage. It finalizes the
+2. **[Brain](brain.md)** (thinking-tier decision-maker) is consulted **once** after triage. It finalizes the
    responsible roster, decides per-specialist web-research (legal only on gated flows), and approves any fan-out.
-   On `fast`/`standard` flows Brain is a thin auto-approve of the triage table (no Opus call); on
+   On `fast`/`standard` flows Brain is a thin auto-approve of the triage table (no thinking-tier call); on
    `deep`/`research`/`scientific`/`security` it actively reasons.
 3. The Brain's decision is written into the artefact (spec status block → scope task file) and **inherited
    downstream** — no skill re-derives the roster.
@@ -38,43 +38,59 @@ Selection is **not** free-chosen by each skill. The flow is:
 `amplify` / `spec` / `scope` **announce** the responsible specialists. `dispatch` / `audit` / `trace` / `deploy`
 **dispatch** the named specialist as the reviewer/investigator at its tier.
 
-## Tiers (reuse existing — no new tier semantics)
+## Tiers — provider-neutral (works on every provider, not just Opus/Sonnet)
 
-Reviewer specialists inherit the existing reviewer tiers: **per-batch → Sonnet**, **standalone / final-integration
-→ Opus** (`--thorough` escalates per-batch to Opus). Security/correctness specialists default **Opus even
-per-batch** (consistent with "if security present, never fast"). Investigators inherit:
-`searcher` → Sonnet; `debugger` / `analyst` / `researcher` → Opus. Brain → Opus (decision-maker).
+Specialists are stated in **tiers — `thinking` / `worker` — never in a hardcoded model name.** The tier resolves to
+the **active provider's** model via [`../skills/hyperflow/model-config.md`](../skills/hyperflow/model-config.md) role
+resolution, so the same charter runs on Claude Code, Codex, OpenCode, Antigravity, or any configured provider:
+
+| Tier | Claude Code | Codex | OpenCode | Antigravity |
+|------|-------------|-------|----------|-------------|
+| `thinking` | Opus 4.8 | GPT-5.5 | per config (default Opus 4.8) | Gemini 3 Pro |
+| `worker` | Sonnet 4.6 | GPT-5.4 | per config (default Sonnet 4.6) | Gemini 3.5 Flash |
+
+Tier assignment:
+
+- **Reviewer specialists** — `worker` per-batch, `thinking` standalone / final-integration (`--thorough` escalates
+  per-batch to `thinking`). Security/correctness specialists (`security-reviewer`, `vulnerability-reviewer`,
+  `data-ml-reviewer`, `compliance-reviewer`) default **`thinking` even per-batch** ("if security present, never fast").
+- **Investigators** — `searcher` → `worker`; `debugger` / `analyst` / `researcher` → `thinking`.
+- **Brain** → `thinking` (decision-maker), with a free cheap-path on `fast`/`standard` flows.
+
+> The `model:` field in each agent's frontmatter is the **Claude-Code-native default alias** for that tier (the only
+> field the Claude Code sub-agent loader reads). On every other provider the orchestrator dispatches the charter at
+> the resolved tier via the Agent tool — the model name in frontmatter is never the source of truth; the **tier** is.
 
 ## Roster
 
 ### Reviewers
 | Agent | Binds personas | Default tier | Focus |
 |---|---|---|---|
-| [frontend-reviewer](frontend-reviewer.md) | frontend, ui | Sonnet / Opus standalone | render, state, component correctness |
-| [backend-reviewer](backend-reviewer.md) | api, architect | Sonnet / Opus | service layer + module boundaries |
-| [api-reviewer](api-reviewer.md) | api | Sonnet / Opus | contract, status codes, validation |
-| [database-reviewer](database-reviewer.md) | db | Sonnet / Opus | migrations, indexes, query plans |
-| [security-reviewer](security-reviewer.md) | security | **Opus** | authz, secrets, OWASP; halts on violation |
-| [vulnerability-reviewer](vulnerability-reviewer.md) | security, scientific | **Opus** | CVE / dependency / exploit-path |
-| [devops-reviewer](devops-reviewer.md) | devops | Sonnet / Opus | CI, IaC, rollback, observability |
-| [performance-reviewer](performance-reviewer.md) | performance | Sonnet / Opus | profiling, complexity, regression budgets |
-| [accessibility-reviewer](accessibility-reviewer.md) | ui, frontend | Sonnet / Opus | WCAG, keyboard, screen-reader |
-| [mobile-reviewer](mobile-reviewer.md) | frontend, ui, performance | Sonnet / Opus | mobile / responsive / native constraints |
-| [data-ml-reviewer](data-ml-reviewer.md) | scientific, db | **Opus** | reproducibility, numerical correctness, lineage |
-| [compliance-reviewer](compliance-reviewer.md) | security, docs | **Opus** | PII / GDPR / audit-trail / regulatory |
+| [frontend-reviewer](frontend-reviewer.md) | frontend, ui | worker / thinking | render, state, component correctness |
+| [backend-reviewer](backend-reviewer.md) | api, architect | worker / thinking | service layer + module boundaries |
+| [api-reviewer](api-reviewer.md) | api | worker / thinking | contract, status codes, validation |
+| [database-reviewer](database-reviewer.md) | db | worker / thinking | migrations, indexes, query plans |
+| [security-reviewer](security-reviewer.md) | security | **thinking** | authz, secrets, OWASP; halts on violation |
+| [vulnerability-reviewer](vulnerability-reviewer.md) | security, scientific | **thinking** | CVE / dependency / exploit-path |
+| [devops-reviewer](devops-reviewer.md) | devops | worker / thinking | CI, IaC, rollback, observability |
+| [performance-reviewer](performance-reviewer.md) | performance | worker / thinking | profiling, complexity, regression budgets |
+| [accessibility-reviewer](accessibility-reviewer.md) | ui, frontend | worker / thinking | WCAG, keyboard, screen-reader |
+| [mobile-reviewer](mobile-reviewer.md) | frontend, ui, performance | worker / thinking | mobile / responsive / native constraints |
+| [data-ml-reviewer](data-ml-reviewer.md) | scientific, db | **thinking** | reproducibility, numerical correctness, lineage |
+| [compliance-reviewer](compliance-reviewer.md) | security, docs | **thinking** | PII / GDPR / audit-trail / regulatory |
 
 ### Investigators
 | Agent | Binds personas | Default tier | Focus |
 |---|---|---|---|
-| [searcher](searcher.md) | research | Sonnet | codebase + docs surface mapping |
-| [debugger](debugger.md) | bugfix, test | **Opus** | root-cause, 5-Whys, hypothesis testing |
-| [analyst](analyst.md) | architect, research | **Opus** | multi-dimensional analysis / decision synthesis |
-| [researcher](researcher.md) | research | **Opus** | external evaluation, library survey, deep web research |
+| [searcher](searcher.md) | research | worker | codebase + docs surface mapping |
+| [debugger](debugger.md) | bugfix, test | **thinking** | root-cause, 5-Whys, hypothesis testing |
+| [analyst](analyst.md) | architect, research | **thinking** | multi-dimensional analysis / decision synthesis |
+| [researcher](researcher.md) | research | **thinking** | external evaluation, library survey, deep web research |
 
 ### Router
 | Agent | Tier | Focus |
 |---|---|---|
-| [brain](brain.md) | **Opus** (decision-maker) | selects the responsible specialist roster; decides web-research + fan-out |
+| [brain](brain.md) | **thinking** (decision-maker) | selects the responsible specialist roster; decides web-research + fan-out |
 
 ## Sub-agent fan-out
 

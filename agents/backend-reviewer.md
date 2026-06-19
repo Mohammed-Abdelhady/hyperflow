@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** api, architect · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** api, architect, refactor (backend surface).
+**Family:** Reviewer · **Binds personas:** api, architect · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** api, architect, refactor (backend surface).
 
 **Mission:** Catch service-layer and structural defects — leaked module boundaries, cyclic dependencies, untyped
 cross-boundary contracts, business logic in the wrong layer, and N+1 call patterns — that per-batch syntax review
