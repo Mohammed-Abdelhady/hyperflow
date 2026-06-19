@@ -9,6 +9,7 @@
   "homepage": "https://github.com/Mohammed-Abdelhady/hyperflow",
   "repository": "https://github.com/Mohammed-Abdelhady/hyperflow",
   "license": "MIT",
+  "agents": "./agents",
   "keywords": [
     "claude-code-plugin",
     "multi-agent",
