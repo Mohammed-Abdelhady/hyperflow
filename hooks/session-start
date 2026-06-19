@@ -262,18 +262,26 @@ PYEOF
 $sticky_line"
   fi
 
-  # Active Tasks
+  # Active Tasks (flat task files + multi-phase feature folders)
+  tlist=""
   if [ -d "$HF_DIR/tasks" ]; then
-    tlist=""
     for tf in "$HF_DIR/tasks/"*.md; do
       [ -f "$tf" ] && tlist="${tlist}- $(basename "$tf")
 "
     done
-    [ -n "$tlist" ] && CONTENT="$CONTENT
+  fi
+  if [ -d "$HF_DIR/features" ]; then
+    for fd in "$HF_DIR/features/"*/; do
+      [ -f "${fd}feature.md" ] || continue
+      ph=$(ls -d "${fd}"phase-*/ 2>/dev/null | wc -l | tr -d ' ')
+      tlist="${tlist}- $(basename "$fd")/ (feature · ${ph} phases)
+"
+    done
+  fi
+  [ -n "$tlist" ] && CONTENT="$CONTENT
 
 ## Active Tasks (incomplete from prior sessions)
 $tlist"
-  fi
 
   # Lean-mode situational summary (one line consolidating all state).
   # Emitted ONLY when mode=lean. Dedicated ## sections above continue to fire

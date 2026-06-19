@@ -15,6 +15,11 @@ For each *.md in .hyperflow/{tasks,audits,specs}/ whose mtime is older than
      decisions,anti-patterns}.md so the durable insight survives.
   3. Move the source file to .hyperflow/archive/<type>/YYYY-MM/<name>.
 
+Completed (``feature.md`` Status = completed), stale ``.hyperflow/features/<slug>/``
+folders are promoted (every phase's learnings) and the whole folder moved to
+``.hyperflow/archive/features/YYYY-MM/<slug>/``. In-progress features are never
+archived, however old.
+
 Then prune .hyperflow/archive/** entries older than ``pruneDays`` (default 30).
 
 Config (~/.hyperflow/config.json)
@@ -151,6 +156,44 @@ def archive_file(hf: Path, type_: str, fpath: Path) -> tuple[bool, int]:
         return (False, promoted)
 
 
+def feature_is_completed(fdir: Path) -> bool:
+    """True when the feature's feature.md Status block reads completed."""
+    fm = fdir / "feature.md"
+    try:
+        text = fm.read_text(errors="replace")
+    except Exception:
+        return False
+    # Match a Status table row: | Status | completed |
+    return bool(re.search(r"^\|\s*Status\s*\|\s*completed\b", text, re.MULTILINE | re.IGNORECASE))
+
+
+def archive_feature(hf: Path, fdir: Path) -> tuple[bool, int]:
+    """Promote learnings from every .md in a completed feature folder, then move
+    the whole folder to archive/features/YYYY-MM/<slug>/. Returns (moved, lines)."""
+    promoted = 0
+    for md in sorted(fdir.rglob("*.md")):
+        try:
+            sections = extract_sections(md.read_text(errors="replace"))
+        except Exception:
+            continue
+        for memfile, body in sections.items():
+            promoted += append_deduped(hf / "memory" / memfile, body, f"{fdir.name}/{md.name}")
+    try:
+        bucket = datetime.fromtimestamp(fdir.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m")
+    except Exception:
+        bucket = "unknown"
+    dest_dir = hf / "archive" / "features" / bucket
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / fdir.name
+    if dest.exists():
+        dest = dest.with_name(f"{fdir.name}-{int(time.time())}")
+    try:
+        shutil.move(str(fdir), str(dest))
+        return (True, promoted)
+    except Exception:
+        return (False, promoted)
+
+
 def prune_archive(hf: Path, prune_days: int) -> int:
     archive = hf / "archive"
     if not archive.exists():
@@ -251,6 +294,24 @@ def main() -> None:
             except Exception:
                 continue
             moved, lines = archive_file(hf, t, p)
+            if moved:
+                archived += 1
+            promoted += lines
+
+    # Completed, stale feature folders → archive the whole folder.
+    fdir_root = hf / "features"
+    if fdir_root.is_dir():
+        for fdir in sorted(fdir_root.iterdir()):
+            if not fdir.is_dir() or not (fdir / "feature.md").is_file():
+                continue
+            try:
+                if fdir.stat().st_mtime >= cutoff:
+                    continue
+            except Exception:
+                continue
+            if not feature_is_completed(fdir):
+                continue  # never archive an in-progress feature, however old
+            moved, lines = archive_feature(hf, fdir)
             if moved:
                 archived += 1
             promoted += lines
