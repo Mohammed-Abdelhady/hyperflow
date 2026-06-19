@@ -113,8 +113,9 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix
 - **Final integration Reviewer** (end-of-chain over cumulative diff) → **Opus** (thinking tier)
 - **Standalone Reviewer** (audit, security sweep, final sanity check) → **Opus**
 - **Debugger / Analyst / Planner / Brainstormer / Orchestrator** → **Opus**
+- **Specialist reviewers** (`security-reviewer`, `database-reviewer`, `algorithm-reviewer`, …) inherit the per-batch-Sonnet / standalone-Opus split; **investigators** (`searcher` worker; `debugger` / `analyst` / `researcher` thinking); **Brain** (specialist router) → **Opus** decision tier. Tiers are provider-neutral — they resolve to the active provider's model (Opus/Sonnet, GPT-5.5/5.4, Gemini 3 Pro/Flash), never hardcoded.
 
-Workers never review. Reviewers never coordinate. Triage stays on the thinking tier.
+Workers never review. Reviewers never coordinate. Triage stays on the thinking tier. Reviews and investigations are run by the **matching domain specialist** ([`agents/`](agents/)), not a generic role — the Brain decides the responsible roster once after triage and the chain inherits it. On deep / security work, specialists research current best-practices and CVEs before acting (web-research-first).
 
 ## File-first artefacts
 

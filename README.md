@@ -124,6 +124,18 @@ The split is structural, not a setting — each tier does only what it's best at
 
 Worker → Reviewer is an iron rule. Independent sub-tasks fan out in parallel; each worker feeds its own thinking-tier reviewer before the batch advances. Every non-trivial phase decomposes into named sub-phases (`2a`, `2b`, `2c`…), each with its own reviewer. Per-batch reviewers do L1–L2 spot-checks; a final integration reviewer runs once over the cumulative diff. Each reviewer returns a verdict — `APPROVE` or `NEEDS_REVISION` (retry once with findings injected).
 
+Reviews and investigations are run by **domain specialists**, not a generic reviewer — see below.
+
+### Specialist registry + Brain
+
+Beyond the personas, Hyperflow ships a registry of **named, domain-specialized agents** in [`agents/`](agents/) — dispatched as the right reviewer/investigator for each surface instead of one generic role:
+
+- **Reviewers** — `frontend-reviewer`, `backend-reviewer`, `api-reviewer`, `database-reviewer`, `security-reviewer`, `vulnerability-reviewer`, `devops-reviewer`, `performance-reviewer`, `algorithm-reviewer` (Big-O & data-structure complexity), `accessibility-reviewer`, `mobile-reviewer`, `data-ml-reviewer`, `compliance-reviewer`.
+- **Investigators** — `searcher`, `debugger`, `analyst`, `researcher`.
+- **Brain** — a thinking-tier router consulted once after triage that decides *which* specialists are responsible, then writes that roster into the artefact so the whole chain inherits it. `amplify`/`spec`/`scope` announce the responsible specialists; `dispatch`/`audit`/`trace`/`deploy` dispatch them.
+
+Each specialist **binds** the matching persona for its standards and adds a strict charter, a **web-research-first** step (it looks up current best-practices / CVEs / framework docs before judging — on `deep`/`research`/`scientific`/`security` flows), and authority to fan out depth-capped sub-agents. Tiers are **provider-neutral** (`thinking`/`worker`) and resolve per provider — Opus/Sonnet, GPT-5.5/5.4, Gemini 3 Pro/Flash. See [`agents/README.md`](agents/README.md).
+
 ### Triage picks the depth
 
 Every task is classified — complexity, scope, risk, ambiguity — and assigned a flow profile, so effort matches the work instead of always running deep:
