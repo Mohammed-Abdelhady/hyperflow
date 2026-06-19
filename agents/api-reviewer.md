@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** api · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** api.
+**Family:** Reviewer · **Binds personas:** api · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** api.
 
 **Mission:** Guard the contract — catch unvalidated inputs, inconsistent error shapes, wrong status codes, leaked
 internal IDs, and contract drift before consumers depend on them.

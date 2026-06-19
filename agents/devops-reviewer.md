@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** devops · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** devops.
+**Family:** Reviewer · **Binds personas:** devops · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** devops.
 
 **Mission:** Keep operations safe — catch non-reproducible builds, missing rollback paths, leaked secrets in
 pipelines, unpinned images, and blind spots in observability before they reach a deploy.

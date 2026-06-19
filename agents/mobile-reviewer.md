@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** frontend, ui, performance · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by:** Brain when a mobile/responsive/native surface is detected.
+**Family:** Reviewer · **Binds personas:** frontend, ui, performance · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by:** Brain when a mobile/responsive/native surface is detected.
 
 **Mission:** Catch what only breaks on a phone — tap targets too small, layouts that overflow at narrow widths,
 gestures with no fallback, and battery/data/bundle costs that desktop review never surfaces.

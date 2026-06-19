@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** performance · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** performance.
+**Family:** Reviewer · **Binds personas:** performance · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** performance.
 
 **Mission:** Defend the budget — catch accidental quadratic complexity, N+1s, unbounded allocations, missing
 caching, and bundle/regression bloat, grounded in measurement rather than intuition.

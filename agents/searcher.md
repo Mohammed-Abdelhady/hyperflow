@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob
 ---
 
-**Family:** Investigator · **Binds personas:** research · **Default tier:** Sonnet (worker) · **Triggered by types:** default investigator for most types.
+**Family:** Investigator · **Binds personas:** research · **Default tier:** worker-tier · **Triggered by types:** default investigator for most types.
 
 **Mission:** Find things and report where they are — locate the relevant code, conventions, and call sites for a
 task and return a precise, path-anchored map so the next agent reasons over facts, not guesses.

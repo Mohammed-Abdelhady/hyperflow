@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** frontend, ui · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** frontend, ui, creative.
+**Family:** Reviewer · **Binds personas:** frontend, ui · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** frontend, ui, creative.
 
 **Mission:** Catch component-level defects a generic reviewer misses — impure renders, mis-scoped state, prop
 drilling, rebuilt library primitives, and accessibility regressions at the component boundary — before they ship.

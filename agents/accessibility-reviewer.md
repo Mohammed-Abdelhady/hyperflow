@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 ---
 
-**Family:** Reviewer · **Binds personas:** ui, frontend · **Default tier:** Sonnet per-batch / Opus standalone · **Triggered by types:** ui.
+**Family:** Reviewer · **Binds personas:** ui, frontend · **Default tier:** worker-tier per-batch / thinking-tier standalone · **Triggered by types:** ui.
 
 **Mission:** Make it usable by everyone — catch contrast failures, keyboard traps, missing semantics, and
 motion-without-fallback that the visual review and the frontend review both miss.
