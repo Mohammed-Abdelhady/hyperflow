@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.31.2] — 2026-06-20
+
+### Changed
+- Reword plugin descriptions to role/session-model language
+- Drop model-routing/providers, reframe site around session model
+- Run every agent on the session model, drop tier routing
+- Drop model-tier providers block, keep security/handoff/specialists
+
+
 ## [4.31.1] — 2026-06-19
 
 ### Fixed
@@ -1018,7 +1027,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.2...HEAD
+[4.31.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.1...v4.31.2
 [4.31.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.0...v4.31.1
 [4.31.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.2...v4.31.0
 [4.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.29.0...v4.30.0
