@@ -259,7 +259,7 @@ Recommended option scales with finding mix:
 **On any "Fix …" choice:**
 
 1. Build a spec file from the chosen findings at `.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md`. Each finding becomes a numbered fix section with: file:line, the issue, the reviewer's suggested fix (or "design needed" if no Fix: was provided), and the commit message stub. The spec file is the chain-driving artefact; do NOT paste fix bullets into chat.
-2. Invoke `Skill` with `skill: scope` and `args: "chain-mode=auto spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md"`.
+2. Invoke `Skill` with `skill: scope` and `args: "session=one spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md"`.
 3. `/hyperflow:scope` will decompose into batches; `/hyperflow:dispatch` will execute them — same per-sub-task commit cadence and per-batch L1–L<n> review as any other chain run.
 
 **On "No":**
