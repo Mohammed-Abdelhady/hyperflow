@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.31.1] — 2026-06-19
+
+### Fixed
+- Drop invalid agents dir-string from Claude Code manifest
+
+
 ## [4.31.0] — 2026-06-19
 
 ### Added
@@ -1012,7 +1018,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.1...HEAD
+[4.31.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.0...v4.31.1
 [4.31.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.2...v4.31.0
 [4.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.29.0...v4.30.0
 [4.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.28.0...v4.29.0
