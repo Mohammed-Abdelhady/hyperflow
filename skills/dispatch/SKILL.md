@@ -66,6 +66,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 ## Inputs
 
 - **Task artefact** — positional arg (slug or path): either a flat `.hyperflow/tasks/<slug>.md` **or** a feature folder `.hyperflow/features/<slug>/` (see [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md)). Default — the most-recently-modified of either.
+- **Handoff package** — a positional slug/path resolving to `.hyperflow-handoff/<slug>/` (see [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)). When present, dispatch is a **second-session build**: it rehydrates `artefact/` into `.hyperflow/` (Step 1.0) and reads `session`/`handoff`/chain args from `HANDOFF.md`. `on_complete` (review|deploy) governs Step 5.
 - **`session=<one|two>`** — passed in by `/hyperflow:scope` (or read from a handoff package's `HANDOFF.md`). If absent, assume `one`. In a two-session build, `handoff=<review|deploy>` governs the end-of-build behavior at Step 5.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
 - **`--final-only`** — skip batch dispatch, run only the final integration review.
@@ -88,6 +89,16 @@ When operational args (`commit=`, `branch=`, `push=`) were NOT already propagate
 Skip when operational args are already propagated (re-asking is an invented-gate violation).
 
 The 3-question batch is identical to scope Step 0.5 — see [scope/SKILL.md § Step 0.5](../scope/SKILL.md#step-05--operational-choices-auto-mode-only--structural-gate--fires-immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Spec, scope, dispatch share one canonical definition; whoever fires first owns the batch, the others see the args propagated and skip.
+
+### Step 1.0 — Handoff rehydration (handoff pickup only)
+
+When invoked on a handoff package (`.hyperflow-handoff/<slug>/`), before loading the task:
+1. Read `HANDOFF.md` → artefact type, chain args (`commit=/branch=/push=/triage=/mode=`), `on_complete`.
+2. If the `.hyperflow/` cache is absent → run `/hyperflow:scaffold` first (so workers get Layer-0 context). If scaffold cannot run here, fall back to the package's `context/` copies.
+3. Copy `artefact/tasks/<slug>.md` → `.hyperflow/tasks/<slug>.md` (flat), or `artefact/features/<slug>/` → `.hyperflow/features/<slug>/` (feature), if not already present locally.
+4. Leave `STATUS=planned` until the build completes (Step 5 flips it).
+
+Then continue Step 1 normally. (Non-handoff runs skip Step 1.0.)
 
 ### Step 1 — Load the task (atomic · §12.2.8)
 
@@ -231,9 +242,17 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 
 > **No wrap-up Reviewer (D5):** the Reviewer that previously sanity-checked the chore commit and memory entries is dropped. Wrap-up is mechanically verifiable — `git status` clean, task file absent, memory file present. The orchestrator's direct observation is sufficient.
 
-### Step 5 — End of Auto-Chain · Audit + Deploy gates
+### Step 5 — End of build
 
-Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. In Codex, if the popup UI is unavailable, render both questions in one `Hyperflow Question` chat block and wait for the user's answers.
+**Handoff build (second session) — completion marker first.** When this run came from a handoff pickup, before the normal gate: write the completion marker, then branch on `on_complete`:
+1. Write `.hyperflow-handoff/<slug>/COMPLETION.md` (built-by provider, base = originating commit from `HANDOFF.md`, head = current `HEAD`, `Diff range = <base>..<head>`, commit count, branch, `Result: built | partial (<done>/<total>)`).
+2. Set `STATUS=built`.
+3. `git add .hyperflow-handoff/<slug>/` + commit `chore(handoff): build complete <slug>`; if `handoff.autoPush` and `push != never` → push (surface the push command on failure).
+4. Branch:
+   - **`on_complete=deploy`** → invoke `Skill` with `skill: deploy` (its own push gate applies). Do NOT also fire the audit/deploy `AskUserQuestion` below — `on_complete` already encoded the disposition.
+   - **`on_complete=review`** → STOP. Print: `Build complete — committed + pushed (range <base>..<head>). Return to session 1 and run /hyperflow:audit <base>..<head> (or /hyperflow:handoff review <slug>).`
+
+**Normal (single-session) end-of-chain — Audit + Deploy gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. In Codex, if the popup UI is unavailable, render both questions in one `Hyperflow Question` chat block and wait for the user's answers.
 
 > **DOCTRINE rule 8 preserved:** both questions still fire; they just batch into one round-trip instead of two. Combined gate cuts human-in-the-loop latency by ~half at end-of-chain.
 
