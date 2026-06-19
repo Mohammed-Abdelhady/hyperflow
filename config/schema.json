@@ -1,39 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Hyperflow Configuration",
-  "description": "Multi-provider model configuration for Hyperflow. Lives at ~/.hyperflow/config.json.",
+  "description": "Hyperflow configuration. Lives at ~/.hyperflow/config.json. Agents run on the current session model — there is no model configuration.",
   "type": "object",
   "properties": {
-    "activeProvider": {
-      "description": "Force a specific provider. null = auto-detect at runtime.",
-      "type": ["string", "null"],
-      "enum": ["claude-code", "opencode", "codex", "antigravity", null],
-      "default": null
-    },
-    "defaults": {
-      "description": "Global fallback models when a provider doesn't specify one.",
-      "type": "object",
-      "properties": {
-        "thinking": {
-          "type": "string",
-          "description": "Default thinking (orchestrator/reviewer/debugger) model.",
-          "default": "opus-4-8"
-        },
-        "worker": {
-          "type": "string",
-          "description": "Default worker (implementer/searcher/writer) model.",
-          "default": "sonnet-4-6"
-        }
-      },
-      "required": ["thinking", "worker"]
-    },
-    "providers": {
-      "description": "Per-provider model configuration.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/$defs/providerConfig"
-      }
-    },
     "security": {
       "description": "Security layer configuration. Controls blocked files, commands, and secret detection.",
       "type": "object",
@@ -165,7 +135,7 @@
       "additionalProperties": false
     },
     "specialists": {
-      "description": "Specialist agent registry settings (agents/*.md). Specialists reuse existing model roles (reviewer/debugger/searcher/decision-maker) — no new role keys. Tiers resolve per provider via model-config.md.",
+      "description": "Specialist agent registry settings (agents/*.md). Specialists reuse existing roles (reviewer/debugger/searcher/decision-maker) — no new role keys. Every specialist runs on the current session model.",
       "type": "object",
       "properties": {
         "brain": {
@@ -220,67 +190,5 @@
       "additionalProperties": false
     }
   },
-  "required": ["defaults"],
-  "$defs": {
-    "providerConfig": {
-      "type": "object",
-      "properties": {
-        "models": {
-          "description": "Available models for the install picker. Updated by hybrid fetch.",
-          "type": "object",
-          "properties": {
-            "thinking": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "worker": {
-              "type": "array",
-              "items": { "type": "string" }
-            }
-          }
-        },
-        "thinking": {
-          "type": "string",
-          "description": "Currently selected thinking model for this provider."
-        },
-        "worker": {
-          "type": "string",
-          "description": "Currently selected worker model for this provider."
-        },
-        "roles": {
-          "description": "Per-role model overrides. Key = role name, value = model ID.",
-          "type": "object",
-          "properties": {
-            "orchestrator": { "type": "string" },
-            "reviewer": { "type": "string" },
-            "debugger": { "type": "string" },
-            "decision-maker": { "type": "string" },
-            "brainstormer": { "type": "string" },
-            "implementer": { "type": "string" },
-            "searcher": { "type": "string" },
-            "writer": { "type": "string" }
-          },
-          "additionalProperties": false
-        },
-        "reasoning": {
-          "description": "Reasoning effort defaults for providers that expose effort controls.",
-          "type": "object",
-          "properties": {
-            "thinking": {
-              "description": "Thinking-tier reasoning mode. 'adaptive' resolves from task type/profile.",
-              "type": "string",
-              "enum": ["adaptive", "low", "medium", "high"]
-            },
-            "worker": {
-              "description": "Worker-tier reasoning mode.",
-              "type": "string",
-              "enum": ["low", "medium", "high"]
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "required": ["thinking", "worker"]
-    }
-  }
+  "additionalProperties": false
 }
