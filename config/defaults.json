@@ -133,6 +133,18 @@
       }
     }
   },
+  "specialists": {
+    "brain": {
+      "enabled": true
+    },
+    "webResearch": {
+      "enabled": true,
+      "maxSources": 5,
+      "recencyMonths": 18,
+      "offlineSkip": true,
+      "flowGate": ["deep", "research", "scientific", "security"]
+    }
+  },
   "security": {
     "blockedFiles": [
       ".env",
