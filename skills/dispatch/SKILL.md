@@ -27,10 +27,10 @@ Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool 
 | 0.5 — Operational choices | — (exempt) | — | — | `AskUserQuestion` only |
 | 1 — Load task | — (atomic · §12.2.8) | — | — | Read + schema check = single mechanical decision; no parallel angles |
 | 2a — Pre-dispatch | Composer × N parallel (Sonnet) — one per sub-task; stitches persona + injects learnings | **Reviewer** (Sonnet) — reviews prompt set for completeness | Parallel worker prompts built before any fan-out fires |
-| 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel (Sonnet) | **Reviewer** (Sonnet · worker tier) — batched over full batch (P2) or per-sub-task fallback (mixed caps / `--thorough`) | One Reviewer call per batch · escalates to Opus under `--thorough` |
+| 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel (Sonnet) | **Domain specialist Reviewer** (Sonnet · worker tier) — the `Specialist:`-matched agent, batched over full batch (P2) or per-sub-task fallback | One Reviewer call per batch · escalates to Opus under `--thorough`; security/correctness specialists Opus always |
 | 2c — Gate run | Worker (Sonnet) — runs lint/typecheck/tests on affected files | **Reviewer** (Sonnet) — judges gate output | Small focused diff; Sonnet sufficient |
 | 2d — Learnings + commit | Writer (Sonnet) — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; learnings appended to context |
-| 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** (Opus · thinking tier) — L1–L<n> over full diff | Single Reviewer dispatch, no parallel angles; atomic-exempt |
+| 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** (Opus · thinking tier) — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
 | 4 — Wrap up | Writer (Sonnet) — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
 | 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy questions |
 
@@ -124,6 +124,11 @@ For each sub-task in the batch, dispatch a Composer Worker in parallel (one Comp
 
 Use the [worker-prompt.md](references/worker-prompt.md) template for each Composer output. Persona stitching (top-3), memory injection (all tag matches), and all clarification gates remain unchanged regardless of mode.
 
+Each Composer also reads the sub-task's `Specialist:` field from the task file and stitches that specialist's
+**output-contract expectations** ([`../../agents/README.md`](../../agents/README.md)) into the worker prompt, so
+workers produce review-ready output for the specialist that will judge it (e.g. an `api-reviewer` sub-task tells the
+worker to document status codes + validation up front).
+
 After all Composers return, dispatch one **Reviewer** (Sonnet) over the full prompt set: confirms persona selection is correct, context block is well-formed, learnings are injected. Verdict: `PASS` / `NEEDS_REVISION`. NEEDS_REVISION re-dispatches only the affected Composer(s).
 
 #### Step 2b — Worker fan-out (P1 · sequential after 2a · internal parallelism P1)
@@ -131,6 +136,7 @@ After all Composers return, dispatch one **Reviewer** (Sonnet) over the full pro
 Dispatch all N sub-task Workers in a **single message** with parallel `Agent` calls using the composed prompts from Step 2a. Workers are Implementer / Searcher / Writer (Sonnet) and run fully in parallel.
 
 When all workers have returned, dispatch **one** batched per-batch **Reviewer** (Sonnet by default — `model: "<resolved-worker>"`) covering the entire batch (P2 — batched single-pass review):
+- **Dispatch as the matching domain specialist.** Read the batch's sub-task `Specialist:` fields (Brain-decided, from the task file). Dispatch the per-batch Reviewer **as that specialist agent** ([`../../agents/README.md`](../../agents/README.md)) — its charter + strict checklist + output contract injected on top of `reviewer-prompt-batched.md`. When the batch spans several surfaces, inject the **union** of the matching charters. Tier is unchanged (Sonnet per-batch; Opus under `--thorough`; `security-reviewer`/`vulnerability-reviewer`/`data-ml-reviewer`/`compliance-reviewer` are Opus even per-batch per DOCTRINE Layer 2). On a gated flow the specialist runs its web-research-first pass ([web-research.md](../hyperflow/web-research.md)) before the verdict.
 - **Check level-cap homogeneity first.** If every sub-task shares the same review-level cap → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers.
 - **Also fall back to per-sub-task reviewers** when `--thorough` was passed (reviewers escalate to Opus under `--thorough`).
 - **Batched reviewer dispatch:** use [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) with `model: "<resolved-worker>"` (or `"<resolved-thinking>"` under `--thorough`). Print `**Reviewer** (Sonnet) — batched review Batch <n> (L1–L<n>, <k> sub-tasks)`. Returns one verdict per sub-task.
@@ -174,6 +180,7 @@ After Step 2d, print a one-line status update — *"Batch 1 done · 9/36 sub-tas
 - No escalations fired (no `ESCALATE:` markers during Step 2)
 - No security flags raised (no triage `security: true` AND no Reviewer security warnings)
 - No per-batch Reviewer surfaced `[Important]` out-of-cap notes (via the `reviewer-prompt-batched.md` "Honor the Level Cap" escape hatch — these notes signal a concern the Reviewer wanted to flag but couldn't escalate within the cap; D7 must NOT swallow them)
+- **Single-specialist coverage (DOCTRINE rule 17 extension):** one specialist covered the whole changed surface (all batches map to the same responsible specialist). When several specialists touched **disjoint** surfaces, this condition fails — keep the final pass to catch cross-surface contradictions no single anchored specialist could see.
 
 If ANY of these conditions fails, the final integration review runs.
 
@@ -183,7 +190,7 @@ If ANY of these conditions fails, the final integration review runs.
 
 **Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). If the Opus integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context (no higher tier exists — escalation here means re-dispatching Opus with the error visible). Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
 
-Dispatch a thinking-tier **Reviewer** (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) over the full changed-file set across every batch (all sub-task commits from Step 2d). Use the same level cap as the batch reviewers (per flow profile).
+Dispatch a thinking-tier **Reviewer** (`model: "<resolved-thinking>"` — always Opus, regardless of `--thorough`) over the full changed-file set across every batch (all sub-task commits from Step 2d). Dispatch it **as the broadest matching specialist(s)** from the task file's `Specialists` roster (Brain-decided) — when the diff spans several surfaces, inject the union of their charters so the integration pass carries the right domain lenses. Use the same level cap as the batch reviewers (per flow profile). On a gated flow the specialist runs web-research-first before the verdict.
 
 Print: `**Reviewer** (Opus) — final integration review (L1–L<n>)`
 
