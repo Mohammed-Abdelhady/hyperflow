@@ -44,14 +44,14 @@
             <span class="install-block-title">Chain overview</span>
           </div>
           <div class="install-code">
-            amplify     &rarr;   spec        &rarr;   scope         &rarr;   dispatch        &rarr;   (suggest)   audit   /   deploy<br />
-            sharpen         specify         decompose         execute              outside review        gates + push<br />
-            the prompt      the design      into batches      with reviews         (gated)               (gated)
+            plan        &rarr;   dispatch        &rarr;   (suggest)   audit   /   deploy<br />
+            sharpen+plan    execute              outside review        gates + push<br />
+            + decompose     with reviews         (gated)               (gated)
           </div>
         </div>
 
         <p>
-          Start with a rough idea: <strong><code>amplify</code></strong> rewrites it into the strongest prompt, then hands off to <code>spec</code>. From there <code>spec &rarr; scope &rarr; dispatch</code> are <strong>chain-starters</strong> &mdash; invoking any of them auto-advances forward through the rest. <code>audit</code> and <code>deploy</code> are <strong>gates</strong> &mdash; never auto-invoked; they fire only on an explicit user <code>Yes</code> to a gate question. <code>scaffold</code> is a one-time project setup (run once per repo), so it sits before the flow rather than inside it.
+          Start with anything from a rough idea to a clear task: <strong><code>plan</code></strong> sharpens the prompt, designs the approach, and decomposes it into a task file (bouncing straight to decomposition when the approach is already clear). <code>plan &rarr; dispatch</code> are <strong>chain-starters</strong> &mdash; invoking either auto-advances forward through the rest. <code>audit</code> and <code>deploy</code> are <strong>gates</strong> &mdash; never auto-invoked; they fire only on an explicit user <code>Yes</code> to a gate question. <code>scaffold</code> is a one-time project setup (run once per repo), so it sits before the flow rather than inside it.
         </p>
 
         <p>Two skills sit outside the chain:</p>
@@ -146,13 +146,13 @@
 
     <hr />
 
-    <!-- ── Spec → scope → dispatch ──────────────────────────────────────── -->
+    <!-- ── Plan → dispatch ──────────────────────────────────────── -->
     <section id="spec-scope-dispatch" aria-labelledby="ssd-heading">
       <div class="container">
-        <h2 id="ssd-heading">Spec &rarr; scope &rarr; dispatch</h2>
+        <h2 id="ssd-heading">Plan &rarr; dispatch</h2>
 
         <!-- Spec -->
-        <h3 id="spec-heading">Spec</h3>
+        <h3 id="spec-heading">Plan — design phase</h3>
 
         <p>
           The chain-starter asks at Step 0 whether to advance <strong>auto</strong> (no gates between phases) or <strong>manual</strong> (confirm before each).
@@ -160,7 +160,7 @@
         </p>
 
         <p>
-          On Codex App/CLI, <code>/hyperflow:*</code> messages are skill aliases rather than native slash commands. If the host does not expose a popup question UI, every required <code>AskUserQuestion</code> gate renders as a concise <code>Hyperflow Question</code> chat block with numbered options and waits for the answer. The fallback applies to Amplify handoff, Spec questions, Scope ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
+          On Codex App/CLI, <code>/hyperflow:*</code> messages are skill aliases rather than native slash commands. If the host does not expose a popup question UI, every required <code>AskUserQuestion</code> gate renders as a concise <code>Hyperflow Question</code> chat block with numbered options and waits for the answer. The fallback applies to Plan questions, Plan ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
         </p>
 
         <p>Then:</p>
@@ -174,7 +174,7 @@
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; 2&ndash;3 alternative approaches with trade-offs</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> per design section &mdash; 5 sections, each approved by the user</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; final spec file at <code>.hyperflow/specs/&lt;slug&gt;.md</code></li>
-          <li>Hand off to <code>scope</code></li>
+          <li>Advance to decomposition</li>
         </ul>
 
         <p class="install-note">
@@ -182,10 +182,10 @@
         </p>
 
         <!-- Scope -->
-        <h3 id="scope-heading">Scope</h3>
+        <h3 id="scope-heading">Plan — decompose phase</h3>
 
         <ul>
-          <li>Chain-mode check (skipped if invoked by <code>spec</code> with the arg already set)</li>
+          <li>Chain-mode check (skipped when the design phase already set the arg)</li>
           <li><strong>Searcher &times; 2</strong> (parallel) + <strong>Reviewer</strong> &mdash; research: affected files, related tests, conventions</li>
           <li><strong>Planner</strong> &mdash; produces the batch graph</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; emits <code>.hyperflow/tasks/&lt;slug&gt;.md</code> with the expanded <code>## Status</code> block that <code>dispatch</code> will keep updating and <code>status</code> will read</li>

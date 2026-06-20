@@ -7,9 +7,9 @@ How a single user request becomes a coordinated multi-agent run — the chain, t
 ## The chain
 
 ```
-amplify     →   spec        →   scope         →   dispatch        →   (suggest)   audit   /   deploy
-sharpen         specify         decompose         execute              outside review        gates + push
-the prompt      the design      into batches      with reviews         (gated)               (gated)
+plan        →   dispatch        →   (suggest)   audit   /   deploy
+sharpen+plan    execute              outside review        gates + push
++ decompose     with reviews         (gated)               (gated)
 
 Big tasks can branch to:
 
@@ -17,7 +17,7 @@ workflow    →   workflow runtime/adapter   →   final synthesis
 big task        native or portable path        checked result
 ```
 
-Start with a rough idea: **`amplify`** rewrites it into the strongest prompt, then hands off to `spec`. From there `spec → scope → dispatch` are **chain-starters** — invoking any of them auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
+Start with anything from a rough idea to a clear task: **`plan`** sharpens the prompt, designs the approach, and decomposes it into a task file (bouncing straight to decomposition when the approach is already clear). `plan → dispatch` are **chain-starters** — invoking either auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
 
 Four skills sit outside the chain:
 
@@ -55,17 +55,17 @@ That JSON drives every downstream decision:
 | `personas[]` | Which persona blocks are stitched into each worker's prompt — composed in priority order: security first, creative last |
 | `complexity` + `scope` | Number of parallel workers per batch; review level cap (L1–L5) for the per-batch reviewer |
 
-Triage can route big tasks to `/hyperflow:workflow` instead of `scope → dispatch`. The route applies to `flow=deep`, `flow=scientific`, `scope=system-wide`, large migrations, repo-wide audits, high-confidence verification, and prompts that explicitly say `run a workflow` or `dynamic workflow`. Claude Code v2.1.154+ uses native dynamic workflows. Codex and OpenCode use the portable workflow adapter. Antigravity, Desktop/web bridge mode, and runtimes that cannot preserve the adapter phases keep using the normal `scope → dispatch` route.
+Triage can route big tasks to `/hyperflow:workflow` instead of `plan → dispatch`. The route applies to `flow=deep`, `flow=scientific`, `scope=system-wide`, large migrations, repo-wide audits, high-confidence verification, and prompts that explicitly say `run a workflow` or `dynamic workflow`. Claude Code v2.1.154+ uses native dynamic workflows. Codex and OpenCode use the portable workflow adapter. Antigravity, Desktop/web bridge mode, and runtimes that cannot preserve the adapter phases keep using the normal `plan → dispatch` route.
 
 ---
 
-## Spec → scope → dispatch
+## Plan → dispatch
 
-### Spec
+### Plan — design phase
 
 The chain-starter asks at Step 0 whether to advance **auto** (no gates between phases) or **manual** (confirm before each). The choice propagates to every downstream skill via the `Skill` tool's `args` parameter. In Codex App/CLI, where that host handoff may not exist, Hyperflow treats the handoff as inline continuation and keeps running the next skill in the same thread.
 
-On Codex App/CLI, `/hyperflow:*` messages are skill aliases rather than native slash commands. If the host does not expose a popup question UI, every required `AskUserQuestion` gate renders as a concise `Hyperflow Question` chat block with numbered options and waits for the answer. The fallback applies to Amplify handoff, Spec questions, Scope ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
+On Codex App/CLI, `/hyperflow:*` messages are skill aliases rather than native slash commands. If the host does not expose a popup question UI, every required `AskUserQuestion` gate renders as a concise `Hyperflow Question` chat block with numbered options and waits for the answer. The fallback applies to Plan questions, Plan ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
 
 Then:
 
@@ -77,13 +77,13 @@ Then:
 6. **Writer** + **Reviewer** — 2–3 alternative approaches with trade-offs
 7. **Writer** + **Reviewer** per design section — 5 sections, each approved by the user
 8. **Writer** + **Reviewer** — final spec file at `.hyperflow/specs/<slug>.md`
-9. Hand off to `scope`
+9. Advance to decomposition
 
 Every step that produces output dispatches at least one Agent (DOCTRINE rule 12). In Codex, Hyperflow maps those dispatches to Codex subagents when available; when subagents are not exposed in the session, the single foreground agent runs the worker/reviewer phases inline with labels and continues. Pure user-interaction steps (`AskUserQuestion`, `Skill` hand-off) are exempt.
 
-### Scope
+### Plan — decompose phase
 
-1. Chain-mode check (skipped if invoked by `spec` with the arg already set)
+1. Chain-mode check (skipped when the design phase already set the arg)
 2. **Searcher × 2** (parallel) + **Reviewer** — research: affected files, related tests, conventions
 3. **Planner** — produces the batch graph
 4. **Writer** + **Reviewer** — emits `.hyperflow/tasks/<slug>.md` with the expanded `## Status` block that `dispatch` will keep updating and `status` will read

@@ -15,7 +15,7 @@
   <meta property="og:description" content="Decision agents plan and review every step, workers execute in parallel, effort is sized to each task, and learnings persist in local, per-project memory — carried across sessions." />
   <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/hero.svg" />
-  <meta property="og:image:alt" content="Hyperflow — the chain: amplify, spec, scope, dispatch, audit, deploy" />
+  <meta property="og:image:alt" content="Hyperflow — the chain: plan, dispatch, audit, deploy" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -85,7 +85,7 @@
         </div>
 
         <p class="hero-chain-hint">
-          amplify &nbsp;&#x2192;&nbsp; spec &nbsp;&#x2192;&nbsp; scope &nbsp;&#x2192;&nbsp; dispatch &nbsp;&#x2192;&nbsp; audit &nbsp;&#x2192;&nbsp; deploy
+          plan &nbsp;&#x2192;&nbsp; dispatch &nbsp;&#x2192;&nbsp; audit &nbsp;&#x2192;&nbsp; deploy
         </p>
       </div>
     </div>
@@ -102,7 +102,7 @@
         Chain-starting skills auto-advance through the rest of the chain. Skip to any entry point — the orchestrator picks up and runs forward.
       </p>
 
-      <div class="chain-diagram" role="img" aria-label="Chain flow: amplify (front door) hands off to spec (plan stage), which auto-chains to scope (plan stage) and dispatch (execute stage), with audit and deploy gates at the end">
+      <div class="chain-diagram" role="img" aria-label="Chain flow: plan (chain starter, plan stage) auto-chains to dispatch (execute stage), with audit and deploy gates at the end">
         <div class="chain-svg-wrap">
           <svg viewBox="0 0 960 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
             <!-- ─────────── Plan-stage bracket ─────────── -->
@@ -111,45 +111,29 @@
             <path d="M40 52 V46 H918 V52" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5" />
             <line x1="479" y1="46" x2="479" y2="40" stroke="#7C3AED" stroke-width="1.25" stroke-opacity="0.5" />
 
-            <!-- ─────────── Node row (w=128 h=76 y=72; x: 40,190,340,490,640,790) ─────────── -->
-            <!-- amplify · front door -->
+            <!-- ─────────── Node row (w=128 h=76 y=72; x: 40,290,540,790) ─────────── -->
+            <!-- plan · chain starter -->
             <rect x="40" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
             <rect x="40" y="72" width="128" height="4" rx="2" fill="#7C3AED" />
-            <text x="104" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">amplify</text>
-            <text x="104" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">FRONT DOOR</text>
+            <text x="104" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">plan</text>
+            <text x="104" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">CHAIN STARTER</text>
             <line x1="56" y1="122" x2="152" y2="122" stroke="#C9C2AE" stroke-width="1" />
-            <text x="104" y="137" font-size="9" fill="#6B6456" text-anchor="middle">sharpen the ask</text>
-
-            <!-- spec · thinking -->
-            <rect x="190" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
-            <rect x="190" y="72" width="128" height="4" rx="2" fill="#7C3AED" />
-            <text x="254" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">spec</text>
-            <text x="254" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">PLAN</text>
-            <line x1="206" y1="122" x2="302" y2="122" stroke="#C9C2AE" stroke-width="1" />
-            <text x="254" y="137" font-size="9" fill="#6B6456" text-anchor="middle">design + approval</text>
-
-            <!-- scope · thinking -->
-            <rect x="340" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
-            <rect x="340" y="72" width="128" height="4" rx="2" fill="#7C3AED" />
-            <text x="404" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">scope</text>
-            <text x="404" y="114" font-size="8" letter-spacing="0.1em" fill="#7C3AED" text-anchor="middle">PLAN</text>
-            <line x1="356" y1="122" x2="452" y2="122" stroke="#C9C2AE" stroke-width="1" />
-            <text x="404" y="137" font-size="9" fill="#6B6456" text-anchor="middle">decompose → task file</text>
+            <text x="104" y="137" font-size="9" fill="#6B6456" text-anchor="middle">sharpen · design · decompose</text>
 
             <!-- dispatch · worker -->
-            <rect x="490" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
-            <rect x="490" y="72" width="128" height="4" rx="2" fill="#14B8A6" />
-            <text x="554" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">dispatch</text>
-            <text x="554" y="114" font-size="8" letter-spacing="0.1em" fill="#14B8A6" text-anchor="middle">EXECUTE · ENDPOINT</text>
-            <line x1="506" y1="122" x2="602" y2="122" stroke="#C9C2AE" stroke-width="1" />
-            <text x="554" y="137" font-size="9" fill="#6B6456" text-anchor="middle">parallel build + review</text>
+            <rect x="290" y="72" width="128" height="76" rx="6" fill="#FBFAF4" stroke="#14110C" />
+            <rect x="290" y="72" width="128" height="4" rx="2" fill="#14B8A6" />
+            <text x="354" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">dispatch</text>
+            <text x="354" y="114" font-size="8" letter-spacing="0.1em" fill="#14B8A6" text-anchor="middle">EXECUTE · ENDPOINT</text>
+            <line x1="306" y1="122" x2="402" y2="122" stroke="#C9C2AE" stroke-width="1" />
+            <text x="354" y="137" font-size="9" fill="#6B6456" text-anchor="middle">parallel build + review</text>
 
             <!-- audit · gate -->
-            <rect x="640" y="72" width="128" height="76" rx="6" fill="#ECE7D7" stroke="#14110C" stroke-dasharray="4 3" />
-            <text x="704" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">audit</text>
-            <text x="704" y="114" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">GATE</text>
-            <line x1="656" y1="122" x2="752" y2="122" stroke="#C9C2AE" stroke-width="1" />
-            <text x="704" y="137" font-size="9" fill="#6B6456" text-anchor="middle">L1–L5 review</text>
+            <rect x="540" y="72" width="128" height="76" rx="6" fill="#ECE7D7" stroke="#14110C" stroke-dasharray="4 3" />
+            <text x="604" y="100" font-family="JetBrains Mono,monospace" font-size="14" fill="#14110C" text-anchor="middle">audit</text>
+            <text x="604" y="114" font-size="8" letter-spacing="0.1em" fill="#6B6456" text-anchor="middle">GATE</text>
+            <line x1="556" y1="122" x2="652" y2="122" stroke="#C9C2AE" stroke-width="1" />
+            <text x="604" y="137" font-size="9" fill="#6B6456" text-anchor="middle">L1–L5 review</text>
 
             <!-- deploy · gate -->
             <rect x="790" y="72" width="128" height="76" rx="6" fill="#ECE7D7" stroke="#14110C" stroke-dasharray="4 3" />
@@ -159,39 +143,29 @@
             <text x="854" y="137" font-size="9" fill="#6B6456" text-anchor="middle">pre-push gates + ship</text>
 
             <!-- ─────────── Connectors (node mid y=110) ─────────── -->
-            <line x1="170" y1="110" x2="186" y2="110" stroke="#7C3AED" stroke-width="1.5" />
-            <polygon points="186,106.5 192,110 186,113.5" fill="#7C3AED" />
-            <text x="179" y="103" font-size="7" fill="#7C3AED" text-anchor="middle">hands off</text>
+            <line x1="170" y1="110" x2="284" y2="110" stroke="#7C3AED" stroke-width="1.5" />
+            <polygon points="284,106.5 290,110 284,113.5" fill="#7C3AED" />
+            <text x="227" y="103" font-size="7.5" fill="#7C3AED" text-anchor="middle">auto-chains</text>
 
-            <line x1="320" y1="110" x2="336" y2="110" stroke="#7C3AED" stroke-width="1.5" />
-            <polygon points="336,106.5 342,110 336,113.5" fill="#7C3AED" />
-            <text x="329" y="103" font-size="7.5" fill="#7C3AED" text-anchor="middle">auto</text>
+            <line x1="420" y1="110" x2="534" y2="110" stroke="#14110C" stroke-width="1.25" />
+            <polygon points="534,106.5 540,110 534,113.5" fill="#14110C" />
 
-            <line x1="470" y1="110" x2="486" y2="110" stroke="#7C3AED" stroke-width="1.5" />
-            <polygon points="486,106.5 492,110 486,113.5" fill="#7C3AED" />
-            <text x="479" y="103" font-size="7.5" fill="#7C3AED" text-anchor="middle">auto</text>
-
-            <line x1="620" y1="110" x2="636" y2="110" stroke="#14110C" stroke-width="1.25" />
-            <polygon points="636,106.5 642,110 636,113.5" fill="#14110C" />
-
-            <line x1="770" y1="110" x2="786" y2="110" stroke="#14110C" stroke-width="1.25" />
-            <polygon points="786,106.5 792,110 786,113.5" fill="#14110C" />
+            <line x1="670" y1="110" x2="784" y2="110" stroke="#14110C" stroke-width="1.25" />
+            <polygon points="784,106.5 790,110 784,113.5" fill="#14110C" />
 
             <!-- ─────────── Entry-point markers ─────────── -->
-            <text x="104" y="164" font-size="8" fill="#7C3AED" text-anchor="middle" font-weight="700">▸ start from a rough idea</text>
-            <text x="254" y="164" font-size="8" fill="#7C3AED" text-anchor="middle">▸ or here</text>
-            <text x="404" y="164" font-size="8" fill="#7C3AED" text-anchor="middle">▸ or here</text>
-            <text x="554" y="164" font-size="8" fill="#14B8A6" text-anchor="middle">▸ or here</text>
+            <text x="104" y="164" font-size="8" fill="#7C3AED" text-anchor="middle" font-weight="700">▸ start here — rough idea to clear task</text>
+            <text x="354" y="164" font-size="8" fill="#14B8A6" text-anchor="middle">▸ or here — a task file exists</text>
 
-            <!-- auto-chain span under spec → dispatch -->
-            <path d="M190 176 V182 H618 V176" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
-            <line x1="404" y1="182" x2="404" y2="187" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
-            <text x="404" y="200" font-size="8.5" fill="#7C3AED" text-anchor="middle" opacity="0.9">auto-chains forward — spec → scope → dispatch</text>
+            <!-- auto-chain span under plan → dispatch -->
+            <path d="M40 176 V182 H418 V176" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
+            <line x1="229" y1="182" x2="229" y2="187" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
+            <text x="229" y="200" font-size="8.5" fill="#7C3AED" text-anchor="middle" opacity="0.9">auto-chains forward — plan → dispatch</text>
 
             <!-- gates span under audit + deploy -->
-            <path d="M640 176 V182 H918 V176" stroke="#6B6456" stroke-width="1" stroke-opacity="0.5" />
-            <line x1="779" y1="182" x2="779" y2="187" stroke="#6B6456" stroke-width="1" stroke-opacity="0.5" />
-            <text x="779" y="200" font-size="8.5" fill="#6B6456" text-anchor="middle">gates fire after dispatch — batched into one ask</text>
+            <path d="M540 176 V182 H918 V176" stroke="#6B6456" stroke-width="1" stroke-opacity="0.5" />
+            <line x1="729" y1="182" x2="729" y2="187" stroke="#6B6456" stroke-width="1" stroke-opacity="0.5" />
+            <text x="729" y="200" font-size="8.5" fill="#6B6456" text-anchor="middle">gates fire after dispatch — batched into one ask</text>
 
             <!-- ─────────── Execute-stage bracket ─────────── -->
             <path d="M40 220 V226 H918 V220" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5" />
@@ -207,7 +181,7 @@
       </div>
 
       <p class="chain-caption">
-        Start with a rough idea: <code>amplify</code> rewrites it into the strongest prompt, then hands off into the chain. <code>spec</code> &rarr; <code>scope</code> &rarr; <code>dispatch</code> auto-chains — enter at <code>spec</code> for design-first work, at <code>scope</code> when the approach is clear, at <code>dispatch</code> when a task file already exists. <code>audit</code> and <code>deploy</code> gates fire at the end, batched into one ask. (<code>scaffold</code> is a one-time project setup, run once per repo.)
+        Start with anything — a rough idea or a clear task: <code>plan</code> sharpens the prompt, designs the approach, and decomposes it into a task file, then <code>dispatch</code> auto-chains to build it. It bounces straight to decomposition when the approach is already clear. Enter at <code>plan</code>, or at <code>dispatch</code> when a task file already exists. <code>audit</code> and <code>deploy</code> gates fire at the end, batched into one ask. (<code>scaffold</code> is a one-time project setup, run once per repo.)
       </p>
     </div>
   </section>
@@ -536,7 +510,7 @@
       <p class="section-label">Skills</p>
       <h2 id="skills-heading">14 specialized skills. Auto-routing on by default.</h2>
       <p class="skills-intro">
-        Say the verb — "audit the diff", "debug this test", "scope the new auth flow" — and the orchestrator routes automatically. No <code>/hyperflow:*</code> prefix required in auto mode. In Codex, <code>hyperflow &lt;skill&gt;</code> is the safest portable spelling, while <code>/hyperflow:*</code> remains an alias. <code>amplify</code> is the front door: it rewrites a rough prompt into the strongest version and hands off into the chain. <code>scaffold</code> sets a project up once; the operational utilities <code>status</code>, <code>background</code>, <code>sticky</code>, <code>bridge</code>, and <code>flush</code> run on their own.
+        Say the verb — "audit the diff", "debug this test", "plan the new auth flow" — and the orchestrator routes automatically. No <code>/hyperflow:*</code> prefix required in auto mode. In Codex, <code>hyperflow &lt;skill&gt;</code> is the safest portable spelling, while <code>/hyperflow:*</code> remains an alias. <code>plan</code> is the front door: it sharpens a rough prompt, designs the approach, and decomposes it into a task file. <code>scaffold</code> sets a project up once; the operational utilities <code>status</code>, <code>background</code>, <code>sticky</code>, <code>bridge</code>, and <code>flush</code> run on their own.
       </p>
 
       <div class="skills-table-wrap">
@@ -557,15 +531,9 @@
               <td><span class="chain-badge standalone">Standalone</span></td>
             </tr>
             <tr>
-              <td><strong>spec</strong></td>
-              <td><code>/hyperflow:spec</code></td>
-              <td>Multi-dimensional analysis + alternatives — refuses to code before approval; auto-chains to scope</td>
-              <td><span class="chain-badge starter">Chain starter</span></td>
-            </tr>
-            <tr>
-              <td><strong>scope</strong></td>
-              <td><code>/hyperflow:scope</code></td>
-              <td>Decompose into parallel worker subtasks; writes task file; auto-chains to dispatch</td>
+              <td><strong>plan</strong></td>
+              <td><code>/hyperflow:plan</code></td>
+              <td>Sharpen the prompt, design the approach, and decompose into a batched task graph; auto-chains to dispatch</td>
               <td><span class="chain-badge starter">Chain starter</span></td>
             </tr>
             <tr>
@@ -573,12 +541,6 @@
               <td><code>/hyperflow:dispatch</code></td>
               <td>Dispatch parallel workers + reviews at every step + final integration review; endpoint of the chain</td>
               <td><span class="chain-badge endpoint">Endpoint</span></td>
-            </tr>
-            <tr>
-              <td><strong>amplify</strong></td>
-              <td><code>/hyperflow:amplify</code></td>
-              <td>Rewrite a rough prompt into the strongest version — domain persona standards + project rules, scored against an 8-dimension rubric, then a handoff into the chain</td>
-              <td><span class="chain-badge standalone">Standalone</span></td>
             </tr>
             <tr>
               <td><strong>trace</strong></td>
@@ -868,7 +830,7 @@
             <tr>
               <td><code>project-decisions.md</code></td>
               <td>Spec-tier</td>
-              <td><code>/hyperflow:spec</code></td>
+              <td><code>/hyperflow:plan</code></td>
               <td>Structural answers from Smart Questions &mdash; prevents re-asking questions the codebase already answered</td>
             </tr>
           </tbody>
@@ -949,7 +911,7 @@
             <span class="example-profile-badge">standard profile</span>
           </div>
           <div class="example-body">
-            <span class="ex-cmd">/hyperflow:scope "Add debounced search bar to dashboard"</span><br /><br />
+            <span class="ex-cmd">/hyperflow:plan "Add debounced search bar to dashboard"</span><br /><br />
             <span class="ex-dim">  Triage    standard flow &middot; 2 files &middot; ambiguity 0.1</span><br />
             <span class="ex-dim">  Scope     Searchers map dashboard + hooks surface</span><br />
             <span class="ex-dim">            Decompose: SearchBar + useDebounce + wire up</span><br /><br />
@@ -968,7 +930,7 @@
             <span class="example-profile-badge">deep profile</span>
           </div>
           <div class="example-body">
-            <span class="ex-cmd">/hyperflow:spec "I need a notification system"</span><br /><br />
+            <span class="ex-cmd">/hyperflow:plan "I need a notification system"</span><br /><br />
             <span class="ex-dim">  Triage    deep flow &middot; ambiguity 0.7</span><br />
             <span class="ex-worker">  Searcher  context + codebase scan (Step 2a/2b)</span><br />
             <span class="ex-thinking">  Analyst   6-dim analysis (Step 3)</span><br />
@@ -1005,7 +967,7 @@
             <span class="example-profile-badge">fast profile</span>
           </div>
           <div class="example-body">
-            <span class="ex-cmd">/hyperflow:scope "Rename Button to PrimaryButton"</span><br /><br />
+            <span class="ex-cmd">/hyperflow:plan "Rename Button to PrimaryButton"</span><br /><br />
             <span class="ex-dim">  Triage    fast flow &middot; 1 file &middot; ambiguity 0.0</span><br /><br />
             <span class="ex-worker">  Implementer  rename + update all imports</span><br />
             <span class="ex-thinking">  Reviewer     inline self-review (fast)</span><br /><br />
@@ -1232,10 +1194,10 @@
           /hyperflow:scaffold<br />
           <br />
           <span class="comment"># Start the full chain from a feature description</span><br />
-          /hyperflow:spec "add user auth with login page and middleware"<br />
+          /hyperflow:plan "add user auth with login page and middleware"<br />
           <br />
-          <span class="comment"># Or enter at scope if the approach is already clear</span><br />
-          /hyperflow:scope "add debounced search to the dashboard"
+          <span class="comment"># plan sharpens, designs, and decomposes — then auto-chains to dispatch</span><br />
+          /hyperflow:plan "add debounced search to the dashboard"
         </div>
       </div>
 

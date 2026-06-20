@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 880" width="760" height="880"
      role="img" aria-labelledby="t d" font-family="'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif">
   <title id="t">Hyperflow v4.31.2</title>
-  <desc id="d">Advanced multi-agent orchestration with persistent cross-session memory — first init once with scaffold, then the chain stacked top to bottom: amplify, spec, scope, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.</desc>
+  <desc id="d">Advanced multi-agent orchestration with persistent cross-session memory — first init once with scaffold, then the chain stacked top to bottom: plan, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.</desc>
   <defs>
     <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0 L0 0 0 28" fill="none" stroke="#ECE7D7" stroke-width="1"/></pattern>
     <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#14110C"/></marker>
@@ -25,47 +25,33 @@
   <rect x="48" y="270" width="672" height="70" fill="#14110C"/>
   <rect x="44" y="266" width="672" height="70" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
   <rect x="44" y="266" width="8" height="70" fill="#7C3AED"/>
-  <text x="72" y="298" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/amplify</text>
-  <text x="72" y="320" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">sharpen the ask</text>
-  <text x="696" y="294" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">FRONT DOOR</text>
+  <text x="72" y="298" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/plan</text>
+  <text x="72" y="320" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">sharpen · design · decompose</text>
+  <text x="696" y="294" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">CHAIN STARTER</text>
   <line x1="380.0" y1="338" x2="380.0" y2="352" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
   <rect x="48" y="358" width="672" height="70" fill="#14110C"/>
   <rect x="44" y="354" width="672" height="70" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="44" y="354" width="8" height="70" fill="#7C3AED"/>
-  <text x="72" y="386" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/spec</text>
-  <text x="72" y="408" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">design + approval</text>
-  <text x="696" y="382" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">CHAIN STARTER</text>
+  <rect x="44" y="354" width="8" height="70" fill="#14B8A6"/>
+  <text x="72" y="386" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/dispatch</text>
+  <text x="72" y="408" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">parallel build + review</text>
+  <text x="696" y="382" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">ENDPOINT</text>
   <line x1="380.0" y1="426" x2="380.0" y2="440" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
   <rect x="48" y="446" width="672" height="70" fill="#14110C"/>
   <rect x="44" y="442" width="672" height="70" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="44" y="442" width="8" height="70" fill="#7C3AED"/>
-  <text x="72" y="474" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/scope</text>
-  <text x="72" y="496" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">decompose to tasks</text>
-  <text x="696" y="470" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">CHAIN STARTER</text>
+  <rect x="44" y="442" width="672" height="70" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
+  <rect x="44" y="442" width="8" height="70" fill="#ECE7D7"/>
+  <text x="72" y="474" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/audit</text>
+  <text x="72" y="496" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">L1–L5 review</text>
+  <text x="696" y="470" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
   <line x1="380.0" y1="514" x2="380.0" y2="528" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
   <rect x="48" y="534" width="672" height="70" fill="#14110C"/>
   <rect x="44" y="530" width="672" height="70" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="44" y="530" width="8" height="70" fill="#14B8A6"/>
-  <text x="72" y="562" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/dispatch</text>
-  <text x="72" y="584" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">parallel build + review</text>
-  <text x="696" y="558" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">ENDPOINT</text>
-  <line x1="380.0" y1="602" x2="380.0" y2="616" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="48" y="622" width="672" height="70" fill="#14110C"/>
-  <rect x="44" y="618" width="672" height="70" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="44" y="618" width="672" height="70" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
-  <rect x="44" y="618" width="8" height="70" fill="#ECE7D7"/>
-  <text x="72" y="650" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/audit</text>
-  <text x="72" y="672" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">L1–L5 review</text>
-  <text x="696" y="646" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
-  <line x1="380.0" y1="690" x2="380.0" y2="704" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="48" y="710" width="672" height="70" fill="#14110C"/>
-  <rect x="44" y="706" width="672" height="70" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="44" y="706" width="672" height="70" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
-  <rect x="44" y="706" width="8" height="70" fill="#ECE7D7"/>
-  <text x="72" y="738" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/deploy</text>
-  <text x="72" y="760" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">pre-push gates</text>
-  <text x="696" y="734" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
-  <rect x="44" y="798" width="672" height="30" fill="#ECE7D7" stroke="#C9C2AE" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="380.0" y="817" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">every step → Worker → Reviewer · nothing ships unreviewed</text>
+  <rect x="44" y="530" width="672" height="70" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
+  <rect x="44" y="530" width="8" height="70" fill="#ECE7D7"/>
+  <text x="72" y="562" fill="#14110C" font-size="22" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/deploy</text>
+  <text x="72" y="584" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">pre-push gates</text>
+  <text x="696" y="558" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
+  <rect x="44" y="622" width="672" height="30" fill="#ECE7D7" stroke="#C9C2AE" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="380.0" y="641" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">every step → Worker → Reviewer · nothing ships unreviewed</text>
   <text x="380.0" y="858" fill="#6B6456" font-size="10.5" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">github.com/Mohammed-Abdelhady/hyperflow</text>
 </svg>
