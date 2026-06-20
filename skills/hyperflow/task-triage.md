@@ -196,6 +196,9 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 - `integration_risk: true` → add `backend-reviewer` (or `api-reviewer` if `api` ∈ `types`).
 - Add `compliance-reviewer` only when `security: true` AND the rationale flags PII / regulated data.
 - Add `mobile-reviewer` only when a mobile/responsive/native surface is detected.
+- Add `motion` whenever the surface involves animation, transitions, scroll-driven effects, or gesture interaction —
+  even when only `ui` is in `types` (the Brain detects the motion surface and adds it; static UI changes do not pull
+  it in).
 - Add `algorithm-reviewer` whenever the diff contains non-trivial algorithms, nested loops, recursion, or
   data-structure choices on a hot path — even when `performance` is not in `types` (the Brain detects this from the
   surface and adds it).

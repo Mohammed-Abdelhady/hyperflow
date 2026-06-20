@@ -76,6 +76,7 @@ the session uses. Specialists differ by **role**, not model:
 | [compliance-reviewer](compliance-reviewer.md) | security, docs | reviewer (full pass) | PII / GDPR / audit-trail / regulatory |
 | [architect](architect.md) | architect | reviewer + design decision agent | system decomposition, boundaries, failure modes, ADRs, frontend-at-scale |
 | [designer](designer.md) | ui, creative | reviewer + design decision agent | design system, visual/experiential design, prior-art research, anti-slop |
+| [motion](motion.md) | ui, performance | reviewer + motion decision agent | animation, 60fps compositor budget, physics/springs, reduced-motion |
 
 The **(full pass)** reviewers always run a complete review even per-batch ("if security present, never fast"); the others run an anchored per-batch review in-flight and a full standalone review outside a batch.
 
