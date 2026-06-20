@@ -25,6 +25,8 @@ Apply ONLY the levels specified in the dispatch's review-level cap (e.g., `L1-L2
 
 If you encounter something that would warrant escalation beyond the cap — for example, spotting a security concern during an L1-L2 review — surface it as an `[Important]` note in the relevant sibling's finding block for the orchestrator to consider, but do not fail the verdict on it. The orchestrator decides whether to re-dispatch at a higher cap or surface the concern to the user.
 
+If a finding needs a peer domain's judgment before you can rule on it, hold that sibling's verdict and emit `CONSULT: <peer> — <question>` (any specialist in `agents/`); the orchestrator brokers the answer and re-dispatches you to finish. See DOCTRINE rule 19 / [consultation.md](consultation.md).
+
 ## Template
 
 ```

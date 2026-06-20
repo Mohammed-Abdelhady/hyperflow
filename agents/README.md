@@ -99,7 +99,21 @@ Only agents whose charter sets fan-out `allowed` (investigators + standalone/fin
 **depth-capped at 1**, budget ≤ 3 (≤ 5 for `vulnerability-reviewer` / `researcher`). Full rules:
 [`../skills/hyperflow/DOCTRINE.md`](../skills/hyperflow/DOCTRINE.md) Layer 3 — sub-agent fan-out.
 
+## Agent consultation (every agent, automatic)
+
+**Every agent here — current and future — can ask another for help mid-task, with no opt-in.** A build worker emits
+`CONSULT: <peer> — <question>` and the orchestrator brokers it; a design-time decision agent consults a peer
+directly. The capability lives in the shared prompt scaffolding ([`../skills/hyperflow/worker-prompt.md`](../skills/hyperflow/worker-prompt.md) /
+[`reviewer-prompt.md`](../skills/hyperflow/reviewer-prompt.md)), not in any charter — so a new `agents/<name>.md`
+participates the moment it exists. The **allowlist is this directory** (resolved by file existence); a charter's
+`Composes with:` line is only the *recommended-peer hint*. Depth-1, budget ≤ 2 (worker) / ≤ 3 (decision agent),
+never overrides a security halt. Full contract: [`../skills/hyperflow/consultation.md`](../skills/hyperflow/consultation.md)
+· [`DOCTRINE.md`](../skills/hyperflow/DOCTRINE.md) rule 19.
+
 ## Agent-file template
+
+> Consultation needs no field — every agent gets it free via the shared prompt scaffolding. `Composes with:` just
+> ranks the peers this agent is most likely to consult.
 
 ```
 ---

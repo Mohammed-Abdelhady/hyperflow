@@ -71,6 +71,10 @@ VERDICT: APPROVED | NEEDS_FIX | SECURITY_VIOLATION
 ```
 ```
 
+If a finding needs a peer domain's judgment before you can rule on it, hold the verdict and emit
+`CONSULT: <peer> — <question>` instead (you may consult any specialist in `agents/`). The Team Lead brokers the
+answer and re-dispatches you to finish the review. See DOCTRINE rule 19 / [consultation.md](consultation.md).
+
 ## Dispatch Example
 
 ```
