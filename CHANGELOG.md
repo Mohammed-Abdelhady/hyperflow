@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.3.1] — 2026-06-20
+
+### Fixed
+- De-tier the model wizard and add Cursor provider
+
+### Changed
+- Repoint deleted-skill references to the merged plan chain
+- Purge removed model-tier language
+
+
 ## [5.3.0] — 2026-06-20
 
 ### Added
@@ -1064,7 +1074,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.1...HEAD
+[5.3.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.0...v5.3.1
 [5.3.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.0.0...v5.1.0
