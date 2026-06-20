@@ -18,9 +18,9 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
 | IDE extensions (VS Code, JetBrains, Cursor) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
 
-If `/hyperflow:spec` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
+If `/hyperflow:plan` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
 
-In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow spec`, `hyperflow amplify`, and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
+In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow plan` and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
 
 Claude Code dynamic workflow support requires Claude Code v2.1.154 or later with workflows enabled. `/hyperflow:workflow` routes big tasks to the host dynamic workflow runtime; workflows may be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow never enables `/effort ultracode` or `xhigh` automatically; set `/effort ultracode` manually if you want session-wide automatic workflow selection.
 

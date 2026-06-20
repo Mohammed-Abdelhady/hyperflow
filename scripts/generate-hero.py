@@ -28,12 +28,10 @@ MUTED = "#6B6456"
 ACCENT = "#E8470F"
 
 # The chain (scaffold is a one-time init, shown as a precursor — not a flow step).
-CHAIN = ["amplify", "spec", "scope", "dispatch", "audit", "deploy"]
-ROLE = {"amplify": "thinking", "spec": "thinking", "scope": "thinking",
-        "dispatch": "worker", "audit": "gate", "deploy": "gate"}
-SUB = {"amplify": "FRONT DOOR", "spec": "CHAIN STARTER", "scope": "CHAIN STARTER",
-       "dispatch": "ENDPOINT", "audit": "GATE", "deploy": "GATE"}
-CAPTION = {"amplify": "sharpen the ask", "spec": "design + approval", "scope": "decompose to tasks",
+CHAIN = ["plan", "dispatch", "audit", "deploy"]
+ROLE = {"plan": "thinking", "dispatch": "worker", "audit": "gate", "deploy": "gate"}
+SUB = {"plan": "CHAIN STARTER", "dispatch": "ENDPOINT", "audit": "GATE", "deploy": "GATE"}
+CAPTION = {"plan": "sharpen · design · decompose",
            "dispatch": "parallel build + review", "audit": "L1–L5 review", "deploy": "pre-push gates"}
 
 
@@ -122,7 +120,7 @@ def render_horizontal(features, version):
     W, H, PAD = 1200, 470, 48
     cv = Canvas(W, H, f"Hyperflow v{version}",
                 f"{tagline} — first init once with scaffold, then the chain: "
-                f"amplify, spec, scope, dispatch, audit, deploy, with plan and execute stages and a Worker to Reviewer review at every step.")
+                f"plan, dispatch, audit, deploy, with plan and execute stages and a Worker to Reviewer review at every step.")
     cv.frame()
     cv.wordmark(PAD, 64, 38)
     cv.badge(W - PAD, 40, version)
@@ -183,7 +181,7 @@ def render_vertical(features, version):
     W, H, PAD = 760, 880, 44
     cv = Canvas(W, H, f"Hyperflow v{version}",
                 f"{tagline} — first init once with scaffold, then the chain stacked top to bottom: "
-                f"amplify, spec, scope, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.")
+                f"plan, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.")
     cv.frame()
     cv.wordmark(PAD, 92, 56)
     cv.badge(W - PAD, 50, version)

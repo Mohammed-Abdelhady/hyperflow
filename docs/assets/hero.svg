@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470"
      role="img" aria-labelledby="t d" font-family="'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif">
   <title id="t">Hyperflow v4.31.2</title>
-  <desc id="d">Advanced multi-agent orchestration with persistent cross-session memory — first init once with scaffold, then the chain: amplify, spec, scope, dispatch, audit, deploy, with plan and execute stages and a Worker to Reviewer review at every step.</desc>
+  <desc id="d">Advanced multi-agent orchestration with persistent cross-session memory — first init once with scaffold, then the chain: plan, dispatch, audit, deploy, with plan and execute stages and a Worker to Reviewer review at every step.</desc>
   <defs>
     <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0 L0 0 0 28" fill="none" stroke="#ECE7D7" stroke-width="1"/></pattern>
     <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#14110C"/></marker>
@@ -25,51 +25,35 @@
   <rect x="52.0" y="204" width="164" height="86" fill="#14110C"/>
   <rect x="48.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
   <rect x="48.0" y="200" width="164" height="5" fill="#7C3AED"/>
-  <text x="130.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/amplify</text>
-  <text x="130.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">FRONT DOOR</text>
+  <text x="130.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/plan</text>
+  <text x="130.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">CHAIN STARTER</text>
   <line x1="64.0" y1="262" x2="196.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
-  <text x="130.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">sharpen the ask</text>
-  <line x1="216.0" y1="243.0" x2="232.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="240.0" y="204" width="164" height="86" fill="#14110C"/>
-  <rect x="236.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="236.0" y="200" width="164" height="5" fill="#7C3AED"/>
-  <text x="318.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/spec</text>
-  <text x="318.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">CHAIN STARTER</text>
-  <line x1="252.0" y1="262" x2="384.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
-  <text x="318.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">design + approval</text>
-  <line x1="404.0" y1="243.0" x2="420.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="428.0" y="204" width="164" height="86" fill="#14110C"/>
-  <rect x="424.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="424.0" y="200" width="164" height="5" fill="#7C3AED"/>
-  <text x="506.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/scope</text>
-  <text x="506.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">CHAIN STARTER</text>
-  <line x1="440.0" y1="262" x2="572.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
-  <text x="506.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">decompose to tasks</text>
-  <line x1="592.0" y1="243.0" x2="608.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="616.0" y="204" width="164" height="86" fill="#14110C"/>
-  <rect x="612.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="612.0" y="200" width="164" height="5" fill="#14B8A6"/>
-  <text x="694.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/dispatch</text>
-  <text x="694.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">ENDPOINT</text>
-  <line x1="628.0" y1="262" x2="760.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
-  <text x="694.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">parallel build + review</text>
-  <line x1="780.0" y1="243.0" x2="796.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="804.0" y="204" width="164" height="86" fill="#14110C"/>
-  <rect x="800.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="800.0" y="200" width="164" height="86" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
-  <rect x="800.0" y="200" width="164" height="5" fill="#ECE7D7"/>
-  <text x="882.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/audit</text>
-  <text x="882.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">GATE</text>
-  <line x1="816.0" y1="262" x2="948.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
-  <text x="882.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">L1–L5 review</text>
-  <line x1="968.0" y1="243.0" x2="984.0" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
-  <rect x="992.0" y="204" width="164" height="86" fill="#14110C"/>
-  <rect x="988.0" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
-  <rect x="988.0" y="200" width="164" height="86" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
-  <rect x="988.0" y="200" width="164" height="5" fill="#ECE7D7"/>
+  <text x="130.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">sharpen · design · decompose</text>
+  <line x1="216.0" y1="243.0" x2="357.33333333333337" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="365.33333333333337" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="361.33333333333337" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="361.33333333333337" y="200" width="164" height="5" fill="#14B8A6"/>
+  <text x="443.33333333333337" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/dispatch</text>
+  <text x="443.33333333333337" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">ENDPOINT</text>
+  <line x1="377.33333333333337" y1="262" x2="509.33333333333337" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="443.33333333333337" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">parallel build + review</text>
+  <line x1="529.3333333333334" y1="243.0" x2="670.6666666666667" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="678.6666666666667" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="674.6666666666667" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="674.6666666666667" y="200" width="164" height="86" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
+  <rect x="674.6666666666667" y="200" width="164" height="5" fill="#ECE7D7"/>
+  <text x="756.6666666666667" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/audit</text>
+  <text x="756.6666666666667" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">GATE</text>
+  <line x1="690.6666666666667" y1="262" x2="822.6666666666667" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <text x="756.6666666666667" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">L1–L5 review</text>
+  <line x1="842.6666666666667" y1="243.0" x2="984.0000000000001" y2="243.0" stroke="#14110C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="992.0000000000001" y="204" width="164" height="86" fill="#14110C"/>
+  <rect x="988.0000000000001" y="200" width="164" height="86" fill="#FBFAF4" stroke="#14110C" stroke-width="2"/>
+  <rect x="988.0000000000001" y="200" width="164" height="86" fill="none" stroke="#14110C" stroke-width="2" stroke-dasharray="5 4"/>
+  <rect x="988.0000000000001" y="200" width="164" height="5" fill="#ECE7D7"/>
   <text x="1070.0" y="234" fill="#14110C" font-size="17" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">/deploy</text>
   <text x="1070.0" y="252" fill="#6B6456" font-size="8" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.8">GATE</text>
-  <line x1="1004.0" y1="262" x2="1136.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
+  <line x1="1004.0000000000001" y1="262" x2="1136.0" y2="262" stroke="#C9C2AE" stroke-width="1"/>
   <text x="1070.0" y="277" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">pre-push gates</text>
   <line x1="48" y1="304" x2="1152" y2="304" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5"/>
   <line x1="48" y1="304" x2="48" y2="310" stroke="#14B8A6" stroke-width="1.25" stroke-opacity="0.5"/>

@@ -1,15 +1,15 @@
 # Hyperflow Demo Script
 
-A ~28-second walk-through that shows the **full spec → scope → dispatch chain**, with the Worker → Reviewer review pattern legible throughout. Used by `scripts/generate-demo-cast.py` to produce `docs/assets/demo.gif`.
+A ~28-second walk-through that shows the **full plan → dispatch chain**, with the Worker → Reviewer review pattern legible throughout. Used by `scripts/generate-demo-cast.py` to produce `docs/assets/demo.gif`.
 
 ## What it shows
 
 | Beat | What happens | Concept visible |
 |---|---|---|
 | 0–4s | `claude` starts — Hyperflow banner, memory loaded | Activation |
-| 4–8s | User types `/hyperflow:spec`, picks Auto mode, Triage fires | Chain-starter, triage, autonomy |
+| 4–8s | User types `/hyperflow:plan`, picks Auto mode, Triage fires | Chain-starter, triage, autonomy |
 | 8–14s | Analyst explores codebase, asks 1 design question, writes spec | Orchestration |
-| 14–19s | Auto-chains to scope — Planner produces 2-batch task file | Decomposition |
+| 14–19s | Decomposition phase — Planner produces 2-batch task file | Decomposition |
 | 19–25s | Dispatch: 3 parallel Worker agents (batch 1), Reviewer, gates pass | Parallel execution, review |
 | 25–27s | Batch 2, final integration reviewer, usage summary, memory persisted | End-to-end completion |
 
@@ -65,6 +65,6 @@ clear
 
 ```html
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Hyperflow — spec to dispatch in 28 seconds" width="100%" />
+  <img src="docs/assets/demo.gif" alt="Hyperflow — plan to dispatch in 28 seconds" width="100%" />
 </p>
 ```
