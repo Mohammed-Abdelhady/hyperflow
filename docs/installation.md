@@ -69,7 +69,7 @@ For big tasks, `/hyperflow:workflow` uses the OpenCode portable workflow adapter
 ### What the installer does
 
 1. Clones the repo to `~/.hyperflow/repo/`
-2. Detects which providers are installed (Codex, OpenCode, Antigravity)
+2. Detects which providers are installed (Claude Code, Codex, OpenCode, Antigravity, Cursor)
 3. Installs or links the provider integration where needed
 4. Asks whether to enable the security layer
 5. Writes your choices to `~/.hyperflow/config.json`
