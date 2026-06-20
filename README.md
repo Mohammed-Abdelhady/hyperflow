@@ -53,7 +53,7 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 
 | # | Skill | What it does |
 |---|-------|--------------|
-| 1 | `plan` | **Front door** — sharpen the prompt (persona standards + 8-dim rubric), design the approach (multi-dimensional analysis + alternatives, refuses to code before you approve), and decompose it into a parallel task graph; skips whichever phase the request doesn't need |
+| 1 | `plan` | **Front door** — sharpen the prompt (persona standards + 8-dim rubric), design the approach (multi-dimensional analysis + alternatives, refuses to code before you approve), and decompose it into a parallel task graph with a full, test-complete implementation brief per sub-task (incl. an end-to-end case) so the build runs faithfully on a cheaper model; skips whichever phase the request doesn't need |
 | 2 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
 | 3 | `workflow` | Big-task lane — native Claude Code workflows, custom Codex/OpenCode adapter |
 | 4 | `audit` | L1–L5 review on the result |

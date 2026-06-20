@@ -272,6 +272,8 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 
 Every Worker dispatch must hit a mandatory detail floor in the brief. Sparse briefs are a doctrine violation — the Worker fills gaps with assumptions; the per-batch Reviewer can only check what was asked for; the resulting commit is plausibly-right rather than actually-right. Detail isn't padding; it's the Worker's only signal about scope.
 
+**Authored at plan time by default (`briefs=auto`).** For non-trivial sub-tasks the detail floor is met *once, on the strong planning model*, and stored as a per-sub-task brief file (`.hyperflow/tasks/<slug>/T<id>.md` flat, `phase-*/tasks/T<id>.md` feature). At dispatch the Composer **loads that brief verbatim** and only appends Project Context + learnings + the specialist output-contract — it does not re-derive the floor. This is what lets the build run faithfully on a **cheaper model or a second session**: the expensive thinking (decompose, design each change, enumerate the realistic test set + the E2E case) is paid in `plan`; `dispatch` transcribes. The Composer authors inline only when no brief exists (a trivial sub-task or a legacy terse task file).
+
 **Mandatory sections in every brief (no exceptions):**
 
 | Section | What it contains |

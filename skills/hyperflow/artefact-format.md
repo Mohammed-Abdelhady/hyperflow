@@ -80,16 +80,35 @@ Use `↓` for sequential, ` · ` (space-dot-space) for parallel siblings on one 
 
 ## Per-task / per-section line format
 
-Each sub-task or section gets one checkbox line + one indented detail line. No multi-paragraph descriptions in task files (those go in the spec).
+The `<slug>.md` task file is a terse **roster**: each sub-task or section gets one checkbox line + one indented detail line. No multi-paragraph descriptions in the *roster* file — the full implementation detail lives in the per-sub-task **brief file** (below), and design detail in the spec.
 
 ```
 - [x] T1 — Writer · Author compaction protocol reference
-       Read: spec, cache/SKILL.md · Create: skills/cache/references/compaction.md · Complexity: medium · Specialist: searcher
+       Read: spec, cache/SKILL.md · Create: skills/cache/references/compaction.md · Complexity: medium · Specialist: searcher · Brief: <slug>/T1.md
 - [ ] T2 — Implementer · Add memory.compactionThreshold to config/schema.json
        Modify: config/schema.json · Complexity: low · Specialist: backend-reviewer
 ```
 
-The detail line is two spaces indented + the file path(s) + complexity. Long task descriptions move to the spec file.
+The detail line is two spaces indented + the file path(s) + complexity + the responsible specialist, and — for non-trivial sub-tasks — a `Brief: <slug>/T<id>.md` pointer to the full brief. **Trivial** sub-tasks (1 file ∧ ~≤10 LOC ∧ obvious — a typo, a single config flag) carry NO brief pointer and get only this terse line; don't over-document a typo.
+
+## Per-sub-task brief file (`.hyperflow/tasks/<slug>/T<id>.md`)
+
+`/hyperflow:plan` authors a full, self-contained implementation brief per **non-trivial** sub-task so the build runs faithfully on a cheaper model (or a second handoff session) — the strong planning model pays the authoring cost once; dispatch transcribes. The brief is the [`worker-prompt.md`](worker-prompt.md) body, written at plan time:
+
+```
+## Task          — one verb-led objective
+## Why           — 1-3 sentences; what changes for the user/system
+## Scope         — IN: what this brief owns · OUT: what siblings own / is deferred
+## Files in scope — Read / Modify / Create, each with the EXACT change described (spec-level prose, no code skeletons)
+## Acceptance criteria — concrete shape-level PASS checks the Reviewer verifies
+## Test cases    — the realistic domain set (no formulaic placeholders) + ≥1 end-to-end / integration scenario
+                   (real inputs → real expected outcome; name the tool — Playwright / Maestro / supertest / …),
+                   or an explicit `E2E: N/A — <why>`
+## Related context — file:line patterns to mirror, related sibling sub-task IDs
+## Gotchas       — convention traps, edge cases, irreversible steps
+```
+
+Spec-level prose only — describe the change, the implementer writes the code. The brief is the **contract**: the per-batch Reviewer PASS/NEEDS_FIX against its Acceptance criteria + Test cases (including the E2E case). In `feature` mode the same brief content lives in each `phase-<n>-<name>/tasks/T<id>.md`.
 
 ## Scope-at-a-glance table
 

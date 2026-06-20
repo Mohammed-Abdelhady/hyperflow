@@ -2,6 +2,8 @@
 
 Use this template when dispatching workers via the Agent tool. **Every section below is mandatory** — the Team Lead must fill each one before dispatch. A sparse / vague brief is a doctrine violation: the worker will fill the gaps with assumptions, and the per-batch Reviewer can't catch what wasn't asked for. Detail floor exists so the worker executes the right work, not a plausible-looking nearby alternative.
 
+**Authored at plan time by default.** For non-trivial sub-tasks, `/hyperflow:plan` writes this entire body into a brief file `.hyperflow/tasks/<slug>/T<id>.md` (or `phase-*/tasks/T<id>.md` in feature mode). At dispatch, the Composer **loads that brief verbatim** and only appends Project Context + learnings + the specialist output-contract — it does not re-derive Task/Scope/Acceptance/Test-cases. This is what lets the build run faithfully on a cheaper model or a second session. The Composer authors inline (the old path) only when no brief file exists (a trivial sub-task or a legacy terse task file).
+
 ## Template
 
 ```
@@ -48,6 +50,8 @@ The orchestrator writes test cases by thinking through:
 [For non-code tasks (docs/configs/refactors), test cases become verification commands with expected results, e.g. `grep -c '<pattern>' <file>` → expect 3; `python3 -m json.tool < <file>` → exit 0; `grep -r '<old-API>' src/` → no results.]
 
 **Minimum coverage:** 3 test cases as a floor, but **3 is rarely enough for a non-trivial task**. Aim for the realistic set: every domain edge case the Worker should handle + the integration failure modes the feature can hit. The UserAvatar example in this template has 10 cases for a single component because that's what the actual surface needs; an auth-middleware brief would need 15+. Quality > arbitrary count.
+
+**End-to-end / integration case (required).** Beyond unit/domain cases, every brief carries **≥1 end-to-end or integration scenario** — the full user-facing or cross-module flow with real inputs → real expected outcome, not a mocked unit slice. Name the tool where one applies: Playwright / Cypress (web UI), Maestro / Detox / XCUITest / Espresso (mobile), supertest / HTTP round-trip (API), a real DB transaction (data layer). Example: "submit the login form with valid creds → redirected to `/dashboard`, `session` cookie set, `GET /api/me` returns the user." Omit only with an explicit `E2E: N/A — <why>` (e.g. a pure type-only refactor).
 
 **Omit ONLY when the task is genuinely test-impossible** (a one-line README typo fix, a CI-config formatting change) — and explicitly state `Test cases: N/A — <why>` so the omission is deliberate, not sloppy.
 

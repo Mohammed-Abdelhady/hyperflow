@@ -4,7 +4,7 @@ description: |
   Use when a request needs shaping before any code is written — a rough or vague prompt to sharpen, an ambiguous idea to design, or a clear-enough task to decompose. One chain-starter that amplifies the prompt, designs the approach, and decomposes it into a batched task file, skipping whichever phases the request doesn't need, then auto-chains into /hyperflow:dispatch.
   Trigger with /hyperflow:plan, "design this", "plan this", "decompose this", "how should we", "what's the best way to", "break this down", "enhance this prompt".
 allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, Agent, AskUserQuestion, Skill
-argument-hint: "<idea, prompt, or task> [session=one|two] [handoff=review|deploy] [--thorough | depth=max] [noamplify]"
+argument-hint: "<idea, prompt, or task> [session=one|two] [handoff=review|deploy] [--thorough | depth=max] [briefs=auto|terse] [noamplify]"
 version: 1.0.0
 license: MIT
 compatibility: Designed for Claude Code
@@ -22,6 +22,7 @@ This is **thinking, not building** through the design phase — no source code i
 ## Iron Rules
 
 - **No code in the design phase.** Plan produces a prompt, a spec, and a task file; `dispatch` executes them.
+- **Author build-ready briefs (`briefs=auto`).** Every non-trivial sub-task gets a full, self-contained implementation brief at plan time (Step 9c), stored at `.hyperflow/tasks/<slug>/T<id>.md`. The strong planning model pays the authoring cost once so the build runs faithfully on a cheaper model or a second session — dispatch transcribes, it doesn't re-derive. Trivial sub-tasks stay terse.
 - **Project rules win on conflict.** A rule in `CLAUDE.md` / `AGENTS.md` / `.hyperflow/memory/` overrides a generic persona standard — it is the user's explicit instruction.
 - **Economy is mandatory.** Amplify enhances to the task's level, never inflates a one-line ask into a spec (rubric dim 8).
 - **Names responsible specialists; never runs their web-research.** The `Responsible specialists:` annotation is an announcement — each specialist's web-research-first pass fires later inside `dispatch`, not here.
@@ -44,7 +45,7 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 | 6 — Synthesis + approaches (P4) | 6a + 6b | Writer ×1–2 per sub-phase | **Reviewer** (batched) | Skips approaches when ambiguity < 0.6 ∧ complexity ≠ high |
 | 7 — Design sections (P1+P2) | 7a + 7b + 7c | Writer ×1–2 per sub-phase (**`architect`** authors 7a §1/§2 on architect-typed / high-complexity / multi-subsystem tasks — embeds Mermaid graphs; **`designer`** authors the visual/experiential decisions on ui/creative-typed tasks — grounds them in `.hyperflow/design/system.md`; **`mobile`** authors the platform/device decisions on mobile/native-typed tasks — grounds them in `../hyperflow/mobile.md`) | **Reviewer** per sub-phase + 1 batched | File-first; one combined approval gate |
 | 8 — Spec finalize | atomic | Writer | **Reviewer** (final-integration) | Renames draft → `.hyperflow/specs/<slug>.md` |
-| 9 — Decompose | 9a + 9b + 9c | Planner ×1 (9a) · Searcher/Writer ×2 (9b/9c) | **Reviewer** per sub-phase | 9a batch graph first; 9b sizing ∥ 9c criteria |
+| 9 — Decompose | 9a + 9b + 9c | Planner ×1 (9a) · Searcher ×2 (9b) · **brief Writer ×1 per non-trivial sub-task (9c)** | **Reviewer** per sub-phase | 9a batch graph → 9b sizing → 9c authors a full build-ready brief per non-trivial sub-task (`briefs=auto`) |
 | 10 — Write task file (P3 w/ 11) | 10a + 10b + 10c | Writer ×2 per sub-phase | **Reviewer** per sub-phase + 1 final verify | Flat task file or feature/phase tree |
 | 11 — Memory (P3 w/ 10) | atomic | Writer appends | **Reviewer** dup/contradiction check | Concurrent with Step 10 |
 | 12 — Hand off | atomic | — | — | `Skill` → dispatch, or write handoff package |
@@ -194,7 +195,7 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 - **9a — Batch graph:** `**Planner** — producing batch graph` with the Step 3 context aggregate + triage + applicable templates — when the `architect` agent authored §1, the Planner consumes its decomposition as the batch-boundary source rather than re-deriving it from [`../hyperflow/task-templates.md`](../hyperflow/task-templates.md) (CRUD / API / UI / Migration / Refactor / Bug Fix, else bespoke). Per sub-task: Worker role · Read/Modify/Create files · parallel-vs-sequential deps · complexity estimate · **≥1 responsible specialist** (from the Brain-finalized triage `specialists[]`, inherited from the spec status block when the design phase ran). Then `**Reviewer** — validating decomposition completeness + batch boundaries` (every finding maps to ≥1 sub-task; no sub-task spans >1 subsystem without a split; topological ordering). **Oversize-split mandate (Layer 3):** split any sub-task hitting >5 files, >500 LOC, 2+ subsystems, `complexity=high`, mixed concerns, or >10-min human review — until every piece is low/medium. Splitting is a cost AND quality optimisation. **Mode:** Planner emits `mode: flat | feature` per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md) — `feature` only when ≥2 sequential dependent stages/milestones exist; a 1-phase "feature" is `NEEDS_REVISION`.
 - **9b — Complexity sizing:** `Searcher — LOC estimation` ∥ `Searcher — subsystem cross-cut check`. → `**Reviewer**`.
-- **9c — Acceptance criteria:** `Writer — per-sub-task criteria` ∥ `Writer — verification hooks`. → `**Reviewer**`.
+- **9c — Per-sub-task briefs (the heavy lift; `briefs=auto` default):** for each **non-trivial** sub-task, a `Writer — authoring brief T<id>` writes the full [`../hyperflow/worker-prompt.md`](../hyperflow/worker-prompt.md) body to `.hyperflow/tasks/<slug>/T<id>.md` — Task · Why · Scope IN/OUT · Files-in-scope with the **exact change described** (spec-level prose, no code skeletons) · Acceptance criteria · the **realistic Test-case set + ≥1 end-to-end/integration scenario** (named tool, real input→outcome; or explicit `E2E: N/A — <why>`) · Related context (file:line patterns to mirror) · Gotchas. Grounded in the Step 3 context aggregate + the spec; names ≥1 responsible specialist. **Trivial** sub-tasks (1 file ∧ ~≤10 LOC ∧ obvious) get NO brief — only the terse roster line. Brief Writers fan out in parallel (one per non-trivial sub-task), then `**Reviewer** — briefs vs design + completeness`: every non-trivial sub-task has a brief; every brief carries Acceptance criteria + ≥1 E2E case + a populated specialist; no brief contradicts the spec. `briefs=terse` skips 9c entirely (one-liner roster only — the legacy output; use when the same strong model will build).
 
 ### Step 10 — Write task file (P3 sub-phases · concurrent with Step 11)
 
@@ -202,10 +203,10 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 - **10a — Status + Goal + Why:** `Writer — status block` ∥ `Writer — goal + why`. → `**Reviewer**`.
 - **10b — Scope + affected files:** `Writer — scope-at-a-glance table` ∥ `Writer — affected-file listing`. → `**Reviewer**`.
-- **10c — Execution plan + batches + verification:** `Writer — execution plan + batch checklist` ∥ `Writer — open questions + verification plan`. → `**Reviewer**`.
-- **10d — Final verify:** `**Reviewer** — assembled task file vs design` — every design requirement maps to ≥1 sub-task, no orphans, every sub-task names ≥1 specialist, `Specialists` status row populated.
+- **10c — Execution plan + batches + verification:** `Writer — execution plan + batch checklist (terse roster, each non-trivial line carrying a `Brief: <slug>/T<id>.md` pointer)` ∥ `Writer — open questions + verification plan`. → `**Reviewer**`.
+- **10d — Final verify:** `**Reviewer** — assembled task file vs design + briefs` — every design requirement maps to ≥1 sub-task, no orphans, every sub-task names ≥1 specialist, `Specialists` status row populated, and **roster↔brief consistency** (every non-trivial roster line resolves to an existing `<slug>/T<id>.md`; every brief maps back to a roster line).
 
-**Mode branch:** `flat` → one `.hyperflow/tasks/<slug>.md` (template + lifecycle in [`../hyperflow/task-tracking.md`](../hyperflow/task-tracking.md); injected worker context in [`../hyperflow/worker-prompt.md`](../hyperflow/worker-prompt.md)); `feature` → the feature tree per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md) (`feature.md` + `phase-<n>-<name>/` folders each with `phase.md` + `tasks/`), final-verify additionally checks phase ordering, `Depends on` references, and one-phase-per-task placement. The status block is updated by `dispatch` after each sub-task PASS.
+**Mode branch:** `flat` → the terse roster `.hyperflow/tasks/<slug>.md` + the brief dir `.hyperflow/tasks/<slug>/T<id>.md` (one full brief per non-trivial sub-task, written in 9c; template + lifecycle in [`../hyperflow/task-tracking.md`](../hyperflow/task-tracking.md); brief format in [`../hyperflow/artefact-format.md`](../hyperflow/artefact-format.md) + [`../hyperflow/worker-prompt.md`](../hyperflow/worker-prompt.md)); `feature` → the feature tree per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md) (briefs land in each `phase-*/tasks/T<id>.md`) (`feature.md` + `phase-<n>-<name>/` folders each with `phase.md` + `tasks/`), final-verify additionally checks phase ordering, `Depends on` references, and one-phase-per-task placement. The status block is updated by `dispatch` after each sub-task PASS.
 
 ### Step 11 — Memory (P3 · concurrent with Step 10)
 
@@ -213,7 +214,7 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 ### Step 12 — Hand off
 
-**`session=one`** (§12.1-trivial): invoke `Skill` with `skill: dispatch`, `args: "session=one <slug> commit=… branch=… push=… triage=… mode=…"`. Print:
+**`session=one`** (§12.1-trivial): invoke `Skill` with `skill: dispatch`, `args: "session=one <slug> commit=… branch=… push=… triage=… mode=… briefs=…"`. Print:
 
 ```
 Plan ready — .hyperflow/tasks/<slug>.md (N batches, M sub-tasks)

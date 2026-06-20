@@ -104,7 +104,7 @@ Then continue Step 1 normally. (Non-handoff runs skip Step 1.0.)
 ### Step 1 — Load the task (atomic · §12.2.8)
 
 Detect the artefact mode:
-- **Flat** — `.hyperflow/tasks/<slug>.md`. Read it; extract batches, sub-tasks, flow-profile, and operational args.
+- **Flat** — `.hyperflow/tasks/<slug>.md` (the terse roster). Read it; extract batches, sub-tasks, flow-profile, and operational args. For each roster line carrying a `Brief: <slug>/T<id>.md` pointer, note the brief path — Step 2a loads it verbatim (do not inline its body here).
 - **Feature (multi-phase)** — `.hyperflow/features/<slug>/`. Read `feature.md` for the **ordered phase roster** +
   dependency graph + `Specialists`. Each `phase-<n>-<name>/` is executed **as if it were a task file**: its
   `phase.md` carries the batch/task roster and its `tasks/T*.md` are the sub-tasks. Also read each phase's `spec.md`
@@ -154,6 +154,7 @@ Sub-phases 2a–2d run in order for every batch (P1 sequential — each depends 
 #### Step 2a — Pre-dispatch (P1 · sequential after mode resolution)
 
 For each sub-task in the batch, dispatch a Composer Worker in parallel (one Composer per sub-task — N total). Each Composer:
+- **Loads the pre-authored brief verbatim when one exists.** If the roster line carries a `Brief: <slug>/T<id>.md` pointer (plan's `briefs=auto` default), read that file and use its body — Task / Why / Scope / Files / Acceptance criteria / Test cases (incl. the E2E case) / Gotchas — as the worker-prompt body **unchanged**. Do NOT re-derive those sections; plan already authored them on the strong model. The Composer's only job is then to *append* context (below). **Fallback (no brief):** trivial sub-task or a legacy terse task file → author the brief inline per [worker-prompt.md](references/worker-prompt.md), the pre-existing behavior. This loader path is what lets dispatch run faithfully on a cheaper model or a second session.
 - Selects the worker persona (Implementer / Searcher / Writer) from the sub-task brief.
 - Stitches the persona header + Project Context per resolved mode:
   - **mode = default / thorough** → inline excerpts from `.hyperflow/profile.md`, `architecture.md`, `conventions.md` matching the worker's role.

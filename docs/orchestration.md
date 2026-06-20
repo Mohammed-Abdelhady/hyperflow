@@ -86,9 +86,10 @@ Every step that produces output dispatches at least one Agent (DOCTRINE rule 12)
 1. Chain-mode check (skipped when the design phase already set the arg)
 2. **Searcher × 2** (parallel) + **Reviewer** — research: affected files, related tests, conventions
 3. **Planner** — produces the batch graph
-4. **Writer** + **Reviewer** — emits `.hyperflow/tasks/<slug>.md` with the expanded `## Status` block that `dispatch` will keep updating and `status` will read
-5. **Writer** + **Reviewer** — appends decisions to `.hyperflow/memory/`
-6. Hand off to `dispatch`
+4. **Brief Writers** (one per non-trivial sub-task) + **Reviewer** — author a full, build-ready brief per sub-task (Task / Why / Scope / exact changes / acceptance criteria / a realistic test set incl. an end-to-end case) into `.hyperflow/tasks/<slug>/T<id>.md`. The strong planning model pays the authoring cost once; `dispatch` loads each brief verbatim, so the build runs faithfully on a cheaper model or a second session. Trivial sub-tasks stay terse.
+5. **Writer** + **Reviewer** — emits the terse roster `.hyperflow/tasks/<slug>.md` (with `Brief:` pointers) + the `## Status` block that `dispatch` keeps updating and `status` reads
+6. **Writer** + **Reviewer** — appends decisions to `.hyperflow/memory/`
+7. Hand off to `dispatch`
 
 ### Dispatch
 
