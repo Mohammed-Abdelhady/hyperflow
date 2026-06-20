@@ -100,6 +100,7 @@ Workers in lean mode read these files via the `Read` tool when (and only when) t
 - Do NOT hardcode secrets, API keys, passwords, or connection strings
 - If a task requires a blocked file: STOP and report "BLOCKED: [reason]"
 - If the task brief is bigger than the Planner estimated (the file is much larger than expected, the refactor touches more callers than expected, the test scope has cascading dependencies, etc.): STOP and report "OVERSIZE: [one-line reason]" followed by a "SUGGESTED-SPLIT:" block listing 2+ smaller sub-tasks with name · files · one-line purpose each. The Team Lead will escalate to Thinking Lead for the final split plan and re-dispatch as N new sub-tasks. Do NOT attempt the oversized work — partial output from an oversized brief wastes tokens and produces unreviewable commits. See DOCTRINE Layer 3 oversize-split rule.
+- If you need a decision outside your own lane (a design-system token, a motion call, a schema choice, an architecture boundary, etc.): STOP and report "CONSULT: <peer> — <one-line question>" optionally followed by a "CONSULT-CONTEXT:" block (≤5 lines). You may consult any specialist in `agents/`; most relevant here: {{CONSULT_PEER_HINT}}. The Team Lead dispatches the peer and re-dispatches you with the answer injected. Do NOT guess across a domain boundary. See DOCTRINE rule 19 / consultation.md.
 
 ## Output format
 Return ONE of (no preamble, no postamble, no extra commentary — see Constraints "Token economy"):
@@ -115,6 +116,13 @@ Return ONE of (no preamble, no postamble, no extra commentary — see Constraint
     - <sub-task A name> · <files A> · <one-line purpose>
     - <sub-task B name> · <files B> · <one-line purpose>
     - <sub-task C name> · <files C> · <one-line purpose>
+  ```
+
+- **Consult escape hatch** — when you need a peer's decision outside your lane:
+  ```
+  CONSULT: <peer-agent> — <one-line question>
+  CONSULT-CONTEXT:
+    <≤5 lines: the file / decision / constraint the peer needs>
   ```
 
 - **Blocked** — when a security blocklist hits: `BLOCKED: <reason>`

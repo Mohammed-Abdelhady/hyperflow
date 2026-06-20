@@ -213,7 +213,7 @@ The named decision dispatches in this doctrine — Classifier (triage), Analyst 
 - **Final integration Reviewer is a decision-agent consultation.** End-of-chain pass that sees the cumulative diff across all batches. This is where cross-batch contradictions, architectural drift, and L3+ integration risks surface. Fires once per multi-batch chain (skippable under D7 conditions).
 - **Standalone reviewers are decision-agent consultations.** Any reviewer dispatched outside a chain's batch context — audit Step 3, trace Debugger, deploy security sweep, plan Step 8 final sanity check — is itself a decision-agent consultation regardless of diff size.
 - **The decision agent is consulted, not constantly busy.** Each consultation is a dispatched Agent call with focused context: "given this brief / verdict / conflict / candidate fix, decide X." It returns a one-shot decision. The Team Lead carries the decision forward. A decision agent never coordinates dispatch — that's the Team Lead's job.
-- **Workers never coordinate.** A worker doing a batch review is reviewing one batch's diff against one fix list — not deciding which batch fires next, not opening gates. Coordination stays at the Team Lead layer.
+- **Workers never coordinate.** A worker doing a batch review is reviewing one batch's diff against one fix list — not deciding which batch fires next, not opening gates. Coordination stays at the Team Lead layer. A worker that needs a peer's judgment does NOT call that peer — it emits a `CONSULT:` signal and stops, exactly as with `OVERSIZE`; the Team Lead brokers (rule 19). Emitting a signal is not coordinating.
 - **`--thorough` flag adds review depth.** It adds a standalone / final-integration review pass beyond the per-batch reviews. Users on high-risk surfaces (financial calc, crypto, regulatory) opt in. Default keeps the per-batch reviews only, to keep cost predictable.
 - **Triage (Layer 0.5) stays a decision-agent consultation.** Never delegate triage to a Worker.
 - **If the usage summary shows `0 decision agents` on a multi-batch chain**, the task was done wrong — the orchestrator must at minimum consult a decision agent at the final integration pass, plus whichever decision-laden steps the chain visited (triage, analyst, planner, etc.).
@@ -521,6 +521,21 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
       testing 3 hypotheses). Single-angle work never fans out (mirrors §12.2.3).
     - Sub-workers act as workers; the specialist synthesizes. Sub-workers never review or decide. No fan-out
       from background agents. One label line per sub-worker; the parent verdict notes the count.
+
+19. **Agent consultation.** A specialist may ask a *peer* for a focused answer mid-task — the lateral sibling of
+    fan-out. Full contract: [consultation.md](consultation.md).
+    - **Who:** **every agent in `agents/` — current and future — automatically**, with no per-charter wiring. The
+      allowlist is the live `agents/` registry (resolved by file existence); a charter's `Composes with:` line is
+      only the recommended-peer hint, never a gate.
+    - **Hybrid routing:** build-time **workers are orchestrator-brokered** — they emit `CONSULT: <peer> — <question>`
+      and stop (never call `Agent` laterally); the Team Lead dispatches the peer and re-dispatches the worker with
+      `Consultation answer from <peer>:` injected. Design-time **decision agents** (`architect`/`designer`/`analyst`/
+      future) consult **directly** via their `Agent` tool.
+    - **Depth cap = 1.** A consulted peer may NOT itself consult (no consult-of-consult, no cycles).
+    - **Budget:** ≤ 2 consults per worker task, ≤ 3 per design-time decision agent; consult tokens roll into the
+      parent's usage line tagged `(N consults)`; the chain `budget` is the ceiling.
+    - **Never overrides a halt.** A `SECURITY_VIOLATION` / `BLOCKED:` still stops the pipeline; a peer that errors
+      falls back to ESCALATE (rule 14) — the chain never blocks forever on a consult.
 
 ### Sub-phase × flag interactions (clarification of §12.2)
 

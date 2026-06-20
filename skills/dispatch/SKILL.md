@@ -166,7 +166,9 @@ Use the [worker-prompt.md](references/worker-prompt.md) template for each Compos
 Each Composer also reads the sub-task's `Specialist:` field from the task file and stitches that specialist's
 **output-contract expectations** ([`../../agents/README.md`](../../agents/README.md)) into the worker prompt, so
 workers produce review-ready output for the specialist that will judge it (e.g. an `api-reviewer` sub-task tells the
-worker to document status codes + validation up front).
+worker to document status codes + validation up front). It also fills the worker-prompt `{{CONSULT_PEER_HINT}}` slot
+from that specialist's `Composes with:` line (the recommended peers); if the line is absent it renders "any
+specialist as needed". The hint only ranks peers — the worker may consult any agent in `agents/` ([consultation.md](../hyperflow/consultation.md)).
 
 After all Composers return, dispatch one **Reviewer** over the full prompt set: confirms persona selection is correct, context block is well-formed, learnings are injected. Verdict: `PASS` / `NEEDS_REVISION`. NEEDS_REVISION re-dispatches only the affected Composer(s).
 
@@ -189,6 +191,7 @@ _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because i
 Parse the per-sub-task verdicts:
 - `SECURITY_VIOLATION` — **halt the chain** immediately. Surface the finding; do not commit anything in the batch.
 - Worker returned `OVERSIZE: <reason>` with `SUGGESTED-SPLIT:` — do NOT proceed. Dispatch a Planner consultation: `**Planner — mid-flight split** — split <sub-task-id> per Worker's OVERSIZE signal`. Pass the Worker's reason, suggested split, the original brief, and batch context. The Planner returns a final split plan (N new sub-tasks, each `complexity = low | medium`). Remove the original; dispatch the N new sub-tasks as a new sub-batch. The per-batch Reviewer fires after the new sub-batch completes. No user question — splitting an oversized brief is a mechanical reshape.
+- Worker (or batched Reviewer) returned `CONSULT: <peer> — <question>` — do NOT mark the sub-task done. Broker per [consultation.md](../hyperflow/consultation.md): resolve `<peer>` to `agents/<name>.md` (any registered agent), dispatch it with the consultation brief (`CONSULT-CONTEXT` + "answer in ≤8 lines, you are consulted not taking over"), then re-dispatch only that Worker/Reviewer with `Consultation answer from <peer>:` injected. Cap 2 consults/worker; a consulted peer may not itself consult (depth-1). If `<peer>` doesn't resolve or errors, fall back to failure-recovery (ESCALATE) — never block. No user question — a consult is a mechanical handoff.
 - `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before re-scoping the sub-task).
 - `PASS` — sub-task handed to Step 2d for commit.
 

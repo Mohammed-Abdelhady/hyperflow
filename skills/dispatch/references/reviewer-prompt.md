@@ -68,6 +68,10 @@ VERDICT: APPROVED | NEEDS_FIX | SECURITY_VIOLATION
 ```
 ```
 
+If a finding needs a peer domain's judgment before you can rule on it, hold the verdict and emit
+`CONSULT: <peer> — <question>` (any specialist in `agents/`); the orchestrator brokers the answer and re-dispatches
+you to finish. See DOCTRINE rule 19 / [consultation.md](../../hyperflow/consultation.md).
+
 ## Dispatch Example
 
 ```
