@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] — 2026-06-20
+
+### Added
+- Add animation specialist agent
+- Add design specialist + /hyperflow:design skill
+- Add architect specialist and use it in plan's design phase
+- Merge amplify + spec + scope into one plan skill
+
+### Changed
+- Repoint marketing site to the merged plan chain
+
+
 ## [4.31.2] — 2026-06-20
 
 ### Changed
@@ -1027,7 +1039,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.2...v5.0.0
 [4.31.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.1...v4.31.2
 [4.31.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.0...v4.31.1
 [4.31.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.26.2...v4.31.0
