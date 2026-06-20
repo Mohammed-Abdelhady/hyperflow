@@ -263,7 +263,19 @@ A batch of 3 parallel sub-tasks produces 3 commits, not one. Quality-gate fix-up
 | `NEEDS_FIX` | Same worker re-dispatched with the reviewer's fix list — max 3 retries before escalating |
 | `BLOCKED:` | Worker hit a security blocklist entry (`.env`, `*.pem`, `~/.ssh/*`, etc.); chain halts, surfaces the blocked resource, lets the user decide |
 | `ESCALATE: <reason>` | Task complexity exceeded the chosen flow profile; orchestrator upgrades the profile per `escalation.md` (fast → standard → deep), re-plans with completed work preserved as context, and continues. If the escalation crosses the risk threshold, `AskUserQuestion` fires first for explicit consent. |
+| `CONSULT: <peer> — <question>` | Worker (or reviewer) needs a decision outside its lane; orchestrator brokers — dispatches the named peer, injects the answer, and re-dispatches the original. Depth-1, ≤ 2 consults per worker, never overrides a halt |
 | `SECURITY_VIOLATION:` | A reviewer caught a hard security issue; chain halts immediately, no auto-continue |
+
+---
+
+## Agent consultation
+
+Specialists don't work blind. Any agent — current or future — can ask a peer for a focused answer mid-task, the lateral sibling of sub-agent fan-out. The capability lives in the shared prompt scaffolding (`worker-prompt.md` / `reviewer-prompt.md`), not in any charter, so the **allowlist is the `agents/` directory itself** — a new `agents/<name>.md` is consultable the moment it exists, with zero wiring.
+
+- **Build-time workers** are orchestrator-brokered: they emit a `CONSULT:` signal and stop; the Team Lead dispatches the peer and re-dispatches the worker with the answer injected. This keeps the "workers never coordinate" rule literally true — emitting a signal is not coordinating.
+- **Design-time decision agents** (`architect`, `designer`, `motion`, `mobile`, `analyst`) consult directly during `plan`'s design phase — e.g. the `architect` asks `motion` whether an interaction is feasible before committing it to the spec.
+
+Caps mirror fan-out: depth-1 (a consulted peer can't itself consult), ≤ 2 consults per worker / ≤ 3 per decision agent, and a consult never overrides a `SECURITY_VIOLATION` / `BLOCKED:` halt. Full contract: [`consultation.md`](../skills/hyperflow/consultation.md).
 
 ---
 
