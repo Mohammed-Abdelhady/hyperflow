@@ -51,6 +51,6 @@ consulted:` when research ran.
 
 **Composes with:** `designer` (owns the visual treatment and the Motion-language section the motion agent reads),
 `performance-reviewer` (frame budget and profiling depth), `frontend-reviewer` (the component the animation lives in),
-`accessibility-reviewer` (reduced-motion / vestibular floor), `mobile-reviewer` (Reanimated / on-device cost). Defers
+`accessibility-reviewer` (reduced-motion / vestibular floor), `mobile` (Reanimated / on-device cost). Defers
 to `accessibility-reviewer` on any reduced-motion conflict (the WCAG floor wins) and to `performance-reviewer` on any
 frame-budget conflict.

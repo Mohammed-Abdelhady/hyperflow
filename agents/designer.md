@@ -53,5 +53,5 @@ a change — a reviewer verdict block per [`../skills/hyperflow/reviewer-prompt.
 treatment inside those boundaries), `motion` (owns how the elements move — the designer sets the visual language and
 the Motion-language tokens, `motion` engineers the animation against them), `frontend-reviewer` (component/render/state
 correctness of the build the designer specs), `accessibility-reviewer` (WCAG/keyboard/screen-reader depth),
-`mobile-reviewer` (responsive + on-device treatment), `performance-reviewer` (render cost of motion and media). Defers to `accessibility-reviewer` on any a11y
+`mobile` (responsive + on-device treatment), `performance-reviewer` (render cost of motion and media). Defers to `accessibility-reviewer` on any a11y
 conflict (the WCAG floor is non-negotiable) and to `security-reviewer` on any security conflict.

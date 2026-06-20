@@ -24,5 +24,5 @@ management). Gated flows only.
 **Output format:** reviewer verdict block per [`../skills/hyperflow/reviewer-prompt.md`](../skills/hyperflow/reviewer-prompt.md);
 findings cite the specific WCAG criterion; `Sources consulted:` when research ran.
 
-**Composes with:** `frontend-reviewer` (component structure), `mobile-reviewer` (touch targets). Defers to security
+**Composes with:** `frontend-reviewer` (component structure), `mobile` (touch targets). Defers to security
 if an a11y choice would leak information.

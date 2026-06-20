@@ -29,7 +29,7 @@ summary (which files/areas the task touches) from the calling skill.
    orchestrator may run this inline without dispatching the Brain at all.)
 2. **Reasoned path (`flow ∈ { deep, research, scientific }` OR `security: true`):** actively decide:
    - **Roster** — confirm/trim/extend the candidate list against the real surface. Add a specialist the table
-     missed (e.g. a detected mobile surface → `mobile-reviewer`); drop one with no matching surface. Keep it
+     missed (e.g. a detected mobile surface → `mobile`); drop one with no matching surface. Keep it
      minimal — every named specialist must own a real surface.
    - **Web-research** — turn it ON for specialists where currency changes the verdict (security/vuln always;
      framework-version-sensitive reviewers when the diff touches a fast-moving library). Scope per specialist.

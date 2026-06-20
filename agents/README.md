@@ -71,7 +71,7 @@ the session uses. Specialists differ by **role**, not model:
 | [performance-reviewer](performance-reviewer.md) | performance | reviewer | profiling, caching, regression budgets |
 | [algorithm-reviewer](algorithm-reviewer.md) | performance, scientific | reviewer | Big-O complexity + data-structure choice; proposes lower-complexity algorithms |
 | [accessibility-reviewer](accessibility-reviewer.md) | ui, frontend | reviewer | WCAG, keyboard, screen-reader |
-| [mobile-reviewer](mobile-reviewer.md) | frontend, ui, performance | reviewer | mobile / responsive / native constraints |
+| [mobile](mobile.md) | frontend, ui, performance | reviewer + design decision agent | framework choice, app architecture, platform a11y, device-size testing, on-device perf |
 | [data-ml-reviewer](data-ml-reviewer.md) | scientific, db | reviewer (full pass) | reproducibility, numerical correctness, lineage |
 | [compliance-reviewer](compliance-reviewer.md) | security, docs | reviewer (full pass) | PII / GDPR / audit-trail / regulatory |
 | [architect](architect.md) | architect | reviewer + design decision agent | system decomposition, boundaries, failure modes, ADRs, frontend-at-scale |

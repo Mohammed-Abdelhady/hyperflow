@@ -120,7 +120,7 @@ spec/task file, its Brain-decided `Specialists` roster seeds the selection.
 
 Dispatch two Reviewer agents in parallel over different file groups (split by directory or feature boundary),
 each **as the domain specialist** matching that group's surface (`frontend-reviewer` / `backend-reviewer` /
-`api-reviewer` / `database-reviewer` / `devops-reviewer` / `mobile-reviewer` / `data-ml-reviewer`):
+`api-reviewer` / `database-reviewer` / `devops-reviewer` / `mobile` / `data-ml-reviewer`):
 - **Reviewer** (domain specialist) — L1+L2 review, file group A (syntax errors, obvious bugs, formatting, naming conventions)
 - **Reviewer** (domain specialist) — L1+L2 review, file group B (same checklist, different file group)
 
