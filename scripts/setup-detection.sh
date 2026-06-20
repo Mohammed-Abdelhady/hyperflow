@@ -20,7 +20,7 @@ FORCE=false
 DRY_RUN=false
 
 # ── Valid tool names ───────────────────────────────────────────────────────────
-VALID_TOOLS="claude-code opencode codex agents antigravity all"
+VALID_TOOLS="claude-code opencode codex agents antigravity cursor all"
 
 # ── Usage ─────────────────────────────────────────────────────────────────────
 usage() {
@@ -32,13 +32,14 @@ tools can discover and load hyperflow conventions automatically.
 
 OPTIONS:
   --tools <list>   Comma-separated tools to set up (default: all)
-                   Valid values: claude-code, opencode, codex, agents, antigravity, all
+                   Valid values: claude-code, opencode, codex, agents, antigravity, cursor, all
                      claude-code  — writes CLAUDE.md (append mode)
                      opencode     — writes AGENTS.md
                      codex        — writes AGENTS.md
                      agents       — writes AGENTS.md (alias for opencode)
                      antigravity  — writes AGENTS.md + .agent/workflows/hyperflow* slash commands
-                     all          — claude-code + opencode + codex + agents + antigravity
+                     cursor       — writes AGENTS.md (Cursor reads it natively)
+                     all          — claude-code + opencode + codex + agents + antigravity + cursor
   --force          Overwrite existing files (default: skip with warning)
   --dry-run        Print what would be created without writing files
   --help           Show this help message
@@ -114,6 +115,7 @@ wants_tool "agents"      && need_agents_md=true
 wants_tool "claude-code" && need_claude_md=true
 wants_tool "antigravity" && need_antigravity=true
 wants_tool "antigravity" && need_agents_md=true   # Antigravity also reads AGENTS.md
+wants_tool "cursor"      && need_agents_md=true   # Cursor reads AGENTS.md natively
 
 # ── Template directory ────────────────────────────────────────────────────────
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"

@@ -8,7 +8,7 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>Multi-agent orchestration for Codex App/CLI, Claude Code, OpenCode &amp; Antigravity.</strong><br/>
+  <strong>Multi-agent orchestration for Codex App/CLI, Claude Code, OpenCode, Antigravity &amp; Cursor.</strong><br/>
   Thinking models plan and review every step. Worker models execute in parallel. Learnings persist in local, per-project memory.
 </p>
 
@@ -24,7 +24,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Claude%20marketplace-published-22C55E?style=flat-square" alt="Published on the official Claude plugin marketplace" />
   &nbsp;
-  <img src="https://img.shields.io/badge/works%20with-Codex%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Antigravity-2EA39F?style=flat-square" alt="works with Codex, Claude Code, OpenCode, and Antigravity" />
+  <img src="https://img.shields.io/badge/works%20with-Codex%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Antigravity%20%7C%20Cursor-2EA39F?style=flat-square" alt="works with Codex, Claude Code, OpenCode, Antigravity, and Cursor" />
 </p>
 
 <p align="center">
