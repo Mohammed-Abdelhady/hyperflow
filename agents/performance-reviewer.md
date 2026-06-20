@@ -24,5 +24,5 @@ versions. Gated flows only.
 **Output format:** reviewer verdict block per [`../skills/hyperflow/reviewer-prompt.md`](../skills/hyperflow/reviewer-prompt.md);
 `Sources consulted:` when research ran.
 
-**Composes with:** `database-reviewer` (query plans), `frontend-reviewer`/`mobile-reviewer` (render/bundle),
+**Composes with:** `database-reviewer` (query plans), `frontend-reviewer`/`mobile` (render/bundle),
 `backend-reviewer` (service hot paths).

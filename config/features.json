@@ -229,13 +229,13 @@
         "tier": "reviewer"
       },
       {
-        "name": "mobile-reviewer",
+        "name": "mobile",
         "personas": [
           "frontend",
           "ui",
           "performance"
         ],
-        "tier": "reviewer"
+        "tier": "reviewer + design decision agent"
       },
       {
         "name": "data-ml-reviewer",
