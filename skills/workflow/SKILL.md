@@ -101,7 +101,7 @@ OpenCode does not provide Claude Code's dynamic workflow runtime. Treat `/hyperf
 
 3. Adversarial verification
    - Run a separate verification pass for each completed unit before reporting it.
-   - Use the configured thinking model for verification and final integration review.
+   - Run verification and the final integration review as decision-agent passes on the current session model.
 
 4. Quality gates and commits
    - Run the detected lint, typecheck, build, and relevant tests.
