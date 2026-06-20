@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.0] — 2026-06-20
+
+### Added
+- Upgrade mobile-reviewer into hybrid mobile specialist
+- Add universal agent consultation protocol (hybrid broker)
+
+### Changed
+- Document the agent consultation protocol
+
+
 ## [5.0.0] — 2026-06-20
 
 ### Added
@@ -1039,7 +1049,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.0.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.1.0...HEAD
+[5.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.2...v5.0.0
 [4.31.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.1...v4.31.2
 [4.31.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v4.31.0...v4.31.1
