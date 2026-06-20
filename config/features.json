@@ -252,6 +252,13 @@
           "docs"
         ],
         "tier": "reviewer"
+      },
+      {
+        "name": "architect",
+        "personas": [
+          "architect"
+        ],
+        "tier": "reviewer + design decision agent"
       }
     ],
     "investigators": [
