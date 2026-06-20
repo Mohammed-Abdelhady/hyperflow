@@ -1,6 +1,11 @@
 # Task Tracking
 
-Persist active task state across sessions as individual files in `.hyperflow/tasks/`. One file per task. Created AFTER research, BEFORE implementation. Dynamic — updated throughout execution. Deleted on completion.
+Persist active task state across sessions as individual files in `.hyperflow/tasks/`. One roster file per task (`<slug>.md`). Created AFTER research, BEFORE implementation. Dynamic — updated throughout execution. Deleted on completion.
+
+> **Briefs sidecar.** The roster `<slug>.md` stays terse; the full, build-ready implementation brief for each
+> non-trivial sub-task lives next to it in `.hyperflow/tasks/<slug>/T<id>.md` (authored by `/hyperflow:plan` Step 9c,
+> format in [artefact-format.md](artefact-format.md)). `dispatch` loads each brief verbatim. When the task completes,
+> delete the `<slug>/` brief dir alongside `<slug>.md` (or let auto-archive move both).
 
 > **Two modes.** This flat one-file-per-task model is used for **single-phase work**. Work large enough to split
 > into **≥ 2 sequential phases** uses the **feature/phase folder structure** instead — a `.hyperflow/features/<slug>/`
