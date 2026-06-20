@@ -176,7 +176,7 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 | `type` | Reviewer specialist(s) | Default investigator |
 |--------|------------------------|----------------------|
 | `frontend` | `frontend-reviewer` | `searcher` |
-| `ui` | `frontend-reviewer`, `accessibility-reviewer` | `searcher` |
+| `ui` | `designer`, `frontend-reviewer`, `accessibility-reviewer` | `searcher` |
 | `api` | `api-reviewer`, `backend-reviewer` | `searcher` |
 | `db` | `database-reviewer`, `database-optimization-reviewer` | `searcher` |
 | `security` | `security-reviewer`, `vulnerability-reviewer` | `researcher` |
@@ -189,7 +189,7 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 | `test` | surface-matched | `debugger` |
 | `docs` | — (docs persona suffices) | `researcher` |
 | `research` | — | `researcher` |
-| `creative` | `frontend-reviewer` | `researcher` |
+| `creative` | `designer`, `frontend-reviewer` | `researcher` |
 
 **Flag overrides (applied after the table, then de-dup the list):**
 - `security: true` → always add `security-reviewer` + `vulnerability-reviewer`.
@@ -244,7 +244,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "brainstormDepth": "light",
   "flow": "creative",
   "personas": ["frontend", "ui"],
-  "specialists": ["frontend-reviewer", "accessibility-reviewer", "searcher"],
+  "specialists": ["designer", "frontend-reviewer", "accessibility-reviewer", "searcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 150000,
@@ -338,7 +338,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "brainstormDepth": "standard",
   "flow": "creative",
   "personas": ["frontend", "ui", "creative"],
-  "specialists": ["frontend-reviewer", "accessibility-reviewer", "researcher"],
+  "specialists": ["designer", "frontend-reviewer", "accessibility-reviewer", "researcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
   "budget": 150000,

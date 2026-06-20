@@ -10,6 +10,7 @@ Applies to every planning artefact the orchestrator produces. **All artefacts li
 | Feature (multi-phase) | `.hyperflow/features/<slug>/feature.md` + `phase-<n>-<name>/` folders | `scope` Step 4 — see [feature-phases.md](feature-phases.md) |
 | Spec (final) | `.hyperflow/specs/<slug>.md` | `spec` Step 8 |
 | Spec (in-progress draft) | `.hyperflow/specs/<slug>.draft.md` | `spec` Step 7 progressive |
+| Design system (living) | `.hyperflow/design/system.md` | `design` Step 2 · `designer` agent |
 | Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` | `audit` Step 5 |
 | Audit-fix spec | `.hyperflow/specs/audit-<YYYY-MM-DD>-<slug>.md` | `audit` Step 6 fix-gate |
 | Project memory | `.hyperflow/memory/<category>.md` | `scope` Step 6 · `cache` CRUD |

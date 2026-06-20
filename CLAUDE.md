@@ -127,6 +127,7 @@ Plans, specs, audits, task decompositions live in `.hyperflow/` files — never 
 | Task decomposition (single-phase) | `.hyperflow/tasks/<slug>.md` |
 | Feature (multi-phase) | `.hyperflow/features/<slug>/` — `feature.md` + `phase-<n>-<name>/` folders, each with `phase.md` + `tasks/` + `spec.md`/`research.md`/`decisions.md` |
 | Feature spec | `.hyperflow/specs/<slug>.md` |
+| Design system | `.hyperflow/design/system.md` |
 | Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` |
 | Project memory | `.hyperflow/memory/<category>.md` |
 

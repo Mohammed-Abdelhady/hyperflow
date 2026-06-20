@@ -126,7 +126,7 @@ Reviews and investigations are run by **domain specialists**, not a generic revi
 
 Beyond the personas, Hyperflow ships a registry of **named, domain-specialized agents** in [`agents/`](agents/) — dispatched as the right reviewer/investigator for each surface instead of one generic role:
 
-- **Reviewers** — `architect` (system decomposition, boundaries, data flow & frontend-at-scale; designs at plan time and reviews structural change), `frontend-reviewer`, `backend-reviewer`, `api-reviewer`, `database-reviewer`, `security-reviewer`, `vulnerability-reviewer`, `devops-reviewer`, `performance-reviewer`, `algorithm-reviewer` (Big-O & data-structure complexity), `accessibility-reviewer`, `mobile-reviewer`, `data-ml-reviewer`, `compliance-reviewer`.
+- **Reviewers** — `architect` (system decomposition, boundaries, data flow & frontend-at-scale; designs at plan time and reviews structural change), `designer` (design system, visual/experiential design, prior-art research & anti-slop; designs at plan time and reviews UI change), `frontend-reviewer`, `backend-reviewer`, `api-reviewer`, `database-reviewer`, `security-reviewer`, `vulnerability-reviewer`, `devops-reviewer`, `performance-reviewer`, `algorithm-reviewer` (Big-O & data-structure complexity), `accessibility-reviewer`, `mobile-reviewer`, `data-ml-reviewer`, `compliance-reviewer`.
 - **Investigators** — `searcher`, `debugger`, `analyst`, `researcher`.
 - **Brain** — a decision-agent router consulted once after triage that decides *which* specialists are responsible, then writes that roster into the artefact so the whole chain inherits it. `plan` announces the responsible specialists; `dispatch`/`audit`/`trace`/`deploy` dispatch them.
 
@@ -192,12 +192,13 @@ Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](ht
 
 ## Skills
 
-Thirteen skills. One chain-starter auto-advances through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
+Fourteen skills. One chain-starter auto-advances through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
 | `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt (8-dim rubric), design the approach (analysis + alternatives), and decompose into a parallel task graph; auto-chains to dispatch |
 | `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
+| `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
 | `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; custom Codex/OpenCode adapter for migrations, audits, and verification-heavy work |
 | `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
