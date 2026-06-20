@@ -25,17 +25,15 @@ PROVIDERS=()
 PROVIDER_PATHS=()
 PROVIDER_KEYS=()
 
-SELECTED_THINKING=""
-SELECTED_WORKER=""
 SECURITY_ENABLED="true"
 
 # ─── Provider Detection ───
 
 detect_providers() {
   local name path key
-  local -a names=("Claude Code" "OpenCode" "Codex")
-  local -a paths=("$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.codex/plugins")
-  local -a keys=("claude-code" "opencode" "codex")
+  local -a names=("Claude Code" "OpenCode" "Codex" "Cursor")
+  local -a paths=("$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.codex/plugins" "$HOME/.cursor/skills")
+  local -a keys=("claude-code" "opencode" "codex" "cursor")
 
   for i in "${!names[@]}"; do
     name="${names[$i]}"
@@ -193,69 +191,6 @@ link_provider() {
   info "$name — linked"
 }
 
-# ─── Model Selection ───
-
-configure_models_claude_code() {
-  header "Model Configuration — Claude Code"
-
-  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Opus 4.8|Latest Opus — Hyperflow default" \
-    "Opus 4.7|Previous Opus" \
-    "Opus 4.6|Legacy Opus" \
-    "Sonnet 4.6|Cost savings — less capable for review"
-  local thinking_options=("opus-4-8" "opus-4-7" "opus-4-6" "sonnet-4-6")
-  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
-
-  echo ""
-
-  pick_one "Worker model (implementer, searcher, writer):" \
-    "Sonnet 4.6|Latest Sonnet — Hyperflow default" \
-    "Haiku 4.5|Fast and cheap for simple tasks"
-  local worker_options=("sonnet-4-6" "haiku-4-5")
-  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
-}
-
-configure_models_opencode() {
-  header "Model Configuration — OpenCode"
-
-  pick_one "Thinking model (orchestrator, reviewer, debugger):" \
-    "Claude Opus 4.8|Hyperflow default" \
-    "Claude Opus 4.7|Previous Opus" \
-    "Claude Opus 4.6|Legacy Opus" \
-    "GPT-5.5|Latest GPT" \
-    "Gemini 3.1 Pro|2M context window"
-  local thinking_options=("anthropic/claude-opus-4-8" "anthropic/claude-opus-4-7" "anthropic/claude-opus-4-6" "openai/gpt-5.5" "google-vertex-ai/gemini-3.1-pro")
-  SELECTED_THINKING="${thinking_options[$PICK_INDEX]}"
-
-  echo ""
-
-  pick_one "Worker model (implementer, searcher, writer):" \
-    "Claude Sonnet 4.6|Hyperflow default" \
-    "Claude Haiku 4.5|Fast and cheap" \
-    "GPT-5.4 Mini|Cost-efficient" \
-    "Gemini 3 Flash|Fast and cheap"
-  local worker_options=("anthropic/claude-sonnet-4-6" "anthropic/claude-haiku-4-5" "openai/gpt-5.4-mini" "google-vertex-ai/gemini-3-flash")
-  SELECTED_WORKER="${worker_options[$PICK_INDEX]}"
-}
-
-configure_models_antigravity() {
-  header "Model Configuration — Antigravity"
-  step "Antigravity selects its model in the IDE model picker (Gemini or Claude)."
-  step "Hyperflow's thinking/worker tier split does not apply — the single agent runs"
-  step "every phase itself. No model config is needed here."
-  SELECTED_THINKING="ide-managed"
-  SELECTED_WORKER="ide-managed"
-}
-
-configure_models_codex() {
-  header "Model Configuration — Codex"
-  step "Codex uses GPT-5.5 for thinking roles with task-adaptive reasoning."
-  step "Worker roles use GPT-5.4 in fast mode (low reasoning)."
-  step "Reasoning never defaults to xhigh."
-  SELECTED_THINKING="gpt-5.5"
-  SELECTED_WORKER="gpt-5.4"
-}
-
 # ─── Security ───
 
 configure_security() {
@@ -279,8 +214,6 @@ configure_security() {
 # ─── Write Config ───
 
 write_config() {
-  local provider_key="${1:-}"
-
   mkdir -p "$HOME/.hyperflow"
 
   if [ -f "$CONFIG_FILE" ]; then
@@ -295,59 +228,16 @@ write_config() {
     providers_csv="$(IFS=,; echo "${PROVIDER_KEYS[*]}")"
   fi
 
-  python3 - "$CONFIG_FILE" "$provider_key" "$SELECTED_THINKING" "$SELECTED_WORKER" "$SECURITY_ENABLED" "$providers_csv" "$INSTALL_DIR" <<'PYEOF'
-import json, os, sys
-config_path, active, sel_think, sel_worker, sec, prov_csv, install_dir = sys.argv[1:8]
+  # Every agent runs on the current session model — there is no model-tier routing
+  # and no per-provider model catalog. The config records detected providers + security only.
+  python3 - "$CONFIG_FILE" "$SECURITY_ENABLED" "$providers_csv" <<'PYEOF'
+import json, sys
+config_path, sec, prov_csv = sys.argv[1:4]
 keys = [k for k in prov_csv.split(",") if k]
 
-defaults_path = os.path.join(install_dir, "config", "defaults.json")
-try:
-    with open(defaults_path) as f:
-        defaults = json.load(f)
-except Exception:
-    defaults = {"providers": {}}
-
-ROLES_THINKING = ["orchestrator", "reviewer", "debugger", "decision-maker", "brainstormer"]
-ROLES_WORKER   = ["implementer", "searcher", "writer"]
-
-def default_id(models):
-    for m in models:
-        if m.get("default"): return m["id"]
-    return models[0]["id"] if models else ""
-
-def ids(models): return [m["id"] for m in models]
-
-provs = {}
-for k in keys:
-    pdef = defaults.get("providers", {}).get(k, {})
-    m = pdef.get("models", {})
-    t = default_id(m.get("thinking", []))
-    w = default_id(m.get("worker", []))
-    if k == active:
-        if sel_think: t = sel_think
-        if sel_worker: w = sel_worker
-    roles = {r: t for r in ROLES_THINKING}
-    roles.update({r: w for r in ROLES_WORKER})
-    provider = {
-        "thinking": t,
-        "worker": w,
-        "models": {
-            "thinking": ids(m.get("thinking", [])),
-            "worker":   ids(m.get("worker", [])),
-        },
-        "roles": roles,
-    }
-    reasoning = pdef.get("reasoning")
-    if isinstance(reasoning, dict):
-        provider["reasoning"] = reasoning
-    provs[k] = provider
-
 cfg = {}
-if active:
-    cfg["activeProvider"] = active
-cfg["defaults"] = {"thinking": sel_think, "worker": sel_worker}
-if provs:
-    cfg["providers"] = provs
+if keys:
+    cfg["providers"] = keys
 cfg["security"] = {"enabled": sec == "true"}
 cfg["memory"]   = {"compactionThreshold": 300}
 cfg["context"]  = {"windowTokens": 200000, "autoCompactMinPercent": 72, "autoCompactReadyTtlMinutes": 30}
@@ -425,11 +315,10 @@ print_summary() {
     echo ""
   fi
 
-  step "Models:    thinking=$SELECTED_THINKING  worker=$SELECTED_WORKER"
+  step "Models:    every agent runs on the current session model (no tier config)"
   step "Security:  $( [ "$SECURITY_ENABLED" = "true" ] && echo "enabled" || echo "disabled" )"
   echo ""
 
-  step "Change models mid-session:  hyperflow: thinking <model>"
   step "Toggle security:            hyperflow: security off/on"
   step "Re-run setup:               ~/.hyperflow/repo/install.sh"
   echo ""
@@ -571,35 +460,13 @@ main() {
     link_provider "${PROVIDERS[$i]}" "${PROVIDER_PATHS[$i]}"
   done
 
-  local config_provider=""
-  local config_provider_key=""
-
-  if [ ${#PROVIDERS[@]} -eq 1 ]; then
-    config_provider="${PROVIDERS[0]}"
-    config_provider_key="${PROVIDER_KEYS[0]}"
-  elif [ ${#PROVIDERS[@]} -gt 1 ]; then
-    header "Setup"
-    local provider_labels=()
-    for i in "${!PROVIDERS[@]}"; do
-      provider_labels+=("${PROVIDERS[$i]}|Configure models for this provider")
-    done
-    pick_one "Which provider is your primary?" "${provider_labels[@]}"
-    config_provider="${PROVIDERS[$PICK_INDEX]}"
-    config_provider_key="${PROVIDER_KEYS[$PICK_INDEX]}"
-  fi
-
-  case "$config_provider" in
-    "Claude Code") configure_models_claude_code ;;
-    OpenCode)      configure_models_opencode ;;
-    Codex)         configure_models_codex ;;
-    Antigravity)   configure_models_antigravity ;;
-    *)             configure_models_claude_code ;;
-  esac
+  # No model configuration — every agent runs on the current session model
+  # (no thinking/worker tier split, no per-provider model catalog).
 
   configure_security
 
   echo ""
-  write_config "$config_provider_key"
+  write_config
 
   setup_project_detection
 
