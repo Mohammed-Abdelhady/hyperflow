@@ -134,13 +134,13 @@ def script(features: dict) -> Cast:
     c.line(gr(""))
     c.prompt()
     c.wait(0.40)
-    c.type("/hyperflow:spec \"Add authentication with login + middleware\"", char_delay=0.04)
+    c.type("/hyperflow:plan \"Add authentication with login + middleware\"", char_delay=0.04)
     c.wait(0.20)
     c.out("\r\n")
     c.wait(0.40)
 
     # ── Skill load + step-0 gate ──────────────────────────────────────────────
-    c.line(mg("⏺") + gr(" ") + bo("Skill") + gr("(hyperflow:spec)"))
+    c.line(mg("⏺") + gr(" ") + bo("Skill") + gr("(hyperflow:plan)"))
     c.line(gr("  ⎿  Successfully loaded skill"))
     c.wait(0.50)
 
@@ -162,7 +162,7 @@ def script(features: dict) -> Cast:
     c.line(gr("  types:[api, security, frontend] · flow: standard · ambiguity: 0.4 (light)"))
     c.wait(0.70)
 
-    # ── Spec phase: Analyst (decision role) + Worker Writers ──────────────────
+    # ── Design phase (inside plan): Analyst (decision role) + Worker Writers ──
     c.line(gr(""))
     c.line(mg("⏺") + gr(" ") + bo("Explore") + gr("(Map existing auth context)"))
     c.line(gr("  ⎿  Done (18 tool uses · 22.4k tokens · 32s)"))
@@ -191,22 +191,19 @@ def script(features: dict) -> Cast:
     c.line(mg("⏺") + gr(" ") + bo("Write") + gr("(.hyperflow/specs/auth.md)"))
     c.line(gr("  ⎿  Wrote 142 lines"))
     c.wait(0.40)
-    c.line(mg("⏺") + gr(" Spec complete. Auto-chaining to ") + worker("/hyperflow:scope") + gr("."))
+    c.line(mg("⏺") + gr(" Design approved — decomposing into a batched task graph."))
     c.wait(0.70)
 
-    # ── Scope: Planner (decision role) decomposes into batched task file ──────
+    # ── Decompose phase (inside plan): Planner builds the batched task file + briefs ──
     c.line(gr(""))
-    c.line(mg("⏺") + gr(" ") + bo("Skill") + gr("(hyperflow:scope)"))
-    c.line(gr("  ⎿  Successfully loaded skill"))
-    c.wait(0.40)
     c.line(mg("⏺") + gr(" ") + bo("Explore") + gr("(Affected files + tests)"))
     c.line(gr("  ⎿  Done (12 tool uses · 18.6k tokens · 22s)"))
     c.wait(0.30)
     c.line(mg("⏺") + gr(" ") + bo("Agent") + gr("(") + mg("Decision") + gr(" — Planner, batch graph)"))
     c.line(gr("  ⎿  Done (4 tool uses · 9.2k tokens · 17s)"))
     c.wait(0.30)
-    c.line(mg("⏺") + gr(" ") + bo("Write") + gr("(.hyperflow/tasks/auth.md)"))
-    c.line(gr("  ⎿  Wrote 78 lines"))
+    c.line(mg("⏺") + gr(" ") + bo("Write") + gr("(.hyperflow/tasks/auth.md + auth/ — 5 build-ready briefs)"))
+    c.line(gr("  ⎿  Each brief: scope · exact changes · acceptance criteria · tests + E2E"))
     c.wait(0.50)
 
     c.line(gr(""))

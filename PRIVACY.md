@@ -19,7 +19,7 @@ This page documents exactly what the plugin reads, writes, and exposes on your m
 | Surface | What it reads | When |
 |---|---|---|
 | `SessionStart` hook | The plugin's own files under `skills/hyperflow/` and `~/.hyperflow/config.json` (if you created one). Reads `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, and `memory/index.md` from the current project if they exist. | On every session start and after `/clear` |
-| Skill bodies | The contents of each invoked skill file (e.g., `skills/spec/SKILL.md`) | When you invoke `/hyperflow:<slug>` |
+| Skill bodies | The contents of each invoked skill file (e.g., `skills/plan/SKILL.md`) | When you invoke `/hyperflow:<slug>` |
 | Project files | Standard files in your project — same scope as the editor itself reads (i.e., subject to your editor's permission model). Workers receive the file paths and contents the orchestrator decides are relevant for the task. | During `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit` |
 | Git history | `git log`, `git diff`, `git status`. Read-only commands, run locally. | During `/hyperflow:audit`, `/hyperflow:deploy` |
 
@@ -29,9 +29,9 @@ This page documents exactly what the plugin reads, writes, and exposes on your m
 |---|---|---|
 | `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `dependencies.md`, `testing.md`, `git-workflow.md` | Analysis cache — facts about your tech stack and conventions | `/hyperflow:scaffold` |
 | `.hyperflow/.checksums` | SHA256 of tracked config files (to detect when analysis is stale) | `/hyperflow:scaffold` |
-| `.hyperflow/tasks/<slug>.md` | Decomposed task graph for an in-flight chain | `/hyperflow:scope` |
-| `.hyperflow/specs/<slug>.md` | Approved design specs | `/hyperflow:spec` |
-| `.hyperflow/memory/{learnings,decisions,pitfalls,patterns,conventions,index}.md` | Project-scoped learnings that accumulate across sessions | `/hyperflow:spec`, `/hyperflow:scope`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:cache` |
+| `.hyperflow/tasks/<slug>.md` (+ `<slug>/T<id>.md` briefs) | Decomposed task graph + per-sub-task implementation briefs for an in-flight chain | `/hyperflow:plan` |
+| `.hyperflow/specs/<slug>.md` | Approved design specs | `/hyperflow:plan` |
+| `.hyperflow/memory/{learnings,decisions,pitfalls,patterns,conventions,index}.md` | Project-scoped learnings that accumulate across sessions | `/hyperflow:plan`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:cache` |
 | `.hyperflow/memory/archive/YYYY-MM.md` | Append-only cold-tier archive of compacted memory entries; one file per calendar month | `/hyperflow:cache compact` |
 | `.gitignore` (one-line append) | Adds `.hyperflow/` if not already present | `/hyperflow:scaffold` |
 | `~/.hyperflow/config.json` | Optional model + security configuration | The installer wizard, if you run it |
@@ -78,7 +78,7 @@ The plugin runs **inside your editor's existing LLM session**. Your editor (Code
 
 **Concretely:**
 
-- When you invoke `/hyperflow:spec`, the worker/reviewer prompts that the plugin assembles are sent to your provider via your editor's normal API client.
+- When you invoke `/hyperflow:plan`, the worker/reviewer prompts that the plugin assembles are sent to your provider via your editor's normal API client.
 - The plugin sees the responses inside your editor's process and orchestrates the next step; it does **not** ship those responses anywhere else.
 - Cache files (`.hyperflow/memory/`) are written from those responses locally only.
 
