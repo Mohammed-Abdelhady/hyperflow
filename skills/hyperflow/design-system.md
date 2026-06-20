@@ -24,7 +24,7 @@ regenerated from scratch.
 | Color tokens | named values + roles (surface, text, one accent); never a raw hex inline elsewhere |
 | Type scale + pairing | display + body (+ utility) faces, sizes, weights, tracking |
 | Spacing scale | the only spacing values allowed downstream — no arbitrary pixels |
-| Motion language | easing curves, durations, what motion is allowed to communicate |
+| Motion language | easing curves, durations, what motion is allowed to communicate — the [`motion`](../../agents/motion.md) agent reads and extends this; deep motion-engineering rules live in [`motion.md`](motion.md) |
 | Voice / tone | how copy reads; what words the product does and doesn't use |
 | Component inventory | named primitives + their visual treatment, cross-referenced by `frontend`/`ui` workers |
 | References | the **real systems studied** to ground the system (with the combination rationale) |
