@@ -132,6 +132,8 @@ Beyond the personas, Hyperflow ships a registry of **named, domain-specialized a
 
 Each specialist **binds** the matching persona for its standards and adds a strict charter, a **web-research-first** step (it looks up current best-practices / CVEs / framework docs before judging — on `deep`/`research`/`scientific`/`security` flows), and authority to fan out depth-capped sub-agents. Specialists run on the current session model like every other agent — they specialise the *role*, not the model. See [`agents/README.md`](agents/README.md).
 
+**Agents consult each other.** Any agent — current or future — can ask a peer for help mid-task: a build worker emits a `CONSULT: <peer> — <question>` signal the orchestrator brokers (dispatch the peer, inject the answer, resume); a design-time decision agent consults directly. Participation is automatic — the allowlist is the `agents/` directory itself, so a new agent is consultable the moment it exists. Depth-1, budget-bounded, and never overrides a security halt. The `architect`, `designer`, `motion`, and `mobile` specialists also act as **design-time decision agents** inside `plan` — authoring the architecture, design system, motion, and mobile-platform decisions (with diagrams and a device/test matrix) into the spec, then reviewing them on change. See [`skills/hyperflow/consultation.md`](skills/hyperflow/consultation.md).
+
 ### Triage picks the depth
 
 Every task is classified — complexity, scope, risk, ambiguity — and assigned a flow profile, so effort matches the work instead of always running deep:

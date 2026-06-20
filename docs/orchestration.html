@@ -515,12 +515,36 @@
                 <td>Task complexity exceeded the chosen flow profile; orchestrator upgrades the profile per <code>escalation.md</code> (fast &rarr; standard &rarr; deep), re-plans with completed work preserved as context, and continues. If the escalation crosses the risk threshold, <code>AskUserQuestion</code> fires first for explicit consent.</td>
               </tr>
               <tr>
+                <td><code>CONSULT: &lt;peer&gt; &mdash; &lt;question&gt;</code></td>
+                <td>Worker (or reviewer) needs a decision outside its lane; orchestrator brokers &mdash; dispatches the named peer, injects the answer, re-dispatches the original. Depth-1, &le; 2 consults per worker, never overrides a halt</td>
+              </tr>
+              <tr>
                 <td><code>SECURITY_VIOLATION:</code></td>
                 <td>A reviewer caught a hard security issue; chain halts immediately, no auto-continue</td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ── Agent consultation ────────────────────────────────────────────── -->
+    <section id="consultation" aria-labelledby="consultation-heading">
+      <div class="container">
+        <p class="section-label">Consultation</p>
+        <h2 id="consultation-heading">Agents consult each other.</h2>
+        <p>
+          Specialists don&rsquo;t work blind. Any agent &mdash; current or future &mdash; can ask a peer for a focused answer mid-task, the lateral sibling of sub-agent fan-out. The capability lives in the shared prompt scaffolding, not in any charter, so the <strong>allowlist is the <code>agents/</code> directory itself</strong> &mdash; a new agent is consultable the moment its file exists, with zero wiring.
+        </p>
+        <ul>
+          <li><strong>Build-time workers</strong> are orchestrator-brokered: they emit a <code>CONSULT:</code> signal and stop; the Team Lead dispatches the peer and re-dispatches the worker with the answer injected &mdash; so &ldquo;workers never coordinate&rdquo; stays literally true.</li>
+          <li><strong>Design-time decision agents</strong> (<code>architect</code>, <code>designer</code>, <code>motion</code>, <code>mobile</code>, <code>analyst</code>) consult directly during <code>plan</code>&rsquo;s design phase.</li>
+        </ul>
+        <p>
+          Caps mirror fan-out: depth-1 (a consulted peer can&rsquo;t itself consult), &le; 2 consults per worker / &le; 3 per decision agent, and a consult never overrides a <code>SECURITY_VIOLATION</code> / <code>BLOCKED:</code> halt.
+        </p>
       </div>
     </section>
 
