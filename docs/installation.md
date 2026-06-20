@@ -16,7 +16,8 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch — the single agent runs every phase and self-reviews |
 | Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
 | claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
-| IDE extensions (VS Code, JetBrains, Cursor) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
+| Cursor | yes | Reads `AGENTS.md` natively for project conventions; `setup-detection.sh --tools cursor` writes it. Sub-agent dispatch depends on whether Cursor shells out to the `claude` binary; the portable single-agent doctrine applies otherwise |
+| Other IDE extensions (VS Code, JetBrains) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
 
 If `/hyperflow:plan` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
 

@@ -319,6 +319,10 @@
     {
       "name": "Antigravity",
       "key": "antigravity"
+    },
+    {
+      "name": "Cursor",
+      "key": "cursor"
     }
   ],
   "capabilities": [
@@ -337,7 +341,7 @@
     "Hot/warm/cold memory tiering with user-invoked compaction (`/hyperflow:cache compact`) and automatic cold archiving",
     "Lazy memory injection (only tag-matched entries per task)",
     "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
-    "4 provider support (Claude Code, Codex, OpenCode, Antigravity)",
+    "5 provider support (Claude Code, Codex, OpenCode, Antigravity, Cursor)",
     "Auto-detect provider via env vars or folder presence",
     "Every agent runs on the current session model; roles differ by responsibility",
     "Quality gates (lint, typecheck, build, tests)",
