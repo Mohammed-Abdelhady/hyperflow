@@ -22,6 +22,10 @@ A specialist **binds** persona(s) for its domain standards and adds only these s
 **A charter that restates its persona's objectives / conventions / anti-patterns verbatim is a doctrine
 violation.** Bind by reference — exactly how `personas-B.md` references `personas-A.md`.
 
+> **Agent vs. persona naming.** `architect` is the one agent that shares a persona's exact name: the `architect`
+> *agent* (a named specialist, hybrid design decision agent + reviewer) **binds** the `architect` *persona*
+> (standards text in `personas-A.md`). Agent = who is dispatched; persona = the standards it applies.
+
 ## How specialists are selected — the Brain
 
 Selection is **not** free-chosen by each skill. The flow is:
@@ -70,6 +74,7 @@ the session uses. Specialists differ by **role**, not model:
 | [mobile-reviewer](mobile-reviewer.md) | frontend, ui, performance | reviewer | mobile / responsive / native constraints |
 | [data-ml-reviewer](data-ml-reviewer.md) | scientific, db | reviewer (full pass) | reproducibility, numerical correctness, lineage |
 | [compliance-reviewer](compliance-reviewer.md) | security, docs | reviewer (full pass) | PII / GDPR / audit-trail / regulatory |
+| [architect](architect.md) | architect | reviewer + design decision agent | system decomposition, boundaries, failure modes, ADRs, frontend-at-scale |
 
 The **(full pass)** reviewers always run a complete review even per-batch ("if security present, never fast"); the others run an anchored per-batch review in-flight and a full standalone review outside a batch.
 

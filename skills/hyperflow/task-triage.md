@@ -181,7 +181,7 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 | `db` | `database-reviewer`, `database-optimization-reviewer` | `searcher` |
 | `security` | `security-reviewer`, `vulnerability-reviewer` | `researcher` |
 | `scientific` | `data-ml-reviewer` | `analyst` |
-| `architect` | `backend-reviewer` | `analyst` |
+| `architect` | `architect` | `analyst` |
 | `performance` | `performance-reviewer`, `algorithm-reviewer` | `debugger` |
 | `devops` | `devops-reviewer` | `searcher` |
 | `refactor` | surface-matched | `searcher` |

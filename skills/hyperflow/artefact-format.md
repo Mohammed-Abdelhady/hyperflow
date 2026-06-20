@@ -143,6 +143,8 @@ Spec files add three extra sections beyond the task-file template:
 2. **Components** — bullet list of named components (compact subcommand handler, Compaction Writer, etc.) with one-line role. Lets the Planner cross-reference Section 1 names without re-reading the architecture prose.
 3. **Trade-offs accepted / rejected** — explicit list at the end of `## 3. Key decisions`. What the design said no to and why. Most useful section for future implementers and audit reviewers.
 
+When the [`architect`](../../agents/architect.md) agent authored the design (architect-typed / high-complexity / multi-subsystem work), `## 1. Architecture` embeds a Mermaid component/container graph and `## 2. Data flow` embeds a Mermaid data-flow diagram — the diagram precedes the implementation. These are fenced ` ```mermaid ` blocks (not the plain-Unicode dependency diagram above, which stays ASCII); the Step 8 final-spec Reviewer checks both graphs are present.
+
 ## Audit file additions
 
 Audit files replace the status table with a verdict table (no Progress / Branch / Commits / Wall-clock / Tokens rows since audits aren't long-running tasks):
