@@ -9,7 +9,7 @@
 
 <p align="center">
   <strong>Multi-agent orchestration for Codex App/CLI, Claude Code, OpenCode, Antigravity &amp; Cursor.</strong><br/>
-  Thinking models plan and review every step. Worker models execute in parallel. Learnings persist in local, per-project memory.
+  Decision agents plan and review every step; workers execute in parallel — all on your current session model. Learnings persist in local, per-project memory.
 </p>
 
 <p align="center">
