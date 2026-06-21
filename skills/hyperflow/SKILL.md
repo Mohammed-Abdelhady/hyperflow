@@ -54,11 +54,9 @@ For `/hyperflow:workflow`, use the Codex portable workflow adapter instead of fa
 
 Codex also may not expose Claude Code's `Skill` handoff tool. Treat every Hyperflow handoff as an inline auto-chain:
 
-- `amplify` handoff continues into `spec` after the required handoff gate.
-- `spec` continues into `scope` after the approved spec.
-- `scope` continues into `dispatch` after writing the task file.
+- `plan` runs amplify → design → decompose inline, then **stops at its build-location gate** (always asked). It never auto-implements: on "this session" it continues into `dispatch` inline; on "another session" it writes a handoff package; on "stop" it keeps the plan.
 - `dispatch` offers `audit` and `deploy` structural gates, then runs the selected follow-up inline.
-- `audit` fix gates continue into `scope` with the generated audit-fix spec.
+- `audit` fix gates continue into `plan` with the generated audit-fix task (which then stops at its own build-location gate).
 
 Do not stop with "Skill tool unavailable" in Codex. Auto-chain is a behavior contract, not a host API requirement.
 

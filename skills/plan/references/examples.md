@@ -7,11 +7,7 @@ Worked transcripts for `/hyperflow:plan`. Illustrative — not load-bearing for 
 ```
 /hyperflow:plan add a token-bucket rate-limit middleware for this app
 
-?  How should I run this chain?
-   One session (Recommended) — run the whole chain here, straight through.
-   Two sessions              — plan here; a second session (another env) builds.
-[user picks One session]
-?  Operational choices — commit cadence · branch · push  [user accepts recommended defaults]
+[Step 0 — silent: max thinking engaged, flags parsed, NO startup questions]
 
 **Classifier** — triaging request            [concurrent with context Searchers · P3]
 Searcher — surface mapping · Searcher — semantic + convention scan
@@ -40,7 +36,10 @@ Writer — finalize spec → .hyperflow/specs/rate-limit-middleware.md  ·  **Re
 Writer — task file  [∥ Writer — memory append · P3]  →  **Reviewer** — assembled task file vs design
 
 Plan ready — .hyperflow/tasks/rate-limit-middleware.md (3 batches, 7 sub-tasks)
-Auto-chaining to /hyperflow:dispatch…
+?  Where should this be built?
+   This session (Recommended) · Another session · Stop
+[user picks This session]
+Building here — handing to /hyperflow:dispatch…   (dispatch asks commit/branch/push at its Step 0.5)
 ```
 
 ### Concise request — amplify skipped, only 2 questions fire
@@ -67,7 +66,7 @@ That's clear enough to skip the design phase — decomposing directly.
 
 **Planner** — batch graph → **Reviewer**  ·  Writer — task file
 Plan ready — .hyperflow/tasks/health-endpoint.md (1 batch, 2 sub-tasks)
-Auto-chaining to /hyperflow:dispatch…
+?  Where should this be built?  This session (Recommended) · Another session · Stop
 ```
 
 ### Thorough mode — P1/P2/P4 disabled, P3/P5 stay on

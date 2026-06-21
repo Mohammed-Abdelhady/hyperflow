@@ -1,11 +1,11 @@
 ---
 name: plan
 description: |
-  Use when a request needs shaping before any code is written — a rough or vague prompt to sharpen, an ambiguous idea to design, or a clear-enough task to decompose. One chain-starter that amplifies the prompt, designs the approach, and decomposes it into a batched task file, skipping whichever phases the request doesn't need, then auto-chains into /hyperflow:dispatch.
+  Use when a request needs shaping before any code is written — a rough or vague prompt to sharpen, an ambiguous idea to design, or a clear-enough task to decompose. One chain-starter that amplifies the prompt, designs the approach, and decomposes it into a batched task file, skipping whichever phases the request doesn't need, then STOPS at a build-location gate (build here, hand off to another session, or just keep the plan). Plan never implements.
   Trigger with /hyperflow:plan, "design this", "plan this", "decompose this", "how should we", "what's the best way to", "break this down", "enhance this prompt".
 allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, Agent, AskUserQuestion, Skill
-argument-hint: "<idea, prompt, or task> [session=one|two] [handoff=review|deploy] [--thorough | depth=max] [briefs=auto|terse] [noamplify]"
-version: 1.0.0
+argument-hint: "<idea, prompt, or task> [--thorough | depth=max] [briefs=auto|terse] [noamplify]"
+version: 2.0.0
 license: MIT
 compatibility: Designed for Claude Code
 tags: [prompt-engineering, design, brainstorming, planning, decomposition, multi-agent]
@@ -13,14 +13,19 @@ tags: [prompt-engineering, design, brainstorming, planning, decomposition, multi
 
 # Plan
 
-One chain-starter that folds three phases — **amplify** (sharpen the prompt), **design** (brainstorm and spec the approach), **decompose** (write the batched task file) — into a single flow, then hands off to `/hyperflow:dispatch`. Each phase skips itself when the request doesn't need it: a clear task bounces straight to decomposition; an already-structured prompt skips amplify.
+One chain-starter that folds three phases — **amplify** (sharpen the prompt), **design** (brainstorm and spec the approach), **decompose** (write the batched task file) — into a single flow, then **stops at a build-location gate** (Step 12). Each phase skips itself when the request doesn't need it: a clear task bounces straight to decomposition; an already-structured prompt skips amplify.
 
-This is **thinking, not building** through the design phase — no source code is written here. The only writes are to `.hyperflow/specs/`, `.hyperflow/tasks/`, `.hyperflow/features/`, `.hyperflow/memory/`, and (two-session mode) the committed `.hyperflow-handoff/` package. It drives **Layer 0.5 (Triage)**, **Layer 4 (Brainstorming/Spec)**, **Layer 0 (Project Analysis)**, **Layer 6 (Memory)**, and **Layer 7 (Task Templates)**.
+**Plan never implements.** It is **thinking, not building** — no source code is written here, and it does not silently chain into `/hyperflow:dispatch`. The only writes are to `.hyperflow/specs/`, `.hyperflow/tasks/`, `.hyperflow/features/`, `.hyperflow/memory/`, and (another-session mode) the committed `.hyperflow-handoff/` package. When the task file is ready, plan **always** asks where to build it (this session / another session / stop) — that gate fires on every run, and the user's choice is the only thing that ever starts a build. It drives **Layer 0.5 (Triage)**, **Layer 4 (Brainstorming/Spec)**, **Layer 0 (Project Analysis)**, **Layer 6 (Memory)**, and **Layer 7 (Task Templates)**.
+
+**Plan runs at maximum thinking depth.** Engage extended / ultra reasoning across triage, analysis, design, and decomposition — plan is the chain's one think-heavy front door and pays the reasoning cost once so the build runs faithfully. Every substantive step **uses tools** (Agents to do the work, `Write` to persist artefacts); a plan that exists only in chat is a violation.
 
 **Every agent runs on the current session model — there is no model-tier routing and no model configuration.** Roles (Classifier, Searcher, Writer, Analyst, Planner, Reviewer) differ by responsibility, not by model.
 
 ## Iron Rules
 
+- **Plan never implements.** It always stops at the build-location gate (Step 12) and asks where to build — this session / another session / stop. It does NOT silently chain into `dispatch`. The gate fires **every run**, even when a `session=` / `commit=` / `branch=` arg was somehow propagated — never skip it.
+- **Max thinking, always.** Run at maximum reasoning depth (ultrathink) through triage, analysis, design, and decomposition. Plan is the one think-heavy phase; do not shortcut the reasoning to save tokens.
+- **Always produce the artefacts on disk.** Every run that reaches decomposition uses tools to `Write` the spec (when the design phase ran) and the task file + briefs. A plan described only in chat — no `.hyperflow/tasks/<slug>.md` written — is a failed run, not a plan.
 - **No code in the design phase.** Plan produces a prompt, a spec, and a task file; `dispatch` executes them.
 - **Author build-ready briefs (`briefs=auto`).** Every non-trivial sub-task gets a full, self-contained implementation brief at plan time (Step 9c), stored at `.hyperflow/tasks/<slug>/T<id>.md`. The strong planning model pays the authoring cost once so the build runs faithfully on a cheaper model or a second session — dispatch transcribes, it doesn't re-derive. Trivial sub-tasks stay terse.
 - **Project rules win on conflict.** A rule in `CLAUDE.md` / `AGENTS.md` / `.hyperflow/memory/` overrides a generic persona standard — it is the user's explicit instruction.
@@ -35,8 +40,7 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 
 | Step | Sub-phase | Workers | Reviewers / decision agents | Notes |
 |---|---|---|---|---|
-| 0 — Session strategy | atomic | — | — | `AskUserQuestion` only; structural gate |
-| 0.5 — Operational choices | atomic | — | — | `AskUserQuestion` only; structural gate |
+| 0 — Setup | atomic | — | — | Silent: parse flags, set max-thinking. NO startup gate, NO questions |
 | 1 — Triage | atomic | Classifier | **Triage Reviewer** | P4-skip Reviewer; P3-concurrent with Step 3 |
 | 2 — Amplify (skippable) | atomic | Writer — rewrite prompt | **Reviewer** — 8-dim rubric, one revision | Skips on clear/structured prompt |
 | 3 — Context | 3a + 3b (P1) | Searcher ×2 per sub-phase | **Reviewer** per sub-phase | 3a surface map · 3b semantic + convention scan |
@@ -48,56 +52,33 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 | 9 — Decompose | 9a + 9b + 9c | Planner ×1 (9a) · Searcher ×2 (9b) · **brief Writer ×1 per non-trivial sub-task (9c)** | **Reviewer** per sub-phase | 9a batch graph → 9b sizing → 9c authors a full build-ready brief per non-trivial sub-task (`briefs=auto`) |
 | 10 — Write task file (P3 w/ 11) | 10a + 10b + 10c | Writer ×2 per sub-phase | **Reviewer** per sub-phase + 1 final verify | Flat task file or feature/phase tree |
 | 11 — Memory (P3 w/ 10) | atomic | Writer appends | **Reviewer** dup/contradiction check | Concurrent with Step 10 |
-| 12 — Hand off | atomic | — | — | `Skill` → dispatch, or write handoff package |
+| 12 — Build-location gate | atomic | — | — | `AskUserQuestion` (ALWAYS fires): this session → `Skill` dispatch · another session → write handoff package · stop |
 
-**Skippable / bounce summary:** Step 2 skips for clear prompts; Step 4 and Step 6-approaches are P4-skippable; Step 5 **bounces** the design phase (Steps 6–8) entirely when the request is clear, jumping to Step 9. `--thorough` / `depth=max` disables P1/P2/P4 (sequential, every step runs, per-section reviewers, standalone final-integration pass added); P3/P5 stay on.
+**Skippable / bounce summary:** Step 2 skips for clear prompts; Step 4 and Step 6-approaches are P4-skippable; Step 5 **bounces** the design phase (Steps 6–8) entirely when the request is clear, jumping to Step 9. `--thorough` / `depth=max` disables P1/P2/P4 (sequential, every step runs, per-section reviewers, standalone final-integration pass added); P3/P5 stay on. **No step is a startup gate** — plan asks the user nothing until the Step 5 clarify questions, and the build decision waits until Step 12.
 
 ## Approval Gates
 
 | Gate | When | Format |
 |---|---|---|
-| Session strategy | Step 0, once per chain | `AskUserQuestion` — one / two sessions (+ handoff: review / deploy when two) |
-| Operational choices | Step 0.5, once per chain | `AskUserQuestion` — commit cadence · branch · push (3-question batch) |
 | Smart questions | Step 5, design path | `AskUserQuestion` — 2–5 questions (floor 2) |
 | Synthesis + approach | Step 6, after batched review | `AskUserQuestion` — confirm synthesis · pick approach |
 | Design section approval | Step 7, one combined gate | `AskUserQuestion` — approve all / revise §N |
-| Phase advance (`manual` mode only) | Step 12, before dispatch | `AskUserQuestion` — continue / stop |
+| **Build location** | Step 12, after the task file is written — **ALWAYS** | `AskUserQuestion` — this session / another session / stop (+ handoff: review / deploy when another session) |
 
-Each gate fires exactly once. Markers follow DOCTRINE rule 8: multi-option/named-workflow choices carry `(Recommended)`; binary action gates (Approve/Revise, continue/stop) carry none.
+The build-location gate fires on **every** run (it is the only thing that ever starts a build); the design-phase gates fire at most once each and are skipped on the bounce path. Plan asks **no startup gates** — the session/build decision and the operational choices (commit cadence · branch · push) are no longer front-loaded. When the user picks "this session," `dispatch` fires its own operational gate (its Step 0.5) before building. Markers follow DOCTRINE rule 8: multi-option/named-workflow choices carry `(Recommended)`; binary action gates (Approve/Revise) carry none.
 
 ## Flow
 
-### Step 0 — Session strategy (FIRST tool call · STRUCTURAL GATE)
+### Step 0 — Setup (silent · max thinking · NO gate)
 
-Fires every direct invocation. "No clarifying questions" / "auto-pilot" / any autonomy directive does NOT skip it; defaulting to `one` without asking is a doctrine violation. Skip only when a `session=<one|two>` arg was propagated from a prior skill.
+Plan asks the user **nothing** at startup. There is no session-strategy gate and no operational gate here — both decisions move to the Step 12 build-location gate (and `dispatch` owns the operational gate when a build actually starts). Defaulting silently is correct: plan is think-only, so there is nothing to decide until a task file exists.
 
-Q1 is a named-workflow choice → recommended option first with `(Recommended)`:
+At Step 0, the orchestrator only:
 
-```
-How should I run this chain?
-  One session (Recommended)  — run the whole chain here, straight through:
-                               plan → dispatch → audit/deploy, no pauses.
-  Two sessions               — this session plans only, then STOPS at the dispatch
-                               boundary and writes a committed handoff package. A
-                               second session (another environment, e.g. Codex/Gemini)
-                               runs the build.
-```
+1. **Engages maximum thinking depth** (ultra reasoning) for the whole run — triage, analysis, design, and decomposition all reason at full depth.
+2. **Parses flags** from the args: `--thorough` / `depth=max` (disable P1/P2/P4 — see the skippable summary), `noamplify` (skip Step 2), `briefs=auto|terse` (Step 9c). Record them; do not ask about them.
 
-**Q2 fires only when Q1 = Two sessions** — binary action gate, NO `(Recommended)` marker, structural default `Return for review`:
-
-```
-When the second session finishes building, what should it do?
-  Return for review   — stop after the build; come back to THIS session and run /hyperflow:audit on the diff.
-  Complete to deploy  — the second session continues to /hyperflow:deploy after the build.
-```
-
-Save and propagate via `args: "session=<one|two>"` (+ `handoff=<review|deploy>` when two). Record `--thorough` / `depth=max` / `noamplify` flags if present. Codex fallback: print the same gate as a `Hyperflow Question` chat block and wait; if no interactive channel exists, error and stop on Q1 (never silently default), default `Return for review` on Q2 only. See [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md).
-
-### Step 0.5 — Operational choices (STRUCTURAL GATE · immediately after Step 0)
-
-When `commit=` / `branch=` / `push=` were NOT propagated, fire ONE `AskUserQuestion` with 3 questions (commit cadence · branch behaviour · push at end). After this the chain runs silently until the end-of-chain audit + deploy gates — the user is interrupted exactly twice at startup, never again until done. Fires for both `session=one` and `session=two`. Skip only when the args are already propagated (re-asking is an invented-gate violation).
-
-The canonical 3-question batch — full option text, recommended-default logic, the `Per-task (deferred)` queue behaviour, and the `commit=/branch=/push=` propagation contract — lives in [`../hyperflow/git-workflow.md`](../hyperflow/git-workflow.md). Recommended defaults: commit `Per-task` (unless `complexity=low ∧ sub-tasks≤2` → `Single`); branch `Create` on main/master else `Stay`; push `Ask at deploy gate` always. `dispatch` reads commit + branch; `deploy` reads push.
+Then proceed straight to Step 1. Any `session=` / `commit=` / `branch=` / `push=` args that happen to be present are **ignored for gating** — the build decision is always made fresh at Step 12.
 
 ### Step 1 — Triage (Layer 0.5 · P3-concurrent with Step 3)
 
@@ -212,27 +193,45 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 `Writer — appending decisions to .hyperflow/memory/decisions.md` (skip trivial; for complex features also seed `.hyperflow/specs/<feature-slug>.md` referenced from the task file) → `**Reviewer** — checking memory entries` for duplicates/contradictions. Both Writers (Step 10 + 11) derive from the Planner output and are independent — dispatch concurrently.
 
-### Step 12 — Hand off
+### Step 12 — Build-location gate (ALWAYS fires · plan never auto-implements)
 
-**`session=one`** (§12.1-trivial): invoke `Skill` with `skill: dispatch`, `args: "session=one <slug> commit=… branch=… push=… triage=… mode=… briefs=…"`. Print:
+The task file is written; plan is done thinking. Fire ONE `AskUserQuestion` — this gate fires on **every** run and is the **only** thing that ever starts a build. Never skip it, never default it, never silently chain into `dispatch`, regardless of any propagated args or autonomy directive. Q1 is a named-workflow choice → recommended option first with `(Recommended)`:
 
 ```
 Plan ready — .hyperflow/tasks/<slug>.md (N batches, M sub-tasks)
-Auto-chaining to /hyperflow:dispatch…
+Where should this be built?
+  This session (Recommended) — run /hyperflow:dispatch here now, straight through.
+  Another session            — write a committed handoff package and STOP; a second
+                               session (another environment, e.g. Codex/Gemini) builds it.
+  Stop                       — keep the plan only; build later with /hyperflow:dispatch <slug>.
 ```
 
-**`session=two`**: do NOT invoke dispatch. Write the committed handoff package and STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)) — create `.hyperflow-handoff/<slug>/` with `HANDOFF.md` (manifest: slug, artefact type/path, resolved chain args, `on_complete`, originating commit, `Specialists` roster), `STATUS` (`planned`), a committed copy of the gitignored artefact, and `context/` copies of `.hyperflow/{conventions,profile,architecture}.md` + memory index; `git add` + commit `chore(handoff): plan <slug> for second-session build`; push if `handoff.autoPush ∧ push != never`; then print the start-session-2 instructions.
+**Q2 fires only when Q1 = Another session** — binary action gate, NO `(Recommended)` marker, structural default `Return for review`:
 
-In `manual` mode, fire the phase-advance gate (continue / stop) before invoking dispatch.
+```
+When the second session finishes building, what should it do?
+  Return for review   — stop after the build; come back to THIS session and run /hyperflow:audit on the diff.
+  Complete to deploy  — the second session continues to /hyperflow:deploy after the build.
+```
+
+Branch on the answer:
+
+- **This session** → invoke `Skill` with `skill: dispatch`, `args: "<slug> triage=… mode=… briefs=…"`. Do **not** pass `commit=` / `branch=` / `push=` — `dispatch` fires its own operational gate (its Step 0.5) before building. Print `Building here — handing to /hyperflow:dispatch…`.
+- **Another session** → do NOT invoke dispatch. Write the committed handoff package and STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)) — create `.hyperflow-handoff/<slug>/` with `HANDOFF.md` (manifest: slug, artefact type/path, resolved chain args, `on_complete` from Q2, originating commit, `Specialists` roster), `STATUS` (`planned`), a committed copy of the gitignored artefact, and `context/` copies of `.hyperflow/{conventions,profile,architecture}.md` + memory index; `git add` + commit `chore(handoff): plan <slug> for second-session build`; then print the start-session-2 instructions.
+- **Stop** → write nothing further. Print `Plan kept at .hyperflow/tasks/<slug>.md — run /hyperflow:dispatch <slug> when you're ready to build.`
+
+Codex fallback: print the same gate as a `Hyperflow Question` chat block and wait; if no interactive channel exists, error and stop (never silently default to building).
 
 ## Anti-Patterns
 
-- Writing code during the design phase.
+- Writing code during the design phase, or letting plan implement anything — plan stops at the Step 12 build-location gate, full stop.
+- Auto-chaining into `dispatch` without firing the build-location gate, or treating a propagated `session=` arg as permission to skip it — the gate fires **every** run.
+- Front-loading a session-strategy or operational (commit/branch/push) gate at startup — those are gone; the build decision waits for Step 12 and `dispatch` owns operational.
+- Producing a plan only in chat — every run that decomposes must `Write` the task file to `.hyperflow/tasks/<slug>.md`.
+- Shortcutting the reasoning to save tokens — plan runs at max thinking.
 - Asking > 5 questions total, or < 2 on the design path (the floor is mandatory even when the request looks clear), or stacking 3+ questions in one call.
 - Skipping alternatives unless P4 skip or the bounce path is in effect.
 - Asking what the codebase reveals; adding features the user didn't request (YAGNI).
-- Pausing for "should I proceed?" when `session=one` — answered at Step 0.
-- Re-asking the session/operational gates when their args were propagated.
 - Sequentializing independent siblings (Steps 1+3, 7a/7b/7c, 9b/9c, 10 + 11) when P1/P3 apply.
 - Per-section reviewers when one batched reviewer covers the same review-level cap.
 - Single-batch plans for multi-file work; omitting the verification plan.
@@ -240,27 +239,27 @@ In `manual` mode, fire the phase-advance gate (continue / stop) before invoking 
 
 ## Overview
 
-`plan` is the chain's single front door. Triage and context map concurrently (P3); amplify sharpens a rough prompt only when one is given; multi-dim analysis and approach proposals skip on low ambiguity (P4). A clear-enough request bounces past the design phase straight to decomposition; an ambiguous one walks the spec section-by-section (file-first, P1+P2) under a 2-question floor. The Planner then produces the batch graph (oversize-split enforced), Writers emit the flat task file or feature/phase tree (P3 with the memory append), and the chain hands off to `/hyperflow:dispatch` — or, in two-session mode, writes a committed handoff package and stops.
+`plan` is the chain's single front door and runs at maximum thinking depth. It asks nothing at startup. Triage and context map concurrently (P3); amplify sharpens a rough prompt only when one is given; multi-dim analysis and approach proposals skip on low ambiguity (P4). A clear-enough request bounces past the design phase straight to decomposition; an ambiguous one walks the spec section-by-section (file-first, P1+P2) under a 2-question floor. The Planner then produces the batch graph (oversize-split enforced), Writers emit the flat task file or feature/phase tree (P3 with the memory append). Plan then **stops** and fires the build-location gate — it never implements: the user chooses to build here (hands to `/hyperflow:dispatch`), build in another session (writes a committed handoff package), or keep the plan for later.
 
 ## Prerequisites
 
 - `.hyperflow/` cache (run `/hyperflow:scaffold` first if missing — improves triage and planning context).
-- `AskUserQuestion` available — required for the gates. Headless / non-interactive mode is rejected at Step 0.
+- `AskUserQuestion` available — required for the gates. Headless / non-interactive mode is rejected at the first gate plan reaches (the Step 5 clarify questions, or the Step 12 build-location gate on the bounce path).
 - An idea, prompt, or task. Pure "should we?" design questions exercise the full flow; clear decompositions bounce past design automatically.
 
 ## Error Handling
 
 | Failure | Behavior |
 |---|---|
-| `AskUserQuestion` unavailable (headless) | Refuse at Step 0; print error and exit. |
+| `AskUserQuestion` unavailable (headless) | Refuse at the first gate reached (Step 5 clarify, else Step 12 build-location); print error and exit. Never silently build. |
 | Classifier rejects request (off-topic/abuse) | Stop. Print neutral reason. |
 | User picks "revise" on a design section | Loop that Writer with feedback. Max 3 cycles per section, then suggest a different approach. |
 | Searcher returns no/empty context | Downstream Writer flags `MISSING CONTEXT`; redispatch with the gap. Max 2 retries, then proceed with a caveat. |
 | User rejects all proposed approaches | Writer drafts a 4th incorporating the stated objection. |
 | Batched Reviewer NEEDS_FIX on 4+/5 sections | Approach likely wrong — bounce to Step 6 and re-pick. |
 | Planner produces single-batch plan for multi-file work | Reviewer rejects; redispatch with split feedback. |
-| Task file write fails (path locked/disk full) | Abort with explicit error; do not auto-chain. |
-| `session` arg malformed | Refuse and re-ask via `AskUserQuestion`. Never silently default. |
+| Task file write fails (path locked/disk full) | Abort with explicit error; do not reach the build gate. |
+| User picks "Stop" at the build-location gate | Leave the task file in place; print the `/hyperflow:dispatch <slug>` resume hint and exit cleanly. |
 | Concurrent dispatch rate-limited | Cap parallel section drafts at 5, concurrent pre-conditions at 2; degrade to sequential — quality unchanged, latency reverts. |
 
 ## Resources

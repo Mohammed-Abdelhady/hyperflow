@@ -361,7 +361,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Overview
 
-`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. Searchers gather context; a standalone Reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — `Yes` auto-chains to `/hyperflow:plan` → `/hyperflow:dispatch`; `No` leaves the diff alone.
+`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. Searchers gather context; a standalone Reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — `Yes` auto-chains to `/hyperflow:plan`, which decomposes the fix and then stops at its own build-location gate before any build starts; `No` leaves the diff alone.
 
 ## Prerequisites
 
