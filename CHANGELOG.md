@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.4.0] — 2026-06-21
+
+### Added
+- Stop at a build-location gate, never auto-implement
+
+
 ## [5.3.1] — 2026-06-20
 
 ### Fixed
@@ -1074,7 +1080,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.4.0...HEAD
+[5.4.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.1...v5.4.0
 [5.3.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.0...v5.3.1
 [5.3.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.1.0...v5.2.0
