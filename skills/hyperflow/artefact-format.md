@@ -201,7 +201,7 @@ The orchestrator's chat output during artefact creation should be the *index poi
 
 - **One short status box** when the artefact is written (or finalized). Includes: file path, line count, lifecycle phase.
 - **No file content** echoed into chat. Even for review summaries — the file is the source of truth.
-- **Hand-off lines** are one sentence: `Plan ready — .hyperflow/tasks/<slug>.md (5 batches · 15 sub-tasks). Auto-chaining to /hyperflow:dispatch...`
+- **Hand-off lines** are one sentence followed by the build-location gate: `Plan ready — .hyperflow/tasks/<slug>.md (5 batches · 15 sub-tasks). Where should this be built?`
 - **Gate prompts** reference the file: `Design draft ready at .hyperflow/specs/<slug>.draft.md — review the file, then approve or revise.`
 
 Chat scrolls; files persist. Long-form goes to files.

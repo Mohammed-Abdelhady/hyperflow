@@ -117,8 +117,7 @@ Verdict:  taste PASS · a11y PASS
 
 ## Hand-off
 
-- **Build now** — auto-chain to `/hyperflow:plan` → `/hyperflow:dispatch`.
-- **Plan first** — open `/hyperflow:plan` for decomposition only.
+- **Plan it** — auto-chain to `/hyperflow:plan` for decomposition; plan then stops at its build-location gate and asks where to build (it never auto-implements).
 - **Stop** — spec persists for a later build.
 
 ## Doctrine

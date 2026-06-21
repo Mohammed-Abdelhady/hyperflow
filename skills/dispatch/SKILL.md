@@ -89,7 +89,7 @@ When operational args (`commit=`, `branch=`, `push=`) were NOT already propagate
 
 Skip when operational args are already propagated (re-asking is an invented-gate violation).
 
-The 3-question batch is identical to plan Step 0.5 — see [plan/SKILL.md § Step 0.5](../plan/SKILL.md#step-05--operational-choices-structural-gate--immediately-after-step-0) for the full question + option text + recommended-default logic + chain-arg propagation contract. Plan and dispatch share one canonical definition; whoever fires first owns the batch, the other sees the args propagated and skips.
+Dispatch owns this gate (plan no longer asks operational choices at startup — it stops at a build-location gate and lets dispatch decide commit/branch/push when a build actually starts). The 3 questions are **commit cadence · branch behaviour · push at end**, with the canonical option text, recommended-default logic, the `Per-task (deferred)` queue behaviour, and the `commit=/branch=/push=` propagation contract in [`../hyperflow/git-workflow.md`](../hyperflow/git-workflow.md). Recommended defaults: commit `Per-task` (unless `complexity=low ∧ sub-tasks≤2` → `Single`); branch `Create` on main/master else `Stay`; push `Ask at deploy gate` always. Skip only when the args are already propagated (re-asking is an invented-gate violation).
 
 ### Step 1.0 — Handoff rehydration (handoff pickup only)
 

@@ -102,7 +102,7 @@
         Chain-starting skills auto-advance through the rest of the chain. Skip to any entry point — the orchestrator picks up and runs forward.
       </p>
 
-      <div class="chain-diagram" role="img" aria-label="Chain flow: plan (chain starter, plan stage) auto-chains to dispatch (execute stage), with audit and deploy gates at the end">
+      <div class="chain-diagram" role="img" aria-label="Chain flow: plan (chain starter, plan stage) stops at a build-location gate, then hands to dispatch (execute stage) when you choose to build here, with audit and deploy gates at the end">
         <div class="chain-svg-wrap">
           <svg viewBox="0 0 960 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;" font-family="Hanken Grotesk,sans-serif">
             <!-- ─────────── Plan-stage bracket ─────────── -->
@@ -145,7 +145,7 @@
             <!-- ─────────── Connectors (node mid y=110) ─────────── -->
             <line x1="170" y1="110" x2="284" y2="110" stroke="#7C3AED" stroke-width="1.5" />
             <polygon points="284,106.5 290,110 284,113.5" fill="#7C3AED" />
-            <text x="227" y="103" font-size="7.5" fill="#7C3AED" text-anchor="middle">auto-chains</text>
+            <text x="227" y="103" font-size="7.5" fill="#7C3AED" text-anchor="middle">build gate</text>
 
             <line x1="420" y1="110" x2="534" y2="110" stroke="#14110C" stroke-width="1.25" />
             <polygon points="534,106.5 540,110 534,113.5" fill="#14110C" />
@@ -157,10 +157,10 @@
             <text x="104" y="164" font-size="8" fill="#7C3AED" text-anchor="middle" font-weight="700">▸ start here — rough idea to clear task</text>
             <text x="354" y="164" font-size="8" fill="#14B8A6" text-anchor="middle">▸ or here — a task file exists</text>
 
-            <!-- auto-chain span under plan → dispatch -->
+            <!-- build-location gate span under plan → dispatch -->
             <path d="M40 176 V182 H418 V176" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
             <line x1="229" y1="182" x2="229" y2="187" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.45" />
-            <text x="229" y="200" font-size="8.5" fill="#7C3AED" text-anchor="middle" opacity="0.9">auto-chains forward — plan → dispatch</text>
+            <text x="229" y="200" font-size="8.5" fill="#7C3AED" text-anchor="middle" opacity="0.9">build-location gate — plan stops, you choose to build</text>
 
             <!-- gates span under audit + deploy -->
             <path d="M540 176 V182 H918 V176" stroke="#6B6456" stroke-width="1" stroke-opacity="0.5" />
@@ -181,7 +181,7 @@
       </div>
 
       <p class="chain-caption">
-        Start with anything — a rough idea or a clear task: <code>plan</code> sharpens the prompt, designs the approach, and decomposes it into a task file, then <code>dispatch</code> auto-chains to build it. It bounces straight to decomposition when the approach is already clear. Enter at <code>plan</code>, or at <code>dispatch</code> when a task file already exists. <code>audit</code> and <code>deploy</code> gates fire at the end, batched into one ask. (<code>scaffold</code> is a one-time project setup, run once per repo.)
+        Start with anything — a rough idea or a clear task: <code>plan</code> sharpens the prompt, designs the approach, and decomposes it into a task file, then <strong>stops</strong> and asks where to build — never implementing on its own. Pick "this session" and it hands to <code>dispatch</code>; pick another session and it writes a handoff package. It bounces straight to decomposition when the approach is already clear. Enter at <code>plan</code>, or at <code>dispatch</code> when a task file already exists. <code>audit</code> and <code>deploy</code> gates fire at the end, batched into one ask. (<code>scaffold</code> is a one-time project setup, run once per repo.)
       </p>
     </div>
   </section>
@@ -533,7 +533,7 @@
             <tr>
               <td><strong>plan</strong></td>
               <td><code>/hyperflow:plan</code></td>
-              <td>Sharpen the prompt, design the approach, and decompose into a batched task graph; auto-chains to dispatch</td>
+              <td>Sharpen the prompt, design the approach, and decompose into a batched task graph (max thinking); stops at a build-location gate — never auto-implements</td>
               <td><span class="chain-badge starter">Chain starter</span></td>
             </tr>
             <tr>
@@ -1196,7 +1196,7 @@
           <span class="comment"># Start the full chain from a feature description</span><br />
           /hyperflow:plan "add user auth with login page and middleware"<br />
           <br />
-          <span class="comment"># plan sharpens, designs, and decomposes — then auto-chains to dispatch</span><br />
+          <span class="comment"># plan sharpens, designs, and decomposes — then stops and asks where to build</span><br />
           /hyperflow:plan "add debounced search to the dashboard"
         </div>
       </div>

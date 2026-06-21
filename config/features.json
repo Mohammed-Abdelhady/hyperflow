@@ -83,7 +83,7 @@
       "name": "plan",
       "command": "/hyperflow:plan",
       "tagline": "Design + decompose",
-      "purpose": "Amplify the prompt, design the approach, and decompose into a batched task file \u2014 skips whichever phase the request doesn't need; auto-chains to dispatch",
+      "purpose": "Amplify the prompt, design the approach, and decompose into a batched task file (max thinking) \u2014 skips whichever phase the request doesn't need; stops at a build-location gate, never auto-implements",
       "chain": "starter"
     },
     {
