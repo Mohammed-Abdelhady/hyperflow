@@ -12,7 +12,11 @@ The orchestrator determines complexity BEFORE dispatching the Reviewer:
 
 ## Template
 
+The first line is a literal routing marker — emit it **verbatim** as the very first line of the dispatched prompt so an upstream tiering proxy can keep review passes on the top model. It is inert to the Reviewer.
+
 ```
+hyperflow-role: reviewer
+
 ## Review scope
 [Files changed, task assigned, complexity classification]
 

@@ -7,6 +7,8 @@ Lean variant of `worker-prompt.md`. Use this as the default template for paralle
 ## Template
 
 ```
+hyperflow-role: worker
+
 ## Task
 [One clear objective — what to do, not how to think about it]
 

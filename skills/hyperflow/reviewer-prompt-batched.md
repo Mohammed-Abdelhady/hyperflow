@@ -30,6 +30,8 @@ If a finding needs a peer domain's judgment before you can rule on it, hold that
 ## Template
 
 ```
+hyperflow-role: reviewer
+
 ## Batched review scope
 Siblings: [N sections or sub-tasks being reviewed]
 Shared input: [the common spec, chosen approach, or task file they all derive from]

@@ -6,7 +6,11 @@ Use this template when dispatching workers via the Agent tool. **Every section b
 
 ## Template
 
+The first line is a literal routing marker — emit it **verbatim** as the very first line of the dispatched prompt. It is inert to the worker but lets an upstream tiering proxy (or any observability tool) identify the agent's role without parsing the body. Everything after it is the brief.
+
 ```
+hyperflow-role: worker
+
 ## Task
 [One clear objective — what to do, not how to think about it. One sentence, verb-led. Examples: "Add a UserAvatar component that displays initials over a colored background." "Wire login form to POST /api/auth/login and redirect on success."]
 
