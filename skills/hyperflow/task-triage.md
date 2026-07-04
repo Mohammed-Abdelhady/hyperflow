@@ -19,6 +19,7 @@ The Classifier is a fast, focused classification call — structured output agai
 Send verbatim to the Classifier. Budget: 2k tokens. Do not add prose around it.
 
 ```text
+hyperflow-role: triage
 You are a task classifier for a multi-agent orchestrator. Analyze the request below and return STRICT JSON ONLY — no prose, no markdown, no code fences.
 
 ### User request

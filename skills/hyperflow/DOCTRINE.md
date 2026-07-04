@@ -180,6 +180,8 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
 
 **Every agent runs on the current session model.** There is no model-tier routing, no per-provider catalog, no model configuration — whatever model the running session uses (Opus, Sonnet, GPT, Gemini, …), every dispatched agent inherits it. Roles are about *responsibility*, not model: the same model can act as orchestrator, decision agent, worker, or reviewer depending on what it was dispatched to do.
 
+Dispatched worker/reviewer/triage prompts carry a `hyperflow-role:` marker as their first line (see the prompt templates). It is purely a *routing/observability hint* — inert to the agent and to hyperflow itself — so an external proxy can, if the operator chooses, run cheaper roles on a cheaper tier. Hyperflow still assigns no model; the marker changes nothing about the doctrine above.
+
 ### The three roles
 
 Hyperflow runs three roles internally:
