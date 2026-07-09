@@ -3,9 +3,9 @@ name: audit
 description: |
   Use when the user wants a code review on recent changes — quality, spec, security, or performance feedback. Triggers a multi-level (L1-L5) review with a standalone Reviewer; on NEEDS_FIX, offers to apply findings via /hyperflow:plan.
   Trigger with /hyperflow:audit, "review this change", "review my PR", "audit the diff", "code review".
-allowed-tools: Read, Bash(git:*), Glob, Grep, Agent, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, Agent, Skill, AskUserQuestion
 argument-hint: "[target] [--level 1-5]"
-version: 3.1.2
+version: 3.1.3
 license: MIT
 compatibility: Designed for Claude Code
 tags: [code-review, quality, multi-level, multi-agent]
