@@ -1,6 +1,14 @@
 ---
 name: hyperflow
-description: "Use when applying Hyperflow's orchestration doctrine in Codex, Antigravity, or another single-agent surface. Auto-invoke for non-trivial engineering work: build, implement, add, refactor, debug, fix, review, audit, plan, scope, design, brainstorm, ship, or deploy."
+description: |
+  Use when applying Hyperflow's orchestration doctrine in Codex, Antigravity, or another single-agent surface. Auto-invoke for non-trivial engineering work: build, implement, add, refactor, debug, fix, review, audit, plan, scope, design, brainstorm, ship, or deploy.
+  Trigger with /hyperflow:hyperflow, "use hyperflow", "apply the doctrine", or automatically on any task-shaped message.
+allowed-tools: Read, Write, Edit, Glob, Grep, Agent, Skill, AskUserQuestion, WebSearch, WebFetch, Bash(git:*), Bash(gh:*), Bash(npm:*), Bash(pnpm:*), Bash(npx:*), Bash(python3:*)
+argument-hint: "[task]"
+version: 1.0.0
+license: MIT
+compatibility: Portable doctrine — Claude Code, Codex App/CLI, OpenCode, Antigravity, Cursor
+tags: [orchestration, doctrine, autonomy, multi-agent, portable]
 ---
 
 # Hyperflow Doctrine (single-agent port)
