@@ -3,9 +3,9 @@ name: deploy
 description: |
   Use when ready to ship — runs pre-push gates (lint, typecheck, build, tests, security sweep), commits, releases, and pushes. Standalone, never auto-invoked. Push always requires explicit confirmation.
   Trigger with /hyperflow:deploy, "ship it", "ready to push", "release", "cut a release", "deploy".
-allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(./scripts/*:*), Glob, Grep, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(./scripts/*:*), Bash(scripts/*:*), Glob, Grep, Agent, AskUserQuestion
 argument-hint: ""
-version: 3.1.2
+version: 3.1.3
 license: MIT
 compatibility: Designed for Claude Code
 tags: [release, ci, automation, push-gates]

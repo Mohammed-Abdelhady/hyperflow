@@ -3,9 +3,9 @@ name: dispatch
 description: |
   Use when a task file exists in .hyperflow/tasks/ and workers need dispatching. Fans out parallel workers under per-batch Reviewers, runs a final integration review, and commits per sub-task. Endpoint of the auto-chain — no auto-deploy.
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
-allowed-tools: Read, Write, Edit, Bash(git:*), Agent, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(grep:*), Bash(rm:*), Bash(bash:*), Bash(python3:*), Agent, Skill, AskUserQuestion
 argument-hint: "[task-file | handoff-slug] [session=one|two] [--phases=all|next] [--from-batch N] [--final-only] [--thorough]"
-version: 3.1.2
+version: 3.1.3
 license: MIT
 compatibility: Designed for Claude Code
 tags: [execution, parallel, review, multi-agent, orchestration]

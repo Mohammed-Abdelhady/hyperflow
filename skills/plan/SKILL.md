@@ -3,9 +3,9 @@ name: plan
 description: |
   Use when a request needs shaping before any code is written — a rough or vague prompt to sharpen, an ambiguous idea to design, or a clear-enough task to decompose. One chain-starter that amplifies the prompt, designs the approach, and decomposes it into a batched task file, skipping whichever phases the request doesn't need, then STOPS at a build-location gate (build here, hand off to another session, or just keep the plan). Plan never implements.
   Trigger with /hyperflow:plan, "design this", "plan this", "decompose this", "how should we", "what's the best way to", "break this down", "enhance this prompt".
-allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, Agent, AskUserQuestion, Skill
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(python3:*), Bash(mv:*), Glob, Grep, Agent, AskUserQuestion, Skill
 argument-hint: "<idea, prompt, or task> [--thorough | depth=max] [briefs=auto|terse] [noamplify]"
-version: 2.0.0
+version: 2.0.1
 license: MIT
 compatibility: Designed for Claude Code
 tags: [prompt-engineering, design, brainstorming, planning, decomposition, multi-agent]
