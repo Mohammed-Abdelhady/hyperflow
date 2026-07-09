@@ -53,6 +53,8 @@ When pushing, always run `./scripts/release.sh` first:
 
 If release.sh says "Nothing to release", skip and push directly.
 
+Full checklist — including the downstream-dependents registry (marketplace mirrors, doctrine embeds) that must be re-verified and synced on every release — lives in [RELEASING.md](RELEASING.md).
+
 **Caveat:** the per-task commit rule above runs *before* release.sh. By the time release.sh runs, the working tree already has N small task-commits — release.sh just adds its own `chore(release):` on top. Don't try to fold multiple tasks into one commit just to keep the release tidy.
 
 ## README Maintenance
