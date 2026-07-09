@@ -3,9 +3,9 @@ name: status
 description: |
   Use when the user wants a one-screen view of current hyperflow project state — version, profile freshness, memory count, and live progress on every in-flight task. Read-only; never modifies state, never dispatches workers.
   Trigger with /hyperflow:status, "what is hyperflow doing", "show task progress", "where are we".
-allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Glob, Grep
+allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Bash(grep:*), Bash(sed:*), Bash(cut:*), Bash(head:*), Bash(awk:*), Glob, Grep
 argument-hint: ""
-version: 3.1.2
+version: 3.1.3
 license: MIT
 compatibility: Designed for Claude Code
 tags: [introspection, read-only, project-state]

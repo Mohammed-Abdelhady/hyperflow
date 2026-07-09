@@ -3,9 +3,9 @@ name: trace
 description: |
   Use when encountering bugs, test failures, runtime errors, broken builds, or "this doesn't work" reports. Systematic root-cause analysis before any patch — never blind-patches symptoms. Standalone, ends with a final-integration review of the fix.
   Trigger with /hyperflow:trace, "debug this", "find the root cause", "why is this failing", "this test is broken".
-allowed-tools: Read, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Glob, Grep, Agent
+allowed-tools: Read, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Glob, Grep, Agent, AskUserQuestion
 argument-hint: "<bug description or failing test name>"
-version: 3.1.2
+version: 3.1.3
 license: MIT
 compatibility: Designed for Claude Code
 tags: [debugging, root-cause, systematic, multi-agent]

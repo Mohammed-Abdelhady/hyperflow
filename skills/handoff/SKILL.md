@@ -3,9 +3,9 @@ name: handoff
 description: |
   Use when managing a two-session handoff — inspecting, picking up, or reviewing a committed handoff package produced by a session=two scope run. The operator interface over the cross-environment handoff lifecycle (plan in one session, build in another, review back in the first).
   Trigger with /hyperflow:handoff, "list handoffs", "pick up the handoff", "review the handoff build".
-allowed-tools: Read, Bash(git:*), Glob, Grep, AskUserQuestion, Skill
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(mv:*), Glob, Grep, AskUserQuestion, Skill
 argument-hint: "<list | status [slug] | pickup <slug> | review <slug> | complete <slug>>"
-version: 1.0.0
+version: 1.0.1
 license: MIT
 compatibility: Designed for Claude Code; portable to Codex/OpenCode/Antigravity
 tags: [handoff, two-session, cross-environment, orchestration]
