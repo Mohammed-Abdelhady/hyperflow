@@ -159,10 +159,34 @@ def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
     return action
 
 
-def main(argv: list[str]) -> int:
+def _print_body_sha(argv: list[str]) -> int:
+    """Print the current template's body-sha — the value stamped into a block's marker.
+
+    Exists so other tools (scripts/verify-downstreams.sh) can ask for the hash rather
+    than reimplement it and silently disagree with auto-bridge about freshness.
+    """
     if len(argv) < 3:
         print(
-            "auto-bridge: usage: auto-bridge.py <plugin-root> <project-root>",
+            "auto-bridge: usage: auto-bridge.py --body-sha <plugin-root>",
+            file=sys.stderr,
+        )
+        return 2
+    template = _read_template(Path(argv[2]))
+    if template is None:
+        print("auto-bridge: template not found", file=sys.stderr)
+        return 2
+    print(_body_hash(template))
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) >= 2 and argv[1] == "--body-sha":
+        return _print_body_sha(argv)
+
+    if len(argv) < 3:
+        print(
+            "auto-bridge: usage: auto-bridge.py <plugin-root> <project-root>\n"
+            "                    auto-bridge.py --body-sha <plugin-root>",
             file=sys.stderr,
         )
         return 0  # non-blocking
