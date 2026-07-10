@@ -138,7 +138,7 @@ def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
             new_content += "\n"
         action = "generated"
     else:
-        start, end, _ = existing
+        start, end, _, _ = existing
         prefix = original[:start]
         suffix = original[end:]
         new_content = prefix + new_block
