@@ -5,7 +5,7 @@
 
 This project uses **hyperflow v${HYPERFLOW_VERSION}** for autonomous multi-agent orchestration.
 
-**Activation:** On session start, load and follow the `hyperflow` skill. If you do not have access to the skill mechanism, read `~/.hyperflow/config.json` for model routing and follow the 9-layer protocol documented at https://github.com/Mohammed-Abdelhady/hyperflow.
+**Activation:** On session start, load and follow the `hyperflow` skill (Codex, OpenCode, Cursor, Grok, and compatible tools). If you do not have access to the skill mechanism, read `~/.hyperflow/config.json` when present and follow the portable doctrine at https://github.com/Mohammed-Abdelhady/hyperflow.
 
 **Behavior overrides:**
 - Decompose every task into worker subtasks (parallel where independent)
