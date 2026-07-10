@@ -2,7 +2,7 @@
 
 Maintainer checklist for cutting a release and keeping downstream consumers in sync.
 Sections 1–2 are the mechanics; **section 3 is the part that goes stale — re-verify it
-on every release** (section 4 has the exact commands).
+on every release** (section 4's script automates the check).
 
 ## 1. Pre-release
 
@@ -45,21 +45,30 @@ gh pr create --title "chore(hyperflow): drop curated freeze — frontmatter pass
 
 ## 4. Refresh the registry (run every release)
 
+- [ ] `./scripts/verify-downstreams.sh` — checks every row of the section-3 table via
+  read-only `gh api` queries (vendored-copy manifest version, doctrine-block `version=`
+  markers, the `curated:` freeze flag) and prints a `DEPENDENT | EXPECTED | ACTUAL | STATUS`
+  table. Exits 1 when any checkable row is stale; `--json` for machine output. Without `gh`
+  or network it skips cleanly (exit 0) — the release never hard-depends on the API.
+  `release.sh` also runs it automatically after tagging, as a non-blocking advisory.
+
+Remediation stays human — the script only reports:
+
+- Jeremy's marketplace still frozen (`curated: true`) → open the ready-to-run unfreeze PR
+  from section 3, or a courtesy resync issue
+- Doctrine embeds stale (forgepath, this repo's `CLAUDE.md`) → `/hyperflow:bridge refresh`
+  in the affected repo and commit
+
+The script verifies **known** rows only; discovering new dependents stays manual:
+
 ```bash
 # Who references the repo anywhere on GitHub (drop own-repo hits):
 gh api -X GET search/code -f q='"Mohammed-Abdelhady/hyperflow"' \
   --jq '.items[] | .repository.full_name + "  " + .path' | grep -v '^Mohammed-Abdelhady/hyperflow' | sort -u
-
-# Is Jeremy's vendored copy still frozen, and at what version?
-gh api repos/jeremylongshore/claude-code-plugins-plus-skills/contents/plugins/ai-agency/hyperflow/.source.json --jq '.content' | base64 -d
-gh api repos/jeremylongshore/claude-code-plugins-plus-skills/contents/sources.yaml --jq '.content' | base64 -d | grep -A14 'name: hyperflow' | grep -E 'curated|verified'
-
-# Doctrine-block staleness in known embeds (compare version= against the current tag):
-gh api repos/Mohammed-Abdelhady/forgepath/contents/CLAUDE.md --jq '.content' | base64 -d | grep 'hyperflow:doctrine:start'
-grep 'hyperflow:doctrine:start' CLAUDE.md
 ```
 
 New hits from the code search = new registry rows: classify as **direct** (vendored copy or
 version-pinned reference → needs a PR or a ping), **transitive** (mirror of a mirror → no action),
-or **self-healing** (doctrine embeds → auto-bridge handles it). Update the table and the
-"Last verified" date, and land the edit in the same commit series as the release.
+or **self-healing** (doctrine embeds → auto-bridge handles it). Update the section-3 table, the
+registry array in `scripts/verify-downstreams.sh`, and the "Last verified" date, and land the
+edit in the same commit series as the release.
