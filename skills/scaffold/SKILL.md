@@ -4,7 +4,7 @@ description: |
   Use when starting hyperflow in a new project, refreshing the .hyperflow/ cache, or installing auto-detection shims (AGENTS.md, CLAUDE.md). One-shot project setup; does not start the spec → scope → dispatch chain.
   Trigger with /hyperflow:scaffold, "init hyperflow", "set up hyperflow", "refresh hyperflow", "install hyperflow shims".
 allowed-tools: Read, Write, Edit, Bash(git:*), Bash(sha256sum:*), Bash(ls:*), Bash(find:*), Bash(scripts/*:*), Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[--tools all|claude-code|opencode|agents] [--force] [--dry-run]"
+argument-hint: "[--tools all|claude-code|opencode|agents|codex|cursor|antigravity|grok] [--force] [--dry-run]"
 version: 3.1.3
 license: MIT
 compatibility: Designed for Claude Code
@@ -80,11 +80,11 @@ Scaffold creates the empty `.hyperflow/memory/` directory; it does NOT write `se
 
 ## Step 3 — Detection Shims
 
-Offer to run `scripts/setup-detection.sh --tools all` to generate AGENTS.md and CLAUDE.md.
+Offer to run `scripts/setup-detection.sh --tools all` to generate AGENTS.md, CLAUDE.md, and provider-specific shims.
 
-Supported tools: `claude-code` (writes CLAUDE.md), `opencode` / `agents` (writes AGENTS.md), `all` (both).
+Supported tools: `claude-code` (CLAUDE.md), `opencode` / `agents` / `codex` / `cursor` (AGENTS.md), `antigravity` (AGENTS.md + `.agent/workflows/`), `grok` (AGENTS.md + `.grok/rules/hyperflow.md`), `all` (every tool).
 
-Flags — `--tools <all|claude-code|opencode|agents>`, `--force`, `--dry-run`.
+Flags — `--tools <all|claude-code|opencode|agents|codex|cursor|antigravity|grok>`, `--force`, `--dry-run`.
 
 Default — `--tools all`. Ask once via `AskUserQuestion` if the user wants to skip any tool.
 
@@ -117,7 +117,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Overview
 
-`/hyperflow:scaffold` is one-shot project setup. It analyzes the codebase via 6 parallel searchers, builds the `.hyperflow/` cache (profile, architecture, conventions, dependencies, testing, git-workflow), seeds the memory skeleton, and optionally writes detection shims (CLAUDE.md for Claude Code, AGENTS.md for OpenCode). Does not start the plan → dispatch chain — invoke `/hyperflow:plan` when ready.
+`/hyperflow:scaffold` is one-shot project setup. It analyzes the codebase via 6 parallel searchers, builds the `.hyperflow/` cache (profile, architecture, conventions, dependencies, testing, git-workflow), seeds the memory skeleton, and optionally writes detection shims (CLAUDE.md, AGENTS.md, Grok rules, Antigravity workflows). Does not start the plan → dispatch chain — invoke `/hyperflow:plan` when ready.
 
 ## Prerequisites
 
@@ -133,7 +133,7 @@ Numbered steps are in [Step 1 — Analysis Cache](#step-1--analysis-cache) throu
 2. If present, recompute SHA256 checksums and refresh only stale files.
 3. Create `.hyperflow/memory/` skeleton: copy `skills/hyperflow/DOCTRINE.md` → `doctrine.md` (idempotent — re-copy only if source is newer); create `learnings.md` empty stub (skip if content exists); create `index.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md` stubs if absent.
 4. Migrate matching entries from legacy `~/.claude/hyperflow-memory.md` if found.
-5. Offer `scripts/setup-detection.sh --tools all` to write CLAUDE.md + AGENTS.md.
+5. Offer `scripts/setup-detection.sh --tools all` to write CLAUDE.md, AGENTS.md, and Grok/Antigravity shims when those tools are selected.
 6. Print summary of created / skipped / migrated artifacts.
 
 ## Output
