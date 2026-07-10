@@ -1,38 +1,103 @@
-<!DOCTYPE html><html lang="en"><head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Orchestration — Hyperflow</title>
-  <meta name="description" content="How Hyperflow orchestrates: chain, tiers, sub-phases, review, memory." />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Hyperflow Orchestrates — Chain, Reviews, Memory</title>
+  <meta name="description" content="How one request becomes a coordinated multi-agent run — the chain, triage, parallel dispatch under review, commit cadence, and failure handling." />
+  <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/orchestration.html" />
+  <meta name="theme-color" content="#0B0F1A" />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hyperflow" />
+  <meta property="og:title" content="How Hyperflow Orchestrates — Chain, Reviews, Memory" />
+  <meta property="og:description" content="How one request becomes a coordinated multi-agent run — the chain, triage, parallel dispatch under review, commit cadence, and failure handling." />
+  <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/orchestration.html" />
+  <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Hyperflow — from GitHub issue to reviewed PR: plan, dispatch, audit, deploy" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How Hyperflow Orchestrates — Chain, Reviews, Memory" />
+  <meta name="twitter:description" content="How one request becomes a coordinated multi-agent run — the chain, triage, parallel dispatch under review, and failure handling." />
+  <meta name="twitter:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/brutalist.css" />
-</head><body>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/hyperflow.css" />
 
-  <nav aria-label="Primary navigation"><div class="nav-inner">
-    <a href="index.html" class="nav-wordmark">Hyperflow</a>
-    <ul class="nav-links" role="list">
-      <li><a href="index.html#chain">Chain</a></li>
-      <li><a href="installation.html">Install</a></li>
-      <li><a href="orchestration.html">Orchestration</a></li>
-      <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
-    </ul>
-  </div></nav>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "name": "How Hyperflow Orchestrates",
+        "url": "https://mohammed-abdelhady.github.io/hyperflow/orchestration.html",
+        "description": "How one request becomes a coordinated multi-agent run — the chain, triage, parallel dispatch under review, commit cadence, and failure handling."
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Hyperflow", "item": "https://mohammed-abdelhady.github.io/hyperflow/" },
+          { "@type": "ListItem", "position": 2, "name": "Orchestration", "item": "https://mohammed-abdelhady.github.io/hyperflow/orchestration.html" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-  <main>
+  <!-- ── Nav ─────────────────────────────────────────────────────────── -->
+  <nav aria-label="Primary">
+    <div class="nav-inner">
+      <a class="nav-wordmark" href="index.html" aria-label="Hyperflow — home">
+        <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="wm-flow" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#14B8A6"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="14" fill="#0E1422"/>
+          <line x1="20.5" y1="32" x2="43.5" y2="32" stroke="url(#wm-flow)" stroke-width="6.5" stroke-linecap="round"/>
+          <circle cx="20.5" cy="25.5" r="9" fill="#7C3AED"/>
+          <circle cx="43.5" cy="38.5" r="9" fill="#14B8A6"/>
+        </svg>
+        Hyperflow
+      </a>
+      <ul class="nav-links" role="list">
+        <li class="nav-anchor"><a href="index.html#chain">Chain</a></li>
+        <li><a href="installation.html">Installation</a></li>
+        <li><a href="orchestration.html" aria-current="page">Orchestration</a></li>
+        <li><a class="nav-cta" href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub →</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main">
 
     <!-- ── Page header ──────────────────────────────────────────────────── -->
     <section id="orchestration-header" aria-labelledby="orchestration-heading">
       <div class="container">
         <p class="section-label">Orchestration</p>
-        <h2 id="orchestration-heading">How a request becomes a coordinated multi-agent run.</h2>
+        <h1 class="page-title" id="orchestration-heading">How a request becomes a coordinated multi-agent run.</h1>
         <p>
           The chain, triage, per-phase agent dispatch, parallelism accounting, and failure handling &mdash;
           everything that turns a single user request into a set of committed, reviewed sub-tasks.
         </p>
       </div>
     </section>
-
-    <hr />
 
     <!-- ── The chain ────────────────────────────────────────────────────── -->
     <section id="the-chain" aria-labelledby="the-chain-heading">
@@ -83,7 +148,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Layer 0.5 — triage ────────────────────────────────────────────── -->
     <section id="triage" aria-labelledby="triage-heading">
@@ -144,7 +208,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Plan → dispatch ──────────────────────────────────────── -->
     <section id="spec-scope-dispatch" aria-labelledby="ssd-heading">
@@ -228,7 +291,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── After dispatch ───────────────────────────────────────────────── -->
     <section id="after-dispatch" aria-labelledby="after-dispatch-heading">
@@ -337,7 +399,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Parallelism ───────────────────────────────────────────────────── -->
     <section id="parallelism" aria-labelledby="parallelism-heading">
@@ -419,7 +480,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Live progress ─────────────────────────────────────────────────── -->
     <section id="live-progress" aria-labelledby="live-progress-heading">
@@ -461,7 +521,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Commit cadence ────────────────────────────────────────────────── -->
     <section id="commit-cadence" aria-labelledby="commit-cadence-heading">
@@ -486,7 +545,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Handling failures ─────────────────────────────────────────────── -->
     <section id="failures" aria-labelledby="failures-heading">
@@ -528,7 +586,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Agent consultation ────────────────────────────────────────────── -->
     <section id="consultation" aria-labelledby="consultation-heading">
@@ -548,7 +605,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Surviving context compaction ──────────────────────────────────── -->
     <section id="compaction" aria-labelledby="compaction-heading">
@@ -572,7 +628,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── Auto-archive ──────────────────────────────────────────────────── -->
     <section id="archive" aria-labelledby="archive-heading">
@@ -612,7 +667,6 @@
       </div>
     </section>
 
-    <hr />
 
     <!-- ── References ────────────────────────────────────────────────────── -->
     <section id="references" aria-labelledby="references-heading">
@@ -665,15 +719,17 @@
     <div class="footer-inner">
       <div class="footer-left">
         <a href="index.html" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta">v4.22.0 &nbsp;&middot;&nbsp; MIT License</span>
+        <span class="footer-meta"><span class="footer-version">v5.8.0</span> · MIT License</span>
       </div>
-      <div class="footer-links">
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/installation.md" target="_blank" rel="noopener">Docs</a>
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
-      </div>
+      <ul class="footer-links" role="list">
+        <li><a href="installation.html">Installation</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/orchestration.md" target="_blank" rel="noopener">Docs</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
     </div>
   </footer>
 
-</body></html>
+</body>
+</html>

@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
-  "version": "5.6.0",
-  "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
-  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
+  "version": "5.8.0",
+  "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
+  "subtitle": "Planners design, parallel workers build, and 22 domain specialists review every step. 18 skills, adaptive depth, persistent per-project memory.",
   "layers": [
     {
       "n": 0,
@@ -87,6 +87,13 @@
       "chain": "starter"
     },
     {
+      "name": "issue",
+      "command": "/hyperflow:issue",
+      "tagline": "Issue \u2192 PR",
+      "purpose": "Turn a GitHub issue into a triaged, planned, dispatched, and reviewed pull request \u2014 bug reports route through root-cause discipline, features through the plan chain; every outbound action gated",
+      "chain": "starter"
+    },
+    {
       "name": "dispatch",
       "command": "/hyperflow:dispatch",
       "tagline": "Execute the batches",
@@ -112,6 +119,13 @@
       "command": "/hyperflow:audit",
       "tagline": "Code review",
       "purpose": "L1 quick \u2192 L5 exhaustive review on changes, files, or PRs",
+      "chain": "standalone"
+    },
+    {
+      "name": "pr",
+      "command": "/hyperflow:pr",
+      "tagline": "PR review",
+      "purpose": "Run the L1-L5 audit against an incoming pull request's real diff range, post findings as one batched GitHub review, chain fixes on NEEDS_FIX, and merge behind a gate \u2014 contributor code never executes without explicit consent",
       "chain": "standalone"
     },
     {
@@ -306,6 +320,22 @@
         "name": "architect",
         "personas": [
           "architect"
+        ],
+        "tier": "reviewer + design decision agent"
+      },
+      {
+        "name": "designer",
+        "personas": [
+          "ui",
+          "creative"
+        ],
+        "tier": "reviewer + design decision agent"
+      },
+      {
+        "name": "motion",
+        "personas": [
+          "ui",
+          "performance"
         ],
         "tier": "reviewer + design decision agent"
       }

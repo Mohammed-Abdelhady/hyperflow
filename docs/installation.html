@@ -3,42 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation — Hyperflow</title>
-  <meta name="description" content="Install Hyperflow on Codex, Claude Code, OpenCode, or Antigravity." />
+  <title>Install Hyperflow — Codex, Claude Code, OpenCode &amp; More</title>
+  <meta name="description" content="Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script. Security config and verification included." />
+  <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/installation.html" />
+  <meta name="theme-color" content="#0B0F1A" />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hyperflow" />
+  <meta property="og:title" content="Install Hyperflow — Codex, Claude Code, OpenCode &amp; More" />
+  <meta property="og:description" content="Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script." />
+  <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/installation.html" />
+  <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Hyperflow — from GitHub issue to reviewed PR: plan, dispatch, audit, deploy" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Install Hyperflow — Codex, Claude Code, OpenCode &amp; More" />
+  <meta name="twitter:description" content="Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script." />
+  <meta name="twitter:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/brutalist.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/hyperflow.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "name": "Install Hyperflow",
+        "url": "https://mohammed-abdelhady.github.io/hyperflow/installation.html",
+        "description": "Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script."
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Hyperflow", "item": "https://mohammed-abdelhady.github.io/hyperflow/" },
+          { "@type": "ListItem", "position": 2, "name": "Installation", "item": "https://mohammed-abdelhady.github.io/hyperflow/installation.html" }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- ── Nav ─────────────────────────────────────────────────────────── -->
-  <nav aria-label="Primary navigation">
+  <nav aria-label="Primary">
     <div class="nav-inner">
-      <a href="index.html" class="nav-wordmark">Hyperflow</a>
+      <a class="nav-wordmark" href="index.html" aria-label="Hyperflow — home">
+        <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="wm-flow" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#14B8A6"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="14" fill="#0E1422"/>
+          <line x1="20.5" y1="32" x2="43.5" y2="32" stroke="url(#wm-flow)" stroke-width="6.5" stroke-linecap="round"/>
+          <circle cx="20.5" cy="25.5" r="9" fill="#7C3AED"/>
+          <circle cx="43.5" cy="38.5" r="9" fill="#14B8A6"/>
+        </svg>
+        Hyperflow
+      </a>
       <ul class="nav-links" role="list">
-        <li><a href="index.html#chain">Chain</a></li>
-        <li><a href="installation.html">Install</a></li>
+        <li class="nav-anchor"><a href="index.html#chain">Chain</a></li>
+        <li><a href="installation.html" aria-current="page">Installation</a></li>
         <li><a href="orchestration.html">Orchestration</a></li>
-        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a class="nav-cta" href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub →</a></li>
       </ul>
     </div>
   </nav>
 
-  <main>
+  <main id="main">
 
     <!-- ── Page header ───────────────────────────────────────────────── -->
     <section id="installation-header" aria-labelledby="installation-heading">
       <div class="container">
         <p class="section-label">Installation</p>
-        <h2 id="installation-heading">Get Hyperflow running in Codex and terminal CLIs.</h2>
+        <h1 class="page-title" id="installation-heading">Get Hyperflow running in Codex and terminal CLIs.</h1>
         <p>
           Covers quick install, platform compatibility, security, and verification.
         </p>
       </div>
     </section>
-
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Where it runs ─────────────────────────────────────────────── -->
     <section id="where-it-runs" aria-labelledby="where-heading">
@@ -114,7 +172,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Quick install ──────────────────────────────────────────────── -->
     <section id="quick-install" aria-labelledby="quick-install-heading">
@@ -264,7 +321,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Recommended settings ───────────────────────────────────────── -->
     <section id="recommended-settings" aria-labelledby="settings-heading">
@@ -314,7 +370,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Security configuration ─────────────────────────────────────── -->
     <section id="security-configuration" aria-labelledby="security-heading">
@@ -398,7 +453,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Optional: CLAUDE.md reinforcement ─────────────────────────── -->
     <section id="claude-md-reinforcement" aria-labelledby="claudemd-heading">
@@ -430,7 +484,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Verify installation ────────────────────────────────────────── -->
     <section id="verify-installation" aria-labelledby="verify-heading">
@@ -443,7 +496,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Updates ────────────────────────────────────────────────────── -->
     <section id="updates" aria-labelledby="updates-heading">
@@ -497,7 +549,6 @@
       </div>
     </section>
 
-    <hr style="margin-top: var(--section-gap);" />
 
     <!-- ── Uninstall ──────────────────────────────────────────────────── -->
     <section id="uninstall" aria-labelledby="uninstall-heading">
@@ -560,14 +611,15 @@
     <div class="footer-inner">
       <div class="footer-left">
         <a href="index.html" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta">v4.22.0 &nbsp;·&nbsp; MIT License</span>
+        <span class="footer-meta"><span class="footer-version">v5.8.0</span> · MIT License</span>
       </div>
-      <div class="footer-links">
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/installation.md" target="_blank" rel="noopener">Docs</a>
-        <a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
-      </div>
+      <ul class="footer-links" role="list">
+        <li><a href="orchestration.html">Orchestration</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/docs/installation.md" target="_blank" rel="noopener">Docs</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
     </div>
   </footer>
 

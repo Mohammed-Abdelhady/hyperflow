@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
-  "version": "5.6.0",
-  "description": "Multi-agent orchestration for AI coding tools including Codex, Claude Code, OpenCode, Grok, and Antigravity. Decision agents plan and review, workers execute — everything runs in parallel on your session model.",
+  "version": "5.8.0",
+  "description": "Point it at a GitHub issue, get back a reviewed pull request. Multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity & Cursor — every step reviewed, memory that stays in your repo.",
   "type": "module",
   "license": "MIT",
   "author": {

@@ -405,6 +405,62 @@ def check_portable_doctrine() -> None:
         return
     for err in module.check(ROOT):
         fail(err)
+DOCS_PAGES = ["index.html", "installation.html", "orchestration.html", "404.html"]
+FOOTER_VERSION_RE = re.compile(r'footer-version">v([0-9.]+)<')
+LOCAL_REF_RE = re.compile(r'(?:href|src|poster)="([^"]+)"')
+NUM_WORDS = {
+    15: "Fifteen", 16: "Sixteen", 17: "Seventeen", 18: "Eighteen", 19: "Nineteen",
+    20: "Twenty", 21: "Twenty-one", 22: "Twenty-two", 23: "Twenty-three", 24: "Twenty-four",
+}
+
+
+def check_docs_site() -> None:
+    plugin_version = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())["version"]
+    docs = ROOT / "docs"
+    for page in DOCS_PAGES:
+        path = docs / page
+        if not path.exists():
+            fail(f"docs/{page} missing")
+            continue
+        content = path.read_text()
+        m = FOOTER_VERSION_RE.search(content)
+        if not m:
+            fail(f"docs/{page} has no footer-version span")
+        elif m.group(1) != plugin_version:
+            fail(f"docs/{page} footer says v{m.group(1)} but plugin.json is {plugin_version}")
+        h1_count = len(re.findall(r"<h1[ >]", content))
+        if h1_count != 1:
+            fail(f"docs/{page} has {h1_count} h1 elements (want exactly 1)")
+        for ref in LOCAL_REF_RE.findall(content):
+            if ref.startswith(("http://", "https://", "mailto:", "#", "data:")):
+                continue
+            target = ref.split("#", 1)[0].split("?", 1)[0]
+            if target and not (docs / target).exists():
+                fail(f"docs/{page} broken local ref → {ref}")
+    sitemap = docs / "sitemap.xml"
+    if not sitemap.exists():
+        fail("docs/sitemap.xml missing")
+    else:
+        for lastmod in re.findall(r"<lastmod>([^<]+)</lastmod>", sitemap.read_text()):
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", lastmod):
+                fail(f"docs/sitemap.xml invalid lastmod: {lastmod}")
+
+
+def check_skill_count() -> None:
+    actual = len(list((ROOT / "skills").glob("*/SKILL.md")))
+    readme = (ROOT / "README.md").read_text()
+    word = NUM_WORDS.get(actual)
+    if word is None:
+        warn(f"skill count {actual} outside NUM_WORDS map — extend it in validate-plugin.py")
+    elif f"{word} skills" not in readme:
+        fail(f"README.md does not say '{word} skills' (skills/ has {actual} SKILL.md files)")
+    for n, stale_word in NUM_WORDS.items():
+        if n != actual and f"{stale_word} skills" in readme:
+            fail(f"README.md still says '{stale_word} skills' but skills/ has {actual}")
+    plugin_desc = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())["description"]
+    m = re.search(r"(\d+) skills", plugin_desc)
+    if m and int(m.group(1)) != actual:
+        fail(f"plugin.json description says '{m.group(1)} skills' but skills/ has {actual}")
 
 
 def main() -> int:
@@ -418,6 +474,8 @@ def main() -> int:
     section("portable doctrine template", check_portable_doctrine)
     section("hooks.json", check_hooks)
     section("README.md internal links", check_readme_links)
+    section("docs site version + refs", check_docs_site)
+    section("skill count consistency", check_skill_count)
 
     print()
     if ERRORS:
