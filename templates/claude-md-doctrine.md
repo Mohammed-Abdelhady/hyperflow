@@ -43,8 +43,9 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix
 - **Per-batch / per-sub-task Reviewer** runs an anchored review of one batch's small diff (L1-L2 territory).
 - **Final integration Reviewer** (end-of-chain over cumulative diff) and **Standalone Reviewer** (audit, security sweep, final sanity check) are decision-agent passes.
 - **Debugger / Analyst / Planner / Brainstormer / Orchestrator** are decision agents.
+- **Specialist reviewers** (`security-reviewer`, `database-reviewer`, `algorithm-reviewer`, …) act as the per-batch and standalone Reviewer; security/correctness specialists always run a full review pass even per-batch. **Investigators** (`searcher` worker; `debugger` / `analyst` / `researcher` decision agents); **Brain** (specialist router) is a decision-maker. All run on the session model.
 
-Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation.
+Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation. Reviews and investigations are run by the **matching domain specialist** ([`agents/`](agents/)), not a generic role — the Brain decides the responsible roster once after triage and the chain inherits it. On deep / security work, specialists research current best-practices and CVEs before acting (web-research-first).
 
 ## File-first artefacts
 
@@ -52,8 +53,10 @@ Plans, specs, audits, task decompositions live in `.hyperflow/` files — never 
 
 | Artefact | Path |
 |---|---|
-| Task decomposition | `.hyperflow/tasks/<slug>.md` |
+| Task decomposition (single-phase) | `.hyperflow/tasks/<slug>.md` |
+| Feature (multi-phase) | `.hyperflow/features/<slug>/` — `feature.md` + `phase-<n>-<name>/` folders, each with `phase.md` + `tasks/` + `spec.md`/`research.md`/`decisions.md` |
 | Feature spec | `.hyperflow/specs/<slug>.md` |
+| Design system | `.hyperflow/design/system.md` |
 | Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` |
 | Project memory | `.hyperflow/memory/<category>.md` |
 
