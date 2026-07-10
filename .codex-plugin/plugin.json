@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
-  "version": "5.6.0",
-  "description": "Autonomous orchestration for Codex App and CLI. Decision agents plan, triage, and review; workers execute in parallel — all on your session model; every chain keeps project memory local.",
+  "version": "5.8.0",
+  "description": "Point it at a GitHub issue, get back a reviewed pull request — in Codex App and CLI. Decision agents plan and review; workers execute in parallel on your session model; memory stays in your repo.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "Hyperflow",
     "shortDescription": "Orchestrate Codex tasks with memory, routing, and review",
-    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, task decomposition, Worker → Reviewer review at every step, parallel worker execution, persistent project memory, security guardrails, and release gates.",
+    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, task decomposition, a specialist review of every step (Worker → Reviewer), parallel worker execution, persistent project memory, security guardrails, and gated release.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [

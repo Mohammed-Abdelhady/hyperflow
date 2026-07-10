@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.8.0] — 2026-07-10
+
+### Added
+- Validate docs-site version and skill-count drift
+- Sync site version, JSON-LD, and sitemap on bump
+- Dark premium redesign of landing, installation, orchestration pages
+- Add og-image generation, demo video, and SEO infrastructure
+
+### Fixed
+- Orchestration-led hero headline
+- WCAG-clean dim text and zero-CLS font fallbacks
+
+### Changed
+- Tone pass on installation and orchestration guides
+- Align feature taglines and specialist registry
+- Replace run-on manifest descriptions with canonical copy
+- Rewrite README as a benefit-led overview
+
+
+## [5.7.0] — 2026-07-10
+
+### Added
+- PR exit gate + gh pre-elections for GitHub-native chains
+- L1-L5 review chain for incoming pull requests
+- GitHub issue → reviewed PR chain
+
+### Fixed
+- Apply final-integration review findings
+- Keep the README shields version badge in sync on bump
+
+### Changed
+- GitHub-native chain section, demo scene, manifest re-lead
+
+
 ## [5.6.0] — 2026-07-10
 
 ### Added
@@ -1113,7 +1147,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.6.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.8.0...HEAD
+[5.8.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.7.0...v5.8.0
+[5.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.6.0...v5.7.0
 [5.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.4.1...v5.5.0
 [5.4.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.4.0...v5.4.1

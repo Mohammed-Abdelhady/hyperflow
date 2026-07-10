@@ -76,7 +76,7 @@ Plan asks the user **nothing** at startup. There is no session-strategy gate and
 At Step 0, the orchestrator only:
 
 1. **Engages maximum thinking depth** (ultra reasoning) for the whole run — triage, analysis, design, and decomposition all reason at full depth.
-2. **Parses flags** from the args: `--thorough` / `depth=max` (disable P1/P2/P4 — see the skippable summary), `noamplify` (skip Step 2), `briefs=auto|terse` (Step 9c). Record them; do not ask about them.
+2. **Parses flags** from the args: `--thorough` / `depth=max` (disable P1/P2/P4 — see the skippable summary), `noamplify` (skip Step 2), `briefs=auto|terse` (Step 9c). Record them; do not ask about them. **GitHub-native pass-through:** `gh_issue=` / `pr=` / `comment=` (set by `/hyperflow:issue`) and `spec=` (a pre-built spec path, e.g. from `/hyperflow:issue` or the audit fix-gate) are recorded verbatim — plan never acts on them, it forwards them to dispatch at Step 12.
 
 Then proceed straight to Step 1. Any `session=` / `commit=` / `branch=` / `push=` args that happen to be present are **ignored for gating** — the build decision is always made fresh at Step 12.
 
@@ -216,7 +216,7 @@ When the second session finishes building, what should it do?
 
 Branch on the answer:
 
-- **This session** → invoke `Skill` with `skill: dispatch`, `args: "<slug> triage=… mode=… briefs=…"`. Do **not** pass `commit=` / `branch=` / `push=` — `dispatch` fires its own operational gate (its Step 0.5) before building. Print `Building here — handing to /hyperflow:dispatch…`.
+- **This session** → invoke `Skill` with `skill: dispatch`, `args: "<slug> triage=… mode=… briefs=…"` — appending `gh_issue=… pr=… comment=…` verbatim when present (the GitHub-native pass-through from Step 0; dispatch's Step 5 PR exit needs them). Do **not** pass `commit=` / `branch=` / `push=` — `dispatch` fires its own operational gate (its Step 0.5) before building. Print `Building here — handing to /hyperflow:dispatch…`.
 - **Another session** → do NOT invoke dispatch. Write the committed handoff package and STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)) — create `.hyperflow-handoff/<slug>/` with `HANDOFF.md` (manifest: slug, artefact type/path, resolved chain args, `on_complete` from Q2, originating commit, `Specialists` roster), `STATUS` (`planned`), a committed copy of the gitignored artefact, and `context/` copies of `.hyperflow/{conventions,profile,architecture}.md` + memory index; `git add` + commit `chore(handoff): plan <slug> for second-session build`; then print the start-session-2 instructions.
 - **Stop** → write nothing further. Print `Plan kept at .hyperflow/tasks/<slug>.md — run /hyperflow:dispatch <slug> when you're ready to build.`
 

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Hyperflow</title>
+  <meta name="description" content="Page not found." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0B0F1A" />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/hyperflow.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ── Nav ─────────────────────────────────────────────────────────── -->
+  <nav aria-label="Primary">
+    <div class="nav-inner">
+      <a class="nav-wordmark" href="index.html" aria-label="Hyperflow — home">
+        <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="wm-flow" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#14B8A6"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="14" fill="#0E1422"/>
+          <line x1="20.5" y1="32" x2="43.5" y2="32" stroke="url(#wm-flow)" stroke-width="6.5" stroke-linecap="round"/>
+          <circle cx="20.5" cy="25.5" r="9" fill="#7C3AED"/>
+          <circle cx="43.5" cy="38.5" r="9" fill="#14B8A6"/>
+        </svg>
+        Hyperflow
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="installation.html">Installation</a></li>
+        <li><a href="orchestration.html">Orchestration</a></li>
+        <li><a class="nav-cta" href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub →</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="nf-heading">
+      <div class="container">
+        <p class="section-label">404</p>
+        <h1 class="page-title" id="nf-heading">No route matched.</h1>
+        <div class="terminal" style="max-width: 40rem; margin-top: 2rem;">
+          <div class="terminal-bar" aria-hidden="true">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="terminal-title">~ — hyperflow</span>
+          </div>
+          <div class="terminal-body">
+            <pre><span class="c-dim">$</span> <span class="c-hot">hyperflow route /you-are-here</span>
+<span class="c-plan">▸ triage</span>     scanning routes…
+<span class="c-dim">✗ not found — no skill matches this path</span>
+
+<span class="c-dim"># try one of these instead</span>
+<span class="c-exec">→</span> <a href="index.html">index.html</a>          <span class="c-dim"># the landing page</span>
+<span class="c-exec">→</span> <a href="installation.html">installation.html</a>   <span class="c-dim"># install in two commands</span>
+<span class="c-exec">→</span> <a href="orchestration.html">orchestration.html</a>  <span class="c-dim"># how the chain works</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Footer ──────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <a href="index.html" class="footer-wordmark">Hyperflow</a>
+        <span class="footer-meta"><span class="footer-version">v5.8.0</span> · MIT License</span>
+      </div>
+      <ul class="footer-links" role="list">
+        <li><a href="installation.html">Installation</a></li>
+        <li><a href="orchestration.html">Orchestration</a></li>
+        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>

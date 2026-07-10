@@ -145,6 +145,44 @@ class MainEndToEndTests(unittest.TestCase):
         self.assertTrue(content.endswith(SUFFIX))
 
 
+class ForceRestampTests(unittest.TestCase):
+    """--force re-stamps a version label; without it, matching content is a no-op."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.project_root = Path(self.tmp.name)
+        (self.project_root / ".hyperflow").mkdir()
+        template = auto_bridge._read_template(REPO_ROOT)
+        current_sha = auto_bridge._body_hash(template)
+        # A block whose CONTENT is current but whose version label is behind.
+        marker = (
+            f"<!-- hyperflow:doctrine:start version=0.0.1 "
+            f"generated=2025-01-01T00:00:00Z body-sha={current_sha} "
+            "source=https://github.com/Mohammed-Abdelhady/hyperflow -->"
+        )
+        self.claude_md = self.project_root / "CLAUDE.md"
+        self.claude_md.write_text(f"{marker}\n\nbody\n\n{END_MARKER}\n", encoding="utf-8")
+
+    def _run(self, *extra):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return auto_bridge.main(
+                [str(SCRIPT_PATH), str(REPO_ROOT), str(self.project_root), *extra]
+            )
+
+    def test_without_force_a_stale_label_is_left_alone(self):
+        before = self.claude_md.read_text(encoding="utf-8")
+        self.assertEqual(self._run(), 0)
+        self.assertEqual(self.claude_md.read_text(encoding="utf-8"), before)
+        self.assertIn("version=0.0.1", before)
+
+    def test_force_restamps_the_version_label(self):
+        self.assertEqual(self._run("--force"), 0)
+        content = self.claude_md.read_text(encoding="utf-8")
+        self.assertNotIn("version=0.0.1", content)
+        self.assertIn(f"version={auto_bridge._read_version(REPO_ROOT)}", content)
+
+
 class BodyShaQueryTests(unittest.TestCase):
     """--body-sha is the hash contract other tools read; it must match the stamp."""
 

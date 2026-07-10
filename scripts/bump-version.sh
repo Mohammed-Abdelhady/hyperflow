@@ -26,8 +26,11 @@ if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
+DOCS_HTML=("$ROOT/docs/index.html" "$ROOT/docs/installation.html" "$ROOT/docs/orchestration.html" "$ROOT/docs/404.html")
+SITEMAP_XML="$ROOT/docs/sitemap.xml"
+
 # Verify all files exist
-for FILE in "$PACKAGE_JSON" "$PLUGIN_JSON" "$CODEX_PLUGIN_JSON" "$MARKETPLACE_JSON" "$README_MD"; do
+for FILE in "$PACKAGE_JSON" "$PLUGIN_JSON" "$CODEX_PLUGIN_JSON" "$MARKETPLACE_JSON" "$README_MD" "${DOCS_HTML[@]}" "$SITEMAP_XML"; do
   if [[ ! -f "$FILE" ]]; then
     echo "Error: file not found: $FILE"
     exit 1
@@ -59,10 +62,21 @@ echo "Updated $MARKETPLACE_JSON (2 occurrences)"
 
 # Update README.md version badge
 sed "${SED_INPLACE[@]}" 's/<code>v[^<]*<\/code>/<code>v'"$NEW_VERSION"'<\/code>/' "$README_MD"
+sed "${SED_INPLACE[@]}" 's|badge/version-v[^-]*-blueviolet|badge/version-v'"$NEW_VERSION"'-blueviolet|' "$README_MD"
+sed "${SED_INPLACE[@]}" 's/alt="version v[^"]*"/alt="version v'"$NEW_VERSION"'"/' "$README_MD"
 echo "Updated $README_MD"
 
 # Update skill VERSION file
 echo "$NEW_VERSION" > "$SKILL_VERSION"
 echo "Updated $SKILL_VERSION"
 
-echo "Version bumped to $NEW_VERSION (6 files)"
+# Update docs site — footer versions, index JSON-LD, sitemap lastmod
+for HTML in "${DOCS_HTML[@]}"; do
+  sed "${SED_INPLACE[@]}" 's/footer-version">v[0-9.]*</footer-version">v'"$NEW_VERSION"'</' "$HTML"
+done
+sed "${SED_INPLACE[@]}" 's/"softwareVersion": "[0-9.]*"/"softwareVersion": "'"$NEW_VERSION"'"/' "$ROOT/docs/index.html"
+TODAY="$(date +%Y-%m-%d)"
+sed "${SED_INPLACE[@]}" 's|<lastmod>[0-9-]*</lastmod>|<lastmod>'"$TODAY"'</lastmod>|g' "$SITEMAP_XML"
+echo "Updated docs site (4 footers, JSON-LD, sitemap lastmod)"
+
+echo "Version bumped to $NEW_VERSION (11 files)"
