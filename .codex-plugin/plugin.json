@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "5.5.0",
+  "version": "5.6.0",
   "description": "Autonomous orchestration for Codex App and CLI. Decision agents plan, triage, and review; workers execute in parallel — all on your session model; every chain keeps project memory local.",
   "author": {
     "name": "Mohammed Abdelhady",
