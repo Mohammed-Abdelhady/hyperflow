@@ -176,6 +176,70 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
    - **No LLM-as-actor.** No "Co-Authored-By: Claude" (or any LLM) in commits. No "Claude / AI / assistant / LLM" as a subject performing an action in commit messages, PR descriptions, rebase notes, code comments, doc prose, skill bodies, memory entries, task files, or anything else written by the orchestrator. Describe what changed and why — never who/what made it. Use neutral phrasing: "The skill writes …", "The orchestrator dispatches …", "Step 4 commits …", "The cast script was rewritten." Product names used as a *named tool / file* are fine (`claude` CLI binary, `Claude Code` platform, `CLAUDE.md` filename); banned use is only as a *narrative subject*.
    - **No hook bypass.** `--no-verify`, `--no-gpg-sign`, `--no-pre-commit`, any flag whose purpose is to skip a hook the project configured — BANNED. Includes scripted commits (e.g. `scripts/queue-commit.sh`), background commits, automated chore commits, recovery flows, scaffold commits, release commits. If a hook rejects a commit, surface the error and stop; the user fixes the rejected files and resumes. If the hook is itself broken, the user fixes the hook. The orchestrator never decides on the user's behalf that a hook should not run. This applies to every code path that calls `git commit`, including the dispatch per-task and per-task-deferred cadences.
 
+<!-- portable:section id=autonomy order=1 title="Autonomy"
+
+## Autonomy
+
+1. **No confirmations** ("should I…?", "is this ok?", "ready to ship?"). Execute.
+2. **Clarification IS required** for *what* / *which* / *where* ambiguities — ask via `AskUserQuestion`. Never ask "should I start?".
+3. **Minimal output.** One-line status updates. No hedging ("I think", "maybe").
+4. **Silent error recovery.** Fix and continue; only surface unrecoverable errors.
+5. **Binary action gates carry NO `(Recommended)` marker.** `Yes/No`, `Push/Hold`, `Approve/Revise`, `Include/Exclude` — neutral. Multi-option lists (3+) and named-workflow choices (`Auto/Manual`) DO mark a recommended option.
+6. **Clarification fires AFTER analysis, never before.** Read the code, analyze, then ask. Asking before research wastes the user's time on questions the codebase already answers.
+
+<!-- /portable:section -->
+
+<!-- portable:section id=auto-routing order=2 title="Auto-routing by intent"
+
+## Auto-routing by intent
+
+Scan every user message. If a verb matches, follow the matching workflow — even without a slash command. First match wins; case-insensitive.
+
+| Verb / phrase | Workflow |
+|---|---|
+| `brainstorm`, `design`, `explore`, "what if", "should we", "unsure about" | Read code → ask ≥2 questions → propose 2-3 approaches → design section-by-section with user approval per section |
+| `scope`, `decompose`, "plan out", "break down" | Map affected surface → produce batched task graph → write to `.hyperflow/tasks/<slug>.md` |
+| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | In Claude Code v2.1.154+, create a dynamic workflow; in Codex/OpenCode use the portable workflow adapter; elsewhere use the build/scope route |
+| `build`, `implement`, `add`, `refactor`, "wire up" | Decompose into batches → dispatch parallel workers → per-batch reviewer → per-sub-task commits → final integration reviewer |
+| `debug`, `fix it`, `solve`, "why is X", "Y fails", stack trace | Systematic root-cause: 5 Whys + parallel hypothesis testing. Never blind-patch symptoms |
+| `audit`, `review`, "check for issues", "security check" | Multi-level review (L1 syntax → L5 exhaustive) → write findings to `.hyperflow/audits/<timestamp>.md` → ask fix-gate |
+| `ship`, `push`, `release`, `deploy` | Pre-push gates (lint + typecheck + build + tests + security sweep) → ask before push → never `--no-verify`, never force-push to main |
+
+**Bypass per-message:** starts with `/`, or contains "without hyperflow" / "just answer".
+
+<!-- /portable:section -->
+
+<!-- portable:section id=file-first order=5 title="File-first artefacts"
+
+## File-first artefacts
+
+Plans, specs, audits, task decompositions live in `.hyperflow/` files — never as long-form chat content. Chat shows a short status box pointing at the file.
+
+| Artefact | Path |
+|---|---|
+| Task decomposition (single-phase) | `.hyperflow/tasks/<slug>.md` |
+| Feature (multi-phase) | `.hyperflow/features/<slug>/` — `feature.md` + `phase-<n>-<name>/` folders, each with `phase.md` + `tasks/` + `spec.md`/`research.md`/`decisions.md` |
+| Feature spec | `.hyperflow/specs/<slug>.md` |
+| Design system | `.hyperflow/design/system.md` |
+| Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` |
+| Project memory | `.hyperflow/memory/<category>.md` |
+
+**Banned locations for plans:** repo root (no `PLAN.md`, `DESIGN.md`, `TODO.md`, `ROADMAP.md`, `SPEC.md`), `docs/` (reserved for user-facing docs), ad-hoc folders.
+
+Files start with a markdown-table status block (NOT box-drawing — alignment breaks). Then TL;DR (2-3 sentences), scope-at-a-glance, per-task lines with file paths inline.
+
+<!-- /portable:section -->
+
+<!-- portable:section id=no-ai-attribution order=6 title="No AI attribution"
+
+## No AI attribution
+
+Never reference "Claude" / "AI" / "assistant" / "LLM" as actor in commits, docs, code comments, memory entries, task files, or anywhere written by the orchestrator. Describe what changed and why — never who made it. No `Co-Authored-By: Claude` (or any LLM) in commits.
+
+Product names used as named tools/files are fine (`claude` CLI binary, `Claude Code` platform, `CLAUDE.md` filename).
+
+<!-- /portable:section -->
+
 ## Layer 2: Roles
 
 **Every agent runs on the current session model.** There is no model-tier routing, no per-provider catalog, no model configuration — whatever model the running session uses (Opus, Sonnet, GPT, Gemini, …), every dispatched agent inherits it. Roles are about *responsibility*, not model: the same model can act as orchestrator, decision agent, worker, or reviewer depending on what it was dispatched to do.
@@ -246,6 +310,22 @@ Dispatch every agent with **no `model:` parameter** — it inherits the current 
 - **Standalone Reviewer** (audit Step 3, deploy Step 3 security sweep, plan Step 8 final sanity check): the buck-stops-here pass.
 - **Debugger / Analyst / Planner / Brainstormer** (trace Step 2, plan Step 4, plan Step 9, plan Step 1): pure decision work, no in-flight anchor.
 - `--thorough` flag: adds a standalone / final-integration review pass.
+
+<!-- portable:section id=roles order=4 title="Roles"
+
+## Roles
+
+**Every agent runs on the current session model** — there is no model-tier routing and no model configuration. Roles differ by responsibility, not by model:
+
+- **Workers** (Implementer / Searcher / Writer) execute mechanical work.
+- **Per-batch / per-sub-task Reviewer** runs an anchored review of one batch's small diff (L1-L2 territory).
+- **Final integration Reviewer** (end-of-chain over cumulative diff) and **Standalone Reviewer** (audit, security sweep, final sanity check) are decision-agent passes.
+- **Debugger / Analyst / Planner / Brainstormer / Orchestrator** are decision agents.
+- **Specialist reviewers** (`security-reviewer`, `database-reviewer`, `algorithm-reviewer`, …) act as the per-batch and standalone Reviewer; security/correctness specialists always run a full review pass even per-batch. **Investigators** (`searcher` worker; `debugger` / `analyst` / `researcher` decision agents); **Brain** (specialist router) is a decision-maker. All run on the session model.
+
+Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation. Reviews and investigations are run by the **matching domain specialist** ([`agents/`](agents/)), not a generic role — the Brain decides the responsible roster once after triage and the chain inherits it. On deep / security work, specialists research current best-practices and CVEs before acting (web-research-first).
+
+<!-- /portable:section -->
 
 ## Layer 3: Orchestrator Pattern
 
@@ -594,6 +674,16 @@ See [doctrine-extensions.md § Layer 7](doctrine-extensions.md#layer-7-task-temp
 
 See [doctrine-extensions.md § Layer 8](doctrine-extensions.md#layer-8-git-workflow) and the full workflow in [git-workflow.md](git-workflow.md).
 
+<!-- portable:section id=commit-cadence order=3 title="Commit cadence"
+
+## Commit cadence
+
+Every distinct task or request produces its own commit. Never bundle two features, two fixes, or feature-plus-doc-update into one commit just because they're in one session.
+
+Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix:` / `docs:` / `refactor:` / `chore:` / `perf:` / `style:` / `test:`.
+
+<!-- /portable:section -->
+
 ## Layer 9: Security
 
 Worker containment via prompt-injected blocklists. See [security.md](security.md) for full rules and configuration.
@@ -606,6 +696,20 @@ Worker containment via prompt-injected blocklists. See [security.md](security.md
 **Config:** `~/.hyperflow/config.json` → `security` key. Disable per-session: `hyperflow: security off`.
 
 Workers that hit a blocked resource report `BLOCKED:`. Reviewers that find violations report `SECURITY_VIOLATION:` which halts the pipeline and surfaces to the user.
+
+<!-- portable:section id=security-blocklist order=7 title="Security blocklist"
+
+## Security blocklist
+
+**Blocked files** — return `BLOCKED:` on access:
+- `.env`, `.env.*` · `*.pem`, `*.key`, `*.crt` · `~/.ssh/*` · `~/.aws/credentials`, `~/.aws/config` · `~/.config/gcloud/*` · `~/.kube/config`
+
+**Blocked commands** — refuse:
+- `rm -rf` · `git push --force` to `main`/`master` · `sudo` · `chmod 777` · package publish (`npm publish`, `cargo publish`) unless explicitly invoked
+
+Reviewer that detects a security violation reports `SECURITY_VIOLATION:` — halt pipeline immediately, no auto-continue.
+
+<!-- /portable:section -->
 
 ## Layer 10: Hygiene — finalize on completion, compact proactively
 
