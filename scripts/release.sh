@@ -145,8 +145,6 @@ fi
 # release commits and README.md hasn't been touched since the last tag, surface
 # a warning so the contributor remembers to keep the README in sync.
 if [ -n "$LAST_TAG" ]; then
-  README_LAST_TOUCHED=$(git log -1 --format=%H -- README.md 2>/dev/null)
-  LAST_TAG_COMMIT=$(git rev-list -n 1 "$LAST_TAG" 2>/dev/null)
   README_CHANGED_SINCE_TAG=$(git diff --name-only "$LAST_TAG"...HEAD -- README.md 2>/dev/null)
 
   # Count commits since last tag that are NOT release/chore/internal-docs.
