@@ -138,7 +138,7 @@ def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
             new_content += "\n"
         action = "generated"
     else:
-        start, end, _ = existing
+        start, end, _, _ = existing
         prefix = original[:start]
         suffix = original[end:]
         new_content = prefix + new_block
@@ -159,10 +159,41 @@ def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
     return action
 
 
-def main(argv: list[str]) -> int:
+def _print_body_sha(argv: list[str]) -> int:
+    """Print the current template's body-sha — the value stamped into a block's marker.
+
+    Exists so other tools (scripts/verify-downstreams.sh) can ask for the hash rather
+    than reimplement it and silently disagree with auto-bridge about freshness.
+    """
     if len(argv) < 3:
         print(
-            "auto-bridge: usage: auto-bridge.py <plugin-root> <project-root>",
+            "auto-bridge: usage: auto-bridge.py --body-sha <plugin-root>",
+            file=sys.stderr,
+        )
+        return 2
+    template = _read_template(Path(argv[2]))
+    if template is None:
+        print("auto-bridge: template not found", file=sys.stderr)
+        return 2
+    print(_body_hash(template))
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) >= 2 and argv[1] == "--body-sha":
+        return _print_body_sha(argv)
+
+    # --force re-stamps the marker even when the body is unchanged. Reserved for this
+    # repo's own release commit, where the version label should track the release. User
+    # projects must keep the content-keyed no-op so a version bump never churns their
+    # CLAUDE.md.
+    force = "--force" in argv[1:]
+    argv = [a for a in argv if a != "--force"]
+
+    if len(argv) < 3:
+        print(
+            "auto-bridge: usage: auto-bridge.py <plugin-root> <project-root> [--force]\n"
+            "                    auto-bridge.py --body-sha <plugin-root>",
             file=sys.stderr,
         )
         return 0  # non-blocking
@@ -198,8 +229,9 @@ def main(argv: list[str]) -> int:
     #      no need to touch the file even if the version label differs.
     #   2. Fall back to version-string matching when no body-sha is present in
     #      the marker (older blocks generated before S7 landed).
+    #   3. --force bypasses both, so a release can re-stamp its own version label.
     claude_md = project_root / "CLAUDE.md"
-    if claude_md.exists():
+    if claude_md.exists() and not force:
         try:
             existing = _find_existing_block(
                 claude_md.read_text(encoding="utf-8")
