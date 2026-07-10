@@ -20,7 +20,7 @@ FORCE=false
 DRY_RUN=false
 
 # ── Valid tool names ───────────────────────────────────────────────────────────
-VALID_TOOLS="claude-code opencode codex agents antigravity cursor all"
+VALID_TOOLS="claude-code opencode codex agents antigravity cursor grok all"
 
 # ── Usage ─────────────────────────────────────────────────────────────────────
 usage() {
@@ -32,14 +32,15 @@ tools can discover and load hyperflow conventions automatically.
 
 OPTIONS:
   --tools <list>   Comma-separated tools to set up (default: all)
-                   Valid values: claude-code, opencode, codex, agents, antigravity, cursor, all
+                   Valid values: claude-code, opencode, codex, agents, antigravity, cursor, grok, all
                      claude-code  — writes CLAUDE.md (append mode)
                      opencode     — writes AGENTS.md
                      codex        — writes AGENTS.md
                      agents       — writes AGENTS.md (alias for opencode)
                      antigravity  — writes AGENTS.md + .agent/workflows/hyperflow* slash commands
                      cursor       — writes AGENTS.md (Cursor reads it natively)
-                     all          — claude-code + opencode + codex + agents + antigravity + cursor
+                     grok         — writes AGENTS.md + .grok/rules/hyperflow.md
+                     all          — claude-code + opencode + codex + agents + antigravity + cursor + grok
   --force          Overwrite existing files (default: skip with warning)
   --dry-run        Print what would be created without writing files
   --help           Show this help message
@@ -108,6 +109,7 @@ wants_tool() {
 need_agents_md=false
 need_claude_md=false
 need_antigravity=false
+need_grok_rules=false
 
 wants_tool "opencode"    && need_agents_md=true
 wants_tool "codex"       && need_agents_md=true
@@ -116,6 +118,8 @@ wants_tool "claude-code" && need_claude_md=true
 wants_tool "antigravity" && need_antigravity=true
 wants_tool "antigravity" && need_agents_md=true   # Antigravity also reads AGENTS.md
 wants_tool "cursor"      && need_agents_md=true   # Cursor reads AGENTS.md natively
+wants_tool "grok"        && need_agents_md=true   # Grok loads AGENTS.md
+wants_tool "grok"        && need_grok_rules=true
 
 # ── Template directory ────────────────────────────────────────────────────────
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
@@ -259,9 +263,9 @@ main() {
   [[ "$DRY_RUN" == true ]] && echo -e "    Mode:         dry-run"
   echo ""
 
-  # AGENTS.md — OpenCode / Codex
+  # AGENTS.md — OpenCode / Codex / Cursor / Grok / Antigravity
   if [[ "$need_agents_md" == true ]]; then
-    echo -e "${BLUE}==> AGENTS.md (OpenCode / Codex)${RESET}"
+    echo -e "${BLUE}==> AGENTS.md (OpenCode / Codex / Cursor / Grok)${RESET}"
     write_file "$ROOT/AGENTS.md" "$(load_template "AGENTS.md.template")"
   fi
 
@@ -284,6 +288,18 @@ main() {
       done
     else
       echo -e "${YELLOW}  antigravity workflow templates not found at $wf_src${RESET}"
+    fi
+  fi
+
+  # .grok/rules — Grok project rules
+  if [[ "$need_grok_rules" == true ]]; then
+    echo -e "${BLUE}==> .grok/rules (Grok)${RESET}"
+    local grok_tpl="$TEMPLATE_DIR/grok-rules/hyperflow.md"
+    if [[ -f "$grok_tpl" ]]; then
+      mkdir -p "$ROOT/.grok/rules"
+      write_file "$ROOT/.grok/rules/hyperflow.md" "$(render_template "$grok_tpl")"
+    else
+      echo -e "${YELLOW}  grok rules template not found at $grok_tpl${RESET}"
     fi
   fi
 
