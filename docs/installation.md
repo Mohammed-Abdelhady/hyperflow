@@ -1,6 +1,6 @@
 # Installation
 
-Getting Hyperflow installed into Codex, terminal CLIs, and supported IDE surfaces — covering quick install, platform compatibility, security, and verification.
+Get from zero to a reviewed pull request in two commands. This guide covers the quick install per tool, where Hyperflow runs, the security configuration it ships with, and how to verify it's active.
 
 ---
 
@@ -175,7 +175,7 @@ This eliminates all permission prompts. Hyperflow runs on whatever model your ag
 
 ## Security configuration
 
-The security layer is enabled by default. It prevents workers from accessing sensitive files, running dangerous commands, and hardcoding secrets.
+The security layer is enabled by default and ships with real teeth: **25 blocked file patterns** (keys, secrets, cloud credentials), **15 blocked commands** (`rm -rf`, force-push to main, `sudo`, unsolicited publish), and **11 secret patterns** scanned in diffs. It prevents workers from accessing sensitive files, running dangerous commands, and hardcoding secrets.
 
 ### Customize blocked patterns
 
