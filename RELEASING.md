@@ -14,6 +14,7 @@ on every release** (section 4's script automates the check).
 
 ## 2. Cut and publish
 
+- [ ] Working tree is clean before running `release.sh` — it stages `CHANGELOG.md`, the manifests, `README.md`, `templates/claude-md-doctrine.md`, `CLAUDE.md`, and `config/features.json` **whole**, so uncommitted edits in any of those files would ride the `chore(release):` commit
 - [ ] `./scripts/release.sh` — auto-detects the bump, writes CHANGELOG, bumps all manifests, commits `chore(release): vX.Y.Z`, tags
 - [ ] `git push && git push origin vX.Y.Z`
 - [ ] `plugin-validation` green on the release commit
