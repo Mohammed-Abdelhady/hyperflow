@@ -258,11 +258,33 @@ def _type_ok(value: object, t: str) -> bool:
     return True
 
 
+# Keywords this validator actually enforces, plus annotation keywords that carry no
+# constraint. Anything else in the schema would be silently ignored — a check that
+# passes while the constraint it names goes unenforced — so it is rejected instead.
+SCHEMA_KEYWORDS_ENFORCED = frozenset(
+    {"type", "required", "properties", "items", "enum", "minItems", "pattern"}
+)
+SCHEMA_KEYWORDS_ANNOTATION = frozenset(
+    {"$schema", "$id", "$comment", "title", "description", "examples", "default"}
+)
+
+
 def validate_against_schema(instance: object, schema: dict, path: str, errors: list[str]) -> None:
     # Compact, zero-dependency JSON-Schema subset validator (type / required /
     # properties / items / enum / minItems / pattern). Deliberately no pip dep so
     # CI stays install-free, mirroring parse_simple_yaml above.
     here = path or "<root>"
+
+    unsupported = sorted(
+        set(schema) - SCHEMA_KEYWORDS_ENFORCED - SCHEMA_KEYWORDS_ANNOTATION
+    )
+    if unsupported:
+        errors.append(
+            f"{here}: schema uses keyword(s) {unsupported} that this validator does not "
+            "enforce — add support in validate_against_schema or drop them, never leave "
+            "them silently unchecked"
+        )
+
     declared = schema.get("type")
     if declared is not None:
         types = declared if isinstance(declared, list) else [declared]
@@ -276,7 +298,9 @@ def validate_against_schema(instance: object, schema: dict, path: str, errors: l
 
     if isinstance(instance, str):
         pattern = schema.get("pattern")
-        if pattern is not None and not re.search(pattern, instance):
+        # fullmatch, not search: Python's `$` also matches before a trailing newline,
+        # so an anchored pattern would accept "1.2.3\n".
+        if pattern is not None and not re.fullmatch(pattern, instance):
             errors.append(f"{here}: {instance!r} does not match pattern {pattern!r}")
 
     if isinstance(instance, dict):
