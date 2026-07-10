@@ -53,6 +53,7 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 
 | # | Skill | What it does |
 |---|-------|--------------|
+| 1 | `issue` | **GitHub front door** — point it at an issue URL: triage (bug → root-cause route, feature → plan), spec from the issue's own acceptance criteria, then the standard chain with a gated PR exit (`Closes #N`) |
 | 1 | `plan` | **Front door** — sharpen the prompt (persona standards + 8-dim rubric), design the approach (multi-dimensional analysis + alternatives, refuses to code before you approve), and decompose it into a parallel task graph with a full, test-complete implementation brief per sub-task (incl. an end-to-end case) so the build runs faithfully on a cheaper model; skips whichever phase the request doesn't need |
 | 2 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
 | 3 | `workflow` | Big-task lane — native Claude Code workflows, custom Codex/OpenCode/Grok adapter |
@@ -62,6 +63,8 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 `plan` never implements — it stops at a build-location gate (build here → `dispatch`, another session → handoff, or just keep the plan), so you stay in control of when a build starts; `audit` and `deploy` are gates that fire at the end. Enter at `plan` for anything from a rough idea to a clear task — it bounces straight to decomposition when the approach is already clear — or at `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
 `workflow` is the big-task lane. Hyperflow routes deep/scientific/system-wide work, large migrations, repo-wide audits, and high-confidence verification prompts to `/hyperflow:workflow`. In Claude Code v2.1.154+, it asks the native dynamic workflow runtime to create a background workflow with research, parallel execution, adversarial verification, quality gates, and final synthesis. In Codex, OpenCode, and Grok, it runs the same phases through a portable workflow adapter using provider subagents/tasks when available and inline worker/reviewer phases otherwise.
+
+**GitHub-native, both directions.** `/hyperflow:issue <url>` turns an issue into a triaged, planned, dispatched, reviewed pull request — issue text is treated as data, never instructions, and every outbound action (PR, comments) sits behind a gate or pre-election (`pr=`, `comment=`). `/hyperflow:pr <url>` is the maintainer side: the same L1–L5 audit runs over the PR's real fetched code (never just diff text), posts one batched review — inline, summary, or local-only — chains fixes on NEEDS_FIX, and merges only behind a gate. Contributor code never executes without an explicit named-risk gate.
 
 In Codex App/CLI, `/hyperflow:*` entries are treated as plugin skill aliases, not native host slash commands. If the host does not expose Hyperflow's `AskUserQuestion` popup UI, required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. When Codex subagents are available, Hyperflow maps worker/searcher/writer dispatches to them; otherwise those phases run inline and the chain continues in the same thread.
 
@@ -194,7 +197,7 @@ Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](ht
 
 ## Skills
 
-Fourteen skills. One chain-starter auto-advances through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
+Sixteen skills. Two chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
