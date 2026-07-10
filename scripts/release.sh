@@ -358,6 +358,20 @@ done
 git commit -m "chore(release): v${NEW_VERSION}"
 git tag -a "v${NEW_VERSION}" -m "v${NEW_VERSION}"
 
+# ── Downstream-dependents check (advisory, never blocks the release) ─────────
+# Mirrors the README-staleness style above: surface the state, keep going.
+# The registry and remediation steps live in RELEASING.md §3; the script skips
+# itself cleanly (exit 0) when gh or the network is unavailable.
+if [[ -x "$SCRIPT_DIR/verify-downstreams.sh" ]]; then
+  echo ""
+  echo -e "${CYAN}▸${RESET} verifying downstream dependents (advisory)"
+  if ! "$SCRIPT_DIR/verify-downstreams.sh"; then
+    echo ""
+    echo -e "${YELLOW}⚠  DOWNSTREAMS STALE${RESET} — see the table above; remediation steps live in RELEASING.md §3."
+    echo -e "   The release is not blocked — sync the dependents after pushing."
+  fi
+fi
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
 
