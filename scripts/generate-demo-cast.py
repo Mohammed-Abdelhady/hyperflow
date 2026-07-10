@@ -89,7 +89,7 @@ def rb(s: str) -> str:   return RED + BOLD + s + RESET   # red bold
 
 
 # ---------------------------------------------------------------------------
-# Demo script — 8 scenes, ~32s total, driven by features.json
+# Demo script — 9 scenes, ~40s total, driven by features.json
 # Elegant style: no ⚡, ✓, ✗ icons. Em-dash separators. Bold for decision/review roles.
 # ---------------------------------------------------------------------------
 
@@ -302,7 +302,9 @@ def script(features: dict) -> Cast:
     c.line(gn("PASS") + gr(" — final integration review · regression test added"))
     c.wait(0.50)
     c.line(yl("?  Open a pull request for this chain?  Yes / No"))
-    c.wait(0.80)
+    c.wait(0.30)
+    c.line(gr("   ") + bo("Yes") + gr(" — push feature branch · gh pr create"))
+    c.wait(0.50)
     c.line(gn("PR #43 opened") + gr(" — fix(pagination): dedupe boundary rows · Closes #42"))
     c.wait(1.00)
 

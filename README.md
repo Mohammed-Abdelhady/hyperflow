@@ -197,7 +197,7 @@ Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](ht
 
 ## Skills
 
-Sixteen skills. Two chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
+Seventeen skills. Two chain-starters auto-advance through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|

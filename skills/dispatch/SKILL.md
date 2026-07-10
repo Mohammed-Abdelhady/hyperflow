@@ -94,7 +94,7 @@ Dispatch owns this gate (plan no longer asks operational choices at startup — 
 ### Step 1.0 — Handoff rehydration (handoff pickup only)
 
 When invoked on a handoff package (`.hyperflow-handoff/<slug>/`), before loading the task:
-1. Read `HANDOFF.md` → artefact type, chain args (`commit=/branch=/push=/triage=/mode=`), `on_complete`.
+1. Read `HANDOFF.md` → artefact type, chain args (`commit=/branch=/push=/triage=/mode=`, plus `gh_issue=/pr=/comment=` when the plan was GitHub-native), `on_complete`.
 2. If the `.hyperflow/` cache is absent → run `/hyperflow:scaffold` first (so workers get Layer-0 context). If scaffold cannot run here, fall back to the package's `context/` copies.
 3. Copy `artefact/tasks/<slug>.md` → `.hyperflow/tasks/<slug>.md` (flat), or `artefact/features/<slug>/` → `.hyperflow/features/<slug>/` (feature), if not already present locally.
 4. Leave `STATUS=planned` until the build completes (Step 5 flips it).
@@ -274,7 +274,7 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 
 **Normal (single-session) end-of-chain — Audit + Deploy gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy) — or 3 when the chain is **GitHub-native** (`gh_issue=` chain arg present and `pr=ask`): question [3] is the PR exit below. Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render the questions in one `Hyperflow Question` chat block and wait for the user's answers.
 
-> **DOCTRINE rule 8 preserved:** both questions still fire; they just batch into one round-trip instead of two. Combined gate cuts human-in-the-loop latency by ~half at end-of-chain.
+> **DOCTRINE rule 8 preserved:** every gate question still fires; they just batch into one round-trip instead of two or three. Combined gate cuts human-in-the-loop latency at end-of-chain.
 
 ```
 ?  End-of-chain gates
@@ -286,9 +286,13 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
    [2] Run /hyperflow:deploy now? (lint + typecheck + build + tests + security sweep, then asks before push)
        Yes — gates pass · ready to ship
        No  — keep commits local · push manually later
+
+   [3] Open a pull request for this chain?           (GitHub-native chains only — gh_issue= present, pr=ask)
+       Yes — push feature branch · gh pr create · Closes #<n>
+       No  — keep the branch local · print the gh pr create command
 ```
 
-Per DOCTRINE rule 8, both questions are binary action gates — no `(Recommended)` marker on either option. Two-outcome framing is symmetric; the orchestrator's analysis is reflected in the surrounding status output (gate results, retry counts, security verdict), not in pre-marking the choice.
+Per DOCTRINE rule 8, the gate questions are binary action gates — no `(Recommended)` marker on any option. Two-outcome framing is symmetric; the orchestrator's analysis is reflected in the surrounding status output (gate results, retry counts, security verdict), not in pre-marking the choice.
 
 **Process answers in order:**
 
@@ -350,7 +354,7 @@ Writer — generating API documentation
 
 ## Operational Args (from Scope Step 0.5 pre-elections)
 
-Scope batches three operational pre-elections at its Step 0.5 and propagates them as chain args (or, in two-session mode, embeds them in the handoff package's `HANDOFF.md`). Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults.
+Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`/`push`) and propagates them as chain args (or, in two-session mode, embeds them in the handoff package's `HANDOFF.md`); the GitHub-native args (`pr`/`comment`) arrive from `/hyperflow:issue` the same way. Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults.
 
 | Arg | Values | Default | Honored at |
 |---|---|---|---|
@@ -371,7 +375,7 @@ Scope batches three operational pre-elections at its Step 0.5 and propagates the
 **`branch=new`** — at Step 2 before the first commit, if currently on `main` / `master` / `develop`, create `feat/<task-slug>` and switch to it. If already on a feature branch, treat as `branch=current`.
 **`branch=current`** — never auto-create. All commits land on whatever branch the orchestrator was invoked on.
 
-**`push=…`** — dispatch does NOT push. It only propagates the chosen value to Deploy Step 6 in the chain args. Deploy honors it there.
+**`push=…`** — dispatch does NOT push commits to the user's branch. It only propagates the chosen value to Deploy Step 6 in the chain args; Deploy honors it there. **One carve-out:** the GitHub-native PR exit (Step 5, `gh_issue=` present) pushes the *feature branch* itself before `gh pr create` — that push is the PR's outbound surface, gated by `pr=` (not `push=`), and never targets `main`/`master`.
 
 ## Iron Rules
 

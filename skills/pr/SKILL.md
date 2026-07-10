@@ -57,7 +57,9 @@ Audit dispatches the matching domain specialists (Brain-decided roster), writes
 
 ## Step 3 — Posting gate
 
-One `AskUserQuestion`, four options (`comment=never` skips straight to local-only):
+One `AskUserQuestion`, four options (`comment=never` skips straight to local-only). Multi-option gate →
+mark a recommended choice (DOCTRINE): **Inline review (Recommended)** on NEEDS_FIX with line-anchored findings,
+**Summary only (Recommended)** on PASS or when findings have no stable anchors.
 
 1. **Inline review** — one batched `gh api repos/{owner}/{repo}/pulls/<n>/reviews` call: every finding as a
    file/line-anchored comment plus a short summary body. Verdict maps PASS → `APPROVE`,
