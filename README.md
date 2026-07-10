@@ -206,6 +206,7 @@ Fourteen skills. One chain-starter auto-advances through the chain; the rest are
 | `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
+| `pr` | `/hyperflow:pr` | Standalone | Review an incoming pull request — L1-L5 audit on the real diff, one batched GitHub review, fix chain, gated merge |
 | `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |
 | `cache` | `/hyperflow:cache` | Standalone | Memory CRUD — show, search, add, prune, archive, compact |
 | `handoff` | `/hyperflow:handoff` | Standalone | Two-session handoff — list / status / pickup / review / complete a committed package |
