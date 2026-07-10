@@ -194,7 +194,7 @@ Full walkthrough → [Orchestration](docs/orchestration.md) · [Landing site](ht
 
 ## Skills
 
-Fourteen skills. One chain-starter auto-advances through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
+Sixteen skills. One chain-starter auto-advances through the chain; the rest are standalone. Auto-routing is on by default — say the verb and the right skill runs without the `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the safest portable spelling, with `/hyperflow:*` handled as an alias.
 
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
@@ -213,6 +213,7 @@ Fourteen skills. One chain-starter auto-advances through the chain; the rest are
 | `sticky` | `/hyperflow:sticky` | Standalone | `on` / `auto` / `off` — per-project auto-routing mode |
 | `bridge` | `/hyperflow:bridge` | Standalone | Embed the portable doctrine into `CLAUDE.md` for Desktop / web / IDE |
 | `flush` | `/hyperflow:flush` | Standalone | Flush a deferred-commit queue from a prior or crashed chain |
+| `hyperflow` | `/hyperflow:hyperflow` | Portable adapter | Apply the orchestration doctrine in Codex, Antigravity, Grok, or another single-agent surface — auto-invoked for non-trivial engineering work |
 
 ## Providers
 
