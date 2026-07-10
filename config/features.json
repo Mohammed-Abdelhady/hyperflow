@@ -122,6 +122,13 @@
       "chain": "standalone"
     },
     {
+      "name": "pr",
+      "command": "/hyperflow:pr",
+      "tagline": "PR review",
+      "purpose": "Run the L1-L5 audit against an incoming pull request's real diff range, post findings as one batched GitHub review, chain fixes on NEEDS_FIX, and merge behind a gate — contributor code never executes without explicit consent",
+      "chain": "standalone"
+    },
+    {
       "name": "deploy",
       "command": "/hyperflow:deploy",
       "tagline": "Pre-push gates",
