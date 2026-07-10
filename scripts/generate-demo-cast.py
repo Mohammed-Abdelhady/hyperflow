@@ -281,6 +281,31 @@ def script(features: dict) -> Cast:
     c.line(gr("Done · Next: ") + worker("/hyperflow:deploy") + gr(" — user-explicit, never auto."))
     c.wait(0.60)
 
+    # ── Scene 9 · GitHub-native: issue → reviewed PR ──────────────────────────
+    # Shows: /hyperflow:issue entry point — triage, chain, gated PR exit.
+    c.line(gr(""))
+    c.prompt()
+    c.wait(0.40)
+    c.type("/hyperflow:issue https://github.com/acme/api/issues/42", char_delay=0.04)
+    c.wait(0.20)
+    c.out("\r\n")
+    c.wait(0.40)
+    c.line(mg("⏺") + gr(" ") + bo("Skill") + gr("(hyperflow:issue)"))
+    c.line(gr("  ⎿  Issue #42 — \"Pagination returns duplicate rows on page boundaries\""))
+    c.wait(0.50)
+    c.line(mg("⏺") + gr(" ") + bo("Triage") + gr(" — bug report · root-cause route · not already fixed on main"))
+    c.wait(0.60)
+    c.line(worker("Writer") + gr(" — spec from issue acceptance criteria · .hyperflow/specs/issue-42.md"))
+    c.wait(0.60)
+    c.line(gr("Chain — plan → dispatch on ") + worker("fix/issue-42-pagination") + gr(" · 3 workers · ") + bo("2 reviewers"))
+    c.wait(1.00)
+    c.line(gn("PASS") + gr(" — final integration review · regression test added"))
+    c.wait(0.50)
+    c.line(yl("?  Open a pull request for this chain?  Yes / No"))
+    c.wait(0.80)
+    c.line(gn("PR #43 opened") + gr(" — fix(pagination): dedupe boundary rows · Closes #42"))
+    c.wait(1.00)
+
     # ── Closing ───────────────────────────────────────────────────────────────
     c.line(gr(""))
     c.line(gn("ready") + gr("  — github.com/Mohammed-Abdelhady/hyperflow"))
