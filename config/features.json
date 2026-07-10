@@ -2,7 +2,7 @@
   "$schema": "./features.schema.json",
   "version": "5.6.0",
   "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
-  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
+  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere — every step dispatches its own Worker → Reviewer pair.",
   "layers": [
     {
       "n": 0,
@@ -31,7 +31,7 @@
     {
       "n": 3,
       "name": "Orchestrator",
-      "summary": "Decompose \u2192 parallel dispatch \u2192 review \u2192 synthesize",
+      "summary": "Decompose → parallel dispatch → review → synthesize",
       "color": "worker"
     },
     {
@@ -83,14 +83,21 @@
       "name": "plan",
       "command": "/hyperflow:plan",
       "tagline": "Design + decompose",
-      "purpose": "Amplify the prompt, design the approach, and decompose into a batched task file (max thinking) \u2014 skips whichever phase the request doesn't need; stops at a build-location gate, never auto-implements",
+      "purpose": "Amplify the prompt, design the approach, and decompose into a batched task file (max thinking) — skips whichever phase the request doesn't need; stops at a build-location gate, never auto-implements",
+      "chain": "starter"
+    },
+    {
+      "name": "issue",
+      "command": "/hyperflow:issue",
+      "tagline": "Issue → PR",
+      "purpose": "Turn a GitHub issue into a triaged, planned, dispatched, and reviewed pull request — bug reports route through root-cause discipline, features through the plan chain; every outbound action gated",
       "chain": "starter"
     },
     {
       "name": "dispatch",
       "command": "/hyperflow:dispatch",
       "tagline": "Execute the batches",
-      "purpose": "Dispatch parallel workers + Worker \u2192 Reviewer review + final integration review; endpoint of the chain",
+      "purpose": "Dispatch parallel workers + Worker → Reviewer review + final integration review; endpoint of the chain",
       "chain": "endpoint"
     },
     {
@@ -104,14 +111,14 @@
       "name": "trace",
       "command": "/hyperflow:trace",
       "tagline": "Root-cause a bug",
-      "purpose": "Systematic 5-Whys + hypothesis testing \u2014 never patches symptoms",
+      "purpose": "Systematic 5-Whys + hypothesis testing — never patches symptoms",
       "chain": "standalone"
     },
     {
       "name": "audit",
       "command": "/hyperflow:audit",
       "tagline": "Code review",
-      "purpose": "L1 quick \u2192 L5 exhaustive review on changes, files, or PRs",
+      "purpose": "L1 quick → L5 exhaustive review on changes, files, or PRs",
       "chain": "standalone"
     },
     {
@@ -132,7 +139,7 @@
       "name": "handoff",
       "command": "/hyperflow:handoff",
       "tagline": "Two-session handoff",
-      "purpose": "Manage a cross-environment two-session run \u2014 list/status/pickup/review/complete a committed handoff package (plan in one session, build in another, review back in the first)",
+      "purpose": "Manage a cross-environment two-session run — list/status/pickup/review/complete a committed handoff package (plan in one session, build in another, review back in the first)",
       "chain": "standalone"
     }
   ],
@@ -337,8 +344,8 @@
     "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
     "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
     "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
-    "Universal agent consultation: any agent (current or future) can ask a peer for help mid-task \u2014 workers via an orchestrator-brokered CONSULT signal, decision agents directly; depth-1, budget-bounded, never overrides a security halt",
-    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode/Grok), review back \u2014 via a git-committed handoff package",
+    "Universal agent consultation: any agent (current or future) can ask a peer for help mid-task — workers via an orchestrator-brokered CONSULT signal, decision agents directly; depth-1, budget-bounded, never overrides a security halt",
+    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode/Grok), review back — via a git-committed handoff package",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
     "Project-scoped persistent memory with tag taxonomy",
@@ -354,7 +361,7 @@
     "Task tracking with incomplete-task recovery across sessions",
     "Session-start update check (cached daily) with an in-session prompt to update",
     "Smart pre-compaction guard allows automatic compact only after dispatch reaches its end gate, then snapshots recoverable state",
-    "Auto-archive of stale .hyperflow/{tasks,audits,specs} \u2014 daily-gated, promotes Learnings/Decisions/Anti-patterns to memory before moving the file to .hyperflow/archive/<type>/YYYY-MM/"
+    "Auto-archive of stale .hyperflow/{tasks,audits,specs} — daily-gated, promotes Learnings/Decisions/Anti-patterns to memory before moving the file to .hyperflow/archive/<type>/YYYY-MM/"
   ],
   "detection": {
     "shims": [
@@ -386,7 +393,7 @@
     "tiers": [
       {
         "name": "hot",
-        "age": "\u22647 days",
+        "age": "≤7 days",
         "load": "eager"
       },
       {
