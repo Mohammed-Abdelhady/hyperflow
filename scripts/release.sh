@@ -296,6 +296,14 @@ if [[ "$HAS_PYTHON3" == "1" && -f "$SCRIPT_DIR/generate-hero.py" ]]; then
   }
 fi
 
+# Generate og-image.png + touch/favicon rasters (requires Pillow)
+if [[ "$HAS_PYTHON3" == "1" && -f "$SCRIPT_DIR/generate-og.py" ]]; then
+  echo -e "${CYAN}▸${RESET} regenerating og-image.png and icons"
+  python3 "$SCRIPT_DIR/generate-og.py" --version "$NEW_VERSION" || {
+    echo -e "${YELLOW}⚠${RESET} og-image regeneration failed (Pillow missing?); continuing"
+  }
+fi
+
 # Generate demo.cast + demo.gif (requires agg for gif)
 if [[ -x "$SCRIPT_DIR/generate-demo.sh" || -f "$SCRIPT_DIR/generate-demo.sh" ]]; then
   if command -v agg >/dev/null 2>&1; then
@@ -340,15 +348,25 @@ git add \
   "$ROOT/.claude-plugin/marketplace.json" \
   "$ROOT/.codex-plugin/plugin.json" \
   "$README" \
-  "$ROOT/skills/hyperflow/VERSION"
+  "$ROOT/skills/hyperflow/VERSION" \
+  "$ROOT/docs/index.html" \
+  "$ROOT/docs/installation.html" \
+  "$ROOT/docs/orchestration.html" \
+  "$ROOT/docs/404.html" \
+  "$ROOT/docs/sitemap.xml"
 
 # Optional generated artifacts — add if they exist (some require external tools)
 for optional in \
   "$ROOT/config/features.json" \
   "$ROOT/docs/assets/hero.svg" \
   "$ROOT/docs/assets/hero-vertical.svg" \
+  "$ROOT/docs/assets/og-image.png" \
+  "$ROOT/docs/assets/apple-touch-icon.png" \
+  "$ROOT/docs/assets/favicon-32.png" \
   "$ROOT/docs/assets/demo.cast" \
   "$ROOT/docs/assets/demo.gif" \
+  "$ROOT/docs/assets/demo.mp4" \
+  "$ROOT/docs/assets/demo-poster.png" \
   "$ROOT/docs/assets/whats-new.cast" \
   "$ROOT/docs/assets/whats-new.gif"; do
   [[ -f "$optional" ]] && git add "$optional"
