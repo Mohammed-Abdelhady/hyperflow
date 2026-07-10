@@ -33,6 +33,9 @@ jobs:
       - name: Run unit tests
         run: python3 -m unittest discover tests -v
 
+      - name: Lint shell scripts
+        run: shellcheck -S warning hooks/session-start hooks/pre-compact scripts/*.sh
+
       - name: jq schema sweep
         run: |
           jq empty .claude-plugin/plugin.json
@@ -41,6 +44,8 @@ jobs:
           jq empty package.json
           jq empty config/defaults.json
           jq empty config/schema.json
+          jq empty config/features.json
+          jq empty config/features.schema.json
 
       - name: Every SKILL.md has an h1 in its body
         run: |

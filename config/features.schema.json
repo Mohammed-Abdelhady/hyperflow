@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/config/features.schema.json",
+  "title": "Hyperflow features registry",
+  "description": "Shape contract for config/features.json — the single source of truth for the landing-page feature registry. Validated in CI by scripts/validate-plugin.py.",
+  "type": "object",
+  "required": [
+    "version",
+    "tagline",
+    "subtitle",
+    "layers",
+    "skills",
+    "specialists",
+    "providers",
+    "capabilities",
+    "detection",
+    "memory",
+    "branding"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "tagline": { "type": "string" },
+    "subtitle": { "type": "string" },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["n", "name", "summary", "color"],
+        "properties": {
+          "n": { "type": ["string", "number"] },
+          "name": { "type": "string" },
+          "summary": { "type": "string" },
+          "color": { "type": "string" }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "command", "tagline", "purpose", "chain"],
+        "properties": {
+          "name": { "type": "string" },
+          "command": {
+            "type": "string",
+            "pattern": "^/hyperflow:[a-z-]+$"
+          },
+          "tagline": { "type": "string" },
+          "purpose": { "type": "string" },
+          "chain": { "type": "string" }
+        }
+      }
+    },
+    "specialists": {
+      "type": "object",
+      "required": ["location", "router", "reviewers", "investigators"],
+      "properties": {
+        "location": { "type": "string" },
+        "router": { "type": "object" },
+        "reviewers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "tier"],
+            "properties": {
+              "name": { "type": "string" },
+              "tier": { "type": "string" }
+            }
+          }
+        },
+        "investigators": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "tier"],
+            "properties": {
+              "name": { "type": "string" },
+              "tier": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "key"],
+        "properties": {
+          "name": { "type": "string" },
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "detection": {
+      "type": "object",
+      "required": ["shims"],
+      "properties": {
+        "shims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["tool", "file"],
+            "properties": {
+              "tool": { "type": "string" },
+              "file": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "required": ["location", "files", "tiers"],
+      "properties": {
+        "location": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "tiers": { "type": "array" }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "required": ["colors"],
+      "properties": {
+        "colors": { "type": "object" }
+      }
+    }
+  }
+}
