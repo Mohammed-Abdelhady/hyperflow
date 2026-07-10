@@ -64,8 +64,9 @@ gated by `comment=` (default `ask`; `never` suppresses the offer entirely).
 
 Invoke `Skill` with `skill: plan` and `args: "spec=.hyperflow/specs/issue-<n>-<slug>.md gh_issue=<n> pr=<pr-arg>
 comment=<comment-arg>"`. Plan runs its own phases (skipping what the spec already covers) and stops at its
-build-location gate as always; dispatch inherits the GitHub chain args. Branch naming: `fix/issue-<n>-<slug>` or
-`feat/issue-<n>-<slug>` per triage class (dispatch's `branch=` gate honors this as the suggested name).
+build-location gate as always; dispatch inherits the GitHub chain args. Branch naming: the task slug is
+`issue-<n>-<slug>`, so dispatch's `branch=new` creates `feat/issue-<n>-<slug>` from it (dispatch owns the
+branch; the issue number rides in the slug).
 
 ## Step 5 — PR exit (owned by dispatch)
 
