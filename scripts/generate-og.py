@@ -27,8 +27,8 @@ FONT_DIR = ROOT / "scripts" / "assets" / "fonts"
 
 CHAIN = ["plan", "dispatch", "audit", "deploy"]
 EYEBROW = "CODEX · CLAUDE CODE · OPENCODE · GROK · ANTIGRAVITY · CURSOR"
-HEADLINE = ["From GitHub issue", "to reviewed PR."]
-SUBLINE = "Multi-agent orchestration — every step reviewed, memory kept local."
+HEADLINE = ["One session.", "A whole engineering team."]
+SUBLINE = "Every step specialist-reviewed — issue to PR in one command."
 SITE = "mohammed-abdelhady.github.io/hyperflow"
 
 
@@ -108,14 +108,23 @@ def draw_og(colors: dict, version: str, out: Path):
     # Eyebrow — supported CLIs
     tracked_text(d, (margin, 78), EYEBROW, mono(19), colors["plan_text"], tracking=2.2)
 
-    # Headline
+    # Headline — shrink until the longest line fits inside the margins
+    size = 88
+    while size > 40:
+        font = inter(size, "Bold")
+        if max(d.textlength(line, font=font) for line in HEADLINE) <= W - margin * 2:
+            break
+        size -= 2
     y = 132
     for line in HEADLINE:
-        d.text((margin, y), line, font=inter(88, "Bold"), fill=colors["text1"])
-        y += 102
+        d.text((margin, y), line, font=inter(size, "Bold"), fill=colors["text1"])
+        y += round(size * 1.16)
 
-    # Subline
-    d.text((margin, y + 22), SUBLINE, font=inter(30, "Regular"), fill=colors["text2"])
+    # Subline — same fit guard as the headline
+    sub_size = 30
+    while sub_size > 18 and d.textlength(SUBLINE, font=inter(sub_size, "Regular")) > W - margin * 2:
+        sub_size -= 1
+    d.text((margin, y + 22), SUBLINE, font=inter(sub_size, "Regular"), fill=colors["text2"])
 
     # Chain pills with gradient connectors
     py, ph = 452, 64
