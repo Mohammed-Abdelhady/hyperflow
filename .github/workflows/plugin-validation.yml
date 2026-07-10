@@ -27,6 +27,21 @@ jobs:
         with:
           python-version: "3.12"
 
+      # shellcheck and jq ship on ubuntu-latest today, but the lint and sweep steps
+      # below would error rather than fail loudly if a future runner image drops them.
+      - name: Ensure lint tooling
+        run: |
+          missing=()
+          command -v shellcheck >/dev/null 2>&1 || missing+=(shellcheck)
+          command -v jq >/dev/null 2>&1 || missing+=(jq)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "installing: ${missing[*]}"
+            sudo apt-get update
+            sudo apt-get install -y "${missing[@]}"
+          fi
+          shellcheck --version | head -2
+          jq --version
+
       - name: Run validate-plugin.py
         run: ./scripts/validate-plugin.py
 
