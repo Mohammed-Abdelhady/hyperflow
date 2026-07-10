@@ -1,6 +1,6 @@
 # Orchestration
 
-How a single user request becomes a coordinated multi-agent run — the chain, triage, per-phase agent dispatch, parallelism accounting, and failure handling.
+How one request becomes a coordinated multi-agent run — and why you can trust the output. This guide walks the chain end to end: triage, per-phase agent dispatch, parallelism accounting, commit cadence, and failure handling.
 
 ---
 
@@ -17,7 +17,7 @@ workflow    →   workflow runtime/adapter   →   final synthesis
 big task        native or portable path        checked result
 ```
 
-Start with anything from a rough idea to a clear task: **`plan`** sharpens the prompt, designs the approach, and decomposes it into a task file (bouncing straight to decomposition when the approach is already clear). `plan → dispatch` are **chain-starters** — invoking either auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked; they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
+Start with anything from a rough idea to a clear task. **`plan`** sharpens the prompt, designs the approach, and decomposes it into a task file — bouncing straight to decomposition when the approach is already clear. `plan → dispatch` are **chain-starters**: invoking either auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked, they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
 
 Four skills sit outside the chain:
 
