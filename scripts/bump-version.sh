@@ -59,6 +59,8 @@ echo "Updated $MARKETPLACE_JSON (2 occurrences)"
 
 # Update README.md version badge
 sed "${SED_INPLACE[@]}" 's/<code>v[^<]*<\/code>/<code>v'"$NEW_VERSION"'<\/code>/' "$README_MD"
+sed "${SED_INPLACE[@]}" 's|badge/version-v[^-]*-blueviolet|badge/version-v'"$NEW_VERSION"'-blueviolet|' "$README_MD"
+sed "${SED_INPLACE[@]}" 's/alt="version v[^"]*"/alt="version v'"$NEW_VERSION"'"/' "$README_MD"
 echo "Updated $README_MD"
 
 # Update skill VERSION file
