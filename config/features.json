@@ -323,18 +323,22 @@
     {
       "name": "Cursor",
       "key": "cursor"
+    },
+    {
+      "name": "Grok",
+      "key": "grok"
     }
   ],
   "capabilities": [
     "Parallel worker dispatch (independent subtasks run simultaneously)",
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
-    "Codex/OpenCode portable workflow adapter for big tasks",
+    "Codex/OpenCode/Grok portable workflow adapter for big tasks",
     "Reviewer review of every worker output (iron rule)",
     "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
     "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
     "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
     "Universal agent consultation: any agent (current or future) can ask a peer for help mid-task \u2014 workers via an orchestrator-brokered CONSULT signal, decision agents directly; depth-1, budget-bounded, never overrides a security halt",
-    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode), review back \u2014 via a git-committed handoff package",
+    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode/Grok), review back \u2014 via a git-committed handoff package",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
     "Project-scoped persistent memory with tag taxonomy",

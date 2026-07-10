@@ -270,7 +270,7 @@ Print one line and stop:
 Audit complete — N findings recorded, no fixes applied. Re-run /hyperflow:audit later or invoke /hyperflow:plan manually if you change your mind.
 ```
 
-If `AskUserQuestion` cannot be presented as a popup, use the Codex fallback: print the fix gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print the findings and an error line — never silently auto-fix or silently exit.
+If `AskUserQuestion` cannot be presented as a popup, use the portable-surface fallback (Codex / OpenCode / Grok): print the fix gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print the findings and an error line — never silently auto-fix or silently exit.
 
 ## Output Format
 
@@ -390,7 +390,7 @@ See [Output Format](#output-format) above for the exact block. Single review blo
 | No diff to review (clean working tree, no target) | Print `Nothing to review — clean working tree. Pass an explicit target.` and stop. |
 | Searcher returns no context (file gone, bad path) | Reviewer flags `[Critical] — target unreachable` and halts at Step 3. |
 | Reviewer emits `SECURITY_VIOLATION` (L3+ only) | Skip Step 4 onward. Print finding. Do not fire fix gate. User decides remediation. |
-| `AskUserQuestion` popup unavailable in Codex | Print the fix gate as a `Hyperflow Question` chat block and wait for the user's answer. |
+| `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the fix gate as a `Hyperflow Question` chat block and wait for the user's answer. |
 | No interactive channel at all | Print findings + an error line stating the fix gate could not fire. Never silently auto-fix or silently exit. |
 | Reviewer disagrees with worker context (NEEDS_FIX on Step 2 coverage check) | Re-dispatch Searcher with the reviewer's gap list. Max 2 retries before surfacing the gap to user. |
 
