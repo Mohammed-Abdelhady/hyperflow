@@ -220,7 +220,7 @@ Branch on the answer:
 - **Another session** → do NOT invoke dispatch. Write the committed handoff package and STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)) — create `.hyperflow-handoff/<slug>/` with `HANDOFF.md` (manifest: slug, artefact type/path, resolved chain args, `on_complete` from Q2, originating commit, `Specialists` roster), `STATUS` (`planned`), a committed copy of the gitignored artefact, and `context/` copies of `.hyperflow/{conventions,profile,architecture}.md` + memory index; `git add` + commit `chore(handoff): plan <slug> for second-session build`; then print the start-session-2 instructions.
 - **Stop** → write nothing further. Print `Plan kept at .hyperflow/tasks/<slug>.md — run /hyperflow:dispatch <slug> when you're ready to build.`
 
-Codex fallback: print the same gate as a `Hyperflow Question` chat block and wait; if no interactive channel exists, error and stop (never silently default to building).
+Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `Hyperflow Question` chat block and wait; if no interactive channel exists, error and stop (never silently default to building).
 
 ## Anti-Patterns
 

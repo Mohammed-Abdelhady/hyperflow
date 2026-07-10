@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.6.0] — 2026-07-10
+
+### Added
+- Register Grok in features and portable gate wording
+- Add Grok project shims
+- Add Grok portable workflow adapter
+- Portable Grok runtime adapter
+- Detect Grok and link full skills tree
+
+### Changed
+- Document Grok as a supported Hyperflow host
+- List Grok among setup-detection tools
+- Add release checklist with downstream-dependents registry
+
+
+### Added
+- First-class Grok CLI / Grok Build support — install detects `~/.grok`, links full `skills/*` tree, portable doctrine + workflow adapter, setup-detection shims (`AGENTS.md` + `.grok/rules/`)
+
 ## [5.5.0] — 2026-07-10
 
 ### Added
@@ -1095,7 +1113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.5.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.6.0...HEAD
+[5.6.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.4.1...v5.5.0
 [5.4.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.4.0...v5.4.1
 [5.4.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.3.1...v5.4.0
