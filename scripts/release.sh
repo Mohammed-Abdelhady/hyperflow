@@ -263,6 +263,18 @@ mv "$TMPFILE2" "$CHANGELOG"
 # ── Bump versions in all manifest files ──────────────────────────────────────
 "$SCRIPT_DIR/bump-version.sh" "$NEW_VERSION"
 
+# ── Regenerate the portable doctrine template from DOCTRINE.md ────────────────
+# templates/claude-md-doctrine.md is a generated artefact derived from
+# skills/hyperflow/DOCTRINE.md. Regenerate it *before* the auto-bridge refresh
+# below so a doctrine edit propagates into the dogfood CLAUDE.md block in the same
+# release commit. Failure is a warning, never a release blocker.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/generate-portable-doctrine.py" ]]; then
+  echo -e "${CYAN}▸${RESET} regenerating portable doctrine template"
+  if ! python3 "$SCRIPT_DIR/generate-portable-doctrine.py"; then
+    echo -e "${YELLOW}⚠${RESET} portable doctrine regeneration failed; continuing — run 'python3 scripts/generate-portable-doctrine.py' manually and commit"
+  fi
+fi
+
 # ── Refresh the dogfood doctrine block in CLAUDE.md (advisory) ───────────────
 # This repo is both plugin root and project root — auto-bridge re-stamps the
 # managed hyperflow:doctrine block with the just-bumped version + body-sha so
@@ -353,7 +365,8 @@ git add \
   "$ROOT/.claude-plugin/marketplace.json" \
   "$ROOT/.codex-plugin/plugin.json" \
   "$README" \
-  "$ROOT/skills/hyperflow/VERSION"
+  "$ROOT/skills/hyperflow/VERSION" \
+  "$ROOT/templates/claude-md-doctrine.md"
 
 # Optional generated artifacts — add if they exist (some require external tools)
 # CLAUDE.md rides along for the doctrine-block refresh above (no-op when fresh).

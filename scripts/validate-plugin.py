@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import sys
@@ -361,6 +362,27 @@ def check_features() -> None:
                 )
 
 
+def check_portable_doctrine() -> None:
+    # templates/claude-md-doctrine.md is generated from skills/hyperflow/DOCTRINE.md
+    # by scripts/generate-portable-doctrine.py. Import that generator by path (the
+    # scripts/ dir is not a package, mirroring how tests load auto-bridge.py) and
+    # run its --check equivalent so a hand-edit that drifts the template from the
+    # canonical doctrine fails CI with an actionable remediation message.
+    gen_path = ROOT / "scripts" / "generate-portable-doctrine.py"
+    if not gen_path.exists():
+        fail("scripts/generate-portable-doctrine.py missing")
+        return
+    try:
+        spec = importlib.util.spec_from_file_location("generate_portable_doctrine", gen_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except (OSError, SyntaxError) as e:
+        fail(f"could not load generate-portable-doctrine.py: {e}")
+        return
+    for err in module.check(ROOT):
+        fail(err)
+
+
 def main() -> int:
     print(f"Validating hyperflow plugin at {ROOT}")
     section("plugin.json", check_plugin_json)
@@ -369,6 +391,7 @@ def main() -> int:
     section("package.json", check_package_json)
     section("SKILL.md frontmatter", check_skills)
     section("config/features.json", check_features)
+    section("portable doctrine template", check_portable_doctrine)
     section("hooks.json", check_hooks)
     section("README.md internal links", check_readme_links)
 
