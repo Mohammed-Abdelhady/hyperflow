@@ -145,8 +145,6 @@ fi
 # release commits and README.md hasn't been touched since the last tag, surface
 # a warning so the contributor remembers to keep the README in sync.
 if [ -n "$LAST_TAG" ]; then
-  README_LAST_TOUCHED=$(git log -1 --format=%H -- README.md 2>/dev/null)
-  LAST_TAG_COMMIT=$(git rev-list -n 1 "$LAST_TAG" 2>/dev/null)
   README_CHANGED_SINCE_TAG=$(git diff --name-only "$LAST_TAG"...HEAD -- README.md 2>/dev/null)
 
   # Count commits since last tag that are NOT release/chore/internal-docs.
@@ -265,6 +263,33 @@ mv "$TMPFILE2" "$CHANGELOG"
 # ── Bump versions in all manifest files ──────────────────────────────────────
 "$SCRIPT_DIR/bump-version.sh" "$NEW_VERSION"
 
+# ── Regenerate the portable doctrine template from DOCTRINE.md ────────────────
+# templates/claude-md-doctrine.md is a generated artefact derived from
+# skills/hyperflow/DOCTRINE.md. Regenerate it *before* the auto-bridge refresh
+# below so a doctrine edit propagates into the dogfood CLAUDE.md block in the same
+# release commit. Failure is a warning, never a release blocker.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/generate-portable-doctrine.py" ]]; then
+  echo -e "${CYAN}▸${RESET} regenerating portable doctrine template"
+  if ! python3 "$SCRIPT_DIR/generate-portable-doctrine.py"; then
+    echo -e "${YELLOW}⚠${RESET} portable doctrine regeneration failed; continuing — run 'python3 scripts/generate-portable-doctrine.py' manually and commit"
+  fi
+fi
+
+# ── Refresh the dogfood doctrine block in CLAUDE.md (advisory) ───────────────
+# This repo is both plugin root and project root — auto-bridge re-stamps the
+# managed hyperflow:doctrine block with the just-bumped version + body-sha so
+# the dogfood embed rides the release commit and can never lag behind a tag.
+# Failure is a warning, never a release blocker.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/auto-bridge.py" ]]; then
+  echo -e "${CYAN}▸${RESET} refreshing CLAUDE.md doctrine block"
+  mkdir -p "$ROOT/.hyperflow"  # gitignored; auto-bridge no-ops without it
+  if ! python3 "$SCRIPT_DIR/auto-bridge.py" "$ROOT" "$ROOT" --force; then
+    echo -e "${YELLOW}⚠${RESET} doctrine block refresh failed; continuing — run 'python3 scripts/auto-bridge.py . .' manually and commit"
+  fi
+else
+  echo -e "${YELLOW}⚠${RESET} python3 or auto-bridge.py unavailable — skipping CLAUDE.md doctrine refresh"
+fi
+
 # ── Regenerate hero.svg + demo.cast/gif ──────────────────────────────────────
 HAS_PYTHON3=0
 if command -v python3 >/dev/null 2>&1; then HAS_PYTHON3=1; fi
@@ -349,6 +374,7 @@ git add \
   "$ROOT/.codex-plugin/plugin.json" \
   "$README" \
   "$ROOT/skills/hyperflow/VERSION" \
+  "$ROOT/templates/claude-md-doctrine.md" \
   "$ROOT/docs/index.html" \
   "$ROOT/docs/installation.html" \
   "$ROOT/docs/orchestration.html" \
@@ -356,7 +382,9 @@ git add \
   "$ROOT/docs/sitemap.xml"
 
 # Optional generated artifacts — add if they exist (some require external tools)
+# CLAUDE.md rides along for the doctrine-block refresh above (no-op when fresh).
 for optional in \
+  "$ROOT/CLAUDE.md" \
   "$ROOT/config/features.json" \
   "$ROOT/docs/assets/hero.svg" \
   "$ROOT/docs/assets/hero-vertical.svg" \
@@ -375,6 +403,20 @@ done
 # ── Commit and tag ────────────────────────────────────────────────────────────
 git commit -m "chore(release): v${NEW_VERSION}"
 git tag -a "v${NEW_VERSION}" -m "v${NEW_VERSION}"
+
+# ── Downstream-dependents check (advisory, never blocks the release) ─────────
+# Mirrors the README-staleness style above: surface the state, keep going.
+# The registry and remediation steps live in RELEASING.md §3; the script skips
+# itself cleanly (exit 0) when gh or the network is unavailable.
+if [[ -x "$SCRIPT_DIR/verify-downstreams.sh" ]]; then
+  echo ""
+  echo -e "${CYAN}▸${RESET} verifying downstream dependents (advisory)"
+  if ! "$SCRIPT_DIR/verify-downstreams.sh"; then
+    echo ""
+    echo -e "${YELLOW}⚠  DOWNSTREAMS STALE${RESET} — see the table above; remediation steps live in RELEASING.md §3."
+    echo -e "   The release is not blocked — sync the dependents after pushing."
+  fi
+fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
