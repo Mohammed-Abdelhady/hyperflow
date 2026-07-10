@@ -60,6 +60,13 @@ detect_providers() {
     PROVIDER_PATHS+=("$ag_skills")
     PROVIDER_KEYS+=("antigravity")
   fi
+
+  # Grok CLI / Grok Build TUI — skills under ~/.grok/skills/
+  if [ -d "$HOME/.grok" ]; then
+    PROVIDERS+=("Grok")
+    PROVIDER_PATHS+=("$HOME/.grok/skills")
+    PROVIDER_KEYS+=("grok")
+  fi
 }
 
 # ─── Prompt Helpers ───
@@ -168,6 +175,36 @@ link_provider() {
     return
   fi
 
+  # Grok discovers each skill as ~/.grok/skills/<name>/SKILL.md. Link the full
+  # skills/* tree (not just hyperflow) so plan/dispatch/audit/… auto-invoke.
+  if [ "$name" = "Grok" ]; then
+    local skills_src="$INSTALL_DIR/skills"
+    if [ ! -d "$skills_src" ]; then
+      warn "Grok — skills not found at $skills_src (update your clone)"
+      return
+    fi
+    mkdir -p "$skills_dir"
+    local linked=0 skill_path sname stgt
+    for skill_path in "$skills_src"/*/; do
+      [ -d "$skill_path" ] || continue
+      [ -f "${skill_path}SKILL.md" ] || continue
+      sname="$(basename "$skill_path")"
+      stgt="$skills_dir/$sname"
+      if [ -L "$stgt" ]; then
+        rm "$stgt"
+      elif [ -d "$stgt" ]; then
+        warn "Grok — found existing directory at $stgt"
+        warn "  Backing up to ${stgt}.bak and replacing with symlink"
+        mv "$stgt" "${stgt}.bak"
+      fi
+      ln -s "${skill_path%/}" "$stgt"
+      linked=$((linked + 1))
+    done
+    info "Grok — linked $linked skills into $skills_dir"
+    step "  Project shims: run scripts/setup-detection.sh --tools grok <project> for AGENTS.md + .grok/rules/"
+    return
+  fi
+
   local target="$skills_dir/hyperflow"
   local source="$INSTALL_DIR/$SKILL_DIR"
 
@@ -259,7 +296,7 @@ setup_project_detection() {
   fi
 
   echo ""
-  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md and CLAUDE.md so Codex, Claude Code, and OpenCode auto-load hyperflow in that project." "n"; then
+  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md and CLAUDE.md so Codex, Claude Code, OpenCode, Grok, and other tools auto-load hyperflow in that project." "n"; then
     return
   fi
 
@@ -308,6 +345,8 @@ print_summary() {
         step "  Codex — plugin (codex plugin add hyperflow@hyperflow-marketplace)"
       elif [ "${PROVIDERS[$i]}" = "Antigravity" ]; then
         step "  Antigravity — hyperflow* skills → ${PROVIDER_PATHS[$i]}"
+      elif [ "${PROVIDERS[$i]}" = "Grok" ]; then
+        step "  Grok — skills/* → ${PROVIDER_PATHS[$i]}"
       else
         step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
       fi
@@ -360,6 +399,30 @@ uninstall() {
         removed=$((removed + 1))
       else
         step "  Antigravity — not installed, skipping"
+      fi
+      continue
+    fi
+
+    if [ "$name" = "Grok" ]; then
+      local grok_removed=0 skill_path sname stgt link_dest
+      for skill_path in "$INSTALL_DIR/skills"/*/; do
+        [ -d "$skill_path" ] || continue
+        [ -f "${skill_path}SKILL.md" ] || continue
+        sname="$(basename "$skill_path")"
+        stgt="${PROVIDER_PATHS[$i]}/$sname"
+        if [ -L "$stgt" ]; then
+          link_dest="$(readlink "$stgt")"
+          if [[ "$link_dest" == *"/skills/"* ]] || [[ "$link_dest" == *".hyperflow"* ]]; then
+            rm "$stgt"
+            grok_removed=$((grok_removed + 1))
+          fi
+        fi
+      done
+      if [ $grok_removed -gt 0 ]; then
+        info "Grok — removed $grok_removed skill symlinks"
+        removed=$((removed + 1))
+      else
+        step "  Grok — not installed, skipping"
       fi
       continue
     fi

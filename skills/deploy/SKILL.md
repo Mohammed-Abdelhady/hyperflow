@@ -143,7 +143,7 @@ Atomic — single Worker → Reviewer pair with no parallel angles. Exempt from 
     Exclude — commit only the worker fixes; user changes stay local
   ```
 
-  If the popup UI is unavailable in Codex, print the same inclusion gate as a `Hyperflow Question` chat block and wait for the user's answer.
+  If the popup UI is unavailable on a portable surface (Codex / OpenCode / Grok), print the same inclusion gate as a `Hyperflow Question` chat block and wait for the user's answer.
 
 - **Never** add `Co-Authored-By: Claude` in commit messages — see [git-workflow.md](references/git-workflow.md).
 
@@ -189,7 +189,7 @@ Push to origin/<branch>?
 
 - **Never force-push to main or master**, regardless of `push` value. `push=auto` is a plain `git push`; if the remote rejects it (non-fast-forward), surface the error and stop — do NOT add `--force`.
 - On yes (or `push=auto`) — `git push`, then `git push --tags` if release created tags.
-- If the popup UI is unavailable in Codex for `push=ask`, print the push gate as a `Hyperflow Question` chat block and wait for the user's answer. If no interactive channel is available at all, hold the push and print `Push: held — interactive confirmation required`.
+- If the popup UI is unavailable on a portable surface (Codex / OpenCode / Grok) for `push=ask`, print the push gate as a `Hyperflow Question` chat block and wait for the user's answer. If no interactive channel is available at all, hold the push and print `Push: held — interactive confirmation required`.
 
 ## Step 7 — Output
 
@@ -271,7 +271,7 @@ See the ship result block in [Step 7 — Output](#step-7--output) above. Two for
 | Security sweep finds secrets | Halt with `SECURITY_VIOLATION:` marker and the file:line. User decides remediation (revert the secret + rotate the credential). |
 | `scripts/release.sh` says "nothing to release" | Skip release; print `Release: skipped (nothing to release)`. Push step still fires for non-release commits. |
 | Push rejected (non-fast-forward) | Refuse to force-push. Print: `Push rejected — branch is behind origin. Pull/rebase first.` |
-| `AskUserQuestion` popup unavailable in Codex | Print the push or commit-inclusion gate as a `Hyperflow Question` chat block and wait for the user's answer. |
+| `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the push or commit-inclusion gate as a `Hyperflow Question` chat block and wait for the user's answer. |
 | Headless / non-interactive | Refuse push step entirely. Print structured result with `Push: held — interactive confirmation required`. |
 | Pre-existing uncommitted user changes | Use `AskUserQuestion` to ask whether to include or exclude from the commit. Default: include. |
 

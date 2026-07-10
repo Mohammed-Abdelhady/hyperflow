@@ -68,7 +68,7 @@ planning session: /hyperflow:handoff review <slug>
 | Artefact path        | `artefact/tasks/<slug>.md` \| `artefact/features/<slug>/`   |
 | Chain args           | `commit=… branch=… push=… triage=<base64> mode=…`           |
 | on_complete          | review \| deploy                                            |
-| Originating provider | claude-code \| codex \| opencode \| antigravity            |
+| Originating provider | claude-code \| codex \| opencode \| antigravity \| grok     |
 | Originating commit   | `<sha>` (HEAD when the package was committed)               |
 | Specialists          | `<Brain-decided roster from the artefact status block>`    |
 | Created              | `<YYYY-MM-DD HH:mm>`                                        |
