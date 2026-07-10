@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
   "version": "5.7.0",
-  "tagline": "Advanced multi-agent orchestration with persistent cross-session memory",
-  "subtitle": "Per-step multi-level review, persona stitching, adaptive flow profiles. Start anywhere \u2014 every step dispatches its own Worker \u2192 Reviewer pair.",
+  "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
+  "subtitle": "Planners design, parallel workers build, and 22 domain specialists review every step. 18 skills, adaptive depth, persistent per-project memory.",
   "layers": [
     {
       "n": 0,
@@ -271,6 +271,22 @@
         "name": "architect",
         "personas": [
           "architect"
+        ],
+        "tier": "reviewer + design decision agent"
+      },
+      {
+        "name": "designer",
+        "personas": [
+          "ui",
+          "creative"
+        ],
+        "tier": "reviewer + design decision agent"
+      },
+      {
+        "name": "motion",
+        "personas": [
+          "ui",
+          "performance"
         ],
         "tier": "reviewer + design decision agent"
       }
