@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- First-class Grok CLI / Grok Build support — install detects `~/.grok`, links full `skills/*` tree, portable doctrine + workflow adapter, setup-detection shims (`AGENTS.md` + `.grok/rules/`)
+
 ## [5.5.0] — 2026-07-10
 
 ### Added

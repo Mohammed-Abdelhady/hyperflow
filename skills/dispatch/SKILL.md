@@ -129,7 +129,7 @@ This feature has <N> phases. How should I build them?
                               <slug> to continue with the following phase.
 ```
 
-Skip the gate (default `all`) when: only one phase is incomplete; `--phases=all|next` was passed; or this is an `on_complete=deploy` two-session build (fully autonomous — `all`). Codex/no-popup → `Hyperflow Question` chat-block fallback; no channel at all → default `All phases`. Propagate the choice as `--phases=<all|next>`.
+Skip the gate (default `all`) when: only one phase is incomplete; `--phases=all|next` was passed; or this is an `on_complete=deploy` two-session build (fully autonomous — `all`). Portable surface without popup (Codex / OpenCode / Grok) → `Hyperflow Question` chat-block fallback; no channel at all → default `All phases`. Propagate the choice as `--phases=<all|next>`.
 
 In **feature mode**, Step 2 runs **once per phase, in roster order**. A phase does not start until its `Depends on`
 phase is `completed`. For each phase:
@@ -272,7 +272,7 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
    - **`on_complete=deploy`** → invoke `Skill` with `skill: deploy` (its own push gate applies). Do NOT also fire the audit/deploy `AskUserQuestion` below — `on_complete` already encoded the disposition.
    - **`on_complete=review`** → STOP. Print: `Build complete — committed + pushed (range <base>..<head>). Return to session 1 and run /hyperflow:audit <base>..<head> (or /hyperflow:handoff review <slug>).`
 
-**Normal (single-session) end-of-chain — Audit + Deploy gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. In Codex, if the popup UI is unavailable, render both questions in one `Hyperflow Question` chat block and wait for the user's answers.
+**Normal (single-session) end-of-chain — Audit + Deploy gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy). Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render both questions in one `Hyperflow Question` chat block and wait for the user's answers.
 
 > **DOCTRINE rule 8 preserved:** both questions still fire; they just batch into one round-trip instead of two. Combined gate cuts human-in-the-loop latency by ~half at end-of-chain.
 
@@ -437,7 +437,7 @@ Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
 | Layer 5 gate failure (lint/typecheck/test) | Worker fix + re-run. Max 3 gate cycles before escalating. |
 | Per-sub-task commit fails (hook rejects, conflict) | Stop; surface the hook error. Do NOT use `--no-verify`. Do NOT amend per-sub-task commits. |
 | Wrap-up memory append has duplicate entries (detected post-commit) | `git revert HEAD` reverts the chore(memory) commit; orchestrator rewrites and recommits. No Reviewer to catch this inline — `git log` and `git revert` are the recovery path. |
-| `AskUserQuestion` popup unavailable in Codex | Print audit/deploy as a `Hyperflow Question` chat block and wait for the user's answers. |
+| `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print audit/deploy as a `Hyperflow Question` chat block and wait for the user's answers. |
 | No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
 | Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
 
