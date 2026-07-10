@@ -77,7 +77,7 @@ done
 REGISTRY=(
   'jeremylongshore/claude-code-plugins-plus-skills|vendored-manifest|jeremylongshore/claude-code-plugins-plus-skills|plugins/ai-agency/hyperflow/.claude-plugin/plugin.json|Open the unfreeze PR from RELEASING.md section 3 (drop curated: true in their sources.yaml), or a courtesy resync issue'
   'Mohammed-Abdelhady/forgepath|doctrine-remote|Mohammed-Abdelhady/forgepath|CLAUDE.md|Run /hyperflow:bridge refresh in that repo and commit'
-  "this repo's own CLAUDE.md|doctrine-local||CLAUDE.md|Auto-refreshed by release.sh — if stale, the refresh step failed: run python3 scripts/auto-bridge.py . . and commit"
+  "this repo's own CLAUDE.md|doctrine-local||CLAUDE.md|Auto-refreshed by release.sh — if stale, the doctrine content changed without the block being re-stamped: run python3 scripts/auto-bridge.py . . and commit"
   'gabrielmoreira/agent-skills-mirror|info|||Transitive daily mirror — inherits automatically once the upstream marketplace resyncs'
   'kota-kawa/Marmo-Core + TuYv/ccpm|info|||Hand-vendored third-hand snapshots — no sync contract to honor'
   'crossaitools.com|info|||Community directory — follows the marketplaces it crawls'
@@ -144,15 +144,24 @@ doctrine_version() {
   grep -o 'hyperflow:doctrine:start version=[0-9][0-9.]*' | head -1 | sed 's/.*version=//'
 }
 
+# A doctrine block is invalidated by its CONTENT, not its version label: auto-bridge
+# deliberately leaves a block untouched when the body-sha matches, "even if the
+# version label differs" (scripts/auto-bridge.py, S7 freshness check). Comparing
+# version labels here would therefore report every doctrine embed as STALE on any
+# version-only release. Compare the body-sha instead.
+doctrine_body_sha() {
+  grep -o 'hyperflow:doctrine:start[^>]*body-sha=[0-9a-f]*' | head -1 | sed 's/.*body-sha=//'
+}
+
 print_row() {
   local color=''
-  case "$4" in
+  case "$5" in
     FRESH) color="$GREEN" ;;
     STALE) color="$RED" ;;
     ERROR) color="$YELLOW" ;;
     INFO)  color="$CYAN" ;;
   esac
-  printf '%-50s %-9s %-9s %b\n' "$1" "$2" "$3" "${color}$4${RESET}"
+  printf '%-48s %-8s %-14s %-14s %b\n' "$1" "$2" "$3" "$4" "${color}$5${RESET}"
 }
 
 # ── Expected version = local manifest (single source of truth) ───────────────
@@ -161,6 +170,14 @@ EXPECTED=$(grep '"version"' "$ROOT/package.json" | head -1 \
 if [[ -z "$EXPECTED" ]]; then
   echo "Error: could not parse version from $ROOT/package.json" >&2
   exit 2
+fi
+
+# Ask auto-bridge for the template's body-sha rather than recomputing it here —
+# a second implementation could disagree, and a freshness check that disagrees
+# with the thing it checks is worse than no check.
+EXPECTED_BODY_SHA=''
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/auto-bridge.py" ]]; then
+  EXPECTED_BODY_SHA=$(python3 "$ROOT/scripts/auto-bridge.py" --body-sha "$ROOT" 2>/dev/null || true)
 fi
 
 # ── Pre-flight: no gh binary or no reachable API → skip cleanly ──────────────
@@ -178,12 +195,14 @@ STALE_NOTES=()
 
 if [[ "$JSON_MODE" != "true" ]]; then
   echo -e "${BOLD}Downstream dependents — expected hyperflow v${EXPECTED}${RESET}"
-  printf '%-50s %-9s %-9s %s\n' 'DEPENDENT' 'EXPECTED' 'ACTUAL' 'STATUS'
+  echo -e "${CYAN}basis=version compares a vendored plugin copy; basis=content compares a doctrine block's body-sha${RESET}"
+  printf '%-48s %-8s %-14s %-14s %s\n' 'DEPENDENT' 'BASIS' 'EXPECTED' 'ACTUAL' 'STATUS'
 fi
 
 for row in "${REGISTRY[@]}"; do
   IFS='|' read -r name method repo path note <<< "$row"
   expected="$EXPECTED"
+  basis='version'
   actual=''
   status=''
   err=''
@@ -191,6 +210,7 @@ for row in "${REGISTRY[@]}"; do
 
   case "$method" in
     vendored-manifest)
+      # A vendored copy of the plugin genuinely lags by version — compare versions.
       if content=$(gh_file "$repo" "$path"); then
         actual=$(printf '%s\n' "$content" | manifest_version || true)
       else
@@ -199,20 +219,35 @@ for row in "${REGISTRY[@]}"; do
       ;;
     doctrine-remote)
       if content=$(gh_file "$repo" "$path"); then
-        actual=$(printf '%s\n' "$content" | doctrine_version || true)
+        actual=$(printf '%s\n' "$content" | doctrine_body_sha || true)
+        if [[ -n "$actual" && -n "$EXPECTED_BODY_SHA" ]]; then
+          basis='content'
+          expected="$EXPECTED_BODY_SHA"
+        else
+          # Legacy block predating body-sha, or no local template to hash — fall
+          # back to the version label, exactly as auto-bridge does.
+          actual=$(printf '%s\n' "$content" | doctrine_version || true)
+        fi
       else
         err=$(head -c 200 "$ERRFILE" | tr '\n' ' ')
       fi
       ;;
     doctrine-local)
       if [[ -f "$ROOT/$path" ]]; then
-        actual=$(doctrine_version < "$ROOT/$path" || true)
+        actual=$(doctrine_body_sha < "$ROOT/$path" || true)
+        if [[ -n "$actual" && -n "$EXPECTED_BODY_SHA" ]]; then
+          basis='content'
+          expected="$EXPECTED_BODY_SHA"
+        else
+          actual=$(doctrine_version < "$ROOT/$path" || true)
+        fi
       else
         err="local file $path not found"
       fi
       ;;
     info)
       status='INFO'
+      basis='-'
       expected='-'
       actual='-'
       ;;
@@ -251,11 +286,12 @@ for row in "${REGISTRY[@]}"; do
 
   if [[ "$JSON_MODE" == "true" ]]; then
     [[ -n "$ROWS_JSON" ]] && ROWS_JSON+=','
-    ROWS_JSON+=$(printf '{"name":"%s","expected":"%s","actual":"%s","status":"%s","error":"%s","action":"%s"}' \
-      "$(json_escape "$name")" "$(json_escape "$expected")" "$(json_escape "$actual")" \
-      "$(json_escape "$status")" "$(json_escape "$err")" "$(json_escape "$note")")
+    ROWS_JSON+=$(printf '{"name":"%s","basis":"%s","expected":"%s","actual":"%s","status":"%s","error":"%s","action":"%s"}' \
+      "$(json_escape "$name")" "$(json_escape "$basis")" "$(json_escape "$expected")" \
+      "$(json_escape "$actual")" "$(json_escape "$status")" "$(json_escape "$err")" \
+      "$(json_escape "$note")")
   else
-    print_row "$name" "$expected" "$actual" "$status"
+    print_row "$name" "$basis" "$expected" "$actual" "$status"
     if [[ "$status" == 'ERROR' && -n "$err" ]]; then
       printf '   %b↳ %s%b\n' "$YELLOW" "$err" "$RESET"
     fi

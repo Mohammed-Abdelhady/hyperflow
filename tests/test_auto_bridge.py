@@ -145,5 +145,30 @@ class MainEndToEndTests(unittest.TestCase):
         self.assertTrue(content.endswith(SUFFIX))
 
 
+class BodyShaQueryTests(unittest.TestCase):
+    """--body-sha is the hash contract other tools read; it must match the stamp."""
+
+    def _run(self, argv):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            code = auto_bridge.main(argv)
+        return code, stdout.getvalue().strip()
+
+    def test_prints_the_hash_that_gets_stamped_into_the_marker(self):
+        code, out = self._run([str(SCRIPT_PATH), "--body-sha", str(REPO_ROOT)])
+        template = auto_bridge._read_template(REPO_ROOT)
+        self.assertEqual(code, 0)
+        self.assertEqual(out, auto_bridge._body_hash(template))
+
+    def test_missing_plugin_root_argument_is_a_usage_error(self):
+        code, _ = self._run([str(SCRIPT_PATH), "--body-sha"])
+        self.assertEqual(code, 2)
+
+    def test_unreadable_template_is_a_usage_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            code, _ = self._run([str(SCRIPT_PATH), "--body-sha", tmp])
+        self.assertEqual(code, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
