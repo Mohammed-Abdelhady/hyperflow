@@ -148,6 +148,55 @@
       "tagline": "Two-session handoff",
       "purpose": "Manage a cross-environment two-session run \u2014 list/status/pickup/review/complete a committed handoff package (plan in one session, build in another, review back in the first)",
       "chain": "standalone"
+    },
+    {
+      "name": "design",
+      "command": "/hyperflow:design",
+      "tagline": "Systematic UI design",
+      "purpose": "Establish/extend the design system, research real-world prior art, dispatch the designer specialist, review for taste + accessibility \u2014 ends with a handoff gate into the chain",
+      "chain": "standalone"
+    },
+    {
+      "name": "status",
+      "command": "/hyperflow:status",
+      "tagline": "Project state snapshot",
+      "purpose": "One-screen read-only view \u2014 version, profile freshness, memory count, live progress on every in-flight task",
+      "chain": "standalone"
+    },
+    {
+      "name": "background",
+      "command": "/hyperflow:background",
+      "tagline": "Background agents",
+      "purpose": "List, inspect, cancel, and prune background agents fired during prior chain runs",
+      "chain": "standalone"
+    },
+    {
+      "name": "sticky",
+      "command": "/hyperflow:sticky",
+      "tagline": "Auto-routing mode",
+      "purpose": "Set auto-routing: on (every task-shaped message routes), auto (intent-verb messages route \u2014 default), off",
+      "chain": "standalone"
+    },
+    {
+      "name": "bridge",
+      "command": "/hyperflow:bridge",
+      "tagline": "Portable doctrine",
+      "purpose": "Embed the managed doctrine block into CLAUDE.md so autonomy + intent-routing + commit cadence carry to Desktop, claude.ai web, and IDE extensions",
+      "chain": "portability"
+    },
+    {
+      "name": "flush",
+      "command": "/hyperflow:flush",
+      "tagline": "Flush deferred commits",
+      "purpose": "Recover a deferred-commit queue from a prior or interrupted chain \u2014 fast-forward the staging branch, delete staging, clear the queue",
+      "chain": "standalone"
+    },
+    {
+      "name": "hyperflow",
+      "command": "/hyperflow:hyperflow",
+      "tagline": "Single-agent adapter",
+      "purpose": "Apply the orchestration doctrine in Codex, Antigravity, Grok, or another single-agent surface \u2014 auto-invoked for non-trivial engineering work",
+      "chain": "portable single-agent adapter"
     }
   ],
   "specialists": {
@@ -375,7 +424,7 @@
     "Hot/warm/cold memory tiering with user-invoked compaction (`/hyperflow:cache compact`) and automatic cold archiving",
     "Lazy memory injection (only tag-matched entries per task)",
     "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
-    "5 provider support (Claude Code, Codex, OpenCode, Antigravity, Cursor)",
+    "Multi-provider support (Claude Code, Codex, OpenCode, Antigravity, Cursor, Grok)",
     "Auto-detect provider via env vars or folder presence",
     "Every agent runs on the current session model; roles differ by responsibility",
     "Quality gates (lint, typecheck, build, tests)",
@@ -399,6 +448,10 @@
       {
         "tool": "Claude Code",
         "file": "CLAUDE.md (appended in place)"
+      },
+      {
+        "tool": "Grok",
+        "file": "AGENTS.md + .grok/rules/hyperflow.md"
       }
     ]
   },

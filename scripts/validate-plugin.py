@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import sys
@@ -234,6 +235,176 @@ def check_readme_links() -> None:
             fail(f"README.md broken link → {href}")
 
 
+FEATURES_PATH = ROOT / "config" / "features.json"
+FEATURES_SCHEMA_PATH = ROOT / "config" / "features.schema.json"
+PROVIDER_COUNT_RE = re.compile(r"\b(\d+)\s+providers?\b", re.IGNORECASE)
+
+
+def _type_ok(value: object, t: str) -> bool:
+    if t == "object":
+        return isinstance(value, dict)
+    if t == "array":
+        return isinstance(value, list)
+    if t == "string":
+        return isinstance(value, str)
+    if t == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if t == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if t == "boolean":
+        return isinstance(value, bool)
+    if t == "null":
+        return value is None
+    return True
+
+
+# Keywords this validator actually enforces, plus annotation keywords that carry no
+# constraint. Anything else in the schema would be silently ignored — a check that
+# passes while the constraint it names goes unenforced — so it is rejected instead.
+SCHEMA_KEYWORDS_ENFORCED = frozenset(
+    {"type", "required", "properties", "items", "enum", "minItems", "pattern"}
+)
+SCHEMA_KEYWORDS_ANNOTATION = frozenset(
+    {"$schema", "$id", "$comment", "title", "description", "examples", "default"}
+)
+
+
+def validate_against_schema(instance: object, schema: dict, path: str, errors: list[str]) -> None:
+    # Compact, zero-dependency JSON-Schema subset validator (type / required /
+    # properties / items / enum / minItems / pattern). Deliberately no pip dep so
+    # CI stays install-free, mirroring parse_simple_yaml above.
+    here = path or "<root>"
+
+    unsupported = sorted(
+        set(schema) - SCHEMA_KEYWORDS_ENFORCED - SCHEMA_KEYWORDS_ANNOTATION
+    )
+    if unsupported:
+        errors.append(
+            f"{here}: schema uses keyword(s) {unsupported} that this validator does not "
+            "enforce — add support in validate_against_schema or drop them, never leave "
+            "them silently unchecked"
+        )
+
+    declared = schema.get("type")
+    if declared is not None:
+        types = declared if isinstance(declared, list) else [declared]
+        if not any(_type_ok(instance, t) for t in types):
+            errors.append(f"{here}: expected type {types}, got {type(instance).__name__}")
+            return  # remaining keywords assume the type matched
+
+    enum = schema.get("enum")
+    if enum is not None and instance not in enum:
+        errors.append(f"{here}: value {instance!r} not in enum {enum}")
+
+    if isinstance(instance, str):
+        pattern = schema.get("pattern")
+        # fullmatch, not search: Python's `$` also matches before a trailing newline,
+        # so an anchored pattern would accept "1.2.3\n".
+        if pattern is not None and not re.fullmatch(pattern, instance):
+            errors.append(f"{here}: {instance!r} does not match pattern {pattern!r}")
+
+    if isinstance(instance, dict):
+        for req in schema.get("required", []):
+            if req not in instance:
+                errors.append(f"{here}: missing required property '{req}'")
+        for key, subschema in schema.get("properties", {}).items():
+            if key in instance:
+                child = f"{path}.{key}" if path else key
+                validate_against_schema(instance[key], subschema, child, errors)
+
+    if isinstance(instance, list):
+        min_items = schema.get("minItems")
+        if isinstance(min_items, int) and len(instance) < min_items:
+            errors.append(f"{here}: array has {len(instance)} item(s), minimum {min_items}")
+        item_schema = schema.get("items")
+        if isinstance(item_schema, dict):
+            for i, item in enumerate(instance):
+                validate_against_schema(item, item_schema, f"{path}[{i}]", errors)
+
+
+def check_features() -> None:
+    if not FEATURES_PATH.exists():
+        fail("config/features.json missing")
+        return
+    try:
+        data = json.loads(FEATURES_PATH.read_text())
+    except json.JSONDecodeError as e:
+        fail(f"config/features.json is not valid JSON: {e}")
+        return
+
+    # (a) Validate features.json against its schema when the schema is present.
+    if FEATURES_SCHEMA_PATH.exists():
+        try:
+            schema = json.loads(FEATURES_SCHEMA_PATH.read_text())
+        except json.JSONDecodeError as e:
+            fail(f"config/features.schema.json is not valid JSON: {e}")
+            schema = None
+        if isinstance(schema, dict):
+            schema_errors: list[str] = []
+            validate_against_schema(data, schema, "", schema_errors)
+            for err in schema_errors:
+                fail(f"features.json schema: {err}")
+    else:
+        warn("config/features.schema.json not found — schema validation skipped")
+
+    # (b) Set-equality: skills/*/ dirs must exactly match features.json skills[].
+    skill_dirs = {p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")}
+    registered: set[str] = set()
+    for entry in data.get("skills", []):
+        name = entry.get("name")
+        command = entry.get("command", "")
+        cmd_tail = command.rsplit(":", 1)[-1] if ":" in command else ""
+        if name and cmd_tail and name != cmd_tail:
+            fail(f"features.json skill name '{name}' != command tail '{cmd_tail}' ({command})")
+        chosen = name or cmd_tail
+        if chosen:
+            registered.add(chosen)
+
+    for missing in sorted(skill_dirs - registered):
+        fail(f"skills/{missing}/ exists but is not registered in features.json skills[]")
+    for extra in sorted(registered - skill_dirs):
+        fail(f"features.json registers skill '{extra}' but skills/{extra}/ does not exist")
+
+    # (c) Every registered skill must be documented in README.md.
+    readme = ROOT / "README.md"
+    readme_text = readme.read_text() if readme.exists() else ""
+    for name in sorted(registered):
+        if f"hyperflow:{name}" not in readme_text:
+            fail(f"features.json skill '{name}' is not referenced in README.md (expected 'hyperflow:{name}')")
+
+    # (d) Any literal "N provider(s)" claim must match providers[] length.
+    provider_count = len(data.get("providers", []))
+    for source in (FEATURES_PATH, ROOT / ".claude-plugin" / "plugin.json", ROOT / ".codex-plugin" / "plugin.json"):
+        if not source.exists():
+            continue
+        for match in PROVIDER_COUNT_RE.finditer(source.read_text()):
+            claimed = int(match.group(1))
+            if claimed != provider_count:
+                fail(
+                    f"{source.relative_to(ROOT)} claims '{match.group(0)}' "
+                    f"but providers[] has {provider_count} entries"
+                )
+
+
+def check_portable_doctrine() -> None:
+    # templates/claude-md-doctrine.md is generated from skills/hyperflow/DOCTRINE.md
+    # by scripts/generate-portable-doctrine.py. Import that generator by path (the
+    # scripts/ dir is not a package, mirroring how tests load auto-bridge.py) and
+    # run its --check equivalent so a hand-edit that drifts the template from the
+    # canonical doctrine fails CI with an actionable remediation message.
+    gen_path = ROOT / "scripts" / "generate-portable-doctrine.py"
+    if not gen_path.exists():
+        fail("scripts/generate-portable-doctrine.py missing")
+        return
+    try:
+        spec = importlib.util.spec_from_file_location("generate_portable_doctrine", gen_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except (OSError, SyntaxError) as e:
+        fail(f"could not load generate-portable-doctrine.py: {e}")
+        return
+    for err in module.check(ROOT):
+        fail(err)
 DOCS_PAGES = ["index.html", "installation.html", "orchestration.html", "404.html"]
 FOOTER_VERSION_RE = re.compile(r'footer-version">v([0-9.]+)<')
 LOCAL_REF_RE = re.compile(r'(?:href|src|poster)="([^"]+)"')
@@ -299,6 +470,8 @@ def main() -> int:
     section("marketplace.json", check_marketplace_json)
     section("package.json", check_package_json)
     section("SKILL.md frontmatter", check_skills)
+    section("config/features.json", check_features)
+    section("portable doctrine template", check_portable_doctrine)
     section("hooks.json", check_hooks)
     section("README.md internal links", check_readme_links)
     section("docs site version + refs", check_docs_site)

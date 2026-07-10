@@ -2,17 +2,19 @@
 
 Maintainer checklist for cutting a release and keeping downstream consumers in sync.
 Sections 1–2 are the mechanics; **section 3 is the part that goes stale — re-verify it
-on every release** (section 4 has the exact commands).
+on every release** (section 4's script automates the check).
 
 ## 1. Pre-release
 
 - [ ] Every distinct task since the last tag has its own conventional commit (see CLAUDE.md commit cadence)
 - [ ] README tables/links reflect any new skills, providers, or config keys
+- [ ] `templates/claude-md-doctrine.md` is current — it is **generated** from `skills/hyperflow/DOCTRINE.md`; after any doctrine edit run `python3 scripts/generate-portable-doctrine.py` and commit the result (`validate-plugin.py` fails when it drifts)
 - [ ] `./scripts/validate-plugin.py` passes locally
 - [ ] `plugin-validation` workflow is green on `main`
 
 ## 2. Cut and publish
 
+- [ ] Working tree is clean before running `release.sh` — it stages `CHANGELOG.md`, the manifests, `README.md`, `templates/claude-md-doctrine.md`, `CLAUDE.md`, and `config/features.json` **whole**, so uncommitted edits in any of those files would ride the `chore(release):` commit
 - [ ] `./scripts/release.sh` — auto-detects the bump, writes CHANGELOG, bumps all manifests, commits `chore(release): vX.Y.Z`, tags
 - [ ] `git push && git push origin vX.Y.Z`
 - [ ] `plugin-validation` green on the release commit
@@ -25,7 +27,7 @@ Last verified: **2026-07-10** (against v5.5.0). Re-run section 4 before trusting
 |---|---|---|---|
 | [jeremylongshore/claude-code-plugins-plus-skills](https://github.com/jeremylongshore/claude-code-plugins-plus-skills) (backs tonsofskills.com + the `ccpi` CLI) | Vendors a full copy at `plugins/ai-agency/hyperflow/`, driven by their `sources.yaml` | **Frozen at v4.26.2** (synced 2026-06-17) via `curated: true` — their sync deliberately skips it because they carried local frontmatter edits (the #6 conversation). Their documented model: once the improvement is merged upstream, drop `curated:` and resync | **Open a PR** editing their `sources.yaml` to remove `curated: true` from the hyperflow entry (upstream shipped the frontmatter pass in v5.5.0), or a courtesy issue asking them to resync. Once unfrozen, their pipeline pulls new releases itself |
 | [Mohammed-Abdelhady/forgepath](https://github.com/Mohammed-Abdelhady/forgepath) | Own repo; embedded doctrine block in `CLAUDE.md` | Stale — block at v4.21.0 | Run `/hyperflow:bridge refresh` in that repo and commit |
-| This repo's own `CLAUDE.md` | Embedded doctrine block (dogfood) | Stale — block at v4.16.2 | Run `/hyperflow:bridge refresh` here after tagging |
+| This repo's own `CLAUDE.md` | Embedded doctrine block (dogfood) | Fresh — block at v5.6.0 | None — `release.sh` regenerates `templates/claude-md-doctrine.md` from `DOCTRINE.md`, then auto-bridge re-stamps the block before the release commit; if stale, run `python3 scripts/generate-portable-doctrine.py && python3 scripts/auto-bridge.py . .` and commit |
 | [gabrielmoreira/agent-skills-mirror](https://github.com/gabrielmoreira/agent-skills-mirror) | Periodic auto-mirror of Jeremy's repo | Refreshes daily | None — inherits automatically once Jeremy resyncs |
 | kota-kawa/Marmo-Core · TuYv/ccpm | Hand-vendored copies of skills taken from Jeremy's copy | Snapshot, third-hand | None — no sync contract to honor |
 | crossaitools.com (ex-claudemarketplaces.com) | Auto-updated community directory; indexes via the marketplaces it crawls | Listed via Jeremy's marketplace | None — follows the marketplace |
@@ -45,21 +47,32 @@ gh pr create --title "chore(hyperflow): drop curated freeze — frontmatter pass
 
 ## 4. Refresh the registry (run every release)
 
+- [ ] `./scripts/verify-downstreams.sh` — checks every row of the section-3 table via
+  read-only `gh api` queries (vendored-copy manifest version, doctrine-block `version=`
+  markers, the `curated:` freeze flag) and prints a `DEPENDENT | EXPECTED | ACTUAL | STATUS`
+  table. Exits 1 when any checkable row is stale; `--json` for machine output. Without `gh`
+  or network it skips cleanly (exit 0) — the release never hard-depends on the API.
+  `release.sh` also runs it automatically after tagging, as a non-blocking advisory.
+
+Remediation stays human — the script only reports:
+
+- Jeremy's marketplace still frozen (`curated: true`) → open the ready-to-run unfreeze PR
+  from section 3, or a courtesy resync issue
+- Forgepath doctrine embed stale → `/hyperflow:bridge refresh` in that repo and commit
+- This repo's own `CLAUDE.md` stale → auto-refreshed by `release.sh`, so a stale row means
+  the regenerate-or-refresh step failed — run `python3 scripts/generate-portable-doctrine.py`
+  then `python3 scripts/auto-bridge.py . .` and commit
+
+The script verifies **known** rows only; discovering new dependents stays manual:
+
 ```bash
 # Who references the repo anywhere on GitHub (drop own-repo hits):
 gh api -X GET search/code -f q='"Mohammed-Abdelhady/hyperflow"' \
   --jq '.items[] | .repository.full_name + "  " + .path' | grep -v '^Mohammed-Abdelhady/hyperflow' | sort -u
-
-# Is Jeremy's vendored copy still frozen, and at what version?
-gh api repos/jeremylongshore/claude-code-plugins-plus-skills/contents/plugins/ai-agency/hyperflow/.source.json --jq '.content' | base64 -d
-gh api repos/jeremylongshore/claude-code-plugins-plus-skills/contents/sources.yaml --jq '.content' | base64 -d | grep -A14 'name: hyperflow' | grep -E 'curated|verified'
-
-# Doctrine-block staleness in known embeds (compare version= against the current tag):
-gh api repos/Mohammed-Abdelhady/forgepath/contents/CLAUDE.md --jq '.content' | base64 -d | grep 'hyperflow:doctrine:start'
-grep 'hyperflow:doctrine:start' CLAUDE.md
 ```
 
 New hits from the code search = new registry rows: classify as **direct** (vendored copy or
 version-pinned reference → needs a PR or a ping), **transitive** (mirror of a mirror → no action),
-or **self-healing** (doctrine embeds → auto-bridge handles it). Update the table and the
-"Last verified" date, and land the edit in the same commit series as the release.
+or **self-healing** (doctrine embeds → auto-bridge handles it). Update the section-3 table, the
+registry array in `scripts/verify-downstreams.sh`, and the "Last verified" date, and land the
+edit in the same commit series as the release.
