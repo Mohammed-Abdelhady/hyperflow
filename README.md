@@ -199,6 +199,7 @@ Fourteen skills. One chain-starter auto-advances through the chain; the rest are
 | Skill | Command | Type | Purpose |
 |-------|---------|------|---------|
 | `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt (8-dim rubric), design the approach (analysis + alternatives), and decompose into a parallel task graph (max thinking); stops at a build-location gate — never auto-implements |
+| `issue` | `/hyperflow:issue` | Chain starter | GitHub issue → triaged, planned, dispatched, reviewed pull request — with injection guard and gated posting |
 | `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
 | `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
 | `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; custom Codex/OpenCode/Grok adapter for migrations, audits, and verification-heavy work |
