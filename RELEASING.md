@@ -25,7 +25,7 @@ Last verified: **2026-07-10** (against v5.5.0). Re-run section 4 before trusting
 |---|---|---|---|
 | [jeremylongshore/claude-code-plugins-plus-skills](https://github.com/jeremylongshore/claude-code-plugins-plus-skills) (backs tonsofskills.com + the `ccpi` CLI) | Vendors a full copy at `plugins/ai-agency/hyperflow/`, driven by their `sources.yaml` | **Frozen at v4.26.2** (synced 2026-06-17) via `curated: true` — their sync deliberately skips it because they carried local frontmatter edits (the #6 conversation). Their documented model: once the improvement is merged upstream, drop `curated:` and resync | **Open a PR** editing their `sources.yaml` to remove `curated: true` from the hyperflow entry (upstream shipped the frontmatter pass in v5.5.0), or a courtesy issue asking them to resync. Once unfrozen, their pipeline pulls new releases itself |
 | [Mohammed-Abdelhady/forgepath](https://github.com/Mohammed-Abdelhady/forgepath) | Own repo; embedded doctrine block in `CLAUDE.md` | Stale — block at v4.21.0 | Run `/hyperflow:bridge refresh` in that repo and commit |
-| This repo's own `CLAUDE.md` | Embedded doctrine block (dogfood) | Stale — block at v4.16.2 | Run `/hyperflow:bridge refresh` here after tagging |
+| This repo's own `CLAUDE.md` | Embedded doctrine block (dogfood) | Fresh — block at v5.6.0 | None — auto-refreshed by `release.sh` (auto-bridge re-stamps the block before the release commit); if stale, the refresh step failed — run `python3 scripts/auto-bridge.py . .` and commit |
 | [gabrielmoreira/agent-skills-mirror](https://github.com/gabrielmoreira/agent-skills-mirror) | Periodic auto-mirror of Jeremy's repo | Refreshes daily | None — inherits automatically once Jeremy resyncs |
 | kota-kawa/Marmo-Core · TuYv/ccpm | Hand-vendored copies of skills taken from Jeremy's copy | Snapshot, third-hand | None — no sync contract to honor |
 | crossaitools.com (ex-claudemarketplaces.com) | Auto-updated community directory; indexes via the marketplaces it crawls | Listed via Jeremy's marketplace | None — follows the marketplace |
@@ -56,8 +56,9 @@ Remediation stays human — the script only reports:
 
 - Jeremy's marketplace still frozen (`curated: true`) → open the ready-to-run unfreeze PR
   from section 3, or a courtesy resync issue
-- Doctrine embeds stale (forgepath, this repo's `CLAUDE.md`) → `/hyperflow:bridge refresh`
-  in the affected repo and commit
+- Forgepath doctrine embed stale → `/hyperflow:bridge refresh` in that repo and commit
+- This repo's own `CLAUDE.md` stale → auto-refreshed by `release.sh`, so a stale row means
+  the refresh step failed — run `python3 scripts/auto-bridge.py . .` and commit
 
 The script verifies **known** rows only; discovering new dependents stays manual:
 

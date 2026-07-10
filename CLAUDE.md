@@ -72,7 +72,7 @@ The `README.md` is the project's primary discovery surface — keep it in sync w
 
 When a change is README-relevant, prefer landing the README update in the same commit (or immediately preceding commit) as the feature itself — never as a follow-up after the tag.
 
-<!-- hyperflow:doctrine:start version=4.16.2 generated=2026-05-21T13:16:15Z body-sha=0701acf7a1e3 source=https://github.com/Mohammed-Abdelhady/hyperflow -->
+<!-- hyperflow:doctrine:start version=5.6.0 generated=2026-07-10T01:30:15Z body-sha=1af281b7c71d source=https://github.com/Mohammed-Abdelhady/hyperflow -->
 
 # Hyperflow Doctrine (Portable Subset)
 
@@ -95,6 +95,7 @@ Scan every user message. If a verb matches, follow the matching workflow — eve
 |---|---|
 | `brainstorm`, `design`, `explore`, "what if", "should we", "unsure about" | Read code → ask ≥2 questions → propose 2-3 approaches → design section-by-section with user approval per section |
 | `scope`, `decompose`, "plan out", "break down" | Map affected surface → produce batched task graph → write to `.hyperflow/tasks/<slug>.md` |
+| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | In Claude Code v2.1.154+, create a dynamic workflow; in Codex/OpenCode use the portable workflow adapter; elsewhere use the build/scope route |
 | `build`, `implement`, `add`, `refactor`, "wire up" | Decompose into batches → dispatch parallel workers → per-batch reviewer → per-sub-task commits → final integration reviewer |
 | `debug`, `fix it`, `solve`, "why is X", "Y fails", stack trace | Systematic root-cause: 5 Whys + parallel hypothesis testing. Never blind-patch symptoms |
 | `audit`, `review`, "check for issues", "security check" | Multi-level review (L1 syntax → L5 exhaustive) → write findings to `.hyperflow/audits/<timestamp>.md` → ask fix-gate |
@@ -116,9 +117,8 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix
 - **Per-batch / per-sub-task Reviewer** runs an anchored review of one batch's small diff (L1-L2 territory).
 - **Final integration Reviewer** (end-of-chain over cumulative diff) and **Standalone Reviewer** (audit, security sweep, final sanity check) are decision-agent passes.
 - **Debugger / Analyst / Planner / Brainstormer / Orchestrator** are decision agents.
-- **Specialist reviewers** (`security-reviewer`, `database-reviewer`, `algorithm-reviewer`, …) act as the per-batch and standalone Reviewer; security/correctness specialists always run a full review pass even per-batch. **Investigators** (`searcher` worker; `debugger` / `analyst` / `researcher` decision agents); **Brain** (specialist router) is a decision-maker. All run on the session model.
 
-Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation. Reviews and investigations are run by the **matching domain specialist** ([`agents/`](agents/)), not a generic role — the Brain decides the responsible roster once after triage and the chain inherits it. On deep / security work, specialists research current best-practices and CVEs before acting (web-research-first).
+Workers never review. Reviewers never coordinate. Triage stays a decision-agent consultation.
 
 ## File-first artefacts
 
@@ -126,10 +126,8 @@ Plans, specs, audits, task decompositions live in `.hyperflow/` files — never 
 
 | Artefact | Path |
 |---|---|
-| Task decomposition (single-phase) | `.hyperflow/tasks/<slug>.md` |
-| Feature (multi-phase) | `.hyperflow/features/<slug>/` — `feature.md` + `phase-<n>-<name>/` folders, each with `phase.md` + `tasks/` + `spec.md`/`research.md`/`decisions.md` |
+| Task decomposition | `.hyperflow/tasks/<slug>.md` |
 | Feature spec | `.hyperflow/specs/<slug>.md` |
-| Design system | `.hyperflow/design/system.md` |
 | Audit findings | `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md` |
 | Project memory | `.hyperflow/memory/<category>.md` |
 

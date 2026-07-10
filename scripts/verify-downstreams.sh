@@ -77,7 +77,7 @@ done
 REGISTRY=(
   'jeremylongshore/claude-code-plugins-plus-skills|vendored-manifest|jeremylongshore/claude-code-plugins-plus-skills|plugins/ai-agency/hyperflow/.claude-plugin/plugin.json|Open the unfreeze PR from RELEASING.md section 3 (drop curated: true in their sources.yaml), or a courtesy resync issue'
   'Mohammed-Abdelhady/forgepath|doctrine-remote|Mohammed-Abdelhady/forgepath|CLAUDE.md|Run /hyperflow:bridge refresh in that repo and commit'
-  "this repo's own CLAUDE.md|doctrine-local||CLAUDE.md|Run /hyperflow:bridge refresh here after tagging"
+  "this repo's own CLAUDE.md|doctrine-local||CLAUDE.md|Auto-refreshed by release.sh — if stale, the refresh step failed: run python3 scripts/auto-bridge.py . . and commit"
   'gabrielmoreira/agent-skills-mirror|info|||Transitive daily mirror — inherits automatically once the upstream marketplace resyncs'
   'kota-kawa/Marmo-Core + TuYv/ccpm|info|||Hand-vendored third-hand snapshots — no sync contract to honor'
   'crossaitools.com|info|||Community directory — follows the marketplaces it crawls'

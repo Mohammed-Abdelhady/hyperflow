@@ -265,6 +265,21 @@ mv "$TMPFILE2" "$CHANGELOG"
 # ── Bump versions in all manifest files ──────────────────────────────────────
 "$SCRIPT_DIR/bump-version.sh" "$NEW_VERSION"
 
+# ── Refresh the dogfood doctrine block in CLAUDE.md (advisory) ───────────────
+# This repo is both plugin root and project root — auto-bridge re-stamps the
+# managed hyperflow:doctrine block with the just-bumped version + body-sha so
+# the dogfood embed rides the release commit and can never lag behind a tag.
+# Failure is a warning, never a release blocker.
+if command -v python3 >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/auto-bridge.py" ]]; then
+  echo -e "${CYAN}▸${RESET} refreshing CLAUDE.md doctrine block"
+  mkdir -p "$ROOT/.hyperflow"  # gitignored; auto-bridge no-ops without it
+  if ! python3 "$SCRIPT_DIR/auto-bridge.py" "$ROOT" "$ROOT"; then
+    echo -e "${YELLOW}⚠${RESET} doctrine block refresh failed; continuing — run 'python3 scripts/auto-bridge.py . .' manually and commit"
+  fi
+else
+  echo -e "${YELLOW}⚠${RESET} python3 or auto-bridge.py unavailable — skipping CLAUDE.md doctrine refresh"
+fi
+
 # ── Regenerate hero.svg + demo.cast/gif ──────────────────────────────────────
 HAS_PYTHON3=0
 if command -v python3 >/dev/null 2>&1; then HAS_PYTHON3=1; fi
@@ -343,7 +358,9 @@ git add \
   "$ROOT/skills/hyperflow/VERSION"
 
 # Optional generated artifacts — add if they exist (some require external tools)
+# CLAUDE.md rides along for the doctrine-block refresh above (no-op when fresh).
 for optional in \
+  "$ROOT/CLAUDE.md" \
   "$ROOT/config/features.json" \
   "$ROOT/docs/assets/hero.svg" \
   "$ROOT/docs/assets/hero-vertical.svg" \
