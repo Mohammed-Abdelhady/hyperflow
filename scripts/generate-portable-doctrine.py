@@ -98,10 +98,16 @@ SECTION_RE = re.compile(
 OPENER_RE = re.compile(r"<!--[ \t]*portable:section\b")
 CLOSER_RE = re.compile(r"<!--[ \t]*/portable:section[ \t]*-->")
 
-# A section body must not contain these: either would terminate or nest the HTML
-# comment that wraps the block, making the condensed markdown render visibly in
-# DOCTRINE.md.
-FORBIDDEN_IN_BODY = ("-->", "<!--")
+# A section body must not contain these. The comment delimiters would terminate or
+# nest the HTML comment wrapping the block, making the condensed markdown render
+# visibly in DOCTRINE.md. The bare marker tokens would smuggle a second doctrine
+# boundary into every downstream CLAUDE.md the template is stamped into.
+FORBIDDEN_IN_BODY = (
+    "-->",
+    "<!--",
+    "hyperflow:doctrine:start",
+    "hyperflow:doctrine:end",
+)
 
 
 def render(doctrine_text: str) -> str:
@@ -124,7 +130,8 @@ def render(doctrine_text: str) -> str:
                 raise ValueError(
                     f"portable:section id={section_id} contains the literal "
                     f"'{token}' in its body — that would close or nest the wrapping "
-                    "HTML comment and make the block render visibly in DOCTRINE.md"
+                    "HTML comment, or smuggle a doctrine marker into every downstream "
+                    "CLAUDE.md the template is stamped into"
                 )
         if section_id in seen_ids:
             raise ValueError(f"portable:section id={section_id} is declared twice")

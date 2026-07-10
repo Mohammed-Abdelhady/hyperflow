@@ -109,6 +109,16 @@ class MalformedMarkerTests(unittest.TestCase):
         broken = VALID.replace("alpha rule", "alpha <!-- rule")
         self._assert_raises(broken, "would close or nest the wrapping")
 
+    def test_bare_doctrine_start_token_in_body_is_rejected(self):
+        # No comment delimiters, so the delimiter guard alone would let it through —
+        # and it would land a second doctrine boundary in every downstream CLAUDE.md.
+        broken = VALID.replace("alpha rule", "alpha hyperflow:doctrine:start version=9 rule")
+        self._assert_raises(broken, "smuggle a doctrine marker")
+
+    def test_bare_doctrine_end_token_in_body_is_rejected(self):
+        broken = VALID.replace("alpha rule", "alpha hyperflow:doctrine:end rule")
+        self._assert_raises(broken, "smuggle a doctrine marker")
+
     def test_duplicate_order_is_rejected(self):
         self._assert_raises(VALID.replace("order=2", "order=1"), "orders must be unique")
 
