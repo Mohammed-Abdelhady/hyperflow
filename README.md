@@ -8,7 +8,7 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>Multi-agent orchestration for Codex App/CLI, Claude Code, OpenCode, Antigravity &amp; Cursor.</strong><br/>
+  <strong>Multi-agent orchestration for Codex App/CLI, Claude Code, OpenCode, Grok, Antigravity &amp; Cursor.</strong><br/>
   Decision agents plan and review every step; workers execute in parallel — all on your current session model. Learnings persist in local, per-project memory.
 </p>
 
@@ -24,7 +24,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Claude%20marketplace-published-22C55E?style=flat-square" alt="Published on the official Claude plugin marketplace" />
   &nbsp;
-  <img src="https://img.shields.io/badge/works%20with-Codex%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Antigravity%20%7C%20Cursor-2EA39F?style=flat-square" alt="works with Codex, Claude Code, OpenCode, Antigravity, and Cursor" />
+  <img src="https://img.shields.io/badge/works%20with-Codex%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Grok%20%7C%20Antigravity%20%7C%20Cursor-2EA39F?style=flat-square" alt="works with Codex, Claude Code, OpenCode, Grok, Antigravity, and Cursor" />
 </p>
 
 <p align="center">
@@ -55,13 +55,13 @@ Start with a rough idea — the pipeline carries it to shipped. Start at any ent
 |---|-------|--------------|
 | 1 | `plan` | **Front door** — sharpen the prompt (persona standards + 8-dim rubric), design the approach (multi-dimensional analysis + alternatives, refuses to code before you approve), and decompose it into a parallel task graph with a full, test-complete implementation brief per sub-task (incl. an end-to-end case) so the build runs faithfully on a cheaper model; skips whichever phase the request doesn't need |
 | 2 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
-| 3 | `workflow` | Big-task lane — native Claude Code workflows, custom Codex/OpenCode adapter |
+| 3 | `workflow` | Big-task lane — native Claude Code workflows, custom Codex/OpenCode/Grok adapter |
 | 4 | `audit` | L1–L5 review on the result |
 | 5 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
 
 `plan` never implements — it stops at a build-location gate (build here → `dispatch`, another session → handoff, or just keep the plan), so you stay in control of when a build starts; `audit` and `deploy` are gates that fire at the end. Enter at `plan` for anything from a rough idea to a clear task — it bounces straight to decomposition when the approach is already clear — or at `dispatch` when a task file already exists. `scaffold` is a one-time project setup — run it once per repo to build the `.hyperflow/` cache.
 
-`workflow` is the big-task lane. Hyperflow routes deep/scientific/system-wide work, large migrations, repo-wide audits, and high-confidence verification prompts to `/hyperflow:workflow`. In Claude Code v2.1.154+, it asks the native dynamic workflow runtime to create a background workflow with research, parallel execution, adversarial verification, quality gates, and final synthesis. In Codex and OpenCode, it runs the same phases through a portable workflow adapter using provider subagents/tasks when available and inline worker/reviewer phases otherwise.
+`workflow` is the big-task lane. Hyperflow routes deep/scientific/system-wide work, large migrations, repo-wide audits, and high-confidence verification prompts to `/hyperflow:workflow`. In Claude Code v2.1.154+, it asks the native dynamic workflow runtime to create a background workflow with research, parallel execution, adversarial verification, quality gates, and final synthesis. In Codex, OpenCode, and Grok, it runs the same phases through a portable workflow adapter using provider subagents/tasks when available and inline worker/reviewer phases otherwise.
 
 In Codex App/CLI, `/hyperflow:*` entries are treated as plugin skill aliases, not native host slash commands. If the host does not expose Hyperflow's `AskUserQuestion` popup UI, required gates still fire as concise `Hyperflow Question` chat blocks with numbered choices, then Hyperflow waits for your answer. When Codex subagents are available, Hyperflow maps worker/searcher/writer dispatches to them; otherwise those phases run inline and the chain continues in the same thread.
 
@@ -170,7 +170,7 @@ Phases run in dependency order; the tasks inside a phase run in parallel batches
 At the start of a chain you choose **how** to run it (this replaces the old auto/manual gate):
 
 - **One session** — plan, build, and review all here, straight through.
-- **Two sessions** — this session plans (brain routing + `plan`), then **stops at the dispatch boundary** and writes a **git-committed handoff package** (`.hyperflow-handoff/<slug>/`). A second session in another environment — Codex, Gemini/Antigravity, OpenCode, even another machine — runs `/hyperflow:dispatch <slug>` to build, then either deploys or returns the diff for review. You come back to the first session and `/hyperflow:audit` the build. The Brain-decided specialist roster, triage, and chain args all travel inside the package. Manage the lifecycle with `/hyperflow:handoff` (`list` / `status` / `pickup` / `review` / `complete`). See [`skills/hyperflow/session-handoff.md`](skills/hyperflow/session-handoff.md).
+- **Two sessions** — this session plans (brain routing + `plan`), then **stops at the dispatch boundary** and writes a **git-committed handoff package** (`.hyperflow-handoff/<slug>/`). A second session in another environment — Codex, Gemini/Antigravity, OpenCode, Grok, even another machine — runs `/hyperflow:dispatch <slug>` to build, then either deploys or returns the diff for review. You come back to the first session and `/hyperflow:audit` the build. The Brain-decided specialist roster, triage, and chain args all travel inside the package. Manage the lifecycle with `/hyperflow:handoff` (`list` / `status` / `pickup` / `review` / `complete`). See [`skills/hyperflow/session-handoff.md`](skills/hyperflow/session-handoff.md).
 
 For multi-phase features, `/hyperflow:dispatch` also asks whether to build **all phases** straight through or **phase by phase** (stop after each phase for review).
 
@@ -180,7 +180,7 @@ Hyperflow routes very large tasks to `/hyperflow:workflow` instead of forcing ev
 
 In Claude Code, the skill uses native dynamic workflows. This requires Claude Code v2.1.154+ with workflows enabled; workflows can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow does not set `/effort ultracode` or `xhigh` automatically. Use `/effort ultracode` yourself if you want Claude Code's session-wide automatic workflow selection.
 
-In Codex and OpenCode, the same command runs a custom Hyperflow workflow adapter: research and planning, provider subagents/tasks or inline worker phases, adversarial verification, quality gates, per-task commits, and final synthesis. This is not native Claude-style saved workflow support; repeatability comes from the skill, `.hyperflow/tasks/`, memory, and provider-specific subagent/task configuration.
+In Codex, OpenCode, and Grok, the same command runs a custom Hyperflow workflow adapter: research and planning, provider subagents/tasks or inline worker phases, adversarial verification, quality gates, per-task commits, and final synthesis. This is not native Claude-style saved workflow support; repeatability comes from the skill, `.hyperflow/tasks/`, memory, and provider-specific subagent/task configuration.
 
 ## Memory that persists
 
@@ -201,7 +201,7 @@ Fourteen skills. One chain-starter auto-advances through the chain; the rest are
 | `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt (8-dim rubric), design the approach (analysis + alternatives), and decompose into a parallel task graph (max thinking); stops at a build-location gate — never auto-implements |
 | `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
 | `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
-| `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; custom Codex/OpenCode adapter for migrations, audits, and verification-heavy work |
+| `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; custom Codex/OpenCode/Grok adapter for migrations, audits, and verification-heavy work |
 | `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
@@ -216,7 +216,7 @@ Fourteen skills. One chain-starter auto-advances through the chain; the rest are
 
 ## Providers
 
-Hyperflow runs on whatever model your agent session uses — Claude Code, Codex, OpenCode, Antigravity, or any other host. Every dispatched agent inherits the current session model; there is no model configuration and nothing to set up. Roles (orchestrator, decision agent, worker, reviewer) differ by responsibility, not by model.
+Hyperflow runs on whatever model your agent session uses — Claude Code, Codex, OpenCode, Grok, Antigravity, or any other host. Every dispatched agent inherits the current session model; there is no model configuration and nothing to set up. Roles (orchestrator, decision agent, worker, reviewer) differ by responsibility, not by model.
 
 ## Documentation
 

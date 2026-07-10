@@ -13,6 +13,7 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, skills, and Claude Code dynamic workflow routing are active |
 | Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, portable workflow adapter, and inline auto-chain fallback are active |
 | OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention; portable workflow adapter uses task/subagent support when available and inline phases otherwise |
+| Grok CLI / Grok Build (`grok` binary) | yes | Loads skills from `~/.grok/skills/` (and project `.grok/skills/`). `install.sh` links the full `skills/*` tree there. Project rules via `AGENTS.md` and `.grok/rules/` (`setup-detection.sh --tools grok`). Uses `spawn_subagent` when enabled; portable function router + workflow adapter; native structured questions when available |
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch — the single agent runs every phase and self-reviews |
 | Claude Code Desktop (Mac/Windows GUI) | no — platform limitation | Does not load terminal-installed plugins; `/hyperflow:*` returns `isn't a recognized command here` |
 | claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
@@ -25,7 +26,7 @@ In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host 
 
 Claude Code dynamic workflow support requires Claude Code v2.1.154 or later with workflows enabled. `/hyperflow:workflow` routes big tasks to the host dynamic workflow runtime; workflows may be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow never enables `/effort ultracode` or `xhigh` automatically; set `/effort ultracode` manually if you want session-wide automatic workflow selection.
 
-Codex and OpenCode do not get native Claude Code dynamic workflows. The same `/hyperflow:workflow` entry runs Hyperflow's portable adapter: research and planning, provider subagents/tasks where available, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task commits, and final synthesis.
+Codex, OpenCode, and Grok do not get native Claude Code dynamic workflows. The same `/hyperflow:workflow` entry runs Hyperflow's portable adapter: research and planning, provider subagents/tasks where available, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task commits, and final synthesis.
 
 **Workarounds for Desktop / web users:**
 
@@ -66,10 +67,25 @@ curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/i
 
 For big tasks, `/hyperflow:workflow` uses the OpenCode portable workflow adapter. It uses task/subagent dispatch when available and otherwise runs the same phases inline.
 
+### Grok CLI / Grok Build
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
+```
+
+When `~/.grok` is present, the installer links **every** skill under `skills/` into `~/.grok/skills/` (not only `hyperflow`). Project shims:
+
+```bash
+./scripts/setup-detection.sh --tools grok
+# → AGENTS.md + .grok/rules/hyperflow.md
+```
+
+For big tasks, `hyperflow workflow` uses the Grok portable workflow adapter (`spawn_subagent` when enabled, inline phases otherwise). Treat `/hyperflow:*` and `hyperflow <verb>` as skill aliases — Grok does not need Claude Code slash-command registration.
+
 ### What the installer does
 
 1. Clones the repo to `~/.hyperflow/repo/`
-2. Detects which providers are installed (Claude Code, Codex, OpenCode, Antigravity, Cursor)
+2. Detects which providers are installed (Claude Code, Codex, OpenCode, Antigravity, Cursor, Grok)
 3. Installs or links the provider integration where needed
 4. Asks whether to enable the security layer
 5. Writes your choices to `~/.hyperflow/config.json`
@@ -115,6 +131,12 @@ git clone https://github.com/Mohammed-Abdelhady/hyperflow.git ~/.hyperflow/repo
 # Then symlink for your provider(s):
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.claude/skills/hyperflow
 ln -s ~/.hyperflow/repo/skills/hyperflow ~/.opencode/skills/hyperflow
+
+# Grok — link the full skills tree (plan, dispatch, hyperflow, …)
+for d in ~/.hyperflow/repo/skills/*/; do
+  [ -f "${d}SKILL.md" ] || continue
+  ln -sfn "${d%/}" "$HOME/.grok/skills/$(basename "$d")"
+done
 ```
 </details>
 

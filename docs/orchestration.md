@@ -55,7 +55,7 @@ That JSON drives every downstream decision:
 | `personas[]` | Which persona blocks are stitched into each worker's prompt — composed in priority order: security first, creative last |
 | `complexity` + `scope` | Number of parallel workers per batch; review level cap (L1–L5) for the per-batch reviewer |
 
-Triage can route big tasks to `/hyperflow:workflow` instead of `plan → dispatch`. The route applies to `flow=deep`, `flow=scientific`, `scope=system-wide`, large migrations, repo-wide audits, high-confidence verification, and prompts that explicitly say `run a workflow` or `dynamic workflow`. Claude Code v2.1.154+ uses native dynamic workflows. Codex and OpenCode use the portable workflow adapter. Antigravity, Desktop/web bridge mode, and runtimes that cannot preserve the adapter phases keep using the normal `plan → dispatch` route.
+Triage can route big tasks to `/hyperflow:workflow` instead of `plan → dispatch`. The route applies to `flow=deep`, `flow=scientific`, `scope=system-wide`, large migrations, repo-wide audits, high-confidence verification, and prompts that explicitly say `run a workflow` or `dynamic workflow`. Claude Code v2.1.154+ uses native dynamic workflows. Codex, OpenCode, and Grok use the portable workflow adapter. Antigravity, Desktop/web bridge mode, and runtimes that cannot preserve the adapter phases keep using the normal `plan → dispatch` route.
 
 ---
 
@@ -117,7 +117,7 @@ Both gates respect DOCTRINE rule 8 (structural gates always fire). The orchestra
 
 ## Big-task workflows
 
-`/hyperflow:workflow <task>` is the big-task path. In Claude Code, it asks the host dynamic workflow runtime to create a background workflow that keeps large orchestration state outside the conversation while preserving Hyperflow's doctrine inside the workflow prompt. In Codex and OpenCode, it runs a custom Hyperflow workflow adapter with the same phase shape.
+`/hyperflow:workflow <task>` is the big-task path. In Claude Code, it asks the host dynamic workflow runtime to create a background workflow that keeps large orchestration state outside the conversation while preserving Hyperflow's doctrine inside the workflow prompt. In Codex, OpenCode, and Grok, it runs a custom Hyperflow workflow adapter with the same phase shape.
 
 The generated workflow must include:
 
@@ -129,7 +129,7 @@ The generated workflow must include:
 
 Native dynamic workflows require Claude Code v2.1.154+ and can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow does not enable `/effort ultracode` or `xhigh`; users can opt into `/effort ultracode` manually when they want Claude Code to make session-wide workflow choices. Successful runs can be saved from `/workflows` with `s` into `.claude/workflows/` or `~/.claude/workflows/`; Hyperflow does not ship saved workflow scripts directly because plugin packaging does not expose `.claude/workflows/` as a first-class component.
 
-Codex and OpenCode adapters are not saved through `/workflows`. They use provider subagents/tasks when available, fall back to inline worker/reviewer phases, track durable work in `.hyperflow/tasks/` when needed, run quality gates, and keep per-task commit expectations.
+Codex, OpenCode, and Grok adapters are not saved through `/workflows`. They use provider subagents/tasks when available, fall back to inline worker/reviewer phases, track durable work in `.hyperflow/tasks/` when needed, run quality gates, and keep per-task commit expectations.
 
 ---
 
