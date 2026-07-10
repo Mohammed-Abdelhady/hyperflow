@@ -56,7 +56,7 @@ If subagent tools are unavailable in this session, emulate worker/reviewer phase
 
 For \`/hyperflow:workflow\`, use the Codex portable workflow adapter: research and planning, \`.hyperflow/tasks/\` progress tracking when needed, parallel subagents when exposed, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task conventional commits, and final synthesis. Do not describe this as native Claude Code dynamic workflow support.
 
-Codex may not expose Claude Code's \`Skill\` handoff tool. Treat handoffs as inline continuation: \`plan → dispatch\`; selected \`audit\` / \`deploy\` follow-ups run inline; audit fix gates continue into \`plan\`. Do not stop with “Skill tool unavailable”.
+Codex may not expose Claude Code's \`Skill\` handoff tool. Treat handoffs as inline continuation: \`plan → dispatch\`; selected \`audit\` / \`deploy\` follow-ups run inline; audit fix gates continue into \`plan\`. Do not stop with \"Skill tool unavailable\".
 
 If \`AskUserQuestion\` is unavailable, print required gates as concise \`Hyperflow Question\` chat blocks and wait for the user's answer."
 else
