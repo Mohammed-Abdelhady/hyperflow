@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "5.8.0",
+  "version": "5.9.0",
   "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
   "subtitle": "Planners design, parallel workers build, and 22 domain specialists review every step. 18 skills, adaptive depth, persistent per-project memory.",
   "layers": [

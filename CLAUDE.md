@@ -72,7 +72,7 @@ The `README.md` is the project's primary discovery surface — keep it in sync w
 
 When a change is README-relevant, prefer landing the README update in the same commit (or immediately preceding commit) as the feature itself — never as a follow-up after the tag.
 
-<!-- hyperflow:doctrine:start version=5.8.0 generated=2026-07-10T05:24:35Z body-sha=265148d17751 source=https://github.com/Mohammed-Abdelhady/hyperflow -->
+<!-- hyperflow:doctrine:start version=5.9.0 generated=2026-07-11T23:08:55Z body-sha=265148d17751 source=https://github.com/Mohammed-Abdelhady/hyperflow -->
 
 # Hyperflow Doctrine (Portable Subset)
 
