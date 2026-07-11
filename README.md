@@ -162,6 +162,8 @@ Learnings live at `.hyperflow/memory/` — plain markdown, committed with your r
 - **Lazy injection** — only tag-matched entries load for a given task, so injection cost stays bounded.
 - **Auto-written by the chain** — `audit` records recurring findings to `anti-patterns.md`; `plan` records structural
   answers to `project-decisions.md`, so the same questions aren't asked twice.
+- **Derived index** — `index.md` is rebuilt from the memory files at every session start, so a stored learning is
+  never left unindexed and invisible. Writers append to the category file; nothing to register.
 
 ## Guardrails
 
