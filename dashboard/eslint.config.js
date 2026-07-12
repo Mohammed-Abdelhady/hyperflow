@@ -6,7 +6,9 @@ import globals from "globals";
 const WRITE_DOOR = "src/server/services/write.ts";
 /** Capability probe may write under os.tmpdir only — never project artefacts. */
 const WATCH_PROBE = "src/server/watch/watcher.ts";
-const FS_WRITE_ALLOW = [WRITE_DOOR, WATCH_PROBE];
+/** Server factory may mkdir empty `.hyperflow` / handoff scaffolds at boot. */
+const SERVER_FACTORY = "src/server/index.ts";
+const FS_WRITE_ALLOW = [WRITE_DOOR, WATCH_PROBE, SERVER_FACTORY];
 
 const FS_WRITE_NAMES = [
   "writeFile",
@@ -163,9 +165,9 @@ export default tseslint.config(
       ],
     },
   },
-  // Shared + cli: ban client/server cross imports from shared, ban tests, ban fs writes
+  // Shared: ban client/server, tests, fs writes
   {
-    files: ["src/shared/**/*.{ts,tsx}", "src/cli/**/*.{ts,tsx}"],
+    files: ["src/shared/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -174,8 +176,29 @@ export default tseslint.config(
           patterns: [
             {
               regex: "(^|[./])(client|server)([/]|$)",
-              message:
-                "shared/ and cli/ must not import client or server sources.",
+              message: "shared/ must not import client or server sources.",
+            },
+            {
+              regex: "(^|[./])tests([/]|$)|fixtures([/]|$)",
+              message: "Production source must not import tests or fixtures.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // CLI may dynamic-import server factory; still ban client/tests/fs writes
+  {
+    files: ["src/cli/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: FS_WRITE_PATHS,
+          patterns: [
+            {
+              regex: "(^|[./])client([/]|$)",
+              message: "cli/ must not import client sources.",
             },
             {
               regex: "(^|[./])tests([/]|$)|fixtures([/]|$)",
