@@ -13,10 +13,10 @@ import { normalizeInput } from "./normalize.js";
 export type FallbackInput = {
   path: string;
   raw: string;
-  reason?: string;
-  mtimeMs?: number;
+  reason?: string | undefined;
+  mtimeMs?: number | undefined;
   /** When true, skip normalize (raw already normalized). */
-  alreadyNormalized?: boolean;
+  alreadyNormalized?: boolean | undefined;
 };
 
 /** Construct the shared-schema RawFallback node. */
