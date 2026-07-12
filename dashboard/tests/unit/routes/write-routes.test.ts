@@ -15,8 +15,6 @@ describe("write routes", () => {
   let root: string;
   let server: Awaited<ReturnType<typeof createDashboardServer>> | null = null;
   const token = "write-token-xyz98765";
-  let port = 19_000 + Math.floor(Math.random() * 800);
-
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), "hf-wr-"));
     mkdirSync(join(root, ".hyperflow", "memory"), { recursive: true });
@@ -46,20 +44,21 @@ describe("write routes", () => {
   });
 
   async function boot() {
-    for (let i = 0; i < 8; i += 1) {
+    // Fresh ephemeral port each boot — reuse after close races ECONNRESET on macOS.
+    for (let i = 0; i < 12; i += 1) {
+      const candidate = 32_000 + Math.floor(Math.random() * 20_000);
       try {
         server = await createDashboardServer({
           rootDir: root,
-          port: port + i,
+          port: candidate,
           token,
           disableWatcher: true,
           homeDir: join(root, "home"),
           globalConfigPath: join(root, "home", ".hyperflow", "config.json"),
         });
-        port = port + i;
         return;
       } catch {
-        /* retry */
+        /* port in use — try another */
       }
     }
     throw new Error("bind failed");
