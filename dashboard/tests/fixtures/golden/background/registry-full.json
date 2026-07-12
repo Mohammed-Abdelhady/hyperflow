@@ -1,0 +1,31 @@
+{
+  "agents": [
+    {
+      "id": "bg-1718049600-quality-gates-b2",
+      "purpose": "Run quality gates for batch 2",
+      "fired_at": "2026-05-16T10:00:00Z",
+      "timeout_at": "2026-05-16T10:30:00Z",
+      "status": "running",
+      "output_buffer": ".hyperflow/background/bg-1718049600-quality-gates-b2.md",
+      "blocks_step": null
+    },
+    {
+      "id": "bg-done-1",
+      "purpose": "finished",
+      "fired_at": "2026-05-16T09:00:00Z",
+      "timeout_at": "2026-05-16T09:30:00Z",
+      "status": "complete",
+      "output_buffer": ".hyperflow/background/bg-done-1.md",
+      "blocks_step": null
+    },
+    {
+      "id": "bg-stall-1",
+      "purpose": "stalled agent",
+      "fired_at": "2026-05-16T08:00:00Z",
+      "timeout_at": "2026-05-16T08:10:00Z",
+      "status": "stalled",
+      "output_buffer": ".hyperflow/background/bg-stall-1.md",
+      "blocks_step": "review"
+    }
+  ]
+}

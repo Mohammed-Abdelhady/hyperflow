@@ -1,0 +1,7 @@
+{
+  "agents": [
+    { "id": "ok-1", "status": "running", "purpose": "a" },
+    { "status": "running", "purpose": "missing id" },
+    { "id": "ok-2", "status": "complete", "purpose": "b" }
+  ]
+}

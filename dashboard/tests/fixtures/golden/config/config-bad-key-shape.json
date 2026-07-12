@@ -1,0 +1,4 @@
+{
+  "memory": { "compactionThreshold": 90 },
+  "handoff": { "autoPush": "yes-please" }
+}

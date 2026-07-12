@@ -1,0 +1,5 @@
+{
+  "agents": [
+    { "id": "paused-1", "status": "paused", "purpose": "hold" }
+  ]
+}

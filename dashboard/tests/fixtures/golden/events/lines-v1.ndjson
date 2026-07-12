@@ -1,0 +1,5 @@
+{"v":1,"ts":"2026-05-16T10:00:00Z","chain":"c1","skill":"dispatch","type":"status","batch":"b1","task":"T1","status":"running"}
+{"v":1,"ts":"2026-05-16T10:01:00Z","chain":"c1","skill":"background","type":"registry","agent":"bg-1","status":"running"}
+{"v":1,"ts":"2026-05-16T10:02:00Z","chain":"c1","skill":"commit","type":"queue","detail":{"msg":"feat: x"}}
+{"v":1,"ts":"2026-05-16T10:03:00Z","chain":"c1","skill":"dispatch","type":"tokens","tokens":1200}
+{"v":1,"ts":"2026-05-16T10:04:00Z","chain":"c1","skill":"dispatch","type":"status","task":"T1","status":"done"}

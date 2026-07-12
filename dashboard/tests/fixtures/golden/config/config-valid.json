@@ -1,0 +1,11 @@
+{
+  "memory": { "compactionThreshold": 100 },
+  "handoff": {
+    "autoPush": true,
+    "remote": "origin",
+    "packageDir": ".hyperflow-handoff"
+  },
+  "specialists": {
+    "brain": { "enabled": true }
+  }
+}
