@@ -9,3 +9,6 @@ node_modules/
 # package must travel via git so a build session in another environment can read it.
 .claude/
 .test/
+# Dashboard npm subpackage build outputs (spec §3B.1 / §5)
+dashboard/dist/
+dashboard/node_modules/

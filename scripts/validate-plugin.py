@@ -11,6 +11,10 @@ from pathlib import Path
 from typing import Callable
 
 ROOT = Path(__file__).resolve().parent.parent
+# npm subpackage (spec §3B.1) — not plugin content. Ignored wherever the validator
+# enumerates skill/feature directories so future glob widening cannot trip over it.
+# README links into dashboard/ still resolve by plain path existence (check_readme_links).
+IGNORED_DIRS = frozenset({"dashboard"})
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
 
@@ -132,6 +136,8 @@ def check_marketplace_json() -> None:
 
 
 def check_package_json() -> None:
+    # Root package.json only — dashboard/package.json carries an independent npm
+    # version (and hyperflowPluginVersion compatibility floor) and is exempt by design.
     path = ROOT / "package.json"
     if not path.exists():
         return
@@ -166,7 +172,10 @@ def check_skills() -> None:
         fail("skills/ directory missing")
         return
 
-    skill_files = sorted(skills_dir.glob("*/SKILL.md"))
+    # Scoped under skills/; filter IGNORED_DIRS so the invariant survives glob widening.
+    skill_files = sorted(
+        p for p in skills_dir.glob("*/SKILL.md") if p.parent.name not in IGNORED_DIRS
+    )
     if not skill_files:
         fail("no skills/*/SKILL.md files found")
         return
@@ -348,7 +357,12 @@ def check_features() -> None:
         warn("config/features.schema.json not found — schema validation skipped")
 
     # (b) Set-equality: skills/*/ dirs must exactly match features.json skills[].
-    skill_dirs = {p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")}
+    # Filter IGNORED_DIRS (dashboard is an npm subpackage, not a skill).
+    skill_dirs = {
+        p.parent.name
+        for p in (ROOT / "skills").glob("*/SKILL.md")
+        if p.parent.name not in IGNORED_DIRS
+    }
     registered: set[str] = set()
     for entry in data.get("skills", []):
         name = entry.get("name")

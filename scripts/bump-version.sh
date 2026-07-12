@@ -11,6 +11,7 @@ CODEX_PLUGIN_JSON="$ROOT/.codex-plugin/plugin.json"
 MARKETPLACE_JSON="$ROOT/.claude-plugin/marketplace.json"
 README_MD="$ROOT/README.md"
 SKILL_VERSION="$ROOT/skills/hyperflow/VERSION"
+DASHBOARD_PACKAGE_JSON="$ROOT/dashboard/package.json"
 
 # Validate argument
 if [[ $# -lt 1 ]]; then
@@ -70,6 +71,15 @@ echo "Updated $README_MD"
 echo "$NEW_VERSION" > "$SKILL_VERSION"
 echo "Updated $SKILL_VERSION"
 
+# Dashboard declared plugin-compatibility floor (independent npm version stays untouched).
+# Optional — dashboard/ may be absent on some checkouts; never fail the bump.
+FILE_COUNT=11
+if [[ -f "$DASHBOARD_PACKAGE_JSON" ]]; then
+  sed "${SED_INPLACE[@]}" 's/"hyperflowPluginVersion": "[^"]*"/"hyperflowPluginVersion": "'"$NEW_VERSION"'"/' "$DASHBOARD_PACKAGE_JSON"
+  echo "Updated $DASHBOARD_PACKAGE_JSON (hyperflowPluginVersion)"
+  FILE_COUNT=12
+fi
+
 # Update docs site — footer versions, index JSON-LD, sitemap lastmod
 for HTML in "${DOCS_HTML[@]}"; do
   sed "${SED_INPLACE[@]}" 's/footer-version">v[0-9.]*</footer-version">v'"$NEW_VERSION"'</' "$HTML"
@@ -79,4 +89,4 @@ TODAY="$(date +%Y-%m-%d)"
 sed "${SED_INPLACE[@]}" 's|<lastmod>[0-9-]*</lastmod>|<lastmod>'"$TODAY"'</lastmod>|g' "$SITEMAP_XML"
 echo "Updated docs site (4 footers, JSON-LD, sitemap lastmod)"
 
-echo "Version bumped to $NEW_VERSION (11 files)"
+echo "Version bumped to $NEW_VERSION ($FILE_COUNT files)"
