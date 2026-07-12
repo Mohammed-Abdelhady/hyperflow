@@ -130,3 +130,21 @@ body {
   line-height: var(--type-body-line);
   font-weight: var(--type-body-weight);
 }
+
+/* Reduced-motion floor — zero duration tokens at the CSS layer */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-flip: 0ms;
+    --motion-enter: 0ms;
+    --motion-panel: 0ms;
+    --motion-sweep: 0ms;
+  }
+}
+
+/* Scrubbing snap — set by JS on documentElement while scrubbing */
+html[data-scrubbing="true"] {
+  --motion-flip: 0ms;
+  --motion-enter: 0ms;
+  --motion-panel: 0ms;
+  --motion-sweep: 0ms;
+}
