@@ -1,0 +1,217 @@
+/* --- Instruments --- */
+
+.hf-chainline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.hf-chainline__rail {
+  position: relative;
+  height: var(--sp-2);
+  background: var(--hairline);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.hf-chainline__fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  will-change: auto;
+}
+
+[dir="rtl"] .hf-chainline__fill {
+  transform-origin: right center;
+}
+
+.hf-chainline__stages {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.hf-chainline__stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  text-align: start;
+  cursor: default;
+}
+
+.hf-chainline__stage--interactive {
+  cursor: pointer;
+}
+
+.hf-chainline__stage--interactive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-1);
+}
+
+.hf-chainline__label {
+  font-family: var(--type-micro-family);
+  font-size: var(--type-micro-size);
+  line-height: var(--type-micro-line);
+  font-weight: var(--type-micro-weight);
+  letter-spacing: var(--type-micro-tracking);
+  text-transform: var(--type-micro-transform);
+  color: var(--text-dim);
+}
+
+.hf-chainline__cost {
+  font-family: var(--type-data-family);
+  font-size: var(--type-data-size);
+  line-height: var(--type-data-line);
+  color: var(--text-mid);
+}
+
+.hf-stage-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8ch;
+  border-radius: var(--r-1);
+  padding-block: var(--sp-1);
+  padding-inline: var(--sp-2);
+  font-family: var(--type-ui-family);
+  font-size: var(--type-ui-size);
+  line-height: var(--type-ui-line);
+  font-weight: var(--type-ui-weight);
+  overflow: hidden;
+  border: 0;
+}
+
+.hf-stage-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hf-stage-chip__layer {
+  transition: opacity var(--motion-flip) var(--ease-out);
+}
+
+.hf-stage-chip__hairline {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  height: 1px;
+  background: var(--state-live);
+  transform-origin: left center;
+}
+
+[dir="rtl"] .hf-stage-chip__hairline {
+  transform-origin: right center;
+}
+
+.hf-stage-chip__hairline--indeterminate {
+  width: var(--sp-6);
+  inset-inline: auto;
+  animation: hf-chip-slide 1.6s linear infinite;
+}
+
+@keyframes hf-chip-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.hf-score-meter {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+}
+
+.hf-score-meter__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hf-score-meter__value {
+  font-family: var(--type-hero-family);
+  font-size: var(--type-hero-size);
+  line-height: var(--type-hero-line);
+  font-weight: var(--type-hero-weight);
+  letter-spacing: var(--type-hero-tracking);
+  font-variant-numeric: tabular-nums;
+  z-index: 1;
+}
+
+.hf-scrubber {
+  position: relative;
+  width: 100%;
+  height: var(--sp-6);
+  touch-action: none;
+  user-select: none;
+}
+
+.hf-scrubber__rail {
+  position: absolute;
+  inset-inline: 0;
+  inset-block: calc(50% - 1px);
+  height: 2px;
+  background: var(--hairline);
+  border-radius: var(--r-full);
+}
+
+.hf-scrubber__fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  border-radius: var(--r-full);
+}
+
+[dir="rtl"] .hf-scrubber__fill {
+  transform-origin: right center;
+}
+
+.hf-scrubber__playhead {
+  position: absolute;
+  top: 50%;
+  width: var(--sp-4);
+  height: var(--sp-4);
+  margin-inline-start: calc(var(--sp-4) / -2);
+  margin-block-start: calc(var(--sp-4) / -2);
+  border-radius: var(--r-full);
+  background: var(--accent);
+  border: 1px solid var(--hairline-strong);
+  cursor: grab;
+  padding: 0;
+}
+
+.hf-scrubber__playhead:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hf-scrubber__tick {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: var(--sp-3);
+  margin-block-start: calc(var(--sp-3) / -2);
+  background: var(--hairline-strong);
+  pointer-events: none;
+}
+
