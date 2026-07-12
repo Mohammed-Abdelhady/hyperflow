@@ -2,8 +2,11 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals";
 
-/** Paths that may import node:fs write APIs — exactly one write door. */
+/** Paths that may import node:fs write APIs. */
 const WRITE_DOOR = "src/server/services/write.ts";
+/** Capability probe may write under os.tmpdir only — never project artefacts. */
+const WATCH_PROBE = "src/server/watch/watcher.ts";
+const FS_WRITE_ALLOW = [WRITE_DOOR, WATCH_PROBE];
 
 const FS_WRITE_NAMES = [
   "writeFile",
@@ -115,10 +118,10 @@ export default tseslint.config(
       ],
     },
   },
-  // Server (except write door): ban client + tests + fs writes
+  // Server (except write door + watch probe): ban client + tests + fs writes
   {
     files: ["src/server/**/*.{ts,tsx}"],
-    ignores: [WRITE_DOOR],
+    ignores: FS_WRITE_ALLOW,
     rules: {
       "no-restricted-imports": [
         "error",
@@ -139,9 +142,9 @@ export default tseslint.config(
       ],
     },
   },
-  // Write door: may use fs writes; still ban client/tests
+  // Write door + watch probe: may use fs writes; still ban client/tests
   {
-    files: [WRITE_DOOR],
+    files: FS_WRITE_ALLOW,
     rules: {
       "no-restricted-imports": [
         "error",
@@ -149,11 +152,11 @@ export default tseslint.config(
           patterns: [
             {
               regex: "(^|[./])client([/]|$)",
-              message: "Write door must not import client.",
+              message: "Server fs-write modules must not import client.",
             },
             {
               regex: "(^|[./])tests([/]|$)|fixtures([/]|$)",
-              message: "Write door must not import tests.",
+              message: "Server fs-write modules must not import tests.",
             },
           ],
         },
