@@ -42,6 +42,11 @@ const LazyPlans = lazy(async () => {
   return { default: PlansSurface };
 });
 
+const LazySpecs = lazy(async () => {
+  const { SpecsSurface } = await import("../features/specs");
+  return { default: SpecsSurface };
+});
+
 function RouteSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense
@@ -102,6 +107,12 @@ function elementForFeature(id: FeatureId, label: string) {
       return (
         <RouteSuspense>
           <LazyPlans />
+        </RouteSuspense>
+      );
+    case "specs":
+      return (
+        <RouteSuspense>
+          <LazySpecs />
         </RouteSuspense>
       );
     default:
