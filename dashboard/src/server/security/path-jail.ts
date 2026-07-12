@@ -32,11 +32,11 @@ export type PathJailOptions = {
    * Explicit out-of-jail allow target (default: ~/.hyperflow/config.json).
    * Realpathed when the file exists; otherwise normalized absolute path.
    */
-  globalConfigPath?: string;
+  globalConfigPath?: string | undefined;
   /** Override for tests (default: os.homedir()). */
-  homeDir?: string;
+  homeDir?: string | undefined;
   /** Force case folding (default: darwin/win32). */
-  caseInsensitive?: boolean;
+  caseInsensitive?: boolean | undefined;
 };
 
 const DENY = (reason: string): PathJailDenial => ({

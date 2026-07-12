@@ -12,8 +12,8 @@ export type DenylistContext = {
   /** Absolute path of the sanctioned global config. */
   globalConfigPath: string;
   /** Absolute path of `.hyperflow-handoff/` sibling (optional). */
-  handoffRoot?: string;
-  caseInsensitive?: boolean;
+  handoffRoot?: string | undefined;
+  caseInsensitive?: boolean | undefined;
 };
 
 export type DenylistVerdict =

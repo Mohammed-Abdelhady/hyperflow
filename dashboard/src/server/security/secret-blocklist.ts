@@ -27,11 +27,11 @@ export type SecretPatterns = {
 };
 
 export type SecretBlocklistOptions = {
-  patterns?: SecretPatterns;
+  patterns?: SecretPatterns | undefined;
   /** Defaults.json absolute path override (tests). */
-  defaultsPath?: string;
-  homeDir?: string;
-  caseInsensitive?: boolean;
+  defaultsPath?: string | undefined;
+  homeDir?: string | undefined;
+  caseInsensitive?: boolean | undefined;
 };
 
 type CompiledPattern =
