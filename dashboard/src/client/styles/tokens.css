@@ -1,0 +1,15 @@
+/**
+ * Placeholder — full token sheet lands in T4 from .hyperflow/design/system.md.
+ * Present so the Vite client build can import a stylesheet on the scaffold.
+ */
+:root {
+  --surface-0: #0a0c10;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: #e9edf2;
+  font-family: system-ui, sans-serif;
+}
