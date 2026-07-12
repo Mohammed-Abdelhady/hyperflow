@@ -3,7 +3,7 @@ name: background
 description: |
   Use when the user wants to see, inspect, cancel, or prune background agents fired during prior chain runs. Read/manage `.hyperflow/background/registry.json` and the per-agent output buffers at `.hyperflow/background/<id>.md`. Standalone — never auto-invoked.
   Trigger with /hyperflow:background, "list background agents", "what's running in background", "cancel background agent", "show background result".
-allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(cat:*), Bash(rm:*), Bash(find:*), Glob, Grep
+allowed-tools: Read, Write, Edit, Bash(ls:*), Bash(cat:*), Bash(rm:*), Bash(find:*), Bash(bash:*), Glob, Grep
 argument-hint: "<list|show|cancel|prune> [id|--all]"
 version: 4.7.0
 license: MIT
@@ -67,7 +67,8 @@ Read `.hyperflow/background/<id>.md` and print it verbatim. If the agent is stil
 1. Read registry, find the entry.
 2. If `status: running`, signal cancellation per the provider's mechanism (Claude Code: use the runtime's cancellation API for that subagent ID; if unavailable, mark the entry `status: cancelled` and leave the agent to time out on its own — the foreground orchestrator will drop the result on collection).
 3. Update registry entry: `status: cancelled`, `cancelled_at: <now>`.
-4. Print `Cancelled <id> — <purpose>`.
+4. When `scripts/emit-event.sh` exists, call `bash $PLUGIN_ROOT/scripts/emit-event.sh $PROJECT_ROOT $CHAIN_ID background bg-cancel agent=<id>` (see [events.md](../hyperflow/events.md)); existence-guard and `|| true` so emit failure never alters cancel outcome.
+5. Print `Cancelled <id> — <purpose>`.
 
 If the agent already completed, print `Agent <id> already <status> — nothing to cancel.`
 
@@ -77,7 +78,20 @@ For every entry with `status: running`, run the `cancel` flow. Print summary: `C
 
 ### `prune`
 
-`find .hyperflow/background/ -name "bg-*.md" -mtime +7 -delete` plus remove their entries from `registry.json` (only entries with `status: complete | error | stalled | cancelled` older than 7 days are pruned). Print: `Pruned N output buffers · N registry entries`.
+`find .hyperflow/background/ -name "bg-*.md" -mtime +7 -delete` plus remove their entries from `registry.json` (only entries with `status: complete | error | stalled | cancelled` older than 7 days are pruned). When `scripts/emit-event.sh` exists, emit type `bg-prune` with the pruned count in `detail` (existence-guard + `|| true`). Print: `Pruned N output buffers · N registry entries`.
+
+## Event emission
+
+Every registry write point emits one line via `bash $PLUGIN_ROOT/scripts/emit-event.sh` when that script exists (field names and types from [events.md](../hyperflow/events.md)):
+
+| Point | Type | Who emits |
+|---|---|---|
+| **launch** | `bg-launch` | The skill that registers a `run_in_background` dispatch (other skills maintain the registry — see Overview below) |
+| **completion** | `bg-complete` | The maintaining skill on the registry status flip at collection |
+| **cancel** | `bg-cancel` | This skill (`cancel` / `cancel --all`) |
+| **prune** | `bg-prune` | This skill (`prune`) |
+
+Invariants: emit only when the script exists; never let an emit failure alter a subcommand's outcome; take vocabulary from `skills/hyperflow/events.md` only.
 
 ## Flow
 

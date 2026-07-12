@@ -100,4 +100,13 @@ data["commits"].append({
 open("$MANIFEST", "w").write(json.dumps(data, indent=2))
 PY
 
+# Emit commit-queued event (silent no-op when helper absent / emit fails).
+# Sibling resolution via BASH_SOURCE — never $PWD. || true keeps set -e safe.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EMIT_EVENT="$SCRIPT_DIR/emit-event.sh"
+if [ -f "$EMIT_EVENT" ]; then
+  DETAIL="$(printf '%s %s' "${SHA:0:7}" "$(echo "$MSG" | head -c 60)")"
+  bash "$EMIT_EVENT" "$PROJECT_ROOT" "$CHAIN_ID" dispatch commit-queued "detail=$DETAIL" || true
+fi
+
 echo "queue-commit: queued $SHA on $STAGING_BRANCH ($(echo "$MSG" | head -c 60))"
