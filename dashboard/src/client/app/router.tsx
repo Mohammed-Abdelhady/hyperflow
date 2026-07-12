@@ -57,6 +57,16 @@ const LazyMemory = lazy(async () => {
   return { default: MemorySurface };
 });
 
+const LazyManagement = lazy(async () => {
+  const { ManagementSurface } = await import("../features/management");
+  return { default: ManagementSurface };
+});
+
+const LazyFeatures = lazy(async () => {
+  const { FeaturesSurface } = await import("../features/features");
+  return { default: FeaturesSurface };
+});
+
 function RouteSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense
@@ -135,6 +145,18 @@ function elementForFeature(id: FeatureId, label: string) {
       return (
         <RouteSuspense>
           <LazyMemory />
+        </RouteSuspense>
+      );
+    case "config":
+      return (
+        <RouteSuspense>
+          <LazyManagement />
+        </RouteSuspense>
+      );
+    case "features":
+      return (
+        <RouteSuspense>
+          <LazyFeatures />
         </RouteSuspense>
       );
     default:
