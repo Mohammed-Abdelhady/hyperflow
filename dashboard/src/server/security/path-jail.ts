@@ -33,6 +33,11 @@ export type PathJailOptions = {
    * Realpathed when the file exists; otherwise normalized absolute path.
    */
   globalConfigPath?: string | undefined;
+  /**
+   * Optional sibling `.hyperflow-handoff/` root — STATUS writes resolve here.
+   * Realpathed when present; otherwise normalized absolute path.
+   */
+  handoffRoot?: string | undefined;
   /** Override for tests (default: os.homedir()). */
   homeDir?: string | undefined;
   /** Force case folding (default: darwin/win32). */
@@ -138,6 +143,7 @@ function resolvePossiblyNew(absCandidate: string): string | null {
 export type PathJail = {
   readonly jailRoot: string;
   readonly globalConfigPath: string;
+  readonly handoffRoot: string | null;
   readonly caseInsensitive: boolean;
   resolveAndVerify: (candidate: string) => PathJailResult;
 };
@@ -158,6 +164,10 @@ export function createPathJail(options: PathJailOptions): PathJail {
   const configCandidate = options.globalConfigPath ?? defaultConfig;
   const globalConfigPath =
     realpathExisting(configCandidate) ?? resolve(configCandidate);
+
+  const handoffRoot = options.handoffRoot
+    ? (realpathExisting(options.handoffRoot) ?? resolve(options.handoffRoot))
+    : null;
 
   function resolveAndVerify(candidate: string): PathJailResult {
     const decoded = decodeCandidate(candidate);
@@ -201,6 +211,10 @@ export function createPathJail(options: PathJailOptions): PathJail {
       return { ok: true, resolvedPath: resolved, isGlobalConfig: false };
     }
 
+    if (handoffRoot && isPathInside(resolved, handoffRoot, fold)) {
+      return { ok: true, resolvedPath: resolved, isGlobalConfig: false };
+    }
+
     if (
       fold
         ? resolved.toLowerCase() === globalConfigPath.toLowerCase()
@@ -225,6 +239,7 @@ export function createPathJail(options: PathJailOptions): PathJail {
   return {
     jailRoot,
     globalConfigPath,
+    handoffRoot,
     caseInsensitive: fold,
     resolveAndVerify,
   };

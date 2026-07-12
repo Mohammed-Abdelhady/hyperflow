@@ -109,6 +109,7 @@ export function createWriteDoor(options: WriteDoorOptions): WriteDoor {
     createPathJail({
       jailRoot: options.jailRoot,
       globalConfigPath: options.globalConfigPath,
+      handoffRoot: options.handoffRoot,
       homeDir: options.homeDir,
       caseInsensitive: options.caseInsensitive,
     });
@@ -124,7 +125,8 @@ export function createWriteDoor(options: WriteDoorOptions): WriteDoor {
   const denylistCtx: DenylistContext = {
     jailRoot: jail.jailRoot,
     globalConfigPath: jail.globalConfigPath,
-    handoffRoot: options.handoffRoot,
+    // Prefer jail-canonical handoff root so realpath (/var vs /private/var) matches.
+    handoffRoot: jail.handoffRoot ?? options.handoffRoot,
     caseInsensitive: options.caseInsensitive ?? jail.caseInsensitive,
   };
 
