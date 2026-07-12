@@ -1,9 +1,11 @@
 import { Outlet } from "react-router-dom";
 import { useConnectionSlice } from "../hooks/use-slice";
+import { useSse } from "../hooks/use-sse";
 import { Banners, deriveBanners } from "./banners";
 import { Sidebar } from "./sidebar";
 
 export function Shell() {
+  useSse(true);
   const connection = useConnectionSlice();
   const banners = deriveBanners({
     streamStatus: connection.streamStatus,
