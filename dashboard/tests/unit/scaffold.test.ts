@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { PLACEHOLDER_SHARED } from "../../src/shared/placeholder.js";
+import { HYPERFLOW_TOKEN_HEADER } from "../../src/shared/schemas/api.js";
 
 describe("scaffold", () => {
-  it("shared placeholder is defined", () => {
-    expect(PLACEHOLDER_SHARED).toBe("shared-scaffold");
+  it("shared token header constant is defined", () => {
+    expect(HYPERFLOW_TOKEN_HEADER).toBe("X-Hyperflow-Token");
   });
 });
