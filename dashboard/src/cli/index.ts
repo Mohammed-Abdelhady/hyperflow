@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * hyperflow-dashboard CLI entry — version gate, discover, port, token, boot.
  */

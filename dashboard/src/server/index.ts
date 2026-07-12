@@ -153,8 +153,10 @@ export async function createDashboardServer(
 
   const app = new Hono();
   app.onError(createErrorHandler());
+  // Host/Origin gate every request (SPA + API). Token gate is API-only so the
+  // static shell can load and perform the fragment → sessionStorage handshake.
   app.use("*", createOriginAllowlist({ port: options.port }));
-  app.use("*", createTokenGate({ sessionToken: options.token }));
+  app.use("/api/*", createTokenGate({ sessionToken: options.token }));
   app.use("/api/*", errorMapperMiddleware());
 
   const api = new Hono();
@@ -215,9 +217,10 @@ export async function createDashboardServer(
     return c.json(notFoundEnvelope(), 404);
   });
 
+  // dist/server → ../client is the Vite SPA output (package ships dist/client).
   const clientDist =
     options.clientDist ??
-    resolve(join(import.meta.dirname, "../../client"));
+    resolve(join(import.meta.dirname, "../client"));
 
   if (existsSync(clientDist)) {
     app.use(

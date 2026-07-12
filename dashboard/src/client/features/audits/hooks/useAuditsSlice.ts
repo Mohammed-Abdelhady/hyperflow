@@ -48,10 +48,14 @@ function toItem(entry: AuditEntry): AuditListItem {
 }
 
 const SURFACE = "audits";
+/** Stable empty filter — never allocate `{}` inside a Zustand selector. */
+const EMPTY_FILTER: Readonly<Record<string, unknown>> = Object.freeze({});
 
 export function useAuditsSlice() {
   const audits = useSnapshotSlice((s) => selectAudits(s.data));
-  const filter = useUiSlice((s) => s.filterBySurface[SURFACE] ?? {});
+  const filter = useUiSlice(
+    (s) => s.filterBySurface[SURFACE] ?? EMPTY_FILTER,
+  );
   const setFilter = useUiSlice((s) => s.setFilter);
 
   const items = useMemo(() => {

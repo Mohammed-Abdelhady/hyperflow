@@ -22,12 +22,15 @@ export function usePlanSelection({ slugs }: PlanSelectionOptions) {
   useEffect(() => {
     if (!selectedSlug) return;
     if (raw === selectedSlug) return;
-    if (raw && !slugs.includes(raw) && selectedSlug) {
+    // Only rewrite when the URL has an invalid slug — never thrash when raw is null
+    // (default selection is in-memory only until the user clicks).
+    if (raw && !slugs.includes(raw)) {
       const next = new URLSearchParams(params);
       next.set(SLUG_QUERY_KEY, selectedSlug);
       setParams(next, { replace: true });
     }
-  }, [raw, selectedSlug, slugs, params, setParams]);
+    // Intentionally omit `params`/`slugs` identity from deps to avoid setParams loops.
+  }, [raw, selectedSlug, setParams]);
 
   const select = useCallback(
     (slug: string) => {

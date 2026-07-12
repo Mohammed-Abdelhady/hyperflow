@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import {
+  EventsRangeResponseSchema,
   SnapshotDeltaSchema,
   WriteEchoPayloadSchema,
   type EventLineResult,
@@ -147,6 +148,23 @@ export function useSse(enabled = true): void {
         store.getState().setConnection({ streamStatus: "connecting" });
         const snapshot = await apiClient.getSnapshot();
         store.getState().hydrate(snapshot, snapshot.meta.lastEventId);
+        // Seed the event feed from /events so replay/stream have history
+        // before the first live SSE frame (snapshot meta alone is not enough).
+        try {
+          const range = await apiClient.getJson(
+            "/events",
+            (json) => EventsRangeResponseSchema.parse(json),
+          );
+          const seeded = range.events.map((line, i) => ({
+            id: `boot-${i}`,
+            line,
+          }));
+          if (seeded.length > 0) {
+            events.getState().mergeRange(seeded);
+          }
+        } catch {
+          /* events optional — markdown-only mode still works */
+        }
         sse?.markHydrated(snapshot.meta.lastEventId);
       } catch {
         store.getState().setConnection({ streamStatus: "dead" });

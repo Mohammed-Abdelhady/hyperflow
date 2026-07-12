@@ -58,25 +58,79 @@ function globToRegExp(glob: string, fold: boolean): RegExp {
 }
 
 /**
- * Resolve monorepo `config/defaults.json` relative to this module.
- * dashboard/src/server/security → ../../../.. → hyperflow package root.
+ * Resolve `config/defaults.json` for monorepo + packaged layouts.
+ * - dist/server/security → ../../../config (package-local, npm tarball)
+ * - dist/server/security → ../../../../config (hyperflow monorepo root)
+ * - src/server/security  → same relative offsets via package root walk
  */
 export function defaultDefaultsPath(): string {
   const here = fileURLToPath(new URL(".", import.meta.url));
-  return resolve(here, "../../../../config/defaults.json");
+  const candidates = [
+    resolve(here, "../../../config/defaults.json"),
+    resolve(here, "../../../../config/defaults.json"),
+    resolve(here, "../../../../../config/defaults.json"),
+  ];
+  for (const p of candidates) {
+    try {
+      readFileSync(p);
+      return p;
+    } catch {
+      /* try next */
+    }
+  }
+  return candidates[0]!;
 }
+
+/** Hard fallback when no defaults.json is available (offline pack edge). */
+export const FALLBACK_SECURITY_PATTERNS: SecretPatterns = {
+  blockedFiles: [
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "*.jks",
+    "credentials.json",
+    "service-account*.json",
+    "*-secret.json",
+    "*-secret.yaml",
+    "~/.ssh/*",
+    "~/.gnupg/*",
+    "id_rsa*",
+    "id_ed25519*",
+    "*.gpg",
+    ".npmrc",
+    ".pypirc",
+    ".docker/config.json",
+    "*.keychain",
+    "*-credentials",
+    "~/.aws/credentials",
+    "~/.azure/*",
+    "~/.config/gcloud/*",
+    "~/.kube/config",
+  ],
+  allowedFiles: [".env.example", ".env.template", ".env.sample"],
+};
 
 export function loadSecurityPatterns(defaultsPath?: string): SecretPatterns {
   const path = defaultsPath ?? defaultDefaultsPath();
-  const raw = JSON.parse(readFileSync(path, "utf8")) as {
-    security?: {
-      blockedFiles?: string[];
-      allowedFiles?: string[];
+  try {
+    const raw = JSON.parse(readFileSync(path, "utf8")) as {
+      security?: {
+        blockedFiles?: string[];
+        allowedFiles?: string[];
+      };
     };
-  };
-  const blockedFiles = raw.security?.blockedFiles ?? [];
-  const allowedFiles = raw.security?.allowedFiles ?? [];
-  return { blockedFiles, allowedFiles };
+    const blockedFiles = raw.security?.blockedFiles ?? [];
+    const allowedFiles = raw.security?.allowedFiles ?? [];
+    if (blockedFiles.length === 0 && allowedFiles.length === 0) {
+      return FALLBACK_SECURITY_PATTERNS;
+    }
+    return { blockedFiles, allowedFiles };
+  } catch {
+    return FALLBACK_SECURITY_PATTERNS;
+  }
 }
 
 function compilePattern(pattern: string): CompiledPattern {

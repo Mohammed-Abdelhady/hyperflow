@@ -92,6 +92,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
       return request(path, { method: "PUT", body: JSON.stringify(body) }, parse);
     },
 
+    async getJson<T>(path: string, parse: (json: unknown) => T): Promise<T> {
+      return request(path, { method: "GET" }, parse);
+    },
+
     /** Build stream URL — sole sanctioned token-in-query use (EventSource). */
     buildStreamUrl(lastEventId?: string | null): string {
       const token = getToken();

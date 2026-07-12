@@ -71,6 +71,8 @@ export default tseslint.config(
       "eslint.config.js",
       "vite.config.ts",
       "vitest.config.ts",
+      "playwright.config.ts",
+      "scripts/**",
     ],
   },
   js.configs.recommended,
