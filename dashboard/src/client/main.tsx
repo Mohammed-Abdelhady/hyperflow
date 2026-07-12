@@ -10,6 +10,7 @@ import "./styles/app.css";
 import "./styles/primitives-static.css";
 import "./styles/primitives-instruments.css";
 import "./styles/primitives-containers.css";
+import "./styles/surfaces.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
