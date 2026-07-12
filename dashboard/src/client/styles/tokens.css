@@ -1,15 +1,132 @@
 /**
- * Placeholder — full token sheet lands in T4 from .hyperflow/design/system.md.
- * Present so the Vite client build can import a stylesheet on the scaffold.
+ * Design tokens — single CSS custom-property authority.
+ * Source of truth: .hyperflow/design/system.md (tokens.css follows it, never the reverse).
+ *
+ * spring-settle / spring-instrument are Motion-for-React spring params
+ * (stiffness / damping / mass), not CSS-expressible. They live in a future
+ * client motion-constants module — omit them here on purpose.
+ *
+ * No @font-face / CDN: IBM Plex family names only; font loading is client-shell.
+ * Dark-first v1 only — no light theme.
  */
+
 :root {
-  --surface-0: #0a0c10;
   color-scheme: dark;
+
+  /* --- Surfaces (system.md §Color tokens / Surfaces) --- */
+  --surface-0: #0A0C10;
+  --surface-1: #0F1217;
+  --surface-2: #14181E;
+  --surface-3: #1A1F26;
+  --hairline: #232932;
+  --hairline-strong: #2F3742;
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5);
+
+  /* --- Text --- */
+  --text-hi: #E9EDF2;
+  --text-mid: #94A3B8;
+  --text-dim: #7A8694;
+  --text-faint: #4C5560;
+
+  /* --- Accent (exactly one) --- */
+  --accent: #14B8A6;
+  --accent-dim: rgb(20 184 166 / 0.14);
+
+  /* --- Semantic state (indicators only; -dim = 14% alpha fills) --- */
+  --state-pass: #3FB950;
+  --state-pass-dim: rgb(63 185 80 / 0.14);
+  --state-fix: #F59E0B;
+  --state-fix-dim: rgb(245 158 11 / 0.14);
+  --state-blocked: #EF4444;
+  --state-blocked-dim: rgb(239 68 68 / 0.14);
+  --state-live: var(--accent);
+  --state-live-dim: var(--accent-dim);
+  --state-queued: var(--text-dim);
+  --state-queued-dim: rgb(122 134 148 / 0.14);
+
+  /* --- Type scale (IBM Plex; face / size / line / weight / tracking) --- */
+  --type-micro-family: "IBM Plex Mono", ui-monospace, monospace;
+  --type-micro-size: 11px;
+  --type-micro-line: 16px;
+  --type-micro-weight: 500;
+  --type-micro-tracking: 0.08em;
+  --type-micro-transform: uppercase;
+
+  --type-data-family: "IBM Plex Mono", ui-monospace, monospace;
+  --type-data-size: 12px;
+  --type-data-line: 18px;
+  --type-data-weight: 400;
+  --type-data-tracking: 0;
+
+  --type-body-family: "IBM Plex Sans", system-ui, sans-serif;
+  --type-body-size: 13px;
+  --type-body-line: 20px;
+  --type-body-weight: 400;
+  --type-body-tracking: 0;
+
+  --type-ui-family: "IBM Plex Sans", system-ui, sans-serif;
+  --type-ui-size: 13px;
+  --type-ui-line: 20px;
+  --type-ui-weight: 500;
+  --type-ui-tracking: 0;
+
+  --type-title-family: "IBM Plex Sans", system-ui, sans-serif;
+  --type-title-size: 15px;
+  --type-title-line: 22px;
+  --type-title-weight: 600;
+  --type-title-tracking: -0.01em;
+
+  --type-section-family: "IBM Plex Sans", system-ui, sans-serif;
+  --type-section-size: 18px;
+  --type-section-line: 26px;
+  --type-section-weight: 600;
+  --type-section-tracking: -0.01em;
+
+  --type-numeral-family: "IBM Plex Mono", ui-monospace, monospace;
+  --type-numeral-size: 26px;
+  --type-numeral-line: 32px;
+  --type-numeral-weight: 500;
+  --type-numeral-tracking: -0.01em;
+
+  --type-hero-family: "IBM Plex Mono", ui-monospace, monospace;
+  --type-hero-size: 44px;
+  --type-hero-line: 48px;
+  --type-hero-weight: 300;
+  --type-hero-tracking: -0.02em;
+
+  /* --- Spacing (sp-1..sp-7 only) --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* --- Radius --- */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 10px;
+  --r-full: 9999px;
+
+  /* --- Motion durations (standalone so reduced-motion can zero them) --- */
+  --motion-flip: 120ms;
+  --motion-enter: 200ms;
+  --motion-panel: 280ms;
+  --motion-sweep: 450ms;
+
+  /* --- Motion easings --- */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-exit-in: cubic-bezier(0.55, 0, 1, 0.45);
 }
 
+/* Scaffold base — token consumers only; no inventing values */
 body {
   margin: 0;
   background: var(--surface-0);
-  color: #e9edf2;
-  font-family: system-ui, sans-serif;
+  color: var(--text-hi);
+  font-family: var(--type-body-family);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  font-weight: var(--type-body-weight);
 }
