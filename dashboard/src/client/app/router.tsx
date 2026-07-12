@@ -52,6 +52,11 @@ const LazyAudits = lazy(async () => {
   return { default: AuditsSurface };
 });
 
+const LazyMemory = lazy(async () => {
+  const { MemorySurface } = await import("../features/memory");
+  return { default: MemorySurface };
+});
+
 function RouteSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense
@@ -124,6 +129,12 @@ function elementForFeature(id: FeatureId, label: string) {
       return (
         <RouteSuspense>
           <LazyAudits />
+        </RouteSuspense>
+      );
+    case "memory":
+      return (
+        <RouteSuspense>
+          <LazyMemory />
         </RouteSuspense>
       );
     default:
