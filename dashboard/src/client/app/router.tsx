@@ -1,57 +1,108 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import {
   createBrowserRouter,
   Navigate,
   RouterProvider,
 } from "react-router-dom";
-import { FEATURE_REGISTRY } from "../constants/features";
+import {
+  FEATURE_REGISTRY,
+  type FeatureId,
+} from "../constants/features";
 import { DEFAULT_ROUTE, ROUTES } from "../constants/routes";
 import { NotFoundPage, SurfacePlaceholder } from "./placeholders";
 import { Shell } from "./shell";
 
-/** Lazy boundaries reserved for heavy chunks (graph / mermaid / replay). */
 const LazyReplay = lazy(async () => {
-  const { SurfacePlaceholder: P } = await import("./placeholders");
-  return {
-    default: function ReplaySurface() {
-      return <P id="replay" label="Replay" />;
-    },
-  };
+  const { ReplayPage } = await import("../features/replay");
+  return { default: ReplayPage };
 });
+
+const LazyHealth = lazy(async () => {
+  const { HealthPage } = await import("../features/health");
+  return { default: HealthPage };
+});
+
+const LazyLeaderboard = lazy(async () => {
+  const { LeaderboardPage } = await import("../features/leaderboard");
+  return { default: LeaderboardPage };
+});
+
+const LazyTokens = lazy(async () => {
+  const { TokensPage } = await import("../features/tokens");
+  return { default: TokensPage };
+});
+
+const LazyMission = lazy(async () => {
+  const { MissionControlPage } = await import("../features/missionControl");
+  return { default: MissionControlPage };
+});
+
+function RouteSuspense({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="hf-placeholder" data-testid="route-suspense">
+          Loading…
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
 
 function PlaceholderRoute({
   id,
   label,
 }: {
-  id: (typeof FEATURE_REGISTRY)[number]["id"];
+  id: FeatureId;
   label: string;
 }) {
   return <SurfacePlaceholder id={id} label={label} />;
 }
 
+function elementForFeature(id: FeatureId, label: string) {
+  switch (id) {
+    case "replay":
+      return (
+        <RouteSuspense>
+          <LazyReplay />
+        </RouteSuspense>
+      );
+    case "health":
+      return (
+        <RouteSuspense>
+          <LazyHealth />
+        </RouteSuspense>
+      );
+    case "leaderboard":
+      return (
+        <RouteSuspense>
+          <LazyLeaderboard />
+        </RouteSuspense>
+      );
+    case "tokens":
+      return (
+        <RouteSuspense>
+          <LazyTokens />
+        </RouteSuspense>
+      );
+    case "mission":
+      return (
+        <RouteSuspense>
+          <LazyMission />
+        </RouteSuspense>
+      );
+    default:
+      return <PlaceholderRoute id={id} label={label} />;
+  }
+}
+
 function buildFeatureRoutes() {
-  return FEATURE_REGISTRY.map((feature) => {
-    if (feature.lazyChunk === "replay") {
-      return {
-        path: feature.route.replace(/^\//, ""),
-        element: (
-          <Suspense
-            fallback={
-              <div className="hf-placeholder" data-testid="route-suspense">
-                Loading…
-              </div>
-            }
-          >
-            <LazyReplay />
-          </Suspense>
-        ),
-      };
-    }
-    return {
-      path: feature.route.replace(/^\//, ""),
-      element: <PlaceholderRoute id={feature.id} label={feature.label} />,
-    };
-  });
+  return FEATURE_REGISTRY.map((feature) => ({
+    path: feature.route.replace(/^\//, ""),
+    element: elementForFeature(feature.id, feature.label),
+  }));
 }
 
 export const appRouter = createBrowserRouter([
