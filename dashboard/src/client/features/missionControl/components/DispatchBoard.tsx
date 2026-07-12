@@ -103,6 +103,9 @@ function DispatchBoardImpl({
                 <StageChip
                   label={agent.stageLabel}
                   state={agent.stageState}
+                  {...(agent.stageState === "live"
+                    ? { indeterminate: true }
+                    : {})}
                   testId={`${testId}-chip-${agent.id}`}
                 />
               </div>
