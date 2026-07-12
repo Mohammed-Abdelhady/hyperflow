@@ -37,6 +37,11 @@ const LazyMission = lazy(async () => {
   return { default: MissionControlPage };
 });
 
+const LazyPlans = lazy(async () => {
+  const { PlansSurface } = await import("../features/plans");
+  return { default: PlansSurface };
+});
+
 function RouteSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense
@@ -91,6 +96,12 @@ function elementForFeature(id: FeatureId, label: string) {
       return (
         <RouteSuspense>
           <LazyMission />
+        </RouteSuspense>
+      );
+    case "plans":
+      return (
+        <RouteSuspense>
+          <LazyPlans />
         </RouteSuspense>
       );
     default:

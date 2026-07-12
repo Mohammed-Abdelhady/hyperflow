@@ -64,5 +64,14 @@ export function selectMemory(snapshot: Snapshot | null) {
 export function selectFeatures(snapshot: Snapshot | null) {
   return snapshot?.features ?? EMPTY_ARR;
 }
+export function selectSpecs(snapshot: Snapshot | null) {
+  return snapshot?.specs ?? EMPTY_ARR;
+}
+export function selectHandoff(snapshot: Snapshot | null) {
+  return snapshot?.handoff ?? EMPTY_ARR;
+}
+export function selectMarkers(snapshot: Snapshot | null) {
+  return snapshot?.markers ?? null;
+}
 
 const EMPTY_ARR: never[] = [];

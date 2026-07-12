@@ -22,3 +22,9 @@ export const INSPECTOR_WIDTH_PX = 360 as const;
 
 /** Sidebar rail width. */
 export const SIDEBAR_WIDTH_PX = 220 as const;
+
+/** Browser-split artefact rail width (system.md layout grammar). */
+export const BROWSER_RAIL_WIDTH_PX = 280 as const;
+
+/** Open huge artefacts in raw-virtualized mode above this char count. */
+export const HUGE_ARTEFACT_CHARS = 80_000 as const;
