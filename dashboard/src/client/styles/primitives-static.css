@@ -1,0 +1,168 @@
+/* Design-system primitives — token-bound only. */
+
+/* --- Static --- */
+
+.hf-stat-card {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-2);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.hf-stat-card__caption {
+  font-family: var(--type-micro-family);
+  font-size: var(--type-micro-size);
+  line-height: var(--type-micro-line);
+  font-weight: var(--type-micro-weight);
+  letter-spacing: var(--type-micro-tracking);
+  text-transform: var(--type-micro-transform);
+  color: var(--text-dim);
+}
+
+.hf-stat-card__value {
+  font-family: var(--type-numeral-family);
+  font-size: var(--type-numeral-size);
+  line-height: var(--type-numeral-line);
+  font-weight: var(--type-numeral-weight);
+  letter-spacing: var(--type-numeral-tracking);
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+
+.hf-stat-card__delta {
+  font-family: var(--type-data-family);
+  font-size: var(--type-data-size);
+  line-height: var(--type-data-line);
+}
+
+.hf-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-1);
+  padding-block: var(--sp-1);
+  padding-inline: var(--sp-2);
+  font-family: var(--type-micro-family);
+  font-size: var(--type-micro-size);
+  line-height: var(--type-micro-line);
+  font-weight: var(--type-micro-weight);
+  letter-spacing: var(--type-micro-tracking);
+  text-transform: var(--type-micro-transform);
+}
+
+.hf-roster-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--row-height, 36px);
+  padding-inline: var(--sp-3);
+  border: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  color: var(--text-hi);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--motion-flip) var(--ease-out);
+}
+
+.hf-roster-row--dense {
+  --row-height: 28px;
+}
+
+.hf-roster-row:hover {
+  background: var(--surface-2);
+}
+
+.hf-roster-row--selected {
+  background: var(--accent-dim);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Logical inset for selection (RTL-safe via logical box-shadow is limited —
+   use border-inline-start instead of physical inset). */
+.hf-roster-row--selected {
+  box-shadow: none;
+  border-inline-start: 2px solid var(--accent);
+  padding-inline-start: calc(var(--sp-3) - 2px);
+}
+
+.hf-roster-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hf-roster-row__title {
+  font-family: var(--type-body-family);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hf-roster-row__meta {
+  font-family: var(--type-data-family);
+  font-size: var(--type-data-size);
+  line-height: var(--type-data-line);
+  color: var(--text-dim);
+  text-align: end;
+}
+
+.hf-roster-row__check {
+  width: var(--sp-4);
+  height: var(--sp-4);
+  accent-color: var(--accent);
+}
+
+.hf-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-5);
+  color: var(--text-mid);
+  font-family: var(--type-body-family);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+.hf-empty-state__action {
+  font-family: var(--type-ui-family);
+  font-size: var(--type-ui-size);
+  line-height: var(--type-ui-line);
+  font-weight: var(--type-ui-weight);
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface-2);
+  color: var(--text-hi);
+  border-radius: var(--r-1);
+  padding-block: var(--sp-2);
+  padding-inline: var(--sp-3);
+  cursor: pointer;
+}
+
+.hf-empty-state__action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hf-heatmap-cell {
+  width: var(--sp-5);
+  height: var(--sp-5);
+  border-radius: var(--r-1);
+  border: 1px solid var(--hairline);
+  transition: background-color var(--motion-flip) var(--ease-out);
+  padding: 0;
+  cursor: default;
+}
+
+.hf-heatmap-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
