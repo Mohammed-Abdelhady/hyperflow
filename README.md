@@ -200,6 +200,7 @@ Eighteen skills. Two chain-starters auto-advance through the chain; the rest are
 | `bridge` | `/hyperflow:bridge` | Standalone | Embed the portable doctrine into `CLAUDE.md` for Desktop / web / IDE |
 | `flush` | `/hyperflow:flush` | Standalone | Flush a deferred-commit queue from a prior or crashed chain |
 | `hyperflow` | `/hyperflow:hyperflow` | Portable doctrine | Applies the full orchestration ruleset in single-agent surfaces (Codex, Antigravity, Grok) — auto-invoked on task-shaped work |
+| `dashboard` | `npx hyperflow-dashboard` | Local UI | Live cockpit for `.hyperflow/` — mission control, replay, artefacts, allowlisted writes ([`dashboard/`](dashboard/)) |
 
 ## Runs everywhere
 
@@ -214,6 +215,7 @@ portable doctrine into your project's `CLAUDE.md`.
 
 - **Install** — [Installation](docs/installation.md) · where it runs, security configuration, verification
 - **Understand** — [Orchestration](docs/orchestration.md) · [Landing site](https://mohammed-abdelhady.github.io/hyperflow/) · [Agents](agents/README.md)
+- **Dashboard** — [hyperflow-dashboard](dashboard/README.md) · local `npx` cockpit for `.hyperflow/`
 - **Reference** — [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · contributor guide in [`CLAUDE.md`](CLAUDE.md)
 
 ## License
