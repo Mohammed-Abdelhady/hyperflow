@@ -1,0 +1,5 @@
+{
+  "memory": { "compactionThreshold": 80 },
+  "cleanup": { "retainDays": 30, "enabled": true },
+  "handoff": { "autoPush": false }
+}
