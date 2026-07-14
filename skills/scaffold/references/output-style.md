@@ -255,6 +255,6 @@ BLOCKED — worker attempted to read .env
 1. **No prose between outputs.** Status lines only. No "I'm now going to…" or "Let me…".
 2. **Alignment matters.** Pad roles, model names, and counts for columnar alignment.
 3. **One blank line** between different output sections (e.g., between agent labels and gates).
-4. **No trailing summaries.** The usage block IS the summary. Don't add "Done! I completed X."
+4. **No free-form trailing prose.** Never "Done! I completed X." For dispatch/handoff builds, work product is the structured **Evidence** block and cost is the **Usage** block (see skills/hyperflow/output-style.md §7–§8). Other skills keep Usage as cost-only; never invent free-form Done prose.
 5. **No decorative chars.** Em-dash for separators, middle dots for inline lists. Never `⚡`, `✓`, `✗`, `▸`, `→`, etc.
 6. **Bold for review roles.** Only `**Reviewer**` and `**Debugger**` are bolded. Workers stay plain.

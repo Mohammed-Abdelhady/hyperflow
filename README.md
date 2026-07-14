@@ -184,7 +184,7 @@ Eighteen skills. Two chain-starters auto-advance through the chain; the rest are
 |-------|---------|------|---------|
 | `issue` | `/hyperflow:issue` | Chain starter | GitHub issue → triaged, planned, dispatched, reviewed pull request — with injection guard and gated posting |
 | `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt, design the approach, decompose into a parallel task graph; stops at a build-location gate — never auto-implements |
-| `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review |
+| `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review; end-of-chain prints Evidence (what landed) then Usage (cost) |
 | `pr` | `/hyperflow:pr` | Standalone | Review an incoming pull request — L1–L5 audit on the real diff, one batched GitHub review, fix chain, gated merge |
 | `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
 | `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; portable Codex/OpenCode/Grok adapter for migrations, audits, and verification-heavy work |
@@ -193,7 +193,7 @@ Eighteen skills. Two chain-starters auto-advance through the chain; the rest are
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
 | `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |
 | `cache` | `/hyperflow:cache` | Standalone | Memory CRUD — show, search, add, prune, archive, compact |
-| `handoff` | `/hyperflow:handoff` | Standalone | Two-session handoff — list / status / pickup / review / complete a committed package |
+| `handoff` | `/hyperflow:handoff` | Standalone | Two-session handoff — list / status / pickup / review / complete; status & review surface COMPLETION Evidence |
 | `status` | `/hyperflow:status` | Standalone | Read-only snapshot — version, memory count, live per-task progress |
 | `background` | `/hyperflow:background` | Standalone | List, show, cancel, prune task-level background agents |
 | `sticky` | `/hyperflow:sticky` | Standalone | `on` / `auto` / `off` — per-project auto-routing mode |
