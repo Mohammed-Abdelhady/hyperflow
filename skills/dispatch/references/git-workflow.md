@@ -86,15 +86,15 @@ Aim for **one logical change per commit**. If a sub-task touched more than one l
 
 By the time `/hyperflow:dispatch` reaches Step 5 (End of chain), every approved sub-task is already its own commit. There is no end-of-session "wrap-up commit" — only the per-task commits made along the way, plus any small fix-commits that landed because a quality gate caught something.
 
-The dispatch skill then asks the user **two separate questions** before stopping:
+The dispatch skill then asks the user **up to three** end-of-chain questions (one combined `AskUserQuestion` call):
 
-1. **Run `/hyperflow:audit` on the changes?** — `AskUserQuestion` (binary).
-2. **Run `/hyperflow:deploy` (full gates + commit + push)?** — `AskUserQuestion` (binary). Deploy has its own push gate.
+1. **Run `/hyperflow:audit` on the changes?** — binary.
+2. **Run `/hyperflow:deploy` (full gates + commit + push)?** — binary. Deploy has its own push gate.
 3. **Open a pull request?** — when `pr=ask` (default on every dispatch). Frontend/mobile PRs require screenshots — see [pr-exit.md](pr-exit.md).
 
-The orchestrator does **NOT** auto-invoke either skill. Both run only on the user's explicit yes.
+The orchestrator does **NOT** auto-invoke audit or deploy. PR opens only on yes / `pr=auto`.
 
-If you want to keep working in the branch instead, both questions accept `No / not now / stop` and dispatch just stops cleanly with the per-task commits in place.
+If you want to keep working in the branch instead, questions accept `No` and dispatch stops cleanly with the per-task commits in place.
 
 ## Squashing (optional, manual)
 
