@@ -88,8 +88,9 @@ By the time `/hyperflow:dispatch` reaches Step 5 (End of chain), every approved 
 
 The dispatch skill then asks the user **two separate questions** before stopping:
 
-1. **Run `/hyperflow:audit` on the changes?** — `AskUserQuestion`, recommended `Yes` for deep / scientific flow profiles, recommended `No` for fast / standard profiles (the per-batch reviewers already covered L1–L2). Audit gives an outside-eye L3 review on the cumulative diff before the user even thinks about pushing.
-2. **Run `/hyperflow:deploy` (full gates + commit + push)?** — `AskUserQuestion`. Deploy is independent from the dispatch chain and asks its own push-confirmation gate at Step 6. Recommended `Yes` when all dispatch gates were green; recommended `No` if the user wants to inspect the diff manually first.
+1. **Run `/hyperflow:audit` on the changes?** — `AskUserQuestion` (binary).
+2. **Run `/hyperflow:deploy` (full gates + commit + push)?** — `AskUserQuestion` (binary). Deploy has its own push gate.
+3. **Open a pull request?** — when `pr=ask` (default on every dispatch). Frontend/mobile PRs require screenshots — see [pr-exit.md](pr-exit.md).
 
 The orchestrator does **NOT** auto-invoke either skill. Both run only on the user's explicit yes.
 
