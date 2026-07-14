@@ -42,7 +42,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 3. Task file: no
 4. Workers: 1 worker, sequential, implementer persona
 5. Review: inline self-review by orchestrator after worker returns; no separate reviewer agent dispatched
-6. Quality gates: changed-file only (lint + type-check on affected file)
+6. Quality gates: tier often **light** — affected-file lint + type-check only; chain-end full suite skipped unless file count forces standard/full
 7. Commit: yes, single atomic commit
 
 **Token budget:** ≤ 30 000 tokens (soft target)
@@ -84,7 +84,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 3. Task file: yes — created before dispatching workers
 4. Workers: 1–2 parallel workers, implementer persona; split by file boundary when 2 are used
 5. Review: 1 batch reviewer after all workers complete
-6. Quality gates: full suite on changed files (lint, type-check, unit tests for touched modules)
+6. Quality gates: per-batch **light** (affected modules); chain-end **full suite** when tier ≥ standard (typical for multi-file standard work)
 7. Commit: yes, single commit per logical task
 
 **Token budget:** ≤ 100 000 tokens (soft target)
@@ -126,7 +126,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 3. Task file: yes — mandatory before any worker dispatch; includes sub-task breakdown
 4. Workers: 3–5+ parallel workers across multiple batches; each batch covers one logical slice; personas: implementer, test-writer, migration-writer as needed
 5. Review: per-batch reviewer after each batch, plus a final integration reviewer after all batches complete
-6. Quality gates: full suite — lint, type-check, unit tests, integration tests, no regressions
+6. Quality gates: tier **full** — light per-batch; chain-end full lint + type-check + unit + integration; no regressions
 7. Commit: yes, one commit per completed sub-task (not per batch)
 
 **Token budget:** 200 000–500 000 tokens (soft target; varies by subsystem count)
@@ -167,7 +167,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 3. Task file: optional — only if the research output must be persisted (e.g., an ADR or comparison doc)
 4. Workers: 0–1 implementer (only for a proof-of-concept prototype, only if explicitly requested)
 5. Review: 1 reviewer if any code was changed; skip entirely for read-only research runs
-6. Quality gates: none if read-only; changed-file gates only if prototype was written
+6. Quality gates: none if read-only; light affected-file gates only if prototype was written
 7. Commit: no if read-only; yes if prototype or docs were created
 
 **Token budget:** ≤ 80 000 tokens (searchers are cheap; output is mostly synthesis text)
@@ -208,7 +208,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 3. Task file: yes — created after brainstorm approval, captures approved design direction
 4. Workers: 1 implementer dispatched only after design approval; 1 additional implementer for complex multi-component UIs
 5. Review: 1 reviewer covering visual fidelity + accessibility (WCAG AA minimum, AAA target)
-6. Quality gates: lint, type-check, accessibility audit on changed components
+6. Quality gates: light per-batch (lint + type-check + a11y on changed components); chain-end full suite when tier ≥ standard
 7. Commit: yes, after quality gates pass
 
 **Token budget:** ≤ 150 000 tokens (brainstorming phase is the deepest)
@@ -250,7 +250,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 3. Task file: yes — includes spec section with expected inputs/outputs and edge case table
 4. Workers: tests FIRST (TDD mandatory) — 1 test-writer dispatched before any implementer; then 1–2 implementers; test count must increase
 5. Review: multi-level L1–L5 — spec review, code quality, edge case coverage, performance correctness, security implications (see [review-levels.md](review-levels.md))
-6. Quality gates: full test suite must pass; no new code lands if any test introduced in this task is failing
+6. Quality gates: tier **full** — light mid-batch; chain-end full suite must pass; no new code lands if any test introduced in this task is failing
 7. Commit: yes, only after every quality gate passes; no partial commits
 
 **Token budget:** 200 000–400 000 tokens (TDD multiplies tokens; correctness takes priority over speed)

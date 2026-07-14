@@ -168,7 +168,7 @@ Files      12 changed · +340/-80
 Sub-tasks
   T1 PASS — author Evidence section in output-style
   T2 PASS — mirror Evidence contract into dispatch references
-Gates      lint pass · typecheck pass · tests pass (12)
+Gates      tier standard · B1–B2 affected pass · chain-end full pass (lint · tsc · test 12 · build)
 Reviews    batch 1 PASS L1–L2 · final PASS
 Risks      none
 Next       audit/deploy gates
