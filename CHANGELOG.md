@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.10.0] — 2026-07-14
+
+### Added
+- Surface Evidence on status and review
+- Persist full Evidence in COMPLETION.md
+- Print Evidence before Usage at terminal wrap-up
+- Mirror Evidence contract in local output-style
+- Require structured Evidence block before Usage
+- Generate the portable subset from DOCTRINE.md
+- Automate downstream-dependents verification
+
+### Fixed
+- Derive the memory index so stored learnings actually load
+- Reject bare doctrine markers in portable section bodies
+- Reject schema keywords the validator does not enforce
+- Compare doctrine blocks by content, not version label
+- Register all sixteen skills and align provider registry at six hosts
+- Unpack full block tuple on doctrine refresh
+
+### Changed
+- Align Evidence vs Usage wording across skill mirrors
+- V5.9.0
+- Note that release.sh stages its artifacts whole
+- Drop dead assignments from the README staleness check
+- Re-stamp the dogfood doctrine block and automate its refresh
+
+
 ## [5.9.0] — 2026-07-12
 
 ### Added
@@ -1167,7 +1194,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.9.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.10.0...HEAD
+[5.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.8.0...v5.10.0
 [5.9.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.8.0...v5.9.0
 [5.8.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.7.0...v5.8.0
 [5.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.6.0...v5.7.0
