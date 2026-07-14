@@ -13,14 +13,15 @@ Execute the task file from `hyperflow-plan`. **No sub-agent dispatch and no mode
 2. **Self-review** the batch diff against the level checklist:
    - **L1** syntax/format/obvious bugs · **L2** spec compliance, naming, edge cases · **L3** cross-file integration + security (secrets, injection, validation).
    - Elevate to L3 when the change touches auth, data, or external input. Fix anything found before committing.
-3. **Quality gates** on affected files: run the project's lint, typecheck, and tests. Fix failures (never `--no-verify`).
+3. **Quality gates (light only):** run the project's lint, typecheck, and tests on **files this batch touched** — not the full suite. On multi-batch / large work, full-project lint/test mid-batch is forbidden (see `skills/hyperflow/quality-gates.md` tiers). Fix failures (never `--no-verify`).
 4. **Commit per sub-task** — one sub-task = one conventional commit (respect commitlint: lowercase subject, allowed scope). Stage only that sub-task's files; never commit files you didn't change.
 5. **Update the task file's status block** (tick the sub-task, bump progress) and append any durable learning to `.hyperflow/memory/`.
 
 ## After all batches
 
 6. **Final integration self-review** over the cumulative diff — catch cross-batch contradictions, scope leaks, and `any`/type regressions.
-7. **Print Evidence then Usage** (terminal only — never mid-batch). Evidence is mandatory work-product proof; Usage is cost only. Full field contract: `skills/hyperflow/output-style.md` §7–§8.
+7. **Chain-end quality gates** when the change is multi-batch, large (≥16 files), deep/scientific, or otherwise tier `standard`/`full`: run **full** lint + typecheck + full tests (+ build if present) **once**. Skip on tiny single-batch light work. Record results for Evidence.
+8. **Print Evidence then Usage** (terminal only — never mid-batch). Evidence is mandatory work-product proof; Usage is cost only. Gates row includes tier + chain-end. Full field contract: `skills/hyperflow/output-style.md` §7–§8.
 
 ```
 ── Hyperflow Evidence ──────────────────────────────────────
@@ -42,7 +43,7 @@ Next       audit/deploy gates
 ```
 
 On handoff builds, also write the same Evidence fields into `.hyperflow-handoff/<slug>/COMPLETION.md`.
-8. **End gate** via AskUserQuestion: offer to run `hyperflow-audit` (independent review) and/or `hyperflow-deploy`. Both are binary (no recommended marker). Never auto-push.
+9. **End gate** via AskUserQuestion: offer to run `hyperflow-audit` (independent review) and/or `hyperflow-deploy`. Both are binary (no recommended marker). Never auto-push. Deploy still runs its own full pre-push suite.
 
 ## Rules
 
