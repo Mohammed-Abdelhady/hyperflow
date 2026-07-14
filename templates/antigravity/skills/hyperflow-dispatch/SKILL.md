@@ -20,10 +20,33 @@ Execute the task file from `hyperflow-plan`. **No sub-agent dispatch and no mode
 ## After all batches
 
 6. **Final integration self-review** over the cumulative diff — catch cross-batch contradictions, scope leaks, and `any`/type regressions.
-7. **End gate** via AskUserQuestion: offer to run `hyperflow-audit` (independent review) and/or `hyperflow-deploy`. Both are binary (no recommended marker). Never auto-push.
+7. **Print Evidence then Usage** (terminal only — never mid-batch). Evidence is mandatory work-product proof; Usage is cost only. Full field contract: `skills/hyperflow/output-style.md` §7–§8.
+
+```
+── Hyperflow Evidence ──────────────────────────────────────
+Result     built · <done>/<total> sub-tasks
+Branch     <branch>
+Commits    <n>  <sha> <subject> · …
+Files      <n> changed · +ins/-del
+  <paths…>
+Sub-tasks
+  T1 PASS — <one-line what landed>
+Gates      lint pass · typecheck pass · tests pass
+Reviews    self-review L1–L<n> · final PASS
+Risks      none | <residual>
+Next       audit/deploy gates
+────────────────────────────────────────────────────────────
+── Hyperflow Usage ─────────────────────────────────────────
+…
+────────────────────────────────────────────────────────────
+```
+
+On handoff builds, also write the same Evidence fields into `.hyperflow-handoff/<slug>/COMPLETION.md`.
+8. **End gate** via AskUserQuestion: offer to run `hyperflow-audit` (independent review) and/or `hyperflow-deploy`. Both are binary (no recommended marker). Never auto-push.
 
 ## Rules
 
-- A `SECURITY_VIOLATION` halts immediately — no commit, no continue.
+- A `SECURITY_VIOLATION` halts immediately — no commit, no continue. Still print Evidence for commits that already landed (`Result halted · security`).
 - If the working tree is dirty with files you didn't create (concurrent work), never stage them; re-check `git status` before each commit.
-- Auto mode completes every sub-task before any summary — no partial "to resume" hand-offs.
+- Auto mode completes every sub-task before any summary — no partial "to resume" hand-offs. Omitting Evidence after a terminal build is a doctrine violation.
+- Free-form "Done! I completed X." prose is banned; structured Evidence replaces it.
