@@ -28,23 +28,32 @@ Read-only. List every `.hyperflow-handoff/*/` (excluding `.archive/`): slug · `
 by status so the user sees what is awaiting build vs awaiting review.
 
 ### `status [<slug>]`
-Show the `HANDOFF.md` manifest + `STATUS` for one package (or all). When `STATUS=built`, also print the
-`COMPLETION.md` diff range and commit count. Read-only.
+Show the `HANDOFF.md` manifest + `STATUS` for one package (or all). Read-only.
+
+When `STATUS=built` (or `reviewed`) and `COMPLETION.md` exists:
+1. Print `Diff range`, commit count, branch, and Result from the status table.
+2. Print the **Evidence** section from `COMPLETION.md` (Sub-tasks, Commits, Files, Gates, Reviews, Risks, Next)
+   per [session-handoff.md](../hyperflow/session-handoff.md) / [output-style.md](../hyperflow/output-style.md) §7.
+3. Legacy packages with only a thin Notes line: print diff range + commit count and
+   `Evidence not available — package predates Evidence contract` (do not invent rows).
+
+When `STATUS=planned`: print that Evidence is not available until the build completes.
 
 ### `pickup <slug>` — build side
 Thin alias for starting the second-session build: invoke `Skill` with `skill: dispatch` and `args: "<slug>"`.
 Dispatch's Step 1.0 rehydrates `artefact/` into `.hyperflow/`, runs `/hyperflow:scaffold` if the cache is missing,
-builds the batches, writes `COMPLETION.md` + `STATUS=built`, and then deploys or stops per `on_complete`.
+builds the batches, writes `COMPLETION.md` (full Evidence) + `STATUS=built`, and then deploys or stops per `on_complete`.
 
 ### `review <slug>` — planning side
 1. Require `STATUS=built` (else: "handoff `<slug>` is `<status>` — nothing to review yet").
 2. Read `COMPLETION.md` → extract `Diff range = <base>..<head>`.
-3. Invoke `Skill` with `skill: audit` and `args: "<base>..<head> level=3"` (`level=5` when the originating triage
+3. Print the Evidence section (or legacy fallback) so the operator sees what landed before audit runs.
+4. Invoke `Skill` with `skill: audit` and `args: "<base>..<head> level=3"` (`level=5` when the originating triage
    flow in `HANDOFF.md` was `scientific` or `security`). The audit dispatches the matching domain specialist
    reviewers over the second session's diff.
-4. On audit clean pass → fire the deploy gate (`AskUserQuestion` — `Run /hyperflow:deploy? Yes / No`, binary, no
+5. On audit clean pass → fire the deploy gate (`AskUserQuestion` — `Run /hyperflow:deploy? Yes / No`, binary, no
    marker). On `NEEDS_FIX` → the audit fix-gate (`Yes` → `/hyperflow:plan` → `/hyperflow:dispatch`) handles it.
-5. Set `STATUS=reviewed` once the review is accepted.
+6. Set `STATUS=reviewed` once the review is accepted.
 
 ### `complete <slug>`
 Mark the lifecycle done: set `STATUS=reviewed` (if not already) and archive the package to
