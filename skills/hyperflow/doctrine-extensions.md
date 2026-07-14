@@ -114,10 +114,13 @@ See [adaptive-brainstorming.md](adaptive-brainstorming.md) for the full depth mo
 
 ## Layer 5: Quality Gates
 
-Automated checks after every worker review. See [quality-gates.md](quality-gates.md) for full details.
+Automated checks after every worker review. See [quality-gates.md](quality-gates.md) for full details (light / standard / full tiers).
 
-**Per-task:** lint + typecheck + tests (affected files only)
-**Final review:** full lint + typecheck + build + full test suite
+**Per-batch (always light):** lint + typecheck + tests on **affected files only**. Full-project lint/test mid-batch on multi-batch work is a doctrine violation.
+
+**Chain-end (dispatch Step 3.5):** when tier is `standard` or `full` (large / multi-batch / deep / scientific / `--thorough`), run **full** lint + typecheck + full test suite (+ build if present) **once** before Evidence. Light tier skips chain-end.
+
+**Deploy:** independent full pre-push suite — never trust-skips because dispatch already passed.
 
 Gate fails → worker fixes → re-run. Max 3 retries before escalating to a standalone review worker.
 
