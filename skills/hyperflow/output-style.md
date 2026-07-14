@@ -152,9 +152,67 @@ gates — lint: pass · typecheck: fail · tests: skipped · build: skipped
 
 Use `pass` / `fail` / `skipped` as plain words. No `✓` / `✗` / `—`. Detail lines indented two spaces.
 
-## 7. Usage Summary
+## 7. Evidence (work product)
 
-Printed after every completed task. The summary now surfaces `Wall-clock` and `Cumulative` rows so parallelism is provable from the numbers alone — without trusting the dispatch labels.
+Printed at every **terminal** dispatch / handoff-build completion — full, partial, or halt-after-work — **immediately before** the Usage block. Evidence proves **what landed**. Usage proves **cost / parallelism**. They are not interchangeable.
+
+```
+── Hyperflow Evidence ──────────────────────────────────────
+Result     built · 8/8 sub-tasks
+Branch     feat/example-slug
+Commits    8  a1b2c3d feat(x): add middleware · b2c3d4e fix(y): guard edge · …
+Files      12 changed · +340/-80
+  skills/dispatch/SKILL.md
+  skills/hyperflow/output-style.md
+  … +10 more
+Sub-tasks
+  T1 PASS — author Evidence section in output-style
+  T2 PASS — mirror Evidence contract into dispatch references
+Gates      lint pass · typecheck pass · tests pass (12)
+Reviews    batch 1 PASS L1–L2 · final PASS
+Risks      none
+Next       audit/deploy gates
+────────────────────────────────────────────────────────────
+```
+
+### Required rows
+
+| Row | Content |
+|---|---|
+| `Result` | `built` · `partial (k/n)` · or `halted · <reason>` plus done/total sub-tasks |
+| `Branch` | branch at wrap-up |
+| `Commits` | count, then short SHAs + subjects (cap **12** listed, then `… +N more`). `commit=none` → `none (commit=none) · working tree dirty` |
+| `Files` | change count + `+ins/-del`, then paths (cap **20** listed, then `… +N more`) |
+| `Sub-tasks` | every roster line: `T<id> PASS\|FAIL\|OPEN\|SKIPPED — <one-line what landed>` (one-liner from worker return, else commit subject) |
+| `Gates` | lint / typecheck / tests outcomes for the chain (or last batch if only one ran) |
+| `Reviews` | per-batch verdicts + levels; final integration PASS/FAIL **or** skip reason (`final skipped — first-try PASS · no escalations`) |
+| `Risks` | `none` or residual Important notes / partials / escalations |
+| `Next` | audit/deploy pending · handoff review instructions · remaining phases · ready-to-run recovery commands |
+
+### Rules
+
+1. **Terminal only.** Never mid-batch. Never after a single sub-task while others remain. Same timing discipline as Usage.
+2. **Evidence before Usage.** Always. Omitting Evidence after a terminal dispatch is a doctrine violation.
+3. **Mechanical facts only.** No free-form "Done! I completed X." prose. No celebration. No AI attribution.
+4. **Partial / halt still print.** Show what *did* land; mark unfinished sub-tasks `OPEN` / `FAIL` and set `Result` accordingly.
+5. **Handoff builds** print this block in chat **and** write the same fields into `.hyperflow-handoff/<slug>/COMPLETION.md` (see [session-handoff.md](session-handoff.md)).
+6. **Feature `--phases=next`:** Evidence covers the completed phase only; `Next` names remaining phases.
+7. **Allowed characters only** (see top of this file). Use `·` separators and `──` rules; never decorative icons.
+
+### Edge rows
+
+| Situation | Evidence behaviour |
+|---|---|
+| `commit=none` | Commits = dirty-tree note; Files from `git status` / unstaged diff |
+| `commit=single` / `per-batch` | List commits that actually exist (not invented per-sub-task SHAs) |
+| Zero file changes | `Files 0 changed · +0/-0`; still list Sub-tasks |
+| D7 final-integration skip | Reviews includes skip reason; Evidence still required |
+| SECURITY halt after some commits | `Result halted · security`; list landed commits only |
+| `--final-only` | Sub-tasks may be `n/a — final-only`; Reviews carries the pass |
+
+## 8. Usage Summary
+
+Printed after every completed task, **after** Evidence. The summary surfaces `Wall-clock` and `Cumulative` rows so parallelism is provable from the numbers alone — without trusting the dispatch labels. Usage is cost accounting only — it does **not** replace Evidence.
 
 ```
 ── Hyperflow Usage ─────────────────────────────────────────
@@ -178,7 +236,7 @@ Rules:
 - Token counts right-aligned in 7-char column, formatted as `Xk` or `X.Xk`
 - Breakdown after tokens (optional): `(3 reviewers: 38.4k · 1 final: 13.7k)` — middle dots between items
 
-## 8. Section Headers
+## 9. Section Headers
 
 Lowercase bracketed labels for structured multi-line blocks only:
 
@@ -193,7 +251,7 @@ Lowercase bracketed labels for structured multi-line blocks only:
 
 Use sparingly. Never use as a decorative prefix on a single status line.
 
-## 9. Memory Output
+## 10. Memory Output
 
 ```
 [memory]  location: .hyperflow/memory/
@@ -204,7 +262,7 @@ Use sparingly. Never use as a decorative prefix on a single status line.
 
 Entry number two-space indent. Tier as plain word (`hot` / `warm` / `cold`), no brackets. Tags in parens at end.
 
-## 10. Task File Status
+## 11. Task File Status
 
 When creating/updating task files:
 
@@ -223,14 +281,14 @@ Task complete — implement-auth (3/3)
 
 No bullet prefixes. Status word right-padded for column alignment.
 
-## 11. Security Violations
+## 12. Security Violations
 
 ```
 SECURITY VIOLATION — hardcoded API key in src/config.ts:42
   Pipeline halted, review required
 ```
 
-## 12. Retry / Escalate / Abort Status Lines
+## 13. Retry / Escalate / Abort Status Lines
 
 Every failure-recovery transition (retry, escalation, abort) emits exactly one status line. Brackets delimit the status code — acceptable here because these are structured machine-readable tags, not decorative prefixes (same rationale as `── Hyperflow Usage ──`). No icons inside.
 
@@ -254,7 +312,7 @@ Every failure-recovery transition (retry, escalation, abort) emits exactly one s
 
 One line per event. Fires at the moment of transition. Full policy in [failure-recovery.md § Observability](failure-recovery.md).
 
-## 13. Blocked Resources
+## 14. Blocked Resources
 
 ```
 BLOCKED — worker attempted to read .env
@@ -266,6 +324,6 @@ BLOCKED — worker attempted to read .env
 1. **No prose between outputs.** Status lines only. No "I'm now going to…" or "Let me…".
 2. **Alignment matters.** Pad roles, model names, and counts for columnar alignment.
 3. **One blank line** between different output sections (e.g., between agent labels and gates).
-4. **No trailing summaries.** The usage block IS the summary. Don't add "Done! I completed X."
+4. **No free-form trailing prose.** Never "Done! I completed X." Work product is the structured **Evidence** block (§7). Cost is the **Usage** block (§8). Both are mandatory at terminal dispatch; neither replaces the other.
 5. **No decorative chars.** Em-dash for separators, middle dots for inline lists. Never `⚡`, `✓`, `✗`, `▸`, `→`, etc.
 6. **Bold for review roles.** Only `**Reviewer**` and `**Debugger**` are bolded. Workers stay plain.
