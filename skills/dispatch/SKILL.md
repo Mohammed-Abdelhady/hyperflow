@@ -208,6 +208,7 @@ Dispatch one Worker to run the gate commands. Dispatch one **Reviewer** to judge
 
 For each sub-task whose verdict is `PASS`:
 - **Commit immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files that sub-task touched. Write a conventional commit (`feat(<scope>): <title>` derived from the task file). One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits, even though they were reviewed in a single batched Reviewer call.
+- **Append to the chain-local Evidence log** (in-memory; rendered at Step 4): `{ id, title, verdict: PASS, one_liner, commit_sha, files[] }`. Prefer the worker's one-line "what you did" summary; fall back to the commit subject. Also record batch-level `Gates` and `Reviews` rows when Step 2c / the per-batch Reviewer finish. Collect **before** any later task-file delete.
 - **Update the task file's `## Status` block** after each commit lands: tick `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads for live progress.
 
 Dispatch one Writer in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. The learnings are appended to the in-memory `Learnings from prior batches` context (injected at Step 2a of subsequent batches). Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
@@ -249,14 +250,15 @@ Parse the verdict:
 Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task file + memory append + chore commit. The per-batch reviewers and final integration review (when not skipped per D7) already validated the substantive changes.
 
 **Nominal path (inline orchestrator):** perform the following directly without an Agent dispatch wrapper:
-1. **Flat mode** — delete the completed task file from `.hyperflow/tasks/`. **Feature mode** — set `feature.md`
+1. **Freeze Evidence inputs first** — from the chain-local Evidence log + `git log` / `git diff --stat` over the chain range (and final-review / D7-skip notes). Do this **before** deleting the task file so Sub-tasks rows stay complete.
+2. **Flat mode** — delete the completed task file from `.hyperflow/tasks/`. **Feature mode** — set `feature.md`
    status `completed` (do not delete mid-feature); when every phase is `completed`, the feature folder becomes
    eligible for archival to `.hyperflow/archive/features/YYYY-MM/<slug>/` (the session-start archiver moves it).
-2. Before appending: `grep -F` the proposed entry's first-line title against `.hyperflow/memory/*.md` files (inline dedup-check — replaces the dropped Reviewer dedup pass). If a match exists, edit the existing entry rather than append a duplicate.
-3. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
-4. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
-5. Print the usage summary per [output-style.md](references/output-style.md).
-6. Mark dispatch-end compact readiness by writing `.hyperflow/.dispatch-auto-compact-ready` with the current UTC timestamp. This short-lived marker is consumed by the `PreCompact` hook and is the only signal that allows automatic compaction; do not write it before every sub-task, batch, gate, or partial stop has completed.
+3. Before appending: `grep -F` the proposed entry's first-line title against `.hyperflow/memory/*.md` files (inline dedup-check — replaces the dropped Reviewer dedup pass). If a match exists, edit the existing entry rather than append a duplicate.
+4. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
+5. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
+6. **Print Evidence then Usage** — render the structured Evidence block, then the Usage block, both per [output-style.md](references/output-style.md) (§7 Evidence, §8 Usage). Order is mandatory: Evidence first. Partial / halt-after-work still print Evidence for what landed.
+7. Mark dispatch-end compact readiness by writing `.hyperflow/.dispatch-auto-compact-ready` with the current UTC timestamp. This short-lived marker is consumed by the `PreCompact` hook and is the only signal that allows automatic compaction; do not write it before every sub-task, batch, gate, or partial stop has completed.
 
 **When the Writer dispatch IS required:** if memory append requires non-trivial prose generation (e.g., synthesizing learnings from a multi-batch run with cross-cutting patterns), dispatch `Writer — finalizing dispatch artifacts` for the memory write. At that point the step is no longer §12.1-trivial and the Writer Agent handles it. The chore commit still follows immediately; no Reviewer is dispatched for wrap-up.
 
@@ -265,11 +267,11 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 ### Step 5 — End of build
 
 **Handoff build (second session) — completion marker first.** When this run came from a handoff pickup, before the normal gate: write the completion marker, then branch on `on_complete`:
-1. Write `.hyperflow-handoff/<slug>/COMPLETION.md` (built-by provider, base = originating commit from `HANDOFF.md`, head = current `HEAD`, `Diff range = <base>..<head>`, commit count, branch, `Result: built | partial (<done>/<total>)`).
+1. Write `.hyperflow-handoff/<slug>/COMPLETION.md` using the expanded template in [session-handoff.md](../hyperflow/session-handoff.md): status table (built-by provider, base = originating commit from `HANDOFF.md`, head = current `HEAD`, `Diff range = <base>..<head>`, commit count, branch, `Result: built | partial (<done>/<total>)`) **plus the full Evidence section** (same fields printed in Step 4 chat — Sub-tasks, Commits, Files, Gates, Reviews, Risks, Next). Do not write a one-line Notes stub in place of Evidence.
 2. Set `STATUS=built`.
 3. `git add .hyperflow-handoff/<slug>/` + commit `chore(handoff): build complete <slug>`; if `handoff.autoPush` and `push != never` → push (surface the push command on failure).
 4. Branch:
-   - **`on_complete=deploy`** → invoke `Skill` with `skill: deploy` (its own push gate applies). Do NOT also fire the audit/deploy `AskUserQuestion` below — `on_complete` already encoded the disposition.
+   - **`on_complete=deploy`** → invoke `Skill` with `skill: deploy` (its own push gate applies). Do NOT also fire the audit/deploy `AskUserQuestion` below — `on_complete` already encoded the disposition. Evidence + COMPLETION are already written.
    - **`on_complete=review`** → STOP. Print: `Build complete — committed + pushed (range <base>..<head>). Return to session 1 and run /hyperflow:audit <base>..<head> (or /hyperflow:handoff review <slug>).`
 
 **Normal (single-session) end-of-chain — Audit + Deploy gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy) — or 3 when the chain is **GitHub-native** (`gh_issue=` chain arg present and `pr=ask`): question [3] is the PR exit below. Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render the questions in one `Hyperflow Question` chat block and wait for the user's answers.
@@ -386,10 +388,10 @@ Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`
 - **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — delete task file + memory append + chore commit is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
 - Therefore — `review agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `review agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
-- **Usage summary fires ONLY at the very end of the chain — after Step 4 wrap-up. NEVER mid-batch. NEVER after partial sub-task completion.** Printing `── Hyperflow Usage ──` with "B1W1 only" or "<n>/<m> sub-tasks completed" while sub-tasks remain pending is a doctrine violation, not a status update. In `auto` mode, a usage summary is a terminal signal — it means the chain is finished. If you printed one with sub-tasks still pending, the chain is in a broken state.
-- **Automatic compact readiness is end-of-dispatch only.** `.hyperflow/.dispatch-auto-compact-ready` is written exactly once after Step 4 wrap-up and the final usage summary. The `PreCompact` hook blocks automatic compaction until this marker exists and is fresh; manual `/compact` still works at any time.
-- **Auto mode must complete every sub-task in every batch before producing any summary, transition, or end-of-chain artefact.** "To resume" instructions, partial usage tables, or "stopping here for now" prose are all forbidden in `auto` mode. The only legal terminations mid-chain are: (a) `SECURITY_VIOLATION`, (b) `ESCALATE: <reason>` crossing the irreversibility boundary, (c) a per-sub-task Reviewer returning `NEEDS_FIX` after 3 worker retries with no resolution. If none of those fired and the chain stopped, surface as `ESCALATE: dispatch halted with N/M sub-tasks remaining — root cause unknown` and ask the user — do NOT print a partial usage summary as if the chain ended cleanly.
-- **If batch dispatch is interrupted (token exhaustion, runtime crash, manual abort) — leave the task file's Status block intact with the partial `[x]` checkmarks, do NOT print a usage summary, do NOT print "To resume" hand-off instructions.** The user can re-invoke `/hyperflow:dispatch --from-batch <n> <slug>` on their own; the task file already reflects which sub-tasks completed. Hand-off instructions printed by a half-finished chain are themselves the bug — they make the user think the chain self-paused cleanly when it actually broke.
+- **Evidence + Usage fire ONLY at terminal wrap-up (or hard halt) — after Step 4, never mid-batch.** Print **Evidence first**, then Usage, per [output-style.md](references/output-style.md). Omitting Evidence after a terminal dispatch is a doctrine violation. Printing `── Hyperflow Evidence ──` or `── Hyperflow Usage ──` while sub-tasks remain pending (non-halt) is a doctrine violation. In `auto` mode, either block is a terminal signal — the chain is finished.
+- **Automatic compact readiness is end-of-dispatch only.** `.hyperflow/.dispatch-auto-compact-ready` is written exactly once after Step 4 wrap-up and the final Evidence + Usage blocks. The `PreCompact` hook blocks automatic compaction until this marker exists and is fresh; manual `/compact` still works at any time.
+- **Auto mode must complete every sub-task in every batch before producing any summary, transition, or end-of-chain artefact.** "To resume" instructions, partial usage tables, or "stopping here for now" prose are all forbidden in `auto` mode. The only legal terminations mid-chain are: (a) `SECURITY_VIOLATION`, (b) `ESCALATE: <reason>` crossing the irreversibility boundary, (c) a per-sub-task Reviewer returning `NEEDS_FIX` after 3 worker retries with no resolution. On (a)–(c), print Evidence for work that already landed (Result `halted` / `partial`) then Usage; do NOT pretend a clean full build. If none of those fired and the chain stopped, surface as `ESCALATE: dispatch halted with N/M sub-tasks remaining — root cause unknown` and ask the user — do NOT print a clean full Evidence/Usage as if the chain ended cleanly.
+- **If batch dispatch is interrupted (token exhaustion, runtime crash, manual abort) — leave the task file's Status block intact with the partial `[x]` checkmarks, do NOT print Evidence or Usage, do NOT print "To resume" hand-off instructions.** The user can re-invoke `/hyperflow:dispatch --from-batch <n> <slug>` on their own; the task file already reflects which sub-tasks completed. Hand-off instructions printed by a half-finished chain are themselves the bug — they make the user think the chain self-paused cleanly when it actually broke.
 
 ## Doctrine
 
@@ -422,22 +424,34 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
    - **Step 2c** — Layer 5 quality gates via a Worker + Reviewer.
    - **Step 2d** — Per-sub-task commits + learnings synthesis via Writer.
 4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 4 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
-5. Wrap-up (§12.1 inline) — orchestrator deletes task file + appends memory + makes `chore(memory):` commit, then writes `.hyperflow/.dispatch-auto-compact-ready` after the usage summary. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
+5. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then Usage**, write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
 6. ONE combined `AskUserQuestion` gate with both audit and deploy questions — process answers in order.
 
 ## Output
 
-Per-batch and per-sub-task agent labels print as they fire (`Implementer — creating auth middleware`, `**Reviewer** — reviewing auth middleware output (L1-L3)`). After the full chain, the usage summary prints:
+Per-batch and per-sub-task agent labels print as they fire (`Implementer — creating auth middleware`, `**Reviewer** — reviewing auth middleware output (L1-L3)`). After the full chain, print **Evidence then Usage**:
 
 ```
+── Hyperflow Evidence ───────────────────
+Result     built · 3/3 sub-tasks
+Branch     feat/example
+Commits    3  a1b2c3d feat(…) · …
+Files      4 changed · +120/-10
+Sub-tasks
+  T1 PASS — …
+Gates      lint pass · typecheck pass · tests pass
+Reviews    batch 1 PASS L1–L2 · final skipped — first-try PASS
+Risks      none
+Next       audit/deploy gates
+─────────────────────────────────────────
 ── Hyperflow Usage ──────────────────────
 11 agents  206.4k tokens  (5 implementers + 1 writer + 1 searcher + 3 batch reviewers + 1 final)
 ─────────────────────────────────────────
 ```
 
-(Wrap-up Reviewer no longer appears per D5. If the integration review skipped per D7, the review agent count equals the batch count exactly.)
+(Wrap-up Reviewer no longer appears per D5. If the integration review skipped per D7, the review agent count equals the batch count exactly; the Reviews Evidence row still records the skip reason.)
 
-Plus the End-of-Chain block listing batches, agents, and per-sub-task commits.
+Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commits (does not replace Evidence).
 
 ## Error Handling
 
