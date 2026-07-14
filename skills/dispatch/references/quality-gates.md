@@ -1,49 +1,104 @@
 # Quality Gates
 
-Automated checks that must pass before a worker's output is approved. Runs after code review, before marking a task done.
+Automated checks that must pass before a worker's output is approved. Layer 5 of the doctrine.
+
+Large / multi-batch ("full") changes must get a thorough lint + test pass — **once at chain end**, not a full-project suite on every batch. Small changes stay cheap (affected files only).
 
 ## Flow
 
 ```
-Worker completes
-    |
-[Reviewer] Reviews code quality
-    |
-[Worker] Runs quality gates
-    |
-All green? -> Mark task done
-    |
-Red? -> Send failures back to worker -> worker fixes -> re-run gates
+Per batch (Step 2c) — always LIGHT
+  Worker output PASSed review
+      │
+      ▼
+  Lint + typecheck + tests on *affected files only*
+      │
+  fail → fix loop (max 3) → re-run
+      │
+  pass → commit / next batch
+
+After final integration review (Step 3.5) — by tier
+  tier = light     → skip chain-end suite (one status line)
+  tier = standard  → FULL suite once (lint + typecheck + full tests + build if present)
+  tier = full      → same FULL suite, fail-fast order, richer Evidence detail
+
+Deploy (later, independent)
+  Always full pre-push suite — does NOT trust-skip because dispatch already ran
 ```
 
-## Checks
+## Checks (auto-detect)
 
-The orchestrator auto-detects which checks are available by scanning the project's package.json scripts and config files.
+Scan the project's `package.json` scripts and config files:
 
-| Check | Detection | Command |
-|-------|-----------|---------|
-| Lint | `eslint.config.*` or `scripts.lint` | `pnpm lint` / `npm run lint` |
-| Typecheck | `tsconfig.json` | `pnpm typecheck` / `npx tsc --noEmit` |
-| Tests | `vitest.config.*` or `jest.config.*` | `pnpm test` (affected files only) |
-| Build | `scripts.build` | `pnpm build` (only on final review) |
+| Check | Detection | Light (affected) | Full (chain-end / deploy) |
+|-------|-----------|------------------|---------------------------|
+| Lint | `eslint.config.*` or `scripts.lint` | lint paths/files touched | full project lint |
+| Typecheck | `tsconfig.json` / `scripts.typecheck` | tsc on project or affected packages | full typecheck |
+| Tests | vitest/jest/pytest/cargo test / `scripts.test` | tests for touched modules | full unit suite (+ integration when configured) |
+| Build | `scripts.build` | skip | run once at chain-end (standard+) and deploy |
 
-## Scope
+If **no** detectors fire (docs-only plugin repos, pure markdown): print `Gates n/a — no project gate scripts` and continue. Optional project add-ons (e.g. `python3 scripts/validate-plugin.py`) via CLAUDE.md `add:`.
 
-- **Per-task gates:** Lint + typecheck + tests for affected files only (not full suite)
-- **Final review gates:** Full lint + typecheck + build + full test suite
+## Tiers
 
-Running the full suite per task is wasteful. Scope checks to what the worker touched.
+Resolve **once** at dispatch Step 1 (after the task file loads). Print:
 
-## Failure Handling
+```
+Gates tier: <light|standard|full> · per-batch affected · chain-end <full suite|skipped>
+```
 
-1. Gate fails -> the Reviewer extracts the error message
-2. The Reviewer sends specific fix instructions to the worker
-3. Worker fixes -> gates re-run
-4. Max 3 retry loops per gate. After 3 failures, surface the error to the user
+Override with chain arg `gates=light|standard|full` when present (wins over auto).
+
+### Selection (highest match wins)
+
+| Tier | Signals (any) |
+|------|----------------|
+| **full** | profile ∈ {`deep`, `scientific`} · OR ≥ 16 files in roster · OR ≥ 3 batches · OR multi-subsystem · OR triage `security: true` · OR `--thorough` |
+| **standard** | multi-batch · OR 4–15 files · OR complexity medium · OR default when not light |
+| **light** | single batch ∧ ≤ 3 sub-tasks ∧ ≤ 5 files ∧ profile ∈ {`fast`, `standard`} ∧ no security/integration_risk flags |
+
+File count = planned files from the task roster (union of sub-task `files`), not only batch 1.
+
+### What runs
+
+| Moment | light | standard | full |
+|--------|-------|----------|------|
+| Per-batch Step 2c | affected lint+typecheck+tests | same | same |
+| Chain-end Step 3.5 | **skip** | full lint + typecheck + full tests (+ build if any) | same + fail-fast lint→typecheck→tests→build |
+| Deploy | full pre-push (always) | always | always |
+
+## Mid-batch ban
+
+On multi-batch runs, or whenever tier is `standard` or `full`:
+
+- **Do not** run full-project `lint` / full test suite in Step 2c.
+- **Do not** invent "run the whole CI" after every sub-task.
+
+That is a doctrine violation — it is the "a lot of lint and test checks" failure mode on large changes.
+
+Light single-batch work may still prefer affected-only (not full suite) unless `gates=full` was forced.
+
+## Chain-end suite (dispatch Step 3.5)
+
+Runs **after** Step 3 final integration review (or D7 skip line) and **before** Step 4 Evidence/Usage.
+
+- Independent of D7: skipping final *review* does **not** skip chain-end *gates* when tier ≥ standard.
+- Worker runs the full suite; Reviewer judges output (`PASS` / `NEEDS_FIX`).
+- On fail: fix loop max 3; land additional conventional commits (never amend history).
+- Feature mode `--phases=next`: run chain-end for the completed phase only.
+
+## Failure handling
+
+1. Gate fails → Reviewer extracts the error
+2. Worker fixes → gates re-run
+3. Max 3 retry loops per gate phase (2c or 3.5)
+4. After 3 failures → escalate / surface to the user
+
+Never `--no-verify`. Never skip a red gate silently.
 
 ## Configuration
 
-To disable specific gates or add custom checks, users can add to their project CLAUDE.md:
+Project `CLAUDE.md` (or session say):
 
 ```markdown
 ## Hyperflow Quality Gates
@@ -51,16 +106,31 @@ To disable specific gates or add custom checks, users can add to their project C
 - add: pnpm format --check
 ```
 
-Or say in conversation: "hyperflow: skip typecheck for this session"
+Or: `hyperflow: skip typecheck for this session` · `gates=full` as chain arg.
 
-## Worker Prompt Addition
+## Worker prompt addition
 
-When quality gates are active, append to the worker prompt constraints:
+When quality gates are active, append:
 
 ```
 ## Quality Requirements
-- Code must pass lint (eslint)
-- Code must pass typecheck (tsc --noEmit)
-- Tests must pass for affected files
-- Run these yourself before reporting completion
+- Pass lint and typecheck on files you touch
+- Pass tests for modules you touch (affected-only mid-batch)
+- Do NOT run the full project test suite mid-batch on multi-batch work
+- Chain-end full suite is orchestrator Step 3.5, not your job unless you are the chain-end Worker
 ```
+
+## Evidence
+
+The Evidence `Gates` row must include tier + summary, e.g.:
+
+```
+Gates      tier standard · B1–B3 affected pass · chain-end full pass (lint · tsc · test 42 · build)
+```
+
+## Dispatch wiring
+
+- Tier resolve: dispatch Step 1
+- Light gates: Step 2c every batch
+- Chain-end full suite: Step 3.5 (see `skills/dispatch/SKILL.md`)
+
