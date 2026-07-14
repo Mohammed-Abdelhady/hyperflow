@@ -93,23 +93,56 @@ When STATUS flips to `built`, the session-start hook surfaces it. Run `/hyperflo
 
 ## `COMPLETION.md` template (written back by the build session)
 
+Must carry the same **Evidence** fields printed in chat at dispatch Step 4
+(see [output-style.md](output-style.md) §7). Session-1 review reads this file
+when scrollback from session-2 is unavailable. `Diff range` stays mandatory
+so `/hyperflow:audit` / `/hyperflow:handoff review` can target the exact commits.
+
 ```markdown
 # Completion — <slug>
 
 | Field        | Value                                  |
 |--------------|----------------------------------------|
-| Built by     | claude-code \| codex \| opencode \| …  |
+| Built by     | claude-code \| codex \| opencode \| grok \| … |
 | Built at     | `<YYYY-MM-DD HH:mm>`                    |
 | Base commit  | `<sha>` (the originating commit)       |
 | Head commit  | `<sha>` (after the last build commit)  |
 | Diff range   | `<base>..<head>`                       |
 | Commits      | <n> per-sub-task commits               |
 | Branch       | `<branch>`                             |
-| Result       | built \| partial (<done>/<total>)      |
+| Result       | built \| partial (<done>/<total>) \| halted |
 
-## Notes
-<one-line build summary or partial-stop reason>
+## Evidence
+
+| Field     | Value |
+|-----------|-------|
+| Result    | built · <done>/<total> sub-tasks |
+| Branch    | `<branch>` |
+| Gates     | lint pass · typecheck pass · tests pass (n) |
+| Reviews   | batch 1 PASS L1–L2 · final PASS \| final skipped — <reason> |
+| Risks     | none \| <residual> |
+| Next      | return to session 1 · /hyperflow:handoff review <slug> |
+
+### Sub-tasks
+
+| ID | Verdict | What landed |
+|----|---------|-------------|
+| T1 | PASS    | <one-line>  |
+| T2 | PASS    | <one-line>  |
+
+### Commits
+
+- `<shortsha>` <subject>
+- … (cap 12 listed, then `… +N more`)
+
+### Files
+
+- `path/one` — <optional role hint>
+- … (cap 20 listed, then `… +N more`)
 ```
+
+Legacy packages that only have a thin `## Notes` line: status/review still works
+(print diff range + commit count); do not invent Evidence rows.
 
 ## Rehydration (build session)
 

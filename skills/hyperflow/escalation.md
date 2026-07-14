@@ -238,7 +238,7 @@ The orchestrator must not guess the user's preference and continue. It must paus
 
 ## Usage summary format
 
-Print this block at the end of every task, regardless of profile. It is always the last thing printed — after the actual task output, not before. The summary is for the user's awareness of cost and process, not a replacement for the task result itself.
+Print this block at the end of every task, regardless of profile. On dispatch / handoff builds it prints **after** the structured Evidence block (work product — see [output-style.md](output-style.md) §7); on other skills it remains the final block after task output. Usage is cost and process accounting only — never a replacement for Evidence or the task result itself.
 
 ```text
 ── Hyperflow Usage ─────────────────────────────────
