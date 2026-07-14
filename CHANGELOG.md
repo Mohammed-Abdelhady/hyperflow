@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.11.0] — 2026-07-14
+
+### Added
+- Port tiered gates to antigravity and Evidence examples
+- Tiered gates — light per-batch, full suite at Step 3.5
+- Mirror tiered policy into dispatch and deploy references
+- Define size-aware light/standard/full quality tiers
+
+### Fixed
+- Require Evidence block after dispatch builds
+
+### Changed
+- Align Layer 5 and flow-profiles with tiered policy
+
+
 ## [5.10.0] — 2026-07-14
 
 ### Added
@@ -1194,7 +1209,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.10.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.11.0...HEAD
+[5.11.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.10.0...v5.11.0
 [5.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.8.0...v5.10.0
 [5.9.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.8.0...v5.9.0
 [5.8.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.7.0...v5.8.0
