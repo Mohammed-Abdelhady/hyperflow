@@ -28,9 +28,10 @@ Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool 
 | 1 — Load task | — (atomic · §12.2.8) | — | — | Read + schema check = single mechanical decision; no parallel angles |
 | 2a — Pre-dispatch | Composer × N parallel — one per sub-task; stitches persona + injects learnings | **Reviewer** — reviews prompt set for completeness | Parallel worker prompts built before any fan-out fires |
 | 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel | **Domain specialist Reviewer** — the `Specialist:`-matched agent, batched over full batch (P2) or per-sub-task fallback | One Reviewer call per batch; security/correctness specialists run with `--thorough` |
-| 2c — Gate run | Worker — runs lint/typecheck/tests on affected files | **Reviewer** — judges gate output | Small focused diff |
+| 2c — Gate run | Worker — **light** lint/typecheck/tests on affected files only | **Reviewer** — judges gate output | Never full-project suite mid-batch |
 | 2d — Learnings + commit | Writer — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; learnings appended to context |
 | 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
+| 3.5 — Chain-end quality gates | Worker — full lint/typecheck/tests/(build) when tier ≥ standard | **Reviewer** — judges suite | Skipped on light tier; independent of D7 |
 | 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
 | 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy questions |
 
@@ -112,6 +113,16 @@ Detect the artefact mode:
 
 Confirm structural completeness: batches/tasks non-empty, each task has `id`, `title`, `files`, `complexity`,
 `Specialist`. If absent or malformed, stop and suggest `/hyperflow:plan` first.
+
+**Resolve gate tier (once per chain).** Per [quality-gates.md](references/quality-gates.md):
+
+1. If chain arg `gates=light|standard|full` is present → use it.
+2. Else compute from roster file-count (union of sub-task files), batch count, triage profile/flags, and `--thorough`:
+   - **full** if profile ∈ {deep, scientific} OR ≥16 files OR ≥3 batches OR multi-subsystem OR `security: true` OR `--thorough`
+   - **light** if single batch ∧ ≤3 sub-tasks ∧ ≤5 files ∧ profile ∈ {fast, standard} ∧ no security/integration_risk
+   - else **standard**
+3. Print: `Gates tier: <tier> · per-batch affected · chain-end <full suite|skipped>`
+4. Stash `gate_tier` for Step 2c / 3.5 and the Evidence Gates row.
 
 > Atomic-exempt per §12.2.8 — file/folder existence + schema validation is a single mechanical decision with no parallel angles. No Worker or Reviewer dispatched.
 
@@ -196,11 +207,16 @@ Parse the per-sub-task verdicts:
 - `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before re-scoping the sub-task).
 - `PASS` — sub-task handed to Step 2d for commit.
 
-#### Step 2c — Gate run (P1 · sequential after 2b verdicts resolve)
+#### Step 2c — Gate run (P1 · sequential after 2b verdicts resolve) — **light only**
 
-After all sub-tasks in the batch have passed review, run **Layer 5 quality gates** (lint / typecheck / tests on affected files) per [quality-gates.md](references/quality-gates.md).
+After all sub-tasks in the batch have passed review, run **Layer 5 light quality gates** per [quality-gates.md](references/quality-gates.md):
 
-Dispatch one Worker to run the gate commands. Dispatch one **Reviewer** to judge the gate output. Verdict: `PASS` / `NEEDS_FIX`. On NEEDS_FIX the Worker applies fixes (never amending per-sub-task commits — fixes land as small additional commits) and the gate re-runs. Max 3 gate cycles before escalating.
+- Lint + typecheck + tests on **files this batch touched only** (affected-only).
+- **Never** run the full-project lint or full test suite here on multi-batch work or when `gate_tier` is `standard` / `full`. That is a doctrine violation (the "too many full lint/test checks on large changes" failure mode).
+
+Dispatch one Worker to run the light gate commands. Dispatch one **Reviewer** to judge the gate output. Verdict: `PASS` / `NEEDS_FIX`. On NEEDS_FIX the Worker applies fixes (never amending per-sub-task commits — fixes land as small additional commits) and the gate re-runs. Max 3 gate cycles before escalating.
+
+Record the batch result in the Evidence log (`B<n> affected pass|fail`).
 
 **Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When the per-batch Reviewer returns NEEDS_REVISION, retry the Worker once with a `## Learnings from review` injection. A second NEEDS_REVISION surfaces the sub-task as partial; the chain continues with the latest output marked partial — no third Worker dispatch.
 
@@ -241,9 +257,25 @@ Print: `**Reviewer** — final integration review (L1–L<n>)`
 The integration Reviewer returns a single structured verdict with per-sub-task findings where applicable. This is the one pass that catches cross-batch contradictions — per-batch reviewers are anchored to one batch's diff and cannot see cross-batch integration issues.
 
 Parse the verdict:
-- `PASS` → proceed to Step 4.
+- `PASS` → proceed to Step 3.5.
 - `NEEDS_FIX` → re-dispatch only the affected sub-tasks' Workers with the fix list. After fixes land, re-run Step 3 for the updated diff.
 - `SECURITY_VIOLATION` → **halt the chain immediately.** Print finding; do not auto-continue.
+
+### Step 3.5 — Chain-end quality gates
+
+Runs **after** Step 3 (or the D7 skip line) and **before** Step 4 wrap-up / Evidence. Independent of D7: a skipped final *review* does **not** skip chain-end *gates* when the tier requires them.
+
+**Skip when `gate_tier == light`:** print `Chain-end suite skipped — light tier (affected gates only)` and proceed to Step 4.
+
+**When `gate_tier` is `standard` or `full`:** run the **full suite once** for the cumulative chain tree:
+
+1. Dispatch one Worker: full lint → typecheck → full test suite → build (if `scripts.build` exists). On `full` tier use fail-fast order (stop at first red category).
+2. Dispatch one **Reviewer** over gate output. Verdict: `PASS` / `NEEDS_FIX`.
+3. `NEEDS_FIX` → Worker fixes (additional commits, no amend); re-run suite; max 3 cycles; then escalate.
+4. `PASS` → record in Evidence log: `chain-end full pass (lint · tsc · test <n> · build?)`.
+5. No detectors / docs-only project → `Gates n/a — no project gate scripts` (still record tier).
+
+Feature mode `--phases=next`: run Step 3.5 for the completed phase only. `--phases=all`: run once after the last phase (and optionally per phase when phases touch disjoint stacks — default once at feature end is enough).
 
 ### Step 4 — Wrap Up
 
@@ -389,6 +421,7 @@ Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`
 - Therefore — `review agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `review agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
 - **Evidence + Usage fire ONLY at terminal wrap-up (or hard halt) — after Step 4, never mid-batch.** Print **Evidence first**, then Usage, per [output-style.md](references/output-style.md). Omitting Evidence after a terminal dispatch is a doctrine violation. Printing `── Hyperflow Evidence ──` or `── Hyperflow Usage ──` while sub-tasks remain pending (non-halt) is a doctrine violation. In `auto` mode, either block is a terminal signal — the chain is finished.
+- **Quality gates are tiered.** Per-batch Step 2c is always **light** (affected files only). Full-project lint/test mid-batch on multi-batch or standard/full-tier work is a doctrine violation. Chain-end Step 3.5 runs the full suite once when `gate_tier` ∈ {standard, full}; light tier skips it. Deploy still runs its own full pre-push suite later (no trust-skip).
 - **Automatic compact readiness is end-of-dispatch only.** `.hyperflow/.dispatch-auto-compact-ready` is written exactly once after Step 4 wrap-up and the final Evidence + Usage blocks. The `PreCompact` hook blocks automatic compaction until this marker exists and is fresh; manual `/compact` still works at any time.
 - **Auto mode must complete every sub-task in every batch before producing any summary, transition, or end-of-chain artefact.** "To resume" instructions, partial usage tables, or "stopping here for now" prose are all forbidden in `auto` mode. The only legal terminations mid-chain are: (a) `SECURITY_VIOLATION`, (b) `ESCALATE: <reason>` crossing the irreversibility boundary, (c) a per-sub-task Reviewer returning `NEEDS_FIX` after 3 worker retries with no resolution. On (a)–(c), print Evidence for work that already landed (Result `halted` / `partial`) then Usage; do NOT pretend a clean full build. If none of those fired and the chain stopped, surface as `ESCALATE: dispatch halted with N/M sub-tasks remaining — root cause unknown` and ask the user — do NOT print a clean full Evidence/Usage as if the chain ended cleanly.
 - **If batch dispatch is interrupted (token exhaustion, runtime crash, manual abort) — leave the task file's Status block intact with the partial `[x]` checkmarks, do NOT print Evidence or Usage, do NOT print "To resume" hand-off instructions.** The user can re-invoke `/hyperflow:dispatch --from-batch <n> <slug>` on their own; the task file already reflects which sub-tasks completed. Hand-off instructions printed by a half-finished chain are themselves the bug — they make the user think the chain self-paused cleanly when it actually broke.
@@ -423,9 +456,10 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
    - **Step 2b** — Worker fan-out (N parallel Workers); batched Reviewer over the batch; parse verdicts (PASS / NEEDS_FIX / SECURITY_VIOLATION / OVERSIZE).
    - **Step 2c** — Layer 5 quality gates via a Worker + Reviewer.
    - **Step 2d** — Per-sub-task commits + learnings synthesis via Writer.
-4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 4 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
-5. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then Usage**, write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
-6. ONE combined `AskUserQuestion` gate with both audit and deploy questions — process answers in order.
+4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 3.5 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
+5. Chain-end quality gates (Step 3.5) — full suite when `gate_tier` ≥ standard; skip on light. Independent of D7.
+6. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then Usage** (Gates row includes tier + chain-end), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
+7. ONE combined `AskUserQuestion` gate with both audit and deploy questions — process answers in order.
 
 ## Output
 
@@ -439,7 +473,7 @@ Commits    3  a1b2c3d feat(…) · …
 Files      4 changed · +120/-10
 Sub-tasks
   T1 PASS — …
-Gates      lint pass · typecheck pass · tests pass
+Gates      tier standard · B1 affected pass · chain-end full pass (lint · tsc · test · build)
 Reviews    batch 1 PASS L1–L2 · final skipped — first-try PASS
 Risks      none
 Next       audit/deploy gates
@@ -449,7 +483,7 @@ Next       audit/deploy gates
 ─────────────────────────────────────────
 ```
 
-(Wrap-up Reviewer no longer appears per D5. If the integration review skipped per D7, the review agent count equals the batch count exactly; the Reviews Evidence row still records the skip reason.)
+(Wrap-up Reviewer no longer appears per D5. If the integration review skipped per D7, the review agent count equals the batch count exactly; the Reviews Evidence row still records the skip reason. Chain-end gates still run for standard/full tiers.)
 
 Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commits (does not replace Evidence).
 
