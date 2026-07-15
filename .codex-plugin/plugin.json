@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "5.11.0",
+  "version": "5.12.0",
   "description": "Point it at a GitHub issue, get back a reviewed pull request — in Codex App and CLI. Decision agents plan and review; workers execute in parallel on your session model; memory stays in your repo.",
   "author": {
     "name": "Mohammed Abdelhady",
