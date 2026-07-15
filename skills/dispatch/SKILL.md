@@ -33,7 +33,7 @@ Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool 
 | 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
 | 3.5 — Chain-end quality gates | Worker — full lint/typecheck/tests/(build) when tier ≥ standard | **Reviewer** — judges suite | Skipped on light tier; independent of D7 |
 | 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
-| 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy questions |
+| 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy + PR (when `pr=ask`); visual PRs require screenshots per [pr-exit.md](references/pr-exit.md) |
 
 Iron rule — `review agents ≥ batches + 1` (one batched Reviewer per batch + final integration when not skipped). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
 
@@ -62,8 +62,9 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 | Phase-dispatch scope | Step 1.5, feature mode with ≥ 2 incomplete phases | `AskUserQuestion` — all phases / phase by phase |
 | Inter-batch (manual mode only) | After each batch's gates pass | `AskUserQuestion` — continue / stop. **Auto mode fires NO inter-batch question** — see DOCTRINE rule 8 (invented gates banned). |
 | Hard halt | Any `SECURITY_VIOLATION` from a reviewer | Stop the chain, surface the finding |
-| **Audit prompt** | Step 5, after wrap-up | `AskUserQuestion` — run `/hyperflow:audit`? (yes/no, recommended toggles with flow profile) |
-| **Deploy prompt** | Step 5, after audit gate | `AskUserQuestion` — run `/hyperflow:deploy`? (yes/no, recommended toggles with gate state) |
+| **Audit prompt** | Step 5, after wrap-up | `AskUserQuestion` — run `/hyperflow:audit`? (yes/no) |
+| **Deploy prompt** | Step 5, after audit gate | `AskUserQuestion` — run `/hyperflow:deploy`? (yes/no) |
+| **PR prompt** | Step 5, when `pr=ask` (default) | `AskUserQuestion` — open a pull request? (yes/no). Applies to **every** dispatch, not only issue chains. See [pr-exit.md](references/pr-exit.md) |
 
 ## Inputs
 
@@ -306,9 +307,9 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
    - **`on_complete=deploy`** → invoke `Skill` with `skill: deploy` (its own push gate applies). Do NOT also fire the audit/deploy `AskUserQuestion` below — `on_complete` already encoded the disposition. Evidence + COMPLETION are already written.
    - **`on_complete=review`** → STOP. Print: `Build complete — committed + pushed (range <base>..<head>). Return to session 1 and run /hyperflow:audit <base>..<head> (or /hyperflow:handoff review <slug>).`
 
-**Normal (single-session) end-of-chain — Audit + Deploy gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with **both** questions in the `questions[]` array (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. The `AskUserQuestion` tool accepts up to 4 questions per call; this combined gate uses 2 (audit + deploy) — or 3 when the chain is **GitHub-native** (`gh_issue=` chain arg present and `pr=ask`): question [3] is the PR exit below. Do not cram further unrelated questions here; the gate's scope is end-of-chain disposition only. On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render the questions in one `Hyperflow Question` chat block and wait for the user's answers.
+**Normal (single-session) end-of-chain — Audit + Deploy + PR gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with audit + deploy in the `questions[]` array, and **always** include the PR question when `pr=ask` (default) — **every** dispatch, not only issue chains (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. Cap is 4 questions per call; this gate uses 2 or 3. Do not cram image-path supply into this call (second call if needed — [pr-exit.md](references/pr-exit.md)). On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render the questions in one `Hyperflow Question` chat block and wait.
 
-> **DOCTRINE rule 8 preserved:** every gate question still fires; they just batch into one round-trip instead of two or three. Combined gate cuts human-in-the-loop latency at end-of-chain.
+> **DOCTRINE rule 8 preserved:** every gate question still fires; they batch into one round-trip. Combined gate cuts human-in-the-loop latency at end-of-chain.
 
 ```
 ?  End-of-chain gates
@@ -321,12 +322,12 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
        Yes — gates pass · ready to ship
        No  — keep commits local · push manually later
 
-   [3] Open a pull request for this chain?           (GitHub-native chains only — gh_issue= present, pr=ask)
-       Yes — push feature branch · gh pr create · Closes #<n>
+   [3] Open a pull request for this chain?           (when pr=ask — default on every dispatch)
+       Yes — push feature branch · gh pr create
        No  — keep the branch local · print the gh pr create command
 ```
 
-Per DOCTRINE rule 8, the gate questions are binary action gates — no `(Recommended)` marker on any option. Two-outcome framing is symmetric; the orchestrator's analysis is reflected in the surrounding status output (gate results, retry counts, security verdict), not in pre-marking the choice.
+Skip question [3] when `pr=never` (print ready command only) or `pr=auto` (open without asking after audit/deploy answers). Binary action gates — no `(Recommended)` marker.
 
 **Process answers in order:**
 
@@ -358,12 +359,14 @@ The orchestrator is not the user's risk advisor. The user already saw every revi
 
 On deploy `Yes` → invoke `Skill` with `skill: deploy`. Deploy has its own push-confirmation gate at its Step 6.
 
-**PR exit (GitHub-native chains only — `gh_issue=<n>` present).** Fires after the deploy answer is processed:
+**PR exit (every dispatch — full contract: [pr-exit.md](references/pr-exit.md)).** Fires after the deploy answer is processed:
 
-- `pr=ask` (default) → question [3] in the combined gate: `Open a pull request for this chain? Yes / No` (binary, no marker). `pr=auto` → open without asking once the chain's gates passed. `pr=never` → skip; print the ready-to-run `gh pr create` command in the wrap-up instead.
-- On PR yes/auto: `git push -u origin <branch>` (never force, never to `main`/`master` directly — the feature branch is the only outbound surface), then `gh pr create` with a conventional title from the dominant commit type and a body of what / why / validation summary + `Closes #<n>`. No AI attribution anywhere in the PR.
-- After the PR opens: when `comment=ask`, offer one courtesy comment on issue `#<n>` linking the PR; `comment=never` skips silently. One batched comment — never incremental updates.
-- `gh` unauthenticated or push rejected → print the exact recovery commands (`gh auth login`, `git push -u origin <branch>`, `gh pr create …`) and stop cleanly. Never half-post.
+- `pr=ask` (default) → question [3] above. `pr=auto` → open without asking. `pr=never` → skip; print ready-to-run `gh pr create`.
+- **Visual-required** (frontend / ui / mobile / creative triage, or UI file globs, or `pr_images=require`): **must** attach ≥1 screenshot before `gh pr create`. Try auto-capture; on failure ask for local image paths; **block** PR create until images exist. Commit media under `docs/pr-media/<slug>/`, push, embed `raw.githubusercontent.com` URLs in the body `## Screenshots` section.
+- Non-visual PRs: no Screenshots section required.
+- On PR yes/auto (after media gate if visual): `git push -u origin <branch>` (never force, never to `main`/`master` — feature branch only), then `gh pr create` with conventional title + body (Summary · Validation · optional Screenshots · `Closes #<n>` only if `gh_issue=` set). No AI attribution.
+- After the PR opens: when `gh_issue=` present and `comment=ask`, offer one courtesy comment on issue `#<n>` linking the PR; `comment=never` skips. One batched comment — never incremental updates.
+- `gh` unauthenticated or push rejected → print recovery commands and stop cleanly. Never half-post.
 
 On `No` to both gates → stop cleanly. Print one line:
 
@@ -395,8 +398,9 @@ Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`
 | `commit` | `per-task` / `per-batch` / `per-task-deferred` / `single` / `none` | `per-task` | Step 2 (commit cadence after each PASS) |
 | `branch` | `new` / `current` | `new` if currently on `main` or `master`, else `current` | Step 2 (before first commit) |
 | `push` | `ask` / `auto` / `never` | `ask` | Forwarded to Deploy Step 6 via chain args |
-| `pr` | `ask` / `auto` / `never` | `ask` | Step 5 PR exit — only meaningful when `gh_issue=<n>` is present (set by `/hyperflow:issue`) |
-| `comment` | `ask` / `never` | `ask` | Step 5 PR exit — courtesy comment on the originating issue |
+| `pr` | `ask` / `auto` / `never` | `ask` | Step 5 PR exit — **every** dispatch (not only issue chains) |
+| `comment` | `ask` / `never` | `ask` | Courtesy comment on originating issue — only when `gh_issue=<n>` |
+| `pr_images` | `auto` / `require` / `never` | `auto` | `auto` = require images when visual-required; `require` = always; `never` = waive (note in Evidence) |
 
 **`commit=per-task`** (default) — commit after every sub-task PASS as the existing flow. Commits land directly on the user's working branch as they happen.
 **`commit=per-batch`** — accumulate sub-task changes; commit once per batch after all sub-tasks PASS, with a message rolling up the batch (`feat(<scope>): batch <n> — <one-line summary>`). One per-batch commit per batch.
@@ -409,7 +413,7 @@ Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`
 **`branch=new`** — at Step 2 before the first commit, if currently on `main` / `master` / `develop`, create `feat/<task-slug>` and switch to it. If already on a feature branch, treat as `branch=current`.
 **`branch=current`** — never auto-create. All commits land on whatever branch the orchestrator was invoked on.
 
-**`push=…`** — dispatch does NOT push commits to the user's branch. It only propagates the chosen value to Deploy Step 6 in the chain args; Deploy honors it there. **One carve-out:** the GitHub-native PR exit (Step 5, `gh_issue=` present) pushes the *feature branch* itself before `gh pr create` — that push is the PR's outbound surface, gated by `pr=` (not `push=`), and never targets `main`/`master`.
+**`push=…`** — dispatch does NOT push commits to the user's branch. It only propagates the chosen value to Deploy Step 6 in the chain args; Deploy honors it there. **One carve-out:** the PR exit (Step 5) pushes the *feature branch* itself before `gh pr create` — that push is the PR's outbound surface, gated by `pr=` (not `push=`), and never targets `main`/`master`.
 
 ## Iron Rules
 
@@ -434,7 +438,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute
 
 `/hyperflow:dispatch` is the workhorse phase — it reads a task file from `/hyperflow:plan` and executes it through the orchestrator pattern.
 
-Parallel workers dispatched in a single message, per-batch Reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with both audit and deploy questions.
+Parallel workers dispatched in a single message, per-batch Reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
 
 Doctrine floor: review agents ≥ batches + 1 (per-batch reviewer + final integration when not skipped per D7; wrap-up Reviewer dropped per D5 / §12.1).
 
@@ -459,7 +463,7 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
 4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 3.5 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
 5. Chain-end quality gates (Step 3.5) — full suite when `gate_tier` ≥ standard; skip on light. Independent of D7.
 6. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then Usage** (Gates row includes tier + chain-end), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
-7. ONE combined `AskUserQuestion` gate with both audit and deploy questions — process answers in order.
+7. ONE combined `AskUserQuestion` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual PRs run the screenshot pipeline before `gh pr create`.
 
 ## Output
 
@@ -501,6 +505,8 @@ Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commit
 | `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print audit/deploy as a `Hyperflow Question` chat block and wait for the user's answers. |
 | No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
 | Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
+| Visual PR without screenshots | **Block** `gh pr create`; ask for image paths or cancel; print recovery. Never open a frontend/mobile PR with text-only body. |
+| `gh` unauthenticated on PR yes | Print `gh auth login` + draft create command; do not half-post. |
 
 ## Examples
 
@@ -518,3 +524,4 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 - [quality-gates.md](references/quality-gates.md) — Layer 5 lint/typecheck/test policy.
 - [git-workflow.md](references/git-workflow.md) — per-sub-task commit cadence, no AI attribution.
 - [output-style.md](references/output-style.md) — agent label + usage summary format.
+- [pr-exit.md](references/pr-exit.md) — universal PR gate + frontend/mobile screenshot mandate.

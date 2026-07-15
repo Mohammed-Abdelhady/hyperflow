@@ -196,7 +196,7 @@ Registry: [`../../agents/README.md`](../../agents/README.md).
 - `security: true` → always add `security-reviewer` + `vulnerability-reviewer`.
 - `integration_risk: true` → add `backend-reviewer` (or `api-reviewer` if `api` ∈ `types`).
 - Add `compliance-reviewer` only when `security: true` AND the rationale flags PII / regulated data.
-- Add `mobile` only when a mobile/responsive/native surface is detected.
+- Add `mobile` only when a mobile/responsive/native surface is detected. When `types` includes `frontend`, `ui`, `mobile`, or `creative`, dispatch's PR exit treats the chain as **visual-required** (screenshots mandatory in the PR — see [`../dispatch/references/pr-exit.md`](../dispatch/references/pr-exit.md)).
 - Add `motion` whenever the surface involves animation, transitions, scroll-driven effects, or gesture interaction —
   even when only `ui` is in `types` (the Brain detects the motion surface and adds it; static UI changes do not pull
   it in).
