@@ -43,7 +43,11 @@ Next       audit/deploy gates
 ```
 
 On handoff builds, also write the same Evidence fields into `.hyperflow-handoff/<slug>/COMPLETION.md`.
-9. **End gate** via AskUserQuestion: offer to run `hyperflow-audit` (independent review) and/or `hyperflow-deploy`. Both are binary (no recommended marker). Never auto-push. Deploy still runs its own full pre-push suite.
+9. **End gate** via AskUserQuestion (binary, no recommended marker):
+   - Run `hyperflow-audit`?
+   - Run `hyperflow-deploy`? (never auto-push; deploy has its own push gate)
+   - **Open a pull request?** (default ask on every build — not only issue chains)
+10. **If opening a PR** and the work is frontend / UI / mobile / creative (or UI files changed): **screenshots are required**. Try auto-capture; if that fails, ask the user for image paths. Commit under `docs/pr-media/<slug>/`, push the feature branch, embed images in the PR body. **Do not** `gh pr create` without ≥1 image on visual work. Full contract: `skills/dispatch/references/pr-exit.md`. Non-visual PRs need no Screenshots section. Add `Closes #<n>` only when the chain came from an issue.
 
 ## Rules
 
@@ -51,3 +55,4 @@ On handoff builds, also write the same Evidence fields into `.hyperflow-handoff/
 - If the working tree is dirty with files you didn't create (concurrent work), never stage them; re-check `git status` before each commit.
 - Auto mode completes every sub-task before any summary — no partial "to resume" hand-offs. Omitting Evidence after a terminal build is a doctrine violation.
 - Free-form "Done! I completed X." prose is banned; structured Evidence replaces it.
+- Never force-push; never push to `main`/`master` directly — PR is from the feature branch only.

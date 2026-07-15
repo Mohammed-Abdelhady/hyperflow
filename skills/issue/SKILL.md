@@ -15,8 +15,9 @@ tags: [github, issue, triage, chain-starter, pull-request, multi-agent]
 
 GitHub-native **entry point** for the chain: one issue URL in, one reviewed pull request out. This skill owns
 ingestion, triage, and spec synthesis; everything after that is the standard chain (`/hyperflow:plan` →
-`/hyperflow:dispatch`) with GitHub chain args propagated so dispatch's Step 5 offers the **PR exit**. The
-maintainer-side counterpart is [`/hyperflow:pr`](../pr/SKILL.md) (review an incoming PR).
+`/hyperflow:dispatch`) with GitHub chain args propagated. Dispatch always offers a **PR exit** on every build
+([`pr-exit.md`](../dispatch/references/pr-exit.md)); this skill adds `gh_issue=` so the PR body gets `Closes #<n>`
+and optional issue comments. The maintainer-side counterpart is [`/hyperflow:pr`](../pr/SKILL.md).
 
 ## Step 0 — Preflight
 
@@ -70,13 +71,14 @@ branch; the issue number rides in the slug).
 
 ## Step 5 — PR exit (owned by dispatch)
 
-Dispatch's Step 5 end-of-chain gate gains a PR question when `gh_issue=` is present — see
-[`../dispatch/SKILL.md`](../dispatch/SKILL.md). Contract:
+Dispatch's Step 5 always offers a PR exit when `pr=ask` (default) — see
+[`../dispatch/SKILL.md`](../dispatch/SKILL.md) and [`../dispatch/references/pr-exit.md`](../dispatch/references/pr-exit.md).
+Issue chains contribute:
 
-- PR body = what / why / validation summary + `Closes #<n>`. Conventional title from the dominant commit type.
-- `pr=ask` (default) → gate question. `pr=auto` → open after gates pass, no question. `pr=never` → skip; print the
-  ready-to-run `gh pr create` command instead.
-- After the PR opens: offer one courtesy comment on the issue linking the PR (gated by `comment=`).
+- `gh_issue=<n>` → PR body includes `Closes #<n>`; optional courtesy comment after open (`comment=ask|never`).
+- Same `pr=ask|auto|never` pre-election as any other chain.
+- **Frontend / mobile / UI work still requires screenshots** in the PR (capture or user-supplied) — issue linkage does not waive media.
+- Conventional title from the dominant commit type. No AI attribution.
 - **Never force-push. Never push to `main`/`master` directly.** The PR branch is the only outbound surface.
 
 ## Iron rules

@@ -184,7 +184,7 @@ Eighteen skills. Two chain-starters auto-advance through the chain; the rest are
 |-------|---------|------|---------|
 | `issue` | `/hyperflow:issue` | Chain starter | GitHub issue → triaged, planned, dispatched, reviewed pull request — with injection guard and gated posting |
 | `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt, design the approach, decompose into a parallel task graph; stops at a build-location gate — never auto-implements |
-| `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out persona-stitched workers under per-batch + final review; light per-batch gates + chain-end full suite on large work; Evidence then Usage |
+| `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out workers under review; tiered gates; Evidence then Usage; end gate asks audit / deploy / **PR** (screenshots required for frontend/mobile) |
 | `pr` | `/hyperflow:pr` | Standalone | Review an incoming pull request — L1–L5 audit on the real diff, one batched GitHub review, fix chain, gated merge |
 | `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
 | `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; portable Codex/OpenCode/Grok adapter for migrations, audits, and verification-heavy work |
