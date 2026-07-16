@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="docs/assets/hero-vertical.svg" />
-    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then the chain: plan → dispatch → audit → deploy, with a Worker → Reviewer review at every step" width="100%" />
+    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then route work through inline-fast or the reviewed plan → dispatch → audit → deploy chain" width="100%" />
   </picture>
 </p>
 
@@ -9,8 +9,8 @@
 
 <p align="center">
   <strong>Point it at a GitHub issue. Get back a reviewed pull request.</strong><br/>
-  Hyperflow turns one AI coding session into a multi-agent engineering pipeline — planners design,
-  workers build in parallel, and a domain specialist reviews every step before it ships.<br/>
+  Hyperflow turns one AI coding session into an adaptive engineering pipeline — tiny proven-safe edits run inline,
+  while planners design, workers build in parallel, and domain specialists review orchestrated work.<br/>
   Runs on Claude Code, Codex, OpenCode, Grok, Antigravity &amp; Cursor — on your session model, zero config.
 </p>
 
@@ -84,14 +84,18 @@ Initialize the project once, then invoke any skill:
 Auto-routing is on by default — say "audit the diff" or "debug this test" and the right skill runs without the
 `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the portable spelling. Setup and host notes → [Installation](docs/installation.md).
 
+Hyperflow uses **lean mode by default**: it loads only the context needed for the current phase. Pass `mode=default`
+or `--thorough` when you explicitly want the full-context, full-ceremony path.
+
 ## What makes it different
 
-- **Every step is reviewed.** Worker → Reviewer is an iron rule at every granularity, sub-phases included — per-batch
-  reviewers spot-check each diff, a final integration reviewer signs off on the whole. No worker output ships unreviewed.
+- **Review matches the path.** The normal orchestrated path keeps Worker → Reviewer at every granularity, plus a final
+  integration pass. Deterministic inline-fast work uses a foreground diff review because no worker is dispatched.
 - **Memory that's yours.** Learnings, decisions, and pitfalls persist in `.hyperflow/memory/` — plain markdown, committed
   with your repo, never uploaded, never mixed across projects.
-- **Depth that adapts.** Triage classifies every task and picks a flow profile (fast → scientific), so a 5-line fix
-  never triggers a 300k-token deep run.
+- **Depth that adapts.** A deterministic preflight admits inline-fast only after observing a clear, reversible change
+  in exactly 1–2 ordinary files. Gated, generated, or migration surfaces — and every uncertain task — keep the normal
+  heavyweight path. Hard ceilings stop profiles at 10k–200k tokens.
 
 ## How it works
 
@@ -119,18 +123,22 @@ Triage assigns every task a flow profile, so effort matches the work instead of 
 
 | Profile | Use when | Workers | Budget |
 |---------|----------|---------|--------|
-| `fast` | trivial single-file, reversible | 1 | ≤30k |
-| `standard` | simple/moderate, 2–5 files | 1–2 | ≤100k |
-| `deep` | complex / cross-cutting / system-wide | 3+ | 300k |
-| `research` | unknown territory, evaluation | 3+ searchers | ≤80k |
-| `creative` | UI/UX exploration | 1–2 | ≤150k |
-| `scientific` | correctness-critical, proof work | 2–3 + TDD | 300k |
+| `fast` | observed clear, reversible 1–2-file change outside gated/generated/migration surfaces | foreground (0 dispatched) | 10k hard |
+| `standard` | simple/moderate, 2–5 files | 1–2 | 50k hard |
+| `deep` | complex / cross-cutting / system-wide | 3+ | 200k hard |
+| `research` | unknown territory, evaluation | 3+ searchers | 60k hard |
+| `creative` | UI/UX exploration | 1–2 | 100k hard |
+| `scientific` | correctness-critical, proof work | 2–3 + TDD | 200k hard |
+
+Normal orchestrated runs record a metadata-only usage ledger: phase totals, duplicate-context ratio, retry cost,
+cache-hit rate, accepted commits, tokens per accepted commit, and estimated-record count. It stores no prompts,
+responses, file contents, patches, or secrets. Inline-fast dispatches zero agents, so it creates no ledger records.
 
 Workers are stitched with the right subset of **15 composable expert personas** (architect, api, db, frontend, ui,
 security, performance, scientific, refactor, bugfix, test, research, creative, devops, docs) — `security` frames every
 decision first, `creative` adapts last.
 
-Small work becomes a flat task file (`.hyperflow/tasks/<slug>.md`); work with sequential stages becomes a **feature**
+Non-inline small work becomes a flat task file (`.hyperflow/tasks/<slug>.md`); work with sequential stages becomes a **feature**
 with phase sub-folders, each carrying its own tasks, spec, research, and decisions — see
 [`skills/hyperflow/feature-phases.md`](skills/hyperflow/feature-phases.md). A chain can also run across **two sessions**:
 plan here, build in another environment via a git-committed handoff package, review back here — see

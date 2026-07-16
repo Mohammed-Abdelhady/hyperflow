@@ -120,7 +120,7 @@ def render_horizontal(features, version):
     W, H, PAD = 1200, 470, 48
     cv = Canvas(W, H, f"Hyperflow v{version}",
                 f"{tagline} — first init once with scaffold, then the chain: "
-                f"plan, dispatch, audit, deploy, with plan and execute stages and a Worker to Reviewer review at every step.")
+                f"plan, dispatch, audit, deploy, with inline review for proven-safe edits and specialist review for orchestrated work.")
     cv.frame()
     cv.wordmark(PAD, 64, 38)
     cv.badge(W - PAD, 40, version)
@@ -129,7 +129,7 @@ def render_horizontal(features, version):
 
     # plan-stage bracket
     cv.text(W / 2, 150, "PLAN STAGE", size=11, fill=THINK, anchor="middle", ls="0.18em")
-    cv.text(W / 2, 164, "orchestrates every phase · triages · reviews every output", size=9, fill=MUTED, anchor="middle")
+    cv.text(W / 2, 164, "orchestrates normal-flow phases · triages · reviews worker output", size=9, fill=MUTED, anchor="middle")
     cv.line(PAD, 182, W - PAD, 182, stroke=THINK, sw=1.25, op=0.5)
     cv.line(PAD, 182, PAD, 176, stroke=THINK, sw=1.25, op=0.5)
     cv.line(W - PAD, 182, W - PAD, 176, stroke=THINK, sw=1.25, op=0.5)
@@ -164,7 +164,7 @@ def render_horizontal(features, version):
     # review note
     ry = by + 52
     cv.rect(PAD, ry, W - 2 * PAD, 26, fill="#ECE7D7", stroke="#C9C2AE", sw=1, dash="3 3")
-    cv.text(W / 2, ry + 17, "every step dispatches a Worker → Reviewer pair · no output reaches the next step unreviewed",
+    cv.text(W / 2, ry + 17, "normal flow: Worker → Reviewer · inline-fast: foreground allowlisted-diff review",
             size=9.5, fill=MUTED, anchor="middle")
 
     fy = H - 22
@@ -181,7 +181,7 @@ def render_vertical(features, version):
     W, H, PAD = 760, 880, 44
     cv = Canvas(W, H, f"Hyperflow v{version}",
                 f"{tagline} — first init once with scaffold, then the chain stacked top to bottom: "
-                f"plan, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.")
+                f"plan, dispatch, audit, deploy, with review matched to the selected execution path.")
     cv.frame()
     cv.wordmark(PAD, 92, 56)
     cv.badge(W - PAD, 50, version)
@@ -189,7 +189,7 @@ def render_vertical(features, version):
     cv.text(PAD, 160, "INIT ONCE · scaffold sets up the project", size=11.5, fill=INK, mono=True)
 
     cv.rect(PAD, 178, 12, 12, fill=THINK)
-    cv.text(PAD + 22, 188, "plan · plans + reviews every step", size=11, fill=INK, mono=True)
+    cv.text(PAD + 22, 188, "plan · plans + reviews normal-flow work", size=11, fill=INK, mono=True)
     cv.rect(PAD, 200, 12, 12, fill=WORK)
     cv.text(PAD + 22, 210, "execute · runs in parallel", size=11, fill=INK, mono=True)
 
@@ -213,7 +213,7 @@ def render_vertical(features, version):
 
     ny = y0 + len(CHAIN) * (rh + gap) + 4
     cv.rect(PAD, ny, rw, 30, fill="#ECE7D7", stroke="#C9C2AE", sw=1, dash="3 3")
-    cv.text(W / 2, ny + 19, "every step → Worker → Reviewer · nothing ships unreviewed", size=10, fill=MUTED, anchor="middle")
+    cv.text(W / 2, ny + 19, "normal: Worker → Reviewer · inline-fast: foreground diff review", size=10, fill=MUTED, anchor="middle")
 
     fy = H - 22
     cv.text(W / 2, fy, "github.com/Mohammed-Abdelhady/hyperflow", size=10.5, fill=MUTED, anchor="middle", mono=True)

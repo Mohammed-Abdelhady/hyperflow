@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 880" width="760" height="880"
      role="img" aria-labelledby="t d" font-family="'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif">
   <title id="t">Hyperflow v5.12.0</title>
-  <desc id="d">From GitHub issue to reviewed pull request — multi-agent orchestration on your session model — first init once with scaffold, then the chain stacked top to bottom: plan, dispatch, audit, deploy, every step reviewed by a Worker to Reviewer pair.</desc>
+  <desc id="d">From GitHub issue to reviewed pull request — multi-agent orchestration on your session model — first init once with scaffold, then the chain stacked top to bottom: plan, dispatch, audit, deploy, with review matched to the selected execution path.</desc>
   <defs>
     <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0 L0 0 0 28" fill="none" stroke="#ECE7D7" stroke-width="1"/></pattern>
     <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#14110C"/></marker>
@@ -18,7 +18,7 @@
   <text x="44" y="132" fill="#6B6456" font-size="13" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">From GitHub issue to reviewed pull request — mult…</text>
   <text x="44" y="160" fill="#14110C" font-size="11.5" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">INIT ONCE · scaffold sets up the project</text>
   <rect x="44" y="178" width="12" height="12" fill="#7C3AED"/>
-  <text x="66" y="188" fill="#14110C" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">plan · plans + reviews every step</text>
+  <text x="66" y="188" fill="#14110C" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">plan · plans + reviews normal-flow work</text>
   <rect x="44" y="200" width="12" height="12" fill="#14B8A6"/>
   <text x="66" y="210" fill="#14110C" font-size="11" font-weight="400" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">execute · runs in parallel</text>
   <text x="44" y="250" fill="#6B6456" font-size="11" font-weight="700" text-anchor="start" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="2">THE CHAIN</text>
@@ -52,6 +52,6 @@
   <text x="72" y="584" fill="#6B6456" font-size="12" font-weight="400" text-anchor="start">pre-push gates</text>
   <text x="696" y="558" fill="#6B6456" font-size="9" font-weight="400" text-anchor="end" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.6">GATE</text>
   <rect x="44" y="622" width="672" height="30" fill="#ECE7D7" stroke="#C9C2AE" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="380.0" y="641" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">every step → Worker → Reviewer · nothing ships unreviewed</text>
+  <text x="380.0" y="641" fill="#6B6456" font-size="10" font-weight="400" text-anchor="middle">normal: Worker → Reviewer · inline-fast: foreground diff review</text>
   <text x="380.0" y="858" fill="#6B6456" font-size="10.5" font-weight="400" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace">github.com/Mohammed-Abdelhady/hyperflow</text>
 </svg>
