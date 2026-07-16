@@ -23,6 +23,20 @@ find_hyperflow_dir() {
 }
 HF_DIR="$(find_hyperflow_dir)"
 
+# Resolve mode before constructing the injected prompt so lean sessions never
+# pay for the full command guide. Projects without a cache also default lean;
+# explicit `.hyperflow/.mode` values restore the legacy/full surfaces.
+project_root="$PWD"
+[ -n "$HF_DIR" ] && project_root="$(dirname "$HF_DIR")"
+HF_MODE="lean"
+if [ -x "$PLUGIN_ROOT/scripts/resolve-mode.py" ]; then
+  HF_MODE="$(python3 "$PLUGIN_ROOT/scripts/resolve-mode.py" "$project_root" 2>/dev/null || echo "lean")"
+fi
+case "$HF_MODE" in
+  lean|default|thorough) ;;
+  *) HF_MODE="lean" ;;
+esac
+
 if [ "$TOOL_NAME" = "codex" ]; then
   INVOKE_LINE="Hyperflow is installed. Invoke it by saying \`hyperflow <function>\` or by typing a \`/hyperflow:*\` alias."
   DIRECT_ENTRIES="## Codex function aliases
@@ -75,7 +89,7 @@ else
 | \`/hyperflow:cache\` | Read or curate \`.hyperflow/memory/\` |"
 fi
 
-CONTENT="<!-- hyperflow-runtime: $TOOL_NAME -->
+FULL_CONTENT="<!-- hyperflow-runtime: $TOOL_NAME -->
 # Hyperflow v$HYPERFLOW_VERSION
 
 $INVOKE_LINE
@@ -96,15 +110,23 @@ In Codex and OpenCode, \`/hyperflow:workflow\` runs the portable workflow adapte
 
 Shared doctrine (autonomy rules, output style, security) lives in [skills/hyperflow/DOCTRINE.md](skills/hyperflow/DOCTRINE.md) and is referenced by each skill when invoked."
 
-if [ -n "$HF_DIR" ]; then
-  # Resolve active mode (default | lean | thorough) via the central helper.
-  # Used to decide whether to collapse session-start output into one summary line.
-  project_root="$(dirname "$HF_DIR")"
-  HF_MODE="default"
-  if [ -x "$PLUGIN_ROOT/scripts/resolve-mode.py" ]; then
-    HF_MODE="$(python3 "$PLUGIN_ROOT/scripts/resolve-mode.py" "$project_root" 2>>"$HF_DIR/.session-start.log" || echo "default")"
+if [ "$HF_MODE" = "lean" ]; then
+  if [ -n "$HF_DIR" ]; then
+    LEAN_CONTEXT="Project context stays on disk: \`.hyperflow/memory/session-context.md\`; memory index: \`.hyperflow/memory/index.md\`; active work: \`.hyperflow/tasks/\`. Read only what the task needs."
+  else
+    LEAN_CONTEXT="No \`.hyperflow/\` cache is present. Use \`/hyperflow:scaffold\` when project analysis is needed."
   fi
+  CONTENT="<!-- hyperflow-runtime: $TOOL_NAME -->
+# Hyperflow v$HYPERFLOW_VERSION · lean
 
+Treat \`/hyperflow:<name>\` and \`hyperflow <name>\` as aliases for \`skills/<name>/SKILL.md\`; load the requested skill and \`skills/hyperflow/DOCTRINE.md\` on demand. Auto-route intent: brainstorm/design/scope/decompose → plan; build/add/refactor → inspect then run deterministic fast preflight (inline-fast or plan); debug/fix → trace; audit/review → audit; ship/push/release/deploy → deploy; big/system-wide → workflow. In Codex, map Agent calls to available subagents and run equivalent worker/reviewer phases inline when subagents are unavailable.
+
+$LEAN_CONTEXT"
+else
+  CONTENT="$FULL_CONTENT"
+fi
+
+if [ -n "$HF_DIR" ]; then
   # Post-compaction recovery — surface the snapshot the pre-compact hook wrote
   # just before the conversation was compacted, then consume it (once only).
   if [ -f "$HF_DIR/.precompact.md" ] && [ -n "$(find "$HF_DIR/.precompact.md" -mmin -60 2>/dev/null || true)" ]; then
@@ -160,17 +182,20 @@ $mig"
       printf 'WARNING: session-context: failed to write session-context.md\n' >&2
   fi
 
-  # Project Snapshot (first 20 lines of each profile file)
-  snap=""
-  for f in profile.md architecture.md conventions.md; do
-    [ -f "$HF_DIR/$f" ] && snap="${snap}### $f
+  # Full modes inline a snapshot. Lean mode exposes the session-context path in
+  # its compact contract and lets the active skill read it on demand.
+  if [ "$HF_MODE" != "lean" ]; then
+    snap=""
+    for f in profile.md architecture.md conventions.md; do
+      [ -f "$HF_DIR/$f" ] && snap="${snap}### $f
 $(head -20 "$HF_DIR/$f")
 "
-  done
-  [ -n "$snap" ] && CONTENT="$CONTENT
+    done
+    [ -n "$snap" ] && CONTENT="$CONTENT
 
 ## Project Snapshot
 $snap"
+  fi
 
   # Project memory — derive index.md + .checksums from the memory files, then
   # inject the index plus the hot-tier entries. The index is derived state: no
@@ -182,16 +207,19 @@ $snap"
     hot_mem="$(python3 "$PLUGIN_ROOT/scripts/memory-index.py" "$HF_DIR" 2>>"$HF_DIR/.session-start.log" || true)"
   fi
 
-  # Memory Index
-  [ -f "$HF_DIR/memory/index.md" ] && CONTENT="$CONTENT
+  # Full modes inline memory. Lean mode still rebuilds the index/checksums above
+  # but reads the on-disk index only when a task needs it.
+  if [ "$HF_MODE" != "lean" ]; then
+    [ -f "$HF_DIR/memory/index.md" ] && CONTENT="$CONTENT
 
 ## Project Memory Index
 $(head -200 "$HF_DIR/memory/index.md")"
 
-  # Hot-tier entries + anti-patterns, in full (Read Protocol steps 2–3)
-  [ -n "$hot_mem" ] && CONTENT="$CONTENT
+    # Hot-tier entries + anti-patterns, in full (Read Protocol steps 2–3)
+    [ -n "$hot_mem" ] && CONTENT="$CONTENT
 
 $hot_mem"
+  fi
 
   # Memory Compaction Advisory (non-blocking, no LLM)
   if [ -f "$HF_DIR/memory/.checksums" ]; then
@@ -281,33 +309,36 @@ if line_out:
     print(line_out)
 PYEOF
 )"
-  if [ -n "$sticky_line" ]; then
+  if [ -n "$sticky_line" ] && [ "$HF_MODE" != "lean" ]; then
     CONTENT="$CONTENT
 
 ## Auto-routing status
 $sticky_line"
   fi
 
-  # Active Tasks (flat task files + multi-phase feature folders)
-  tlist=""
-  if [ -d "$HF_DIR/tasks" ]; then
-    for tf in "$HF_DIR/tasks/"*.md; do
-      [ -f "$tf" ] && tlist="${tlist}- $(basename "$tf")
+  # Full modes inline task names. Lean mode reports only the count and the
+  # `.hyperflow/tasks/` pointer in its compact status/contract.
+  if [ "$HF_MODE" != "lean" ]; then
+    tlist=""
+    if [ -d "$HF_DIR/tasks" ]; then
+      for tf in "$HF_DIR/tasks/"*.md; do
+        [ -f "$tf" ] && tlist="${tlist}- $(basename "$tf")
 "
-    done
-  fi
-  if [ -d "$HF_DIR/features" ]; then
-    for fd in "$HF_DIR/features/"*/; do
-      [ -f "${fd}feature.md" ] || continue
-      ph=$(ls -d "${fd}"phase-*/ 2>/dev/null | wc -l | tr -d ' ')
-      tlist="${tlist}- $(basename "$fd")/ (feature · ${ph} phases)
+      done
+    fi
+    if [ -d "$HF_DIR/features" ]; then
+      for fd in "$HF_DIR/features/"*/; do
+        [ -f "${fd}feature.md" ] || continue
+        ph=$(ls -d "${fd}"phase-*/ 2>/dev/null | wc -l | tr -d ' ')
+        tlist="${tlist}- $(basename "$fd")/ (feature · ${ph} phases)
 "
-    done
-  fi
-  [ -n "$tlist" ] && CONTENT="$CONTENT
+      done
+    fi
+    [ -n "$tlist" ] && CONTENT="$CONTENT
 
 ## Active Tasks (incomplete from prior sessions)
 $tlist"
+  fi
 
   # Pending two-session handoffs (committed .hyperflow-handoff/ packages). STATUS
   # decides which side we're on: planned ⇒ build here; built ⇒ review here.
@@ -337,8 +368,8 @@ $hlist"
 
   # Lean-mode situational summary (one line consolidating all state).
   # Emitted ONLY when mode=lean. Dedicated ## sections above continue to fire
-  # when they have attention-needed content (memory compaction advisory, sticky
-  # upgrade announcement, auto-bridge wrote/refreshed) — the summary is the
+  # when they have attention-needed content (memory compaction advisory,
+  # auto-bridge wrote/refreshed, pending handoff) — the summary is the
   # always-present situational floor, not a replacement for the action signals.
   if [ "$HF_MODE" = "lean" ] && [ -x "$PLUGIN_ROOT/scripts/lean-summary.py" ]; then
     lean_line="$(python3 "$PLUGIN_ROOT/scripts/lean-summary.py" "$PLUGIN_ROOT" "$project_root" 2>>"$HF_DIR/.session-start.log" || true)"

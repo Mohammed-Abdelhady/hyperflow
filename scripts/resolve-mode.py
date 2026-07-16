@@ -5,7 +5,7 @@ resolve-mode.py — single source of truth for the active hyperflow mode.
 Resolves the per-project mode from (in priority order):
   1. Explicit chain arg (e.g. argv flag `--lean` / `--thorough` / `--mode=lean`)
   2. .hyperflow/.mode file content
-  3. Default: `default`
+  3. Default: `lean`
 
 Usage:
   resolve-mode.py <project-root> [--from-args <args-string>]
@@ -25,8 +25,8 @@ import sys
 from pathlib import Path
 
 VALID_MODES = {"default", "lean", "thorough"}
-FLAG_RE = re.compile(r"(?:^|\s)--(lean|thorough)(?:\s|$)")
-KV_RE = re.compile(r"(?:^|\s)mode=(default|lean|thorough)(?:\s|$)")
+FLAG_RE = re.compile(r"(?:^|\s)--(lean|thorough)(?=\s|$)")
+KV_RE = re.compile(r"(?:^|\s)(?:--)?mode=(default|lean|thorough)(?=\s|$)")
 
 
 def _from_args(args_string: str | None) -> str | None:
@@ -54,7 +54,14 @@ def _from_file(project_root: Path) -> str | None:
 
 def resolve(project_root: Path, args_string: str | None = None) -> str:
     """Apply the priority chain. Always returns a valid mode word."""
-    return _from_args(args_string) or _from_file(project_root) or "default"
+    return _from_args(args_string) or _from_file(project_root) or "lean"
+
+
+def _requested_modes(args_string: str | None) -> set[str]:
+    """Return every explicit mode so contradictory spellings cannot hide."""
+    if not args_string:
+        return set()
+    return set(FLAG_RE.findall(args_string)) | set(KV_RE.findall(args_string))
 
 
 def main(argv: list[str]) -> int:
@@ -63,8 +70,8 @@ def main(argv: list[str]) -> int:
             "resolve-mode: usage: resolve-mode.py <project-root> [--from-args <args>]",
             file=sys.stderr,
         )
-        # Still emit a default so callers don't trip.
-        print("default")
+        # Still emit the product default so callers don't trip.
+        print("lean")
         return 0
 
     project_root = Path(argv[1])
@@ -74,16 +81,16 @@ def main(argv: list[str]) -> int:
         if i + 1 < len(argv):
             args_string = argv[i + 1]
 
-    # Validate: lean and thorough are mutually exclusive.
-    if args_string:
-        flags = FLAG_RE.findall(args_string)
-        if "lean" in flags and "thorough" in flags:
-            print(
-                "resolve-mode: --lean and --thorough are mutually exclusive — passing both is a doctrine violation",
-                file=sys.stderr,
-            )
-            print("default")
-            return 0
+    # Validate every accepted spelling: a key/value form must not silently
+    # override a contradictory flag form.
+    modes = _requested_modes(args_string)
+    if len(modes) > 1:
+        print(
+            "resolve-mode: conflicting modes are mutually exclusive — pass exactly one of default, lean, or thorough",
+            file=sys.stderr,
+        )
+        print("lean")
+        return 0
 
     print(resolve(project_root, args_string))
     return 0
