@@ -6,10 +6,10 @@ Reads .hyperflow/ and prints ONE compact line consolidating: plugin version,
 profile/architecture/conventions freshness, memory entry count, auto-bridge
 state, sticky/auto-routing state, active-task count.
 
-Skips the line entirely (exits 0 with no output) when ANY surface needs
-explicit attention — those surfaces emit their own dedicated section instead
-(memory compaction advisory firing, scaffold missing analysis files, sticky
-just upgraded, etc.).
+The line is always emitted for a Hyperflow project. Surfaces that need explicit
+attention (memory compaction, cache migration, bridge refresh, handoff, update,
+or compaction recovery) emit their own dedicated hook sections in addition to
+this situational floor.
 
 Usage:
   lean-summary.py <plugin-root> <project-root>
@@ -19,7 +19,6 @@ Always exits 0 (non-blocking). Errors go to stderr.
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -93,10 +92,23 @@ def _sticky_state(hf_dir: Path) -> tuple[str, bool]:
 
 def _tasks_state(hf_dir: Path) -> tuple[str, bool]:
     tasks_dir = hf_dir / "tasks"
-    if not tasks_dir.is_dir():
-        return "0 active tasks", False
+    features_dir = hf_dir / "features"
     try:
-        count = sum(1 for f in tasks_dir.iterdir() if f.suffix == ".md")
+        flat_count = (
+            sum(1 for f in tasks_dir.iterdir() if f.is_file() and f.suffix == ".md")
+            if tasks_dir.is_dir()
+            else 0
+        )
+        feature_count = (
+            sum(
+                1
+                for feature_dir in features_dir.iterdir()
+                if feature_dir.is_dir() and (feature_dir / "feature.md").is_file()
+            )
+            if features_dir.is_dir()
+            else 0
+        )
+        count = flat_count + feature_count
     except OSError:
         return "tasks: read-error", True
     label = "1 active task" if count == 1 else f"{count} active tasks"
@@ -120,29 +132,18 @@ def main(argv: list[str]) -> int:
 
     version = _read_version(plugin_root)
     parts: list[str] = [f"hyperflow v{version}"]
-    attention = False
     for fn in (_profile_state, _memory_state):
-        label, needs_attn = fn(hf_dir)
+        label, _ = fn(hf_dir)
         parts.append(label)
-        attention = attention or needs_attn
-    label, needs_attn = _bridge_state(project_root)
+    label, _ = _bridge_state(project_root)
     parts.append(label)
-    attention = attention or needs_attn
-    label, needs_attn = _sticky_state(hf_dir)
+    label, _ = _sticky_state(hf_dir)
     parts.append(label)
-    attention = attention or needs_attn
-    label, needs_attn = _tasks_state(hf_dir)
+    label, _ = _tasks_state(hf_dir)
     parts.append(label)
-    attention = attention or needs_attn
 
-    if attention:
-        # Don't suppress; let the dedicated section handle the message.
-        # But still emit the summary so user sees the overall state at a glance.
-        print(" · ".join(parts))
-        return 0
-
-    # All-clear: emit the consolidated one-liner. Hook will then skip the
-    # individual ## sections (they're empty/idle anyway).
+    # Attention is intentionally reflected in the labels while the hook emits
+    # any actionable detail as a separate section.
     print(" · ".join(parts))
     return 0
 
