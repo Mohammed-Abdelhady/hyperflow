@@ -119,7 +119,11 @@
           Start with anything from a rough idea to a clear task: <strong><code>plan</code></strong> sharpens the prompt, designs the approach, and decomposes it into a task file (bouncing straight to decomposition when the approach is already clear). <code>plan &rarr; dispatch</code> are <strong>chain-starters</strong> &mdash; invoking either auto-advances forward through the rest. <code>audit</code> and <code>deploy</code> are <strong>gates</strong> &mdash; never auto-invoked; they fire only on an explicit user <code>Yes</code> to a gate question. <code>scaffold</code> is a one-time project setup (run once per repo), so it sits before the flow rather than inside it.
         </p>
 
-        <p>Two skills sit outside the chain:</p>
+        <p>
+          Auto-routed implementation requests first run a deterministic preflight. Only an observed, clear, reversible change in exactly 1&ndash;2 ordinary files can take the foreground <strong>inline-fast</strong> branch; gated, generated, migration, ambiguous, or explicitly thorough work keeps the normal <code>plan &rarr; dispatch</code> path.
+        </p>
+
+        <p>Four skills sit outside the chain:</p>
 
         <div class="skills-table-wrap">
           <table>
@@ -130,6 +134,10 @@
               </tr>
             </thead>
             <tbody>
+              <tr>
+                <td><code>workflow</code></td>
+                <td>Big-task workflow lane for deep/system-wide tasks, large migrations, repo-wide audits, and high-confidence verification</td>
+              </tr>
               <tr>
                 <td><code>trace</code></td>
                 <td>Root-cause analysis &mdash; 5-whys + hypothesis testing for bugs and test failures</td>
@@ -155,7 +163,7 @@
         <h2 id="triage-heading">Layer 0.5 &mdash; triage</h2>
 
         <p>
-          Every chain-starter begins with a <strong>Classifier</strong> dispatch (Layer 0.5 in the doctrine). It returns:
+          Auto-routed implementation requests begin with a deterministic preflight. It can prove the narrow inline-fast case without dispatching an agent; everything else proceeds to the normal <strong>Classifier</strong> dispatch (Layer 0.5 in the doctrine). Explicit <code>plan</code>, <code>mode=default</code>, and <code>--thorough</code> requests always keep the normal path. The classifier returns:
         </p>
 
         <div class="install-block">
@@ -166,8 +174,8 @@
             {<br />
             &nbsp;&nbsp;"types":      ["api", "security", "frontend"],<br />
             &nbsp;&nbsp;"complexity": "moderate",<br />
-            &nbsp;&nbsp;"risk":       "medium",<br />
-            &nbsp;&nbsp;"scope":      "5-files",<br />
+            &nbsp;&nbsp;"risk":       "reversible",<br />
+            &nbsp;&nbsp;"scope":      "multi-file",<br />
             &nbsp;&nbsp;"ambiguity":  0.4,<br />
             &nbsp;&nbsp;"flow":       "standard",<br />
             &nbsp;&nbsp;"personas":   ["security", "api", "frontend"]<br />
@@ -192,7 +200,7 @@
               </tr>
               <tr>
                 <td><code>ambiguity</code></td>
-                <td>Spec depth &mdash; light (2 questions) / standard (3 questions + alternatives) / deep (4&ndash;5 questions + section-by-section approval). Floor: 2 questions, always.</td>
+                <td>Spec depth &mdash; grounded, clear work invents zero questions; only material ambiguity triggers questions, with 5 maximum.</td>
               </tr>
               <tr>
                 <td><code>personas[]</code></td>
@@ -205,6 +213,35 @@
             </tbody>
           </table>
         </div>
+
+        <p>
+          Triage can route big tasks to <code>/hyperflow:workflow</code> instead of <code>plan &rarr; dispatch</code>. The route applies to <code>flow=deep</code>, <code>flow=scientific</code>, <code>scope=system-wide</code>, large migrations, repo-wide audits, high-confidence verification, and explicit workflow requests. Claude Code uses native dynamic workflows where available; Codex, OpenCode, and Grok use the portable adapter. Surfaces that cannot preserve adapter phases keep the normal <code>plan &rarr; dispatch</code> route.
+        </p>
+
+        <p>Flow budgets are hard ceilings, not targets:</p>
+
+        <div class="skills-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Profile</th>
+                <th scope="col">Hard ceiling</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>fast</code></td><td>10k tokens</td></tr>
+              <tr><td><code>standard</code></td><td>50k tokens</td></tr>
+              <tr><td><code>deep</code></td><td>200k tokens</td></tr>
+              <tr><td><code>research</code></td><td>60k tokens</td></tr>
+              <tr><td><code>creative</code></td><td>100k tokens</td></tr>
+              <tr><td><code>scientific</code></td><td>200k tokens</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="install-note">
+          The guard checks totals at natural phase and batch boundaries. It may continue, degrade the remaining work, or halt before another dispatch; it never interrupts an agent already in flight.
+        </p>
       </div>
     </section>
 
@@ -218,8 +255,7 @@
         <h3 id="spec-heading">Plan — design phase</h3>
 
         <p>
-          The chain-starter asks at Step 0 whether to advance <strong>auto</strong> (no gates between phases) or <strong>manual</strong> (confirm before each).
-          The choice propagates to every downstream skill via the <code>Skill</code> tool&rsquo;s <code>args</code> parameter. In Codex App/CLI, where that host handoff may not exist, Hyperflow treats the handoff as inline continuation and keeps running the next skill in the same thread.
+          The chain starts in <strong>lean mode</strong> unless the request explicitly supplies <code>mode=default</code> or <code>--thorough</code>. Lean mode loads only phase-relevant context; the explicit full modes restore the established full-context, full-ceremony path. Structural build-location, audit, deploy, and push gates remain intact in either mode.
         </p>
 
         <p>
@@ -229,10 +265,10 @@
         <p>Then:</p>
 
         <ul>
-          <li><strong>Classifier</strong> &mdash; triage JSON (see above)</li>
+          <li><strong>Classifier</strong> &mdash; triage JSON (see above; skipped only by a proven inline-fast route)</li>
           <li><strong>Searcher</strong> (worker) + <strong>Reviewer</strong> &mdash; context exploration</li>
           <li><strong>Analyst</strong> &mdash; 6-dimension brief: intent, technical fit, scope, constraints, risks, alternatives</li>
-          <li><strong><code>AskUserQuestion</code></strong> &times;N &mdash; design questions, floor 2, scaled by ambiguity; every option list marks a <code>(Recommended)</code> choice</li>
+          <li><strong><code>AskUserQuestion</code></strong> &times;N &mdash; only material design questions, scaled by ambiguity and capped at 5; grounded, clear work asks zero</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; requirement synthesis</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> &mdash; 2&ndash;3 alternative approaches with trade-offs</li>
           <li><strong>Writer</strong> + <strong>Reviewer</strong> per design section &mdash; 5 sections, each approved by the user</li>
@@ -259,7 +295,11 @@
         <!-- Dispatch -->
         <h3 id="dispatch-heading">Dispatch</h3>
 
-        <p>The workhorse. Per batch:</p>
+        <p>
+          The workhorse has two paths. A deterministic inline-fast route is available only after inspection observes all of these facts: the task is clear, reversible, limited to exactly 1&ndash;2 ordinary files, and outside security/integration gates, generated surfaces, migrations, explicit Hyperflow routing, and thorough mode. It inspects and edits in the foreground, runs affected checks, reviews the diff inline, and creates one conventional commit. It dispatches zero agents. If read-only discovery invalidates any eligibility fact, Hyperflow switches to the normal path before writing; it never escalates after a partial inline edit.
+        </p>
+
+        <p>Every other task uses the normal orchestrated workhorse. Per batch:</p>
 
         <ul>
           <li>Print the batch header &mdash; <code>Batch N &mdash; parallel:K</code> or <code>serial:K</code></li>
@@ -403,7 +443,7 @@
     <!-- ── Parallelism ───────────────────────────────────────────────────── -->
     <section id="parallelism" aria-labelledby="parallelism-heading">
       <div class="container">
-        <h2 id="parallelism-heading">Parallelism &mdash; provable from the numbers</h2>
+        <h2 id="parallelism-heading">Parallelism and usage &mdash; provable from the numbers</h2>
 
         <p>
           Parallel dispatch is a prompt-discipline property &mdash; multiple <code>Agent</code> calls in Claude Code, or multiple Codex subagent calls when exposed, should be issued together so independent work runs concurrently;
@@ -438,14 +478,23 @@
             Spec depth: standard            1 agent     3.2k tokens<br />
             Profile: deep                   &mdash;           &mdash;<br />
             Reviews                         4 agents   52.1k tokens  (3 batch &middot; 1 final)<br />
-            Workers                         8 agents  186.0k tokens  (4 implementer &middot; 3 searcher &middot; 1 writer)<br />
+            Workers                         8 agents   66.0k tokens  (4 implementer &middot; 3 searcher &middot; 1 writer)<br />
             Wall-clock                      3m 47s<br />
             Cumulative                     14m 22s    (ratio 0.26 &mdash; parallel)<br />
             Escalations                     0<br />
-            Total                          14 agents  243.1k tokens<br />
+            Duplicate context                         8.4k tokens  (ratio 0.07)<br />
+            Retry cost                                4.2k tokens<br />
+            Cache hit rate                            0.31<br />
+            Accepted commits                          6            (20.52k tokens/commit)<br />
+            Estimated records                         0<br />
+            Total                          14 agents  123.1k tokens<br />
             &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;
           </div>
         </div>
+
+        <p>
+          Normal-flow agent calls append metadata-only ledger records: chain, phase, batch, task, attempt, role, token counts, cache/context metadata, estimate status, accepted-commit status, and timestamp. The ledger never stores prompts, responses, file contents, patches, or secrets. Inline-fast has no agent result to record, so its usage block reports zero dispatched agents and creates no ledger records; Hyperflow does not invent foreground token counts.
+        </p>
 
         <p><code>ratio = wall-clock / cumulative</code>. Thresholds:</p>
 

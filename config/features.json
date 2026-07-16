@@ -2,7 +2,7 @@
   "$schema": "./features.schema.json",
   "version": "5.12.0",
   "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
-  "subtitle": "Planners design, parallel workers build, and 22 domain specialists review every step. 18 skills, adaptive depth, persistent per-project memory.",
+  "subtitle": "Tiny proven-safe edits run inline; planners, parallel workers, and 22 specialists handle orchestrated work. 18 skills, adaptive depth, persistent per-project memory.",
   "layers": [
     {
       "n": 0,
@@ -13,13 +13,13 @@
     {
       "n": "0.5",
       "name": "Task Triage",
-      "summary": "Classify the task (types, complexity, risk, ambiguity, flow profile, personas) before any worker fires",
+      "summary": "Run deterministic inline-fast preflight first; otherwise classify types, complexity, risk, ambiguity, flow, and personas before workers fire",
       "color": "thinking"
     },
     {
       "n": 1,
       "name": "Autonomy",
-      "summary": "Zero confirmations, minimal output, silent recovery",
+      "summary": "Lean context by default, zero invented questions for grounded clear work, minimal output, silent recovery",
       "color": "thinking"
     },
     {
@@ -31,7 +31,7 @@
     {
       "n": 3,
       "name": "Orchestrator",
-      "summary": "Decompose \u2192 parallel dispatch \u2192 review \u2192 synthesize",
+      "summary": "Proven safe 1\u20132-file work runs inline-fast; everything else decomposes \u2192 dispatches \u2192 reviews \u2192 synthesizes",
       "color": "worker"
     },
     {
@@ -83,7 +83,7 @@
       "name": "plan",
       "command": "/hyperflow:plan",
       "tagline": "Design + decompose",
-      "purpose": "Amplify the prompt, design the approach, and decompose into a batched task file (max thinking) \u2014 skips whichever phase the request doesn't need; stops at a build-location gate, never auto-implements",
+      "purpose": "Amplify the prompt, ask only material questions, design the approach, and decompose into a batched task file \u2014 grounded clear work invents zero questions; stops at a build-location gate, never auto-implements",
       "chain": "starter"
     },
     {
@@ -97,7 +97,7 @@
       "name": "dispatch",
       "command": "/hyperflow:dispatch",
       "tagline": "Execute the batches",
-      "purpose": "Dispatch parallel workers + Worker \u2192 Reviewer review + final integration review; endpoint of the chain",
+      "purpose": "Use deterministic foreground inline-fast only for observed clear reversible 1\u20132-file work; otherwise dispatch parallel workers + Worker \u2192 Reviewer review + final integration review",
       "chain": "endpoint"
     },
     {
@@ -195,7 +195,7 @@
       "name": "hyperflow",
       "command": "/hyperflow:hyperflow",
       "tagline": "Single-agent adapter",
-      "purpose": "Apply the orchestration doctrine in Codex, Antigravity, Grok, or another single-agent surface \u2014 auto-invoked for non-trivial engineering work",
+      "purpose": "Apply lean-by-default orchestration in Codex, Antigravity, Grok, or another single-agent surface, preserving deterministic safe fast work and the normal reviewed path",
       "chain": "portable single-agent adapter"
     }
   ],
@@ -412,7 +412,10 @@
     "Parallel worker dispatch (independent subtasks run simultaneously)",
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
     "Codex/OpenCode/Grok portable workflow adapter for big tasks",
-    "Reviewer review of every worker output (iron rule)",
+    "Normal orchestrated path reviews every worker output; deterministic inline-fast uses foreground diff review",
+    "Lean context by default; mode=default or --thorough restores full context and ceremony",
+    "Hard token ceilings: fast 10k, standard 50k, deep 200k, research 60k, creative 100k, scientific 200k",
+    "Metadata-only usage ledger with phase totals, duplicate-context ratio, retry cost, cache-hit rate, accepted commits, tokens per accepted commit, and estimate count",
     "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
     "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
     "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
