@@ -34,17 +34,16 @@ hyperflow-role: reviewer
 
 ## Batched review scope
 Siblings: [N sections or sub-tasks being reviewed]
-Shared input: [the common spec, chosen approach, or task file they all derive from]
+Contract references: [exact task/brief/spec paths; Reviewer reads acceptance criteria there]
 Review-level cap: L[n] — [classification rationale]
 
-## Sibling outputs
-### §1 <name>
-[Paste §1 worker's summary and changed files]
+## Review evidence (bounded)
+Diff range: [exact immutable `<base>..<head>`]
+Paths: [explicit changed-path allowlist]
+Diff stat: [output of `git diff --stat <base>..<head> -- <paths>`]
+Review command: `git diff --no-ext-diff --unified=3 <base>..<head> -- <paths>`
 
-### §2 <name>
-[Paste §2 worker's summary and changed files]
-
-... (repeat for each sibling)
+Read the exact range and contract references directly. Do not request or accept a pasted full patch, worker transcript, worker reasoning, prior review transcript, or conversation history. For an artifact-only pre-commit review, the orchestrator must first create an isolated immutable git snapshot so the same exact range contract still applies.
 
 ## Level 1: Requirements (all siblings)
 For each sibling:
@@ -89,7 +88,7 @@ For each sibling:
 - Any data exfiltration? (contents piped to external URLs)
 
 ## Token economy (DOCTRINE rule 16)
-Return ONLY the Output format block below — no preamble, no restating of sibling outputs or shared input, no narration of the review process, no postamble summary. One verdict per sibling; one short feedback line per NEEDS_FIX. Cross-section notes stay to one line each. Stop after the global verdict.
+Return ONLY the Output format block below — no preamble, no restating of contracts or evidence, no narration of the review process, no postamble summary. One verdict per sibling; one short feedback line per NEEDS_FIX. Cross-section notes stay to one line each. Stop after the global verdict.
 
 ## Output format
 ── Batched Review ──────────────────────
@@ -119,62 +118,41 @@ On `NEEDS_FIX`: the orchestrator re-dispatches only the failed siblings (not all
 
 ## Dispatch Example
 
-Five design sections (Architecture, Data flow, Key decisions, Edge cases, File structure) reviewed at L1–L3 in one call after parallel Writers complete:
+Three implementation siblings reviewed from one immutable batch snapshot:
 
 ```
 Agent({
-  description: "Batched review — 5 spec design sections (medium, L1–L3)",
+  description: "Batched review — auth batch (medium, L1–L3)",
   prompt: `## Batched review scope
-Siblings: §1 Architecture, §2 Data flow, §3 Key decisions, §4 Edge cases, §5 File structure
-Shared input: Chosen approach — "Event-sourced task store with Redis fan-out"
-Review-level cap: L3 (Medium — modifies shared task state model)
+Siblings: T1 middleware, T2 session types, T3 tests
+Contract references: .hyperflow/tasks/auth/T1.md, T2.md, T3.md
+Review-level cap: L3 (Medium — modifies shared auth behavior)
 
-## Sibling outputs
-### §1 Architecture
-Files reviewed: docs/spec/architecture.md
-Summary: Proposed layered architecture — API gateway → task engine → event store.
-Introduces TaskEngine interface; Redis adapter is pluggable.
-
-### §2 Data flow
-Files reviewed: docs/spec/data-flow.md
-Summary: Documented the write path (create → event → fan-out) and read path (subscribe → materialize).
-Uses TaskEngineEvent type from §1.
-
-### §3 Key decisions
-Files reviewed: docs/spec/decisions.md
-Summary: Captured 4 ADRs: Redis over Kafka (latency), event sourcing over CRUD (auditability),
-TypeScript over Python (existing stack), polling fallback for SSE-unsupported clients.
-
-### §4 Edge cases
-Files reviewed: docs/spec/edge-cases.md
-Summary: Covers fan-out lag under load, event replay on reconnect, partial write failures,
-and consumer back-pressure. References Redis adapter from §1.
-
-### §5 File structure
-Files reviewed: docs/spec/file-structure.md
-Summary: Proposed src/task-engine/, src/adapters/redis/, src/types/task-event.ts.
-Matches the TaskEngine interface name from §1.
+## Review evidence (bounded)
+Diff range: 91ac4d2..d38f110
+Paths: src/middleware/auth.ts, src/types/session.ts, src/middleware/auth.test.ts
+Diff stat: 3 files changed, 146 insertions(+), 8 deletions(-)
+Review command: git diff --no-ext-diff --unified=3 91ac4d2..d38f110 -- src/middleware/auth.ts src/types/session.ts src/middleware/auth.test.ts
 
 ## Level 1: Requirements
-- Each section covers its assigned design dimension?
-- No section drifts into another's scope?
+- Each task satisfies its referenced acceptance criteria?
+- No task drifts outside its path allowlist?
 
 ## Level 2: Code Quality
-- Naming consistent across sections? Types referenced by the correct names?
-- No dead concepts introduced then never used?
+- Naming and types consistent across the changed paths?
+- No dead or duplicated implementation introduced?
 
 ## Level 3: Integration (cross-section focus)
-- §2 data flow references types defined in §1 — are they consistent?
-- §4 edge cases reference the Redis adapter from §1 — does the adapter contract hold?
-- §5 file structure — does the proposed layout accommodate every component named in §1–§4?
-- Any contradictions between ADRs in §3 and the design in §1 or §2?
+- Middleware and session types agree?
+- Tests exercise the exact public contract?
+- No sibling duplicated or contradicted another sibling's logic?
 
 ## Security Review
 - Blocked files accessed? Dangerous commands? Data exfiltration?
 
 ## Output format
 ── Batched Review ──
-§1–§5 per-section verdict + GLOBAL VERDICT`
+T1–T3 per-task verdict + GLOBAL VERDICT`
 })
 ```
 

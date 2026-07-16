@@ -68,19 +68,19 @@ Inject relevant analysis into worker prompts under `## Project Context`:
 
 ## Layer 0.5: Task Triage
 
-Triage is the FIRST step on every new user request. A cheap thinking call classifies the task into `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON. The classification drives every downstream decision — flow profile, brainstorm depth, persona stitching, token budget. Triage is mandatory on every new-work request; skip it only for mid-flow clarifications or follow-up replies.
+Triage is the first step on every new-work request. A deterministic preflight resolves only high-confidence inline-fast work; everything else uses the focused Classifier call. Both paths emit `{ types[], complexity, risk, scope, ambiguity, flow, personas[] }` JSON that drives downstream decisions.
 
 | Field | What it controls |
 |-------|-----------------|
 | `types[]` | Which personas are stitched (maps to personas-A/B priority order) |
 | `flow` | Which flow profile Layer 3 executes (`fast`/`standard`/`deep`/`research`/`creative`/`scientific`) |
 | `personas[]` | Ordered list injected into worker prompts |
-| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → light, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep). The 2-question floor (Layer 4) is non-negotiable; only the P4 bounce-to-scope path at `ambiguity < 0.4 AND complexity == low` exits the spec phase entirely. |
-| `budget` | Token envelope passed to flow profile for worker/reviewer allocation |
+| `ambiguity` | Brainstorm depth in Layer 4 (`0.0–0.2` → none, `0.2–0.5` → light, `0.5–0.8` → standard, `0.8–1.0` → deep). Questions fire only when an answer changes implementation. |
+| `budget` | Hard token ceiling passed to the flow profile and budget guard |
 
 See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, field definitions, and worked examples.
 
-**Classifier:** Triage is structured classification, not deep reasoning. Fallback chain on malformed JSON output: retry once → use safe defaults.
+**Classifier:** Triage is structured classification, not deep reasoning. It is skipped only when deterministic preflight returns `inline_fast`. Fallback chain on malformed JSON output: retry once → use safe defaults.
 
 **Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
 
@@ -88,20 +88,20 @@ See [task-triage.md](task-triage.md) for the full prompt template, JSON schema, 
 
 ## Layer 4: Adaptive Brainstorming
 
-Brainstorming runs on EVERY task — never skipped. Depth is scaled to the triage `ambiguity` score, **with a hard floor of 2 questions per spec run**. Skipping questions entirely (`silent` mode) is no longer allowed — even trivial tasks get two structural questions so the user always has a chance to redirect.
+Every task receives grounded analysis, but questions are adaptive. Clear reversible work uses `none`; material ambiguity scales through light, standard, and deep. Structural gates remain unchanged.
 
 | Ambiguity (0.0–1.0) | Depth | Behavior |
 |---------------------|-------|----------|
-| 0.0–0.2 | `light` | **Always 2 questions** — usually scope-confirm + 1 constraint check |
-| 0.2–0.5 | `light` | **Always 2 questions** — intent clarify + constraint discovery |
+| 0.0–0.2 | `none` | Silent grounded recap; no invented clarification |
+| 0.2–0.5 | `light` | 0–2 questions whose answers change implementation |
 | 0.5–0.8 | `standard` | **3 questions** + propose 2–3 alternatives with trade-offs |
 | 0.8–1.0 | `deep` | **4–5 questions** + full 6-dimension analysis + section-by-section design approval |
 
-**Hard floor:** every spec run dispatches `AskUserQuestion` at least twice, regardless of how confident the triage was. The 2-question minimum gives the user a structural place to course-correct before workers run.
+**Question rule:** never ask what inspection already answered. `AskUserQuestion` is required only for unresolved material choices and the existing structural gates.
 
 Some types force a minimum depth: `creative` → `deep`; `architect`/`security`/`scientific` → `standard`. See [adaptive-brainstorming.md](adaptive-brainstorming.md) for depth overrides.
 
-`AskUserQuestion` is mandatory for all depths above `silent`. Banned: "Should I proceed?" Allowed: clarification of what to build, which approach, scope boundaries.
+`AskUserQuestion` is mandatory when a resolved depth contains material unknowns. Banned: "Should I proceed?" Allowed: clarification of what to build, which approach, and scope boundaries.
 
 See [adaptive-brainstorming.md](adaptive-brainstorming.md) for the full depth modes, question framework, and section-approval protocol.
 

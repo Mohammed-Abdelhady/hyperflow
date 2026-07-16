@@ -2,7 +2,7 @@
 
 > Shared reference for every Hyperflow skill. Not a registered skill itself — invoked indirectly by `/hyperflow:scaffold`, `/hyperflow:plan`, `/hyperflow:dispatch`, `/hyperflow:trace`, `/hyperflow:audit`, `/hyperflow:deploy`, and `/hyperflow:cache`.
 
-You operate as an orchestrator coordinating worker and reviewer agents. Every agent runs on the current session model — there is no model-tier routing or model configuration; roles differ by responsibility, not model. Every task — no matter how small — follows this pattern. Brainstorming runs on every task, depth scaled by triage. All terminal output follows the visual language in [output-style.md](output-style.md).
+You operate as an orchestrator coordinating worker and reviewer agents. Every agent runs on the current session model; roles differ by responsibility, not model. High-confidence reversible 1–2-file work may use the deterministic inline-fast lane with foreground execution and inline diff review. All other work uses worker/reviewer orchestration. Analysis and questions scale to grounded ambiguity.
 
 ## Reference files
 
@@ -40,7 +40,7 @@ See [doctrine-extensions.md § Layer 0](doctrine-extensions.md#layer-0-project-a
 
 ## Layer 0.5: Task Triage
 
-**Summary:** FIRST step on every new request. The Classifier produces `{ types[], complexity, risk, scope, ambiguity, flow, personas[], budget }` JSON. Drives all downstream choices: flow profile, brainstorm depth, persona stitching, token budget. Mandatory — skip only for mid-flow clarifications or follow-up replies. Fallback chain on malformed output: retry once → safe defaults.
+**Summary:** FIRST step on every new request. Deterministic preflight resolves only high-confidence inline-fast work; everything else uses the Classifier. Both produce `{ types[], complexity, risk, scope, ambiguity, flow, personas[], budget }`. Fallback on malformed classifier output: retry once → safe defaults.
 
 **Hard rule:** triage output is the contract for all downstream layers. If no triage was performed, the orchestrator is operating wrong.
 
@@ -69,7 +69,7 @@ Scan every user message for these verbs/phrases. If matched, route immediately. 
 | Design exploration | `brainstorm`, `design`, `explore`, `let's think about`, `what if`, `should we`, `how should`, `unsure about`, `not sure how to` | `/hyperflow:plan` |
 | Scope / plan | `scope`, `decompose`, `plan out`, `break down`, `create a plan`, `task graph`, `decompose into batches` | `/hyperflow:plan` |
 | Big-task workflow | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow`, `high-confidence verification` | `/hyperflow:workflow` in Claude Code v2.1.154+, Codex, and OpenCode; otherwise `/hyperflow:plan` |
-| Implementation | `build`, `implement`, `add`, `create`, `make a`, `refactor`, `write the`, `wire up`, `extract`, `inline` | `/hyperflow:plan` (stops at a build-location gate — never auto-implements) |
+| Implementation | `build`, `implement`, `add`, `create`, `make a`, `refactor`, `write the`, `wire up`, `extract`, `inline` | Inspect first → deterministic inline-fast when proven safe; otherwise `/hyperflow:plan` |
 | Debugging / fix | `debug`, `fix it`, `fix`, `solve`, `troubleshoot`, `investigate`, `root-cause`, `why is`, `X is broken`, `Y fails`, `Z throws`, stack trace pasted | `/hyperflow:trace` |
 | Review / audit | `audit`, `review`, `check for issues`, `look for bugs`, `any problems`, `code review`, `security check`, `scan the diff` | `/hyperflow:audit` |
 | Shipping | `ship`, `push`, `release`, `deploy`, `let's deploy`, `ready to ship`, `cut a release`, `merge to main` | `/hyperflow:deploy` |
@@ -78,7 +78,7 @@ Scan every user message for these verbs/phrases. If matched, route immediately. 
 | Status / progress | `status`, `progress`, `what's running`, `how much done`, `eta` | `/hyperflow:status` |
 | Background agents | `list background`, `what's in background`, `cancel background`, `show background` | `/hyperflow:background` |
 
-Verb-matching is case-insensitive and word-boundary-aware. Match the first verb encountered — don't try to find "the best" route by re-reading the whole message.
+Verb-matching is case-insensitive and word-boundary-aware. A verb selects a candidate workflow, not its weight: map the affected surface, then run `scripts/route-task.py`. Explicit Hyperflow commands always keep their requested workflow.
 
 **Tier 2 — `state: on` (full sticky):** every task-shaped user message routes, even without an intent verb. Useful when the user is in a sustained build session and wants every message — even short ones like "the dashboard component" — interpreted as work. Uses the message-shape heuristic from the original sticky contract (verb-led → plan; etc.).
 
@@ -129,8 +129,8 @@ The numbered autonomy rules that follow continue to apply both when sticky is ON
      - Layer 3: Task verification — present understanding before dispatching workers
      - Layer 4: Brainstorming — intent, constraints, assumptions, scope
    - Clarification ≠ permission. Asking "Which layout?" is clarification. Asking "Should I start?" is confirmation.
-   - **Structural gates** — session strategy (Step 0 — one / two sessions, + the two-session handoff follow-up), **operational choices (Step 0.5 — commit cadence + branch + push pre-elections batched into one `AskUserQuestion` call immediately after Step 0, so the user is interrupted exactly twice at startup and then not again until done; fires for both `session=one` and `session=two`)**, spec questions (floor 2), section approval (Spec Step 7), scope post-research clarify (Scope Step 2.5, when ambiguity remains), phase-dispatch scope (Dispatch Step 1.5 — next phase vs all phases, feature mode only), audit prompt (Dispatch Step 5), deploy prompt (Dispatch Step 5), audit fix-gate (Audit Step 6), push confirmation (Deploy Step 6, honors `push` pre-election from Step 0.5), commit-inclusion (Deploy Step 4), `SECURITY_VIOLATION` halt — are NOT clarifications and NOT confirmations. They are part of the chain's structure and MUST fire every time their precondition is met. **"No clarifying questions" / "auto-pilot" / "always-on" / any autonomy directive does NOT skip them.** If the agent can't `AskUserQuestion` for a structural gate, it errors rather than defaulting. Specifically — Step 0 of every chain-starter (spec / scope when invoked directly) MUST present the one/two-session choice via `AskUserQuestion`; defaulting to `one` without asking is a doctrine violation even if the user previously said "work without confirmations". (Dispatch is the build endpoint — it resolves session context rather than asking; see its Step 0.)
-   - **The session gate (one vs two) controls WHERE the chain runs, never clarification questions.** `session=one` runs the whole chain straight through in this session (no inter-phase pauses); `session=two` runs planning here (brain + plan), stops at the dispatch boundary, and hands the build to a second session in another environment (see [`../../agents/README.md`](../../agents/README.md) for the Brain roster carried across, and `session-handoff.md` for the package). Every chain skill's dedicated clarification stage still fires regardless of the session choice: plan Step 5 (floor 2 on the design path), plan post-research clarify on the bounce path, dispatch Step 2 (irreversible-boundary ambiguity), audit Step 6, deploy Step 4 + Step 6. `session=one` MUST NOT be read as "skip clarification questions." (The prior per-phase `manual` pause mode is removed; two-session's hard stop at the dispatch boundary covers the inspect-before-building case.)
+   - **Structural gates** — session/build location, operational choices when a build starts, section approval when a design phase runs, phase-dispatch scope, audit/deploy/fix/push/commit-inclusion gates, and `SECURITY_VIOLATION` halt — fire whenever their documented precondition is met. Clarification questions are not structural gates: ask them only for unresolved material choices after inspection.
+   - **The session gate controls WHERE the chain runs, not whether material ambiguity exists.** Clear work can ask zero clarification questions; irreversible ambiguity still fires its dedicated escalation gate.
    - **Codex / single-agent fallback:** if the host does not expose `AskUserQuestion` as a popup UI, the structural gate still fires in chat. Print a compact `Hyperflow Question` block with the same question, numbered options, and `(Recommended)` marker where the doctrine requires one, then stop and wait for the user's reply. Never silently pick the recommendation, never downgrade the gate to a status update, and never treat the lack of popup UI as permission to skip required questions.
    - **File-first artefacts: long-form work product lives in files under `.hyperflow/`, never inline in chat and never scattered into other repo locations. Format per [`artefact-format.md`](artefact-format.md).** Every planning artefact the orchestrator produces — feature specs, design sections, task decompositions, audit findings, audit-fix specs, decision logs — MUST live under one of three canonical homes:
 
@@ -197,10 +197,10 @@ Scan every user message. If a verb matches, follow the matching workflow — eve
 
 | Verb / phrase | Workflow |
 |---|---|
-| `brainstorm`, `design`, `explore`, "what if", "should we", "unsure about" | Read code → ask ≥2 questions → propose 2-3 approaches → design section-by-section with user approval per section |
+| `brainstorm`, `design`, `explore`, "what if", "should we", "unsure about" | Read code → ask only material questions → propose 2-3 approaches → design section-by-section with user approval per section |
 | `scope`, `decompose`, "plan out", "break down" | Map affected surface → produce batched task graph → write to `.hyperflow/tasks/<slug>.md` |
 | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | In Claude Code v2.1.154+, create a dynamic workflow; in Codex/OpenCode use the portable workflow adapter; elsewhere use the build/scope route |
-| `build`, `implement`, `add`, `refactor`, "wire up" | Decompose into batches → dispatch parallel workers → per-batch reviewer → per-sub-task commits → final integration reviewer |
+| `build`, `implement`, `add`, `refactor`, "wire up" | Inspect → inline-fast for proven reversible 1-2-file work; otherwise decompose → parallel workers → batch review → commits → integration review |
 | `debug`, `fix it`, `solve`, "why is X", "Y fails", stack trace | Systematic root-cause: 5 Whys + parallel hypothesis testing. Never blind-patch symptoms |
 | `audit`, `review`, "check for issues", "security check" | Multi-level review (L1 syntax → L5 exhaustive) → write findings to `.hyperflow/audits/<timestamp>.md` → ask fix-gate |
 | `ship`, `push`, `release`, `deploy` | Pre-push gates (lint + typecheck + build + tests + security sweep) → ask before push → never `--no-verify`, never force-push to main |
@@ -333,12 +333,12 @@ Layer 3 executes the flow profile chosen by triage. There are 6 profiles — `fa
 
 | Profile | Use when | Workers | Reviewers | Budget |
 |---------|----------|---------|-----------|--------|
-| `fast` | Trivial single-file, reversible, ambiguity < 0.2 | 1 | inline self-review | ≤30k |
-| `standard` | Simple/moderate, 2–5 files | 1–2 | 1 batch reviewer | ≤100k |
-| `deep` | Complex / cross-cutting / system-wide | 3+ | per-batch + final | 300k |
-| `research` | Unknown territory, library/code evaluation | 3+ searchers | inline synthesis | ≤80k |
-| `creative` | UI/UX exploration, design-dominant | 1–2 | 1 reviewer | ≤150k |
-| `scientific` | Correctness-critical, numerical/proof, TDD | 2–3 | multi-level L1–L5 | 300k |
+| `fast` | Proven reversible 1–2 files, ambiguity < 0.2 | 0 dispatched | inline diff review | 10k hard |
+| `standard` | Simple/moderate, 2–5 files | 1–2 | 1 batch reviewer | 50k hard |
+| `deep` | Complex / cross-cutting / system-wide | 3+ | per-batch + final | 200k hard |
+| `research` | Unknown territory, library/code evaluation | 3+ searchers | inline synthesis | 60k hard |
+| `creative` | UI/UX exploration, design-dominant | 1–2 | 1 reviewer | 100k hard |
+| `scientific` | Correctness-critical, numerical/proof, TDD | 2–3 | multi-level L1–L5 | 200k hard |
 
 See [flow-profiles.md](flow-profiles.md) for full per-profile pipelines, skip/upgrade conditions, and examples.
 
@@ -373,7 +373,7 @@ Every Worker dispatch must hit a mandatory detail floor in the brief. Sparse bri
 | **Security Constraints** | Full blocklist as in worker-prompt.md template |
 | **Output format** | Completed / OVERSIZE / BLOCKED contract |
 
-**Relaxation under `mode=lean` AND `triage.complexity == low` AND 1-2 file / 1-function scope:** Why may be 1 sentence; Scope IN/OUT may be single lines; Related context may be omitted when truly none apply. Task, Files in scope, Acceptance criteria, **Test cases (≥3)**, Output format, Security Constraints remain mandatory in all modes — they're the contractual minimum. Test cases never relax — even a one-function lean task needs happy-path + edge case + error case to be reviewable.
+**Relaxation under `mode=lean` AND `triage.complexity IN [trivial, simple]` for a planned 1–2-file scope:** Why and Scope may be compact and Related context may be omitted. Inline-fast bypasses the worker brief entirely. Planned work still keeps Task, Files, Acceptance, tests, Output, and Security constraints.
 
 **Why this matters.** A Worker dispatched with `Task: add login` and nothing else will produce *a* login implementation that's plausibly-correct but probably wrong on scope, edge cases, or convention. A Worker dispatched with the full detail floor produces exactly what the Planner intended, with edge cases handled and the right sibling-coordination respected. The per-batch Reviewer's job is to verify the work matches the brief — if the brief was vague, the Reviewer has nothing to check against. Detail floor exists so the Reviewer has something concrete to PASS/NEEDS_FIX against.
 
@@ -404,11 +404,11 @@ Every Worker dispatch must hit a mandatory detail floor in the brief. Sparse bri
 | File breadth | > 5 files touched |
 | Change volume | > 500 LOC of expected changes |
 | Subsystem cross-cut | touches 2+ distinct subsystems (auth + UI + DB, frontend + API + migration, …) |
-| Complexity tag | `complexity = high` from triage |
+| Complexity tag | `complexity = complex` from triage |
 | Mixed concerns | one sub-task spans data-model + business-logic + UI + tests |
 | Reviewability | a human reviewing the resulting commit would need > 10 minutes to grasp it |
 
-Split target: each resulting sub-task should be (a) reviewable in under 10 minutes of human time, (b) fit comfortably in a single Worker prompt + reasonable response, (c) have a single coherent purpose nameable in one conventional-commit subject line. Aim for sub-tasks at `complexity = low | medium` after the split; never keep `high`.
+Split target: each resulting sub-task should be (a) reviewable in under 10 minutes of human time, (b) fit comfortably in a single Worker prompt + reasonable response, (c) have a single coherent purpose nameable in one conventional-commit subject line. Aim for sub-tasks at `complexity = simple | moderate` after the split; never keep `complex`.
 
 **2. Mid-flight (Worker `OVERSIZE` escape hatch).** If a Worker discovers during execution that its brief is bigger than the Planner estimated (e.g., the file is 5k lines instead of 500, the refactor touches more callers than expected, the test scope has cascading dependencies), the Worker returns:
 
@@ -434,14 +434,14 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 
 ### Rules
 
-1. **Always decompose first.** Even a single file edit: a Worker edits → a Reviewer verifies.
+1. **Route before decomposing.** A deterministic `inline_fast` decision may edit a proven clear, reversible 1–2-file change in the foreground and verify its allowlisted diff inline. Every other implementation request decomposes before workers run: a Worker edits → a Reviewer verifies.
 2. **Parallel by default.** Sub-tasks that don't share state get dispatched simultaneously in a single message with multiple Agent tool calls.
 3. **Learning injection.** After each batch, extract patterns/gotchas from worker outputs. Inject synthesized learnings into subsequent worker prompts.
 4. **Self-contained prompts.** Workers get full context — file paths, what to do, constraints, prior learnings. Never tell them to "check the plan" — paste the relevant bits.
 5. **Worker prompt template.** See [worker-prompt.md](worker-prompt.md). Personas (from triage `personas[]`) are stitched under a `## Persona` section in the worker prompt — see [personas-A.md](personas-A.md) and [personas-B.md](personas-B.md).
-6. **Multi-level review (per-batch + final integration).** After each batch, dispatch a per-batch Reviewer — anchored to that batch's diff at L1-L<n>. After all batches complete, dispatch the final integration Reviewer — sees the cumulative diff and catches cross-batch contradictions. `--thorough` flag adds a standalone / final-integration review pass for high-risk surfaces. Scale levels by complexity (simple: L1-2, medium: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) and [reviewer-prompt-batched.md](reviewer-prompt-batched.md) for templates and [review-levels.md](review-levels.md) for the full checklist.
+6. **Multi-level review (per-batch + final integration).** After each batch, dispatch a per-batch Reviewer — anchored to that batch's diff at L1-L<n>. After all batches complete, dispatch the final integration Reviewer — sees the cumulative diff and catches cross-batch contradictions. `--thorough` flag adds a standalone / final-integration review pass for high-risk surfaces. Scale levels by complexity (simple: L1-2, moderate: L1-3, complex: L1-5). See [reviewer-prompt.md](reviewer-prompt.md) and [reviewer-prompt-batched.md](reviewer-prompt-batched.md) for templates and [review-levels.md](review-levels.md) for the full checklist.
 7. **The orchestrator stays active.** The orchestrator never goes idle while workers run. It reviews each worker's output as it arrives, asks the user questions if ambiguity surfaces, assists or re-scopes stuck workers, and validates integration between outputs. If a worker is taking too long or producing poor results, the orchestrator intervenes — breaks the task smaller, provides more context, or escalates by dispatching a fresh decision agent.
-8. **Minimum decision agents = profile-dependent (asymmetric under D7).** `fast` = 1 (inline self-review); `standard` ≥ 1 per batch; `deep` / `scientific` = batches + 1 (per-batch reviewer + final integration) when integration review runs; = batches (per-batch reviewers only) when D7 conditional-skip fires (all batches first-try PASS + no escalations + no security/integration flags). A task with `Decision / review: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped. See `skills/dispatch/SKILL.md` Step 3 for D7 skip conditions.
+8. **Minimum review passes = profile-dependent (asymmetric under D7).** Deterministic `inline_fast` = 1 foreground allowlisted-diff review and 0 dispatched review agents; `standard` ≥ 1 review agent per batch; `deep` / `scientific` = batches + 1 review agents (per-batch reviewer + final integration) when integration review runs; = batches (per-batch reviewers only) when D7 conditional-skip fires (all batches first-try PASS + no escalations + no security/integration flags). A task with `Decision / review: 1 agent` and multiple batches in `deep` mode is wrong — it means batch reviews were skipped. See `skills/dispatch/SKILL.md` Step 3 for D7 skip conditions.
 9. **Agent labels.** Before every Agent dispatch, print a single elegant line. No icons, no brackets, no emoji. Format: `Role — short description` (em-dash separator, description lowercase, under 80 chars).
    - `**Reviewer** — reviewing auth middleware output`
    - `**Debugger** — investigating test failure in auth.test.ts`
@@ -473,7 +473,7 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
     - If a decision agent shows `0.0k tokens`, it wasn't actually dispatched — it was inline work that doesn't count.
     - The orchestrator's own work (decomposition, coordination, tool calls) is inherently untracked. This is exactly why reviews must be dispatched — they are the only measurable decision work.
 11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md).
-12. **Multi-level agents inside every step.** Every substantive step in every chain skill MUST dispatch at least one Agent — never do "real" work inline. A step counts as substantive when it produces output the next step depends on (analysis, decomposition, generation, review, decision). Pure user-interaction steps (`AskUserQuestion`, `Skill` hand-off, printing a status line) are exempt. The pattern for each substantive step:
+12. **Multi-level agents inside normal-flow steps.** Every substantive step in a normal orchestrated chain MUST dispatch at least one Agent. The sole implementation exception is a deterministic `inline_fast` branch that passed the read-only safety preflight; it performs foreground mutation, affected gates, and an allowlisted-diff review without agents. A normal-flow step counts as substantive when it produces output the next step depends on (analysis, decomposition, generation, review, decision). Pure user-interaction steps (`AskUserQuestion`, `Skill` hand-off, printing a status line) are exempt. The pattern for each normal-flow substantive step:
    - **Worker role** does the production work (research, synthesis, drafting, decomposition).
    - **Decision / review role** reviews/decides on the worker's output (verdict, gate, escalation).
    - Both dispatches appear in the usage summary; both count toward the `decision agents ≥ batches + 1` minimum.
@@ -520,27 +520,27 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
    - **P1 — Parallelize sibling workers.** Sub-tasks that share a common upstream input and have no inter-dependency MUST be dispatched in a single message with parallel `Agent` calls. Never sequentialize siblings.
    - **P2 — Batch sibling reviews.** When N sibling outputs share the same review-level cap, dispatch ONE Reviewer using `skills/hyperflow/reviewer-prompt-batched.md` instead of N per-sibling calls. Returns per-sibling verdicts; cross-section coherence checks improve as a side-effect. The batched Reviewer counts as **one** Reviewer per batch toward the `decision agents ≥ batches + 1` floor, regardless of sub-task count. Floor lowered from +2 to +1: wrap-up Reviewer dropped per §12.1 (wrap-up is mechanical, trivial-eligible).
    - **P3 — Concurrent independent pre-conditions.** Steps whose outputs do not depend on each other are dispatched in the same message regardless of `--thorough`. Always on.
-   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.6 AND complexity != high`, optional design-exploration steps (plan Step 4, Step 6) may be skipped. When `ambiguity < 0.4 AND complexity == low`, plan bounces past the design phase directly to decomposition (Step 9). The 2-question floor (rule 8) is never skipped — it is non-negotiable; only the bounce path exits the design phase. Thresholds and borderline rounding rules are in `skills/hyperflow/latency-patterns.md` §P4.
+   - **P4 — Triage-driven step skipping.** When `triage.ambiguity < 0.6 AND complexity != complex`, optional exploration may be skipped. When `ambiguity < 0.4 AND complexity IN [trivial, simple]`, plan bounces directly to decomposition. Below 0.2, ask no clarification unless inspection exposed a material unknown.
    - **P5 — Lean worker prompts via memory references.** Prefer `skills/hyperflow/worker-prompt-lean.md` for default dispatches. Workers `Read` only the `.hyperflow/memory/` files they need. Smaller prompts reduce time-to-first-token; context access is on-demand, not absent.
    - **Compatibility with §12.** §13 does NOT relax §12. Every substantive step still dispatches at least one Agent. §13 governs the structure of those dispatches (parallel vs sequential, batched vs per-sibling, lean vs full).
    - **Quality floor preserved.** Review depth is unchanged. Workers still face a dispatched review. What changes is when calls fire and in what grouping, not who reviews what.
    - **`--thorough` / `depth=max` disables P1, P2, P4.** P3 and P5 remain on — they carry no quality tradeoff. When the flag is active, restore sequential drafts, per-section reviews, and full step execution.
-   - **`--lean` / `mode=lean` enables low-token mode WITHOUT quality reduction.** Opt-in token savings limited to mechanisms that preserve review quality, persona coverage, memory injection, and every clarification gate. When the flag is active:
+   - **Lean is the default mode.** `mode=default` restores the legacy full injection and `--thorough` restores maximum review ceremony. Lean keeps full context available on disk and loads it only when needed:
      - **Project context as paths:** workers receive a `Project Context:` block with the PATHS `.hyperflow/profile.md` / `architecture.md` / `conventions.md` + a one-line description each, instead of the inlined content. They read on demand when their task needs it. Saves ~2k × N parallel workers per batch with zero quality impact (the info is identical, just lazy).
      - **Session-context bundle reference:** workers receive the path `.hyperflow/memory/session-context.md` (written once at session start by scaffold or the hook) instead of having profile + architecture + conventions + index re-injected into every worker prompt. Pure deduplication.
-     - **Session-start hook output:** collapses Project Snapshot / Memory Index / Bridge notice / Sticky status into one summary line (e.g. `hyperflow v4.12 · profile fresh · 12 memory entries · auto-bridge OK · sticky=auto · 0 active tasks`) when nothing needs attention. Full sections return when any are stale, advisory-worthy, or attention-needed. Cosmetic — no quality impact.
-     - **Artefact format minimal-mode:** small tasks (`triage.complexity == low` AND projected sub-tasks ≤ 5) use the minimum task-file template (status table + Goal + per-task lines + cost table). Scope-at-a-glance table and ASCII dependency diagram return automatically when the task graduates past 5 sub-tasks or any sub-task has `complexity != low`. So the rich format always fires when it's actually useful.
+     - **Session-start hook output:** injects compact routing plus one status line and file pointers. Routine snapshots, indexes, hot-memory bodies, routing status, and task names remain on disk. Only actionable recovery/migration/compaction/bridge/handoff/update notices expand.
+     - **Artefact format minimal-mode:** small planned tasks (`triage.complexity IN [trivial, simple]` and projected sub-tasks ≤5) use the minimum task-file template. Inline-fast writes no task file.
      - **Estimated combined effect** on a typical 5-batch dispatch: ~200k tokens → ~140k tokens (~30% reduction). Quality floor preserved across every dimension:
        - Persona stitching: **unchanged** (still top-3 persona blocks per worker)
-       - Memory injection: **unchanged** (still injects all tag-matched warm-tier entries; hot tier always loads)
+       - Memory access: **unchanged** in capability; lean uses index/tag pointers and loads matching bodies on demand
        - Per-batch Reviewer template: **unchanged** (full `reviewer-prompt-batched.md` with all L1-L<n> checklist examples)
        - Per-batch review: **unchanged** (fires every batch; `--thorough` adds a standalone / final-integration pass)
        - Final integration Reviewer: **unchanged** (always fires when D7 conditions not met)
-       - Clarification questions: **all gates fire as normal** — plan 2-question floor (design path), plan post-research clarify (bounce path), audit fix-gate, deploy commit-inclusion + push, section approvals
+       - Clarification questions: material unknowns still ask; structural audit/deploy/section/push gates remain unchanged
        - Security blocklist enforcement: unchanged
        - SECURITY_VIOLATION halt: unchanged
      - **Incompatible flags:** `--lean` and `--thorough` are mutually exclusive. If both passed, refuse with a clear error rather than silently picking one.
-     - **Persistent default:** set per-project via `.hyperflow/.mode` (`lean` / `default` / `thorough`); read at every chain start.
+     - **Persistent override:** `.hyperflow/.mode` accepts `lean`, `default`, or `thorough`; missing file resolves to lean.
      - **What `--lean` does NOT do** (these were considered and rejected because they reduce quality): persona top-1 only, memory ≥2-tag-match filter, reviewer-template lean variant. The default behavior is the right behavior for review work; only the lazy-context optimisations qualify under "preserve quality".
 
    See [latency-patterns.md](latency-patterns.md) for the full P1–P5 pattern catalogue. `--lean` is orthogonal to the P1–P5 latency optimisations (which target wall-clock); `--lean` targets token cost specifically.
@@ -561,12 +561,12 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 15. **Triage validation.** Triage (Layer 0.5) classifies each request into `{ types, complexity, risk, scope, ambiguity, flow, personas[] }` via a single Classifier call. A bad triage cascades through every downstream decision — wrong flow profile, wrong personas, wrong batch decomposition — silently. Before any chain-starter consumes the triage output, dispatch one **Triage Reviewer** that validates the classification against the user's request + the project profile. Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}.
 
     - **PASS** → consume triage as-is, proceed to next Step.
-    - **RECLASSIFY** → Reviewer returns a corrected classification with reasoning; orchestrator uses the corrected version, prints a one-line note to the user (`Triage reclassified: complexity high → medium · personas added: [security]`).
+    - **RECLASSIFY** → Reviewer returns a corrected classification with reasoning; orchestrator uses the corrected version, prints a one-line note to the user (`Triage reclassified: complexity complex → moderate · personas added: [security]`).
     - **ESCALATE** → Reviewer can't decide; fall through to the user via a Smart Question early in plan Step 5 asking about the ambiguity.
 
     Triage Reviewer cost: ~2k tokens per chain. Catches mis-classifications that would otherwise waste 100k+ tokens on the wrong flow. Net win.
 
-    **P4 skip:** when `triage.complexity == low AND triage.ambiguity < 0.2 AND scope ∈ {0-file, 1-file} AND risk != high`, skip the Triage Reviewer dispatch and consume the original Classifier output. The cost of a mis-classification at this confidence tier is bounded by the small-task token budget; the Reviewer's value evaporates. Print a one-line skip note for observability.
+    **P4 skip:** when `triage.complexity IN [trivial, simple] AND triage.ambiguity < 0.2 AND scope IN [single-file, multi-file] AND risk=reversible` with no gated flags, skip the Triage Reviewer. Deterministic inline-fast already needs no Classifier or Triage Reviewer.
 
 16. **Token economy — every agent stays specific and to the point.** Workers and Reviewers produce only what their contract asks for. No preamble ("I'll now …", "Let me start by …"), no restating the brief back, no postamble summary recapping what was just done, no narration of intermediate reasoning, no "here's a summary of my changes" block when the Output format already specifies one-line-per-change.
     - **Output discipline.** Worker output = one-line summary per change + optional Notes for future tasks (omit when none). Reviewer output = the verdict block specified in `reviewer-prompt.md` / `reviewer-prompt-batched.md` — verdict line + per-failure finding, nothing else. Status lines printed by the orchestrator stay ≤ 1 line each.
@@ -646,7 +646,7 @@ Background agents are an opt-in extension of Layer 3 dispatch. They run with `ru
 
 ## Layer 4: Adaptive Brainstorming
 
-**Summary:** runs on EVERY task — never skipped. Depth scales to triage `ambiguity` with a **hard floor of 2 questions per design run** (the user always gets a structural place to course-correct). Light = 2Q · standard = 3Q + 2-3 alternatives · deep = 4-5Q + 6-dim analysis + section-by-section approval. `creative`/`architect`/`security`/`scientific` types force a minimum depth. `AskUserQuestion` is mandatory; "Should I proceed?" is banned.
+**Summary:** every task gets grounded analysis; question depth scales to ambiguity. None = 0Q · light = 0–2Q · standard = 2–3Q + alternatives · deep = 4–5Q + 6-dim analysis + section approval. `creative`/`architect`/`security`/`scientific` types force a minimum depth. "Should I proceed?" remains banned.
 
 See [doctrine-extensions.md § Layer 4](doctrine-extensions.md#layer-4-adaptive-brainstorming) for the depth table, hard rules (section approval / minimum alternatives / no-code-before-design), and type-based depth overrides. Full framework in [adaptive-brainstorming.md](adaptive-brainstorming.md).
 
@@ -658,7 +658,7 @@ See [doctrine-extensions.md § Layer 5](doctrine-extensions.md#layer-5-quality-g
 
 ## Layer 6: Project-Scoped Memory
 
-**Summary:** `.hyperflow/memory/` holds project-scoped learnings (entries never leak across projects). Hot tier (≤7d) eagerly loaded; warm (8-30d) queried by task tags; cold (30+d) compressed and archived. Workers receive ONLY tag-matched subset.
+**Summary:** `.hyperflow/memory/` holds project-scoped learnings. Lean startup injects only index/path pointers; workers load relevant hot/warm entries by task tags on demand. Cold entries remain compressed and archived.
 
 See [doctrine-extensions.md § Layer 6](doctrine-extensions.md#layer-6-project-scoped-memory) for storage layout, write/read/prune rules, and runtime controls. Full protocols in [memory-system.md](memory-system.md).
 

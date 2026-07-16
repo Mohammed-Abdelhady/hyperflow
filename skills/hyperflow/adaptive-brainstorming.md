@@ -1,27 +1,34 @@
 # Adaptive brainstorming
 
-## Why always-on
+## Why adaptive
 
-In the old design, brainstorming was a conditional gate — easy to skip when a task looked
-"obviously simple." That created a systematic blind spot: even trivial-seeming tasks carry
-hidden decisions (naming, scope boundaries, caller impact, edge cases) that surface as
-expensive rework once implementation is underway. In TriageFlow, every task gets brainstorming
-because even a one-line rename has an interpretation the orchestrator must commit to. Depth
-scales to ambiguity — 2 questions on low-ambiguity tasks, full multi-section exploration on
-open-ended ones — but the floor is **2 questions, always**. The front-loaded cost of
-brainstorming is always less than the back-loaded cost of misaligned output.
+Grounded inspection, not mandatory questioning, prevents misalignment on clear work. Deterministic
+fast-lane tasks use a silent recap after the affected surface is known. Standard tasks ask only
+questions whose answers would change the implementation. Open-ended, creative, security, and
+correctness-sensitive work keeps the deeper exploration and approval gates.
 
 ## Depth derivation
 
-Brainstorm depth is derived from the `ambiguity` field in the triage output. **Hard floor: every spec run asks at least 2 questions via `AskUserQuestion`** — silent mode is retired. If a task type forces a higher minimum depth, the higher value wins (see Depth overrides section).
+Brainstorm depth is derived from `ambiguity`. A high-confidence deterministic fast lane uses `none`; other clear work may complete light analysis without asking. If a task type forces a higher minimum depth, the higher value wins.
 
 | Ambiguity score | Depth    | Behavior summary                                                              |
 |-----------------|----------|-------------------------------------------------------------------------------|
-| 0.0 – 0.5       | light    | **2 AskUserQuestion calls** (intent + constraints); no alternatives proposal  |
+| 0.0 – 0.2       | none     | Grounded silent recap; no clarification question                              |
+| 0.2 – 0.5       | light    | 0–2 material questions; no alternatives proposal                              |
 | 0.5 – 0.8       | standard | **3 AskUserQuestion calls**; 2–3 alternatives proposal with trade-offs        |
 | 0.8 – 1.0       | deep     | Full 6-dimension exploration; 4–5 questions; section-by-section approval      |
 
 ## The 3 depth modes
+
+### Mode: none
+
+**When:** deterministic fast lane, or ambiguity <0.2 with a fully grounded reversible request and no forced minimum.
+
+**Behavior:** inspect the affected files/callers, record a one-sentence intent recap, and proceed without a user question. Any discovered ambiguity or broader scope exits this mode before mutation.
+
+**Token cost:** no agent call.
+
+---
 
 ### Mode: light
 
@@ -151,7 +158,7 @@ The orchestrator must apply this algorithm exactly, in order, on every task:
 7. Run brainstorming at the resolved depth.
 ```
 
-**Depth ordering** (from lowest to highest): light < standard < deep. (Silent mode was retired — the floor is now 2 questions, always.)
+**Depth ordering** (from lowest to highest): none < light < standard < deep.
 
 If multiple types appear in a single triage output and they force different minimums, take the
 highest among them. Example: a task classified as both `security` and `creative` forces `deep`
@@ -171,10 +178,10 @@ forced minimum is higher than what ambiguity alone would produce, the higher dep
 | security               | standard      | Security choices need informed user consent         |
 | scientific             | standard      | Correctness assumptions must be stated explicitly   |
 | research               | light         | The research itself is the brainstorming            |
-| bugfix (clear repro)   | light         | Repro is the spec — still 2 questions for scope/edges |
-| docs                   | light         | Usually clear — still 2 questions for audience/depth   |
+| bugfix (clear repro)   | none          | Repro and affected surface can fully define the change |
+| docs                   | none          | Clear audience and requested depth need no ceremony    |
 
-**Override rule:** compare the ambiguity-derived depth to the type-forced minimum. Take whichever is deeper. Light (2 questions) is the floor for every type — never zero.
+**Override rule:** compare the ambiguity-derived depth to the type-forced minimum and take the deeper value. `none` is allowed only when no type forces a deeper pass.
 
 ## Section-by-section approval
 
@@ -277,8 +284,8 @@ approved approach without escalating back to the orchestrator.
 
 The following behaviors are explicitly prohibited. The orchestrator must not exhibit any of them.
 
-- **Skipping brainstorming** because a task "looks small" → still ask 2 questions. Brainstorming
-  is never skipped; only the depth changes.
+- **Skipping grounded inspection** because a task "looks small" → the `none` mode still maps callers,
+  scope, and risk before mutation; it skips questions, not analysis.
 - **Asking "should I X?"** — this is confirmation-seeking, not clarification. It is banned in all
   depth modes.
 - **Stacking multiple questions in one message** outside of a formal `AskUserQuestion` call →

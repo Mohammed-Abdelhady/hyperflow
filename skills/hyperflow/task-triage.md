@@ -2,11 +2,22 @@
 
 ## Purpose
 
-Triage is invoked once per user request — before research, before brainstorming, before any worker dispatch. A single cheap thinking-model call classifies the task and emits a JSON object that drives every downstream decision: which flow profile to use, how deep to brainstorm, which persona templates to compose into worker prompts, how many workers and batches to expect, and what token budget to allocate. Every layer that follows reads from this JSON rather than re-deriving intent independently.
+Triage runs once per user request — before research, brainstorming, or worker dispatch. A deterministic preflight handles only high-confidence fast-lane work; every other request falls through to the focused Classifier call. The resulting JSON drives flow profile, brainstorm depth, personas, worker/batch counts, and the hard chain budget so downstream layers do not re-derive intent.
 
 ## When to invoke
 
-Invoke on every user request that introduces new work — "build X", "fix Y", "research Z", "refactor W". Skip only when the orchestrator is already mid-flow (e.g., responding to a follow-up question about an in-progress task, clarifying an AskUserQuestion answer, or the request is a pure meta-command like `hyperflow: memory show`).
+For each new work request, first map the affected surface without mutation, then run:
+
+```bash
+python3 "$PLUGIN_ROOT/scripts/route-task.py" "$USER_REQUEST" \
+  --risk "$OBSERVED_RISK" --clarity "$OBSERVED_CLARITY" \
+  --project-root "$PROJECT_ROOT" \
+  --file path/to/first --file path/to/second
+```
+
+`inline_fast` is valid only when the observed scope is 1–2 files, risk is reversible, intent is clear, and no security, integration, generated-file, migration, explicit Hyperflow, or thorough-mode signal exists. It emits a complete fast triage object with `triage_source: deterministic`; skip the Classifier and proceed through the fast pipeline. `classifier` means dispatch the Classifier below. Unknown scope/risk always falls through.
+
+Skip both paths only when already mid-flow or handling a pure meta-command such as `hyperflow memory show`.
 
 ## Classifier dispatch
 
@@ -35,13 +46,13 @@ You are a task classifier for a multi-agent orchestrator. Analyze the request be
   "risk": string,             // reversible | irreversible
   "scope": string,            // single-file | multi-file | cross-cutting | system-wide
   "ambiguity": number,        // 0.0–1.0
-  "brainstormDepth": string,  // light | standard | deep (silent removed per DOCTRINE 2-question floor)
+  "brainstormDepth": string,  // none | light | standard | deep
   "flow": string,             // fast | standard | deep | research | creative | scientific
   "personas": string[],       // subset of types — persona template names to compose
   "specialists": string[],    // derived from types[] (+ security/integration_risk flags) per the mapping in task-triage.md — candidate responsible specialist agents; Brain finalizes
   "estimatedWorkers": number,
   "estimatedBatches": number,
-  "budget": number,           // token budget integer
+  "budget": number,           // hard chain token ceiling
   "security": boolean,        // true if auth, crypto, secrets, payment, PII, or any security-sensitive code path
   "integration_risk": boolean, // true if task crosses system boundaries: multiple services, API contracts, shared state, DB migrations
   "rationale": string         // one sentence
@@ -59,13 +70,13 @@ Return only valid JSON. No explanation before or after.
   "risk": "reversible",
   "scope": "multi-file",
   "ambiguity": 0.35,
-  "brainstormDepth": "light",
+  "brainstormDepth": "none",
   "flow": "standard",
   "personas": ["frontend", "api"],
   "specialists": ["frontend-reviewer", "api-reviewer", "backend-reviewer"],
   "estimatedWorkers": 2,
   "estimatedBatches": 1,
-  "budget": 100000,
+  "budget": 50000,
   "security": false,
   "integration_risk": false,
   "rationale": "Two-layer feature touching UI and a new REST endpoint with moderate design choices."
@@ -87,7 +98,7 @@ Return only valid JSON. No explanation before or after.
 | `specialists` | `string[]` | Candidate responsible specialist agents (`agents/<name>.md`), derived from `types[]` + the `security`/`integration_risk` flags via the mapping table below. Not free-chosen — the table is deterministic. The **Brain** finalizes this roster after triage; `dispatch`/`audit`/`trace`/`deploy` dispatch the matching specialist as reviewer/investigator. |
 | `estimatedWorkers` | `number` | Expected total parallel worker count across all batches. |
 | `estimatedBatches` | `number` | Expected number of dispatch batches. |
-| `budget` | `number` | Soft token budget for the full task. Used in usage summary to flag overruns. |
+| `budget` | `number` | Hard token ceiling for the full chain. Checked with `scripts/budget-guard.py` at natural phase and batch boundaries. |
 | `security` | `bool` | `true` when the task involves auth, crypto, secrets, payment, PII, or any code path where security implications are present. Elevates dispatch review cap from L1-L2 to L1-L3 (D6). |
 | `integration_risk` | `bool` | `true` when the task touches cross-system boundaries: multiple services, API contracts, shared state, or database migrations. Elevates dispatch review cap from L1-L2 to L1-L3 (D6). |
 | `rationale` | `string` | One sentence echoed back to the user in the orchestrator's opening line. |
@@ -106,8 +117,8 @@ Return only valid JSON. No explanation before or after.
 
 | `ambiguity` range | `brainstormDepth` | Behavior |
 |-------------------|-------------------|---------|
-| 0.0–0.2 | `light` | **Always 2 questions** (DOCTRINE 2-question floor) — usually scope-confirm + 1 constraint check |
-| 0.2–0.5 | `light` | **Always 2 questions** — intent clarify + constraint discovery |
+| 0.0–0.2 | `none` | No invented clarification; use the grounded request and observed code surface |
+| 0.2–0.5 | `light` | 1–2 material questions only when the answer changes implementation |
 | 0.5–0.8 | `standard` | 2–3 clarifying questions |
 | 0.8–1.0 | `deep` | Full 6-dimension exploration (see brainstorming-advanced.md) |
 
@@ -115,23 +126,24 @@ Return only valid JSON. No explanation before or after.
 
 Apply the FIRST rule that matches:
 
-1. `complexity=trivial` AND `scope=single-file` AND `risk=reversible` AND `ambiguity<0.3` → **`fast`**
-2. `types` includes `scientific` OR (`risk=irreversible` AND numerical correctness matters) → **`scientific`**
+1. `types` includes `scientific` OR (`risk=irreversible` AND numerical correctness matters) → **`scientific`**
+2. `security=true` OR `integration_risk=true` OR `risk=irreversible` → never fast; continue with the strictest matching non-fast rule
 3. `complexity=research` → **`research`**
-4. `types` includes `ui` OR `creative` AND `complexity≥moderate` → **`creative`**
+4. (`types` includes `ui` OR `creative`) AND `complexity≥moderate` → **`creative`**
 5. `complexity=complex` OR `scope` in `[cross-cutting, system-wide]` → **`deep`**
-6. `complexity` in `[simple, moderate]` AND `scope` in `[single-file, multi-file]` → **`standard`**
+6. `complexity=trivial` AND `scope` in `[single-file, multi-file]` AND observed file count ≤2 AND `risk=reversible` AND `ambiguity<0.2` → **`fast`**
+7. `complexity` in `[simple, moderate]` AND `scope` in `[single-file, multi-file]` → **`standard`**
 
 ### Budget defaults by flow
 
 | Flow | Budget |
 |------|--------|
-| `fast` | 30000 |
-| `standard` | 100000 |
-| `deep` | 300000 |
-| `research` | 80000 |
-| `creative` | 150000 |
-| `scientific` | 300000 |
+| `fast` | 10000 |
+| `standard` | 50000 |
+| `deep` | 200000 |
+| `research` | 60000 |
+| `creative` | 100000 |
+| `scientific` | 200000 |
 
 Source of truth: `flow-profiles.md` — these values must match.
 
@@ -227,7 +239,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "specialists": ["searcher"],
   "estimatedWorkers": 1,
   "estimatedBatches": 1,
-  "budget": 30000,
+  "budget": 10000,
   "security": false,
   "integration_risk": false,
   "rationale": "Trivial single-file rename with zero ambiguity — fast path."
@@ -241,7 +253,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
 ```json
 {
   "types": ["frontend", "ui"],
-  "complexity": "simple",
+  "complexity": "moderate",
   "risk": "reversible",
   "scope": "multi-file",
   "ambiguity": 0.25,
@@ -251,7 +263,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "specialists": ["designer", "frontend-reviewer", "accessibility-reviewer", "searcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
-  "budget": 150000,
+  "budget": 100000,
   "security": false,
   "integration_risk": false,
   "rationale": "UI feature with minor ambiguity around persistence strategy — creative flow with a light clarification pass."
@@ -274,7 +286,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "specialists": ["api-reviewer", "backend-reviewer", "database-reviewer", "security-reviewer", "vulnerability-reviewer", "researcher"],
   "estimatedWorkers": 4,
   "estimatedBatches": 3,
-  "budget": 300000,
+  "budget": 200000,
   "security": true,
   "integration_risk": true,
   "rationale": "Multi-subsystem auth feature touching DB schema, JWT issuing, and password handling — deep flow required."
@@ -297,7 +309,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "specialists": ["devops-reviewer", "debugger"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
-  "budget": 80000,
+  "budget": 60000,
   "security": false,
   "integration_risk": false,
   "rationale": "Unknown root cause in CI — research flow to investigate before patching."
@@ -321,7 +333,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "specialists": ["backend-reviewer", "database-reviewer", "analyst", "researcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
-  "budget": 80000,
+  "budget": 60000,
   "security": false,
   "integration_risk": true,
   "rationale": "Architectural decision with long-term irreversible implications — research flow with structured trade-off analysis."
@@ -345,7 +357,7 @@ The **Triage Reviewer** (DOCTRINE rule 15) validates the `specialists[]` derivat
   "specialists": ["designer", "frontend-reviewer", "accessibility-reviewer", "researcher"],
   "estimatedWorkers": 2,
   "estimatedBatches": 2,
-  "budget": 150000,
+  "budget": 100000,
   "security": false,
   "integration_risk": false,
   "rationale": "Open-ended creative UI task — creative flow with standard brainstorm to align on aesthetic direction first."
@@ -375,7 +387,7 @@ If the Classifier returns malformed output (invalid JSON, missing required field
      "specialists": [],
      "estimatedWorkers": 1,
      "estimatedBatches": 1,
-     "budget": 100000,
+     "budget": 50000,
      "security": false,
      "integration_risk": false,
      "rationale": "Triage fallback — classification unavailable, proceeding with standard defaults."

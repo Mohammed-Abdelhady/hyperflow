@@ -130,7 +130,7 @@ On Grok, prefer the native `AskUserQuestion` tool when present; use the chat-blo
 | `brainstorm`, `design`, `explore`, "should we" | Research first, ask material questions, then propose approaches |
 | `scope`, `decompose`, "plan out" | Map affected files, then write a task graph under `.hyperflow/tasks/` |
 | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | Use the workflow skill: Claude Code native workflow, or Codex/OpenCode/Grok portable adapter, otherwise decompose through `scope` |
-| `build`, `implement`, `add`, `refactor` | Decompose, execute batches, self-review, commit per task |
+| `build`, `implement`, `add`, `refactor` | Inspect first; deterministic inline-fast for clear reversible 1–2-file work, otherwise decompose and execute reviewed batches |
 | `debug`, `fix it`, "why is X failing" | Root-cause before patching |
 | `audit`, `review`, "check for issues" | Review findings first, then offer/apply fixes |
 | `ship`, `push`, `release`, `deploy` | Run gates, commit/release, ask before push |

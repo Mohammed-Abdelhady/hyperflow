@@ -54,13 +54,13 @@ For every `.hyperflow/tasks/*.md`, parse its `## Status` block (written by `/hyp
 | Field | Source | Behaviour |
 |-------|--------|----------|
 | Slug | basename of the task file minus `.md` | always present |
-| Done / total | `Sub-tasks: <done> / <total>` from Status block | falls back to counting `[x]` vs `[x]`+`[ ]` checkboxes if Status missing |
+| Done / total | `Progress` row in the two-column Status table | falls back to legacy `Sub-tasks: <done> / <total>`, then checkbox counting |
 | Done sub-task names | lines with `[x]` from the `## Batches` section | listed under the bar |
 | Running sub-task | the first `[~]` checkbox (dispatch marks `~` while a sub-task is mid-flight) | `(idle)` if none |
 | Pending sub-task count | count of `[ ]` checkboxes | shown as `N pending` |
-| Tokens used | `Tokens used:` line from Status block | `(not tracked yet)` if Status absent |
-| Wall-clock | `Wall-clock:` line from Status block | `(not started)` if no `Started:` |
-| ETA | `ETA:` line from Status block | `(computing)` if <3 sub-tasks done |
+| Tokens used | `Tokens` row in Status table (ledger total + execution/review/verification phase totals) | falls back to legacy `Tokens used:`; `(not tracked yet)` if absent |
+| Wall-clock | `Wall-clock` row in Status table | falls back to legacy `Wall-clock:`; `(not started)` if absent |
+| ETA | ETA text inside `Wall-clock` row | falls back to legacy `ETA:`; `(computing)` if <3 sub-tasks done |
 
 ## How to compute each field
 
@@ -110,12 +110,31 @@ If no files → show `(none)` and skip the In-flight section entirely.
 For each `.hyperflow/tasks/<slug>.md`:
 
 ```bash
-# Extract Status block fields
-sub_done=$(grep '^Sub-tasks:' "$file" | sed -E 's|.*: *([0-9]+) */ *([0-9]+).*|\1|')
-sub_total=$(grep '^Sub-tasks:' "$file" | sed -E 's|.*: *([0-9]+) */ *([0-9]+).*|\2|')
-tokens=$(grep '^Tokens used:' "$file" | sed 's|^Tokens used: *||')
-wall=$(grep '^Wall-clock:' "$file" | sed 's|^Wall-clock: *||')
-eta=$(grep '^ETA:' "$file" | sed 's|^ETA: *||')
+# Canonical two-column markdown table first.
+table_value() {
+  awk -F'|' -v target="$1" '
+    {
+      key=$2; value=$3
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      if (key == target) { print value; exit }
+    }
+  ' "$file"
+}
+
+progress=$(table_value "Progress")
+tokens=$(table_value "Tokens")
+wall=$(table_value "Wall-clock")
+sub_done=$(printf '%s\n' "$progress" | sed -nE 's|.* ([0-9]+) */ *([0-9]+) sub-tasks.*|\1|p')
+sub_total=$(printf '%s\n' "$progress" | sed -nE 's|.* ([0-9]+) */ *([0-9]+) sub-tasks.*|\2|p')
+eta=$(printf '%s\n' "$wall" | sed -nE 's|.*ETA[[:space:]]*([^·]+).*|\1|p')
+
+# Backwards compatibility for pre-table task files.
+[ -n "$sub_done" ] || sub_done=$(grep '^Sub-tasks:' "$file" | sed -E 's|.*: *([0-9]+) */ *([0-9]+).*|\1|')
+[ -n "$sub_total" ] || sub_total=$(grep '^Sub-tasks:' "$file" | sed -E 's|.*: *([0-9]+) */ *([0-9]+).*|\2|')
+[ -n "$tokens" ] || tokens=$(grep '^Tokens used:' "$file" | sed 's|^Tokens used: *||')
+[ -n "$wall" ] || wall=$(grep '^Wall-clock:' "$file" | sed 's|^Wall-clock: *||')
+[ -n "$eta" ] || eta=$(grep '^ETA:' "$file" | sed 's|^ETA: *||')
 started=$(grep '^Started:' "$file" | sed 's|^Started: *||')
 ```
 
@@ -173,7 +192,7 @@ Task:         implement-auth
   Last done   T7: Reset email worker
   Running     T8: Login UI (Implementer · 14s elapsed)
   Pending     6 sub-tasks
-  Tokens      thinking 89.2k · worker 142.0k · total 231.2k
+  Tokens      231.2k total · execution 142.0k · review 89.2k · verification 0
   Wall-clock  4m 22s elapsed
   ETA         ~3m 16s remaining   (avg 32s/sub-task · 6 left)
 
@@ -192,7 +211,7 @@ When no `.hyperflow/tasks/*.md` files exist, omit the `── In-flight work ─
 ## ETA computation
 
 ```
-elapsed_seconds       = now - started_unix
+elapsed_seconds       = parsed elapsed value from the Wall-clock table row
 avg_per_subtask       = elapsed_seconds / done
 remaining_seconds     = avg_per_subtask * pending
 ```
@@ -210,7 +229,7 @@ Every section degrades gracefully:
 - Missing `.hyperflow/memory/index.md` → `Memory  (none)`
 - No `.hyperflow/tasks/*.md` files → `Active tasks  (none)`, no In-flight section
 - Task file present but Status block malformed/missing → fall back to checkbox count, show `(not tracked yet)` for tokens/ETA
-- `Started:` line absent → `Status  not started`, skip ETA
+- `Wall-clock` table row absent (and no legacy `Started:` line) → `Status  not started`, skip ETA
 
 Never error out. Never modify any file. Never dispatch an agent.
 

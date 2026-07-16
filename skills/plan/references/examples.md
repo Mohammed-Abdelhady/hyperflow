@@ -42,12 +42,12 @@ Plan ready — .hyperflow/tasks/rate-limit-middleware.md (3 batches, 7 sub-tasks
 Building here — handing to /hyperflow:dispatch…   (dispatch asks commit/branch/push at its Step 0.5)
 ```
 
-### Concise request — amplify skipped, only 2 questions fire
+### Concise request — amplify skipped, 2 material questions remain
 
 ```
 /hyperflow:plan rename "Cart" to "Bag" across the codebase
 
-[triage ambiguity 0.2 → amplify skipped (prompt already specific) → light depth → exactly 2 questions]
+[triage ambiguity 0.2 → amplify skipped (prompt already specific) → light depth → 2 material questions found]
 
 ? Rename only user-visible text (UI strings, docs), or also internal symbols (types, variables, file names)?
 ? Do any integrations (analytics events, API contracts) depend on the "Cart" name?
@@ -60,7 +60,7 @@ Building here — handing to /hyperflow:dispatch…   (dispatch asks commit/bran
 ```
 /hyperflow:plan add a /health endpoint that returns {status: "ok"}
 
-[triage ambiguity 0.25 · complexity: low → bounce threshold met at Step 5]
+[triage ambiguity 0.25 · complexity: simple → bounce threshold met at Step 5]
 
 That's clear enough to skip the design phase — decomposing directly.
 

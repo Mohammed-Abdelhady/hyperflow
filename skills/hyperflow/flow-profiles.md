@@ -10,7 +10,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 
 | Complexity   | Scope          | Risk          | Ambiguity | Types include       | Profile    |
 |--------------|----------------|---------------|-----------|---------------------|------------|
-| trivial      | single-file    | reversible    | < 0.3     | any                 | fast       |
+| trivial      | 1–2 files      | reversible    | < 0.2     | no gated types      | fast       |
 | simple       | ≤ 5 files      | reversible    | any       | no scientific       | standard   |
 | moderate     | ≤ 5 files      | reversible    | any       | no scientific       | standard   |
 | complex      | any            | any           | any       | no scientific       | deep       |
@@ -27,33 +27,33 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 
 ### Profile: fast
 
-**Use when:** The task is trivial, touches a single file, is fully reversible, and has no ambiguity.
+**Use when:** Deterministic pre-triage confirms a trivial 1–2-file task that is fully reversible, clear, and outside every gated surface.
 
 **Triage signature:**
 - complexity: trivial
-- scope: single-file
+- scope: single-file or bounded multi-file (observed file count ≤2)
 - risk: reversible
-- ambiguity: < 0.3
-- types: any (except scientific)
+- ambiguity: < 0.2
+- types: no security, scientific, architect, migration, generated-file, or integration-risk surface
 
 **Pipeline:**
 1. Brainstorm: silent recap only — orchestrator silently confirms intent, no questions asked
 2. Research: none — 0 searchers
 3. Task file: no
-4. Workers: 1 worker, sequential, implementer persona
-5. Review: inline self-review by orchestrator after worker returns; no separate reviewer agent dispatched
+4. Execution: foreground orchestrator applies the bounded change directly; no Composer or Worker agent dispatch
+5. Review: inline diff review by the orchestrator; no separate reviewer agent
 6. Quality gates: tier often **light** — affected-file lint + type-check only; chain-end full suite skipped unless file count forces standard/full
 7. Commit: yes, single atomic commit
 
-**Token budget:** ≤ 30 000 tokens (soft target)
+**Token budget:** 10 000 tokens (hard ceiling)
 
 **Agent counts:**
 - Reviewer: 0 (inline review only — no separate reviewer dispatch)
-- Worker: 1
+- Worker: 0 dispatched (foreground execution)
 
 **Skip conditions:** Never — fast is already the minimal profile; it cannot be downgraded further.
 
-**Upgrade conditions:** Worker returns `ESCALATE` flag (unexpected complexity, cross-file side effects discovered) → bump to standard. See [escalation.md](escalation.md) for full escalation rules.
+**Upgrade conditions:** Pre-mutation inspection discovers >2 affected files, ambiguity, generated output, integration/security risk, or external research → stop the inline path and route to standard/deep before mutation. See [escalation.md](escalation.md).
 
 **Example invocations:**
 
@@ -63,7 +63,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 "Bump the version string in package.json to 2.1.4"
 ```
 
-**Anti-patterns:** fast is NOT for tasks that touch more than one file, require research, have design decisions, or carry any irreversibility risk.
+**Anti-patterns:** fast is NOT for explicit `/hyperflow:*` requests, `--thorough`, tasks touching >2 files, generated surfaces, migrations, research/design decisions, security/integration risk, or any irreversibility.
 
 ---
 
@@ -87,7 +87,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 6. Quality gates: per-batch **light** (affected modules); chain-end **full suite** when tier ≥ standard (typical for multi-file standard work)
 7. Commit: yes, single commit per logical task
 
-**Token budget:** ≤ 100 000 tokens (soft target)
+**Token budget:** 50 000 tokens (hard ceiling)
 
 **Agent counts:**
 - Reviewer: 0–1 (optional batch reviewer)
@@ -129,7 +129,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 6. Quality gates: tier **full** — light per-batch; chain-end full lint + type-check + unit + integration; no regressions
 7. Commit: yes, one commit per completed sub-task (not per batch)
 
-**Token budget:** 200 000–500 000 tokens (soft target; varies by subsystem count)
+**Token budget:** 200 000 tokens (hard ceiling)
 
 **Agent counts:**
 - Reviewer: per-batch + 1 final integration (always present per Layer 3 rule)
@@ -170,7 +170,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 6. Quality gates: none if read-only; light affected-file gates only if prototype was written
 7. Commit: no if read-only; yes if prototype or docs were created
 
-**Token budget:** ≤ 80 000 tokens (searchers are cheap; output is mostly synthesis text)
+**Token budget:** 60 000 tokens (hard ceiling)
 
 **Agent counts:**
 - Reviewer: 0–1 (only when code is changed)
@@ -211,7 +211,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 6. Quality gates: light per-batch (lint + type-check + a11y on changed components); chain-end full suite when tier ≥ standard
 7. Commit: yes, after quality gates pass
 
-**Token budget:** ≤ 150 000 tokens (brainstorming phase is the deepest)
+**Token budget:** 100 000 tokens (hard ceiling)
 
 **Agent counts:**
 - Reviewer: 1–2 (brainstorm approval + visual/a11y review)
@@ -253,7 +253,7 @@ The orchestrator reads the triage output and maps it to exactly one profile. Whe
 6. Quality gates: tier **full** — light mid-batch; chain-end full suite must pass; no new code lands if any test introduced in this task is failing
 7. Commit: yes, only after every quality gate passes; no partial commits
 
-**Token budget:** 200 000–400 000 tokens (TDD multiplies tokens; correctness takes priority over speed)
+**Token budget:** 200 000 tokens (hard ceiling; correctness work must be decomposed before exceeding it)
 
 **Agent counts:**
 - Reviewer: 3–5 (multi-level L1–L5 review passes)
@@ -326,27 +326,27 @@ See [escalation.md](escalation.md) for the full escalation protocol, flag format
 
 ## Token accounting
 
-Each profile has a soft budget. The orchestrator tracks cumulative token usage per agent role and prints a usage summary at the end of every task.
+Each profile has a hard chain ceiling. `scripts/budget-guard.py` checks exact usage after triage/planning and after every dispatch batch, before another phase or batch launches. It never interrupts an in-flight agent. A phase cap first returns `degrade` (reuse evidence, run inline/mechanical work, or reduce fan-out); exhausting the chain ceiling returns `halt` with resumable task state.
 
 ```text
 ── Hyperflow Usage ──────────────────────
-Profile: deep (budget: 300k)
-Total    13 agents  300k  · within budget
+Profile: deep (hard ceiling: 200k)
+Total    9 agents  184k  · 16k remaining
 ─────────────────────────────────────────
 ```
 
 Budget thresholds by profile:
 
-| Profile    | Soft budget     |
-|------------|-----------------|
-| fast       | ≤ 30 000        |
-| standard   | ≤ 100 000       |
-| deep       | 200 000–500 000 |
-| research   | ≤ 80 000        |
-| creative   | ≤ 150 000       |
-| scientific | 200 000–400 000 |
+| Profile    | Hard ceiling |
+|------------|--------------|
+| fast       | 10 000       |
+| standard   | 50 000       |
+| deep       | 200 000      |
+| research   | 60 000       |
+| creative   | 100 000      |
+| scientific | 200 000      |
 
-If `Total > budget × 1.5` the orchestrator flags the overrun: `⚠ OVER BUDGET`. The flag is informational — it does not abort the task, but it is included in the usage summary so patterns of over-budget runs can be caught and the profile selection or task decomposition can be adjusted.
+Default phase caps are defined for triage, planning, execution, review, and verification in `config/defaults.json`. Unused earlier-phase capacity remains available to the chain total, but no phase may launch another agent after its own cap returns `degrade`; the orchestrator finishes that boundary using existing evidence or writes resumable state. The hard total cannot be overridden implicitly. Explicit configuration may raise ceilings; `--thorough` changes review behavior, not the configured total.
 
 ---
 
@@ -354,12 +354,12 @@ If `Total > budget × 1.5` the orchestrator flags the overrun: `⚠ OVER BUDGET`
 
 | Profile    | Brainstorm depth | Searchers | Workers    | Reviewers            | Budget          | Task file | TDD  |
 |------------|------------------|-----------|------------|----------------------|-----------------|-----------|------|
-| fast       | silent recap     | 0         | 1          | none (inline)        | ≤ 30k           | no        | no   |
-| standard   | 1 question max   | 0–1       | 1–2        | 1 batch              | ≤ 100k          | yes       | no   |
-| deep       | 2–3 questions    | 2–3       | 3–5+       | per-batch + final    | 200k–500k       | yes       | no   |
-| research   | 1 question max   | 3+        | 0–1        | 0–1                  | ≤ 80k           | optional  | no   |
-| creative   | full 6-dim       | 0–2       | 1–2        | 1 (visual + a11y)    | ≤ 150k          | yes       | no   |
-| scientific | 2–3 questions    | 1–2       | 2–3        | L1–L5 multi-level    | 200k–400k       | yes       | yes  |
+| fast       | silent recap     | 0         | 0 dispatched| none (inline)        | 10k hard        | no        | no   |
+| standard   | 1 question max   | 0–1       | 1–2        | 1 batch              | 50k hard        | yes       | no   |
+| deep       | 2–3 questions    | 2–3       | 3–5+       | per-batch + final    | 200k hard       | yes       | no   |
+| research   | 1 question max   | 3+        | 0–1        | 0–1                  | 60k hard        | optional  | no   |
+| creative   | full 6-dim       | 0–2       | 1–2        | 1 (visual + a11y)    | 100k hard       | yes       | no   |
+| scientific | 2–3 questions    | 1–2       | 2–3        | L1–L5 multi-level    | 200k hard       | yes       | yes  |
 
 Key constraints at a glance:
 - **fast:** inline review only; no task file; upgrade on any ESCALATE signal

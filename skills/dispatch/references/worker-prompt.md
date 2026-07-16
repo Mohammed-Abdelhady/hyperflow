@@ -18,7 +18,7 @@ Use this template when dispatching workers via the Agent tool.
 [Injected from .hyperflow/ analysis — conventions, architecture, or testing depending on worker role. Omit section if no project analysis exists.]
 
 ## Learnings from prior tasks
-[Synthesized from prior batches — patterns found, gotchas, decisions already made. Omit section if first task.]
+[Rolling replacement snapshot from prior batches: maximum 6 semantically unique bullets and 300 tokens. Keep active decisions, contracts, and gotchas only; replace duplicate/obsolete bullets. Never include transcripts or raw patches. Omit if first task.]
 
 ## Constraints
 - Only modify files listed in scope

@@ -112,7 +112,8 @@ When sticky is ON, the orchestrator MUST follow this routing on every new user m
 
 1. **Chat-shaped messages** (questions about prior output, "yes" / "no" answers to a pending gate, acknowledgments like "ok"/"thanks", short clarifications) — pass through normally, no chain routing.
 2. **Task-shaped messages** (any verb-led request for new work: "add X", "fix Y", "refactor Z", "build", "implement", "create", "design", "scope out", "decompose", "ship") — auto-route:
-   - **New work** (whether the user asks *what* / *should we* or describes *how* and names concrete files / functions) → invoke `/hyperflow:plan` with the user's message as `ARGUMENTS`. Plan internally bounces past the design phase straight to decomposition when the request is already clear.
+   - **New implementation work** → inspect the affected surface, then run deterministic pre-triage. `inline_fast` executes the clear reversible 1–2-file change in the foreground with affected checks and inline diff review. `classifier` invokes `/hyperflow:plan` with the user's message.
+   - **Design/scope work** → invoke `/hyperflow:plan`; deterministic fast execution never applies to an explicitly exploratory request.
    - **Existing task file referenced** (e.g. "resume the auth task") → invoke `/hyperflow:dispatch` with the matching slug.
 3. **Bug reports** ("X is broken", "Y test fails", "Z throws…") → invoke `/hyperflow:trace`.
 4. **Review requests** ("review this", "audit the diff", "any issues?") → invoke `/hyperflow:audit`.

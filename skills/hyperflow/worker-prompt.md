@@ -2,7 +2,7 @@
 
 Use this template when dispatching workers via the Agent tool. **Every section below is mandatory** — the Team Lead must fill each one before dispatch. A sparse / vague brief is a doctrine violation: the worker will fill the gaps with assumptions, and the per-batch Reviewer can't catch what wasn't asked for. Detail floor exists so the worker executes the right work, not a plausible-looking nearby alternative.
 
-**Authored at plan time by default.** For non-trivial sub-tasks, `/hyperflow:plan` writes this entire body into a brief file `.hyperflow/tasks/<slug>/T<id>.md` (or `phase-*/tasks/T<id>.md` in feature mode). At dispatch, the Composer **loads that brief verbatim** and only appends Project Context + learnings + the specialist output-contract — it does not re-derive Task/Scope/Acceptance/Test-cases. This is what lets the build run faithfully on a cheaper model or a second session. The Composer authors inline (the old path) only when no brief file exists (a trivial sub-task or a legacy terse task file).
+**Authored at plan time by default.** For non-trivial sub-tasks, `/hyperflow:plan` writes this entire body into a brief file `.hyperflow/tasks/<slug>/T<id>.md` (or `phase-*/tasks/T<id>.md` in feature mode). At dispatch, the orchestrator loads that brief verbatim and mechanically appends Project Context + bounded rolling learnings + the specialist output-contract inline—it does not re-derive Task/Scope/Acceptance/Test-cases and does not dispatch a Composer. Only a complex missing brief can trigger one batch-level Composer for the whole missing set. This is what lets the build run faithfully on a cheaper model or a second session.
 
 ## Template
 
@@ -93,7 +93,7 @@ Project Context (load on demand):
 Workers in lean mode read these files via the `Read` tool when (and only when) their task actually needs the information. No quality regression — same content, lazy access. Saves ~2k tokens × N parallel workers per batch because the bundle isn't re-injected into every worker prompt.]
 
 ## Learnings from prior tasks
-[Synthesized by the orchestrator — patterns found, gotchas, decisions already made. Omit section if first task.]
+[Rolling replacement snapshot synthesized by the orchestrator. Maximum 6 semantically unique bullets and 300 tokens total. Include only active decisions, contracts, or gotchas that can change this task; newer facts replace duplicate/obsolete bullets. Never include transcripts, completed-task narration, or raw patches. Omit section if first task.]
 
 ## Constraints
 - Only modify files listed in scope
@@ -222,7 +222,7 @@ Note the contrast with a sparse brief ("create a UserAvatar component that shows
 
 ## When to compress (lean mode + small tasks)
 
-For `mode=lean` AND `triage.complexity == low` AND scope is genuinely 1-2 files / 1 function, the detail floor relaxes:
+For `mode=lean` AND `triage.complexity == trivial|simple` AND scope is genuinely 1-2 files / 1 function, the detail floor relaxes:
 - **Why** can be 1 sentence
 - **Scope IN/OUT** can be a single line each
 - **Edge cases** section may be omitted only if no edge cases apply

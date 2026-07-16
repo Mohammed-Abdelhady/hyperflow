@@ -138,12 +138,12 @@ For each `NEEDS_FIX` section: re-dispatch only that section's Worker; single re-
 
 | Condition | Steps skipped | Rationale |
 |---|---|---|
-| `ambiguity < 0.6 AND complexity != high` | Step 4 (6-dim analysis) + Step 6 (approach proposals) | Nothing ambiguous to analyze; one clear approach exists |
-| `ambiguity < 0.4 AND complexity == low` | Design phase (Steps 6-8) | Bounce directly to decomposition (Step 9) — design ceremony adds no value |
+| `ambiguity < 0.6 AND complexity != complex` | Step 4 (6-dim analysis) + Step 6 (approach proposals) | Nothing ambiguous to analyze; one clear approach exists |
+| `ambiguity < 0.4 AND complexity IN [trivial, simple]` | Design phase (Steps 6-8) | Bounce directly to decomposition (Step 9) — design ceremony adds no value |
 
-**Steps always kept regardless of triage:**
-- Step 7 sections (the design walk-through is the deliverable)
-- Step 5 questions (2-question floor is a structural gate per DOCTRINE rule 8)
+**Steps always kept when their preconditions apply:**
+- Step 7 sections when the design walk-through is the deliverable
+- Structural gates; clarification questions are skipped when grounded ambiguity is below 0.2
 
 **Borderline rounding rule:** When `ambiguity` lands at or near the threshold (e.g., 0.39, 0.41), **round up** — run the optional steps. The latency win matters on the clearly unambiguous cases; borderline cases keep the full ceremony. Never skip on the fence.
 
@@ -195,9 +195,9 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L1 — Lightweight Classifier (D1)
 
-**What it is:** Triage Classifier (plan Step 1) dispatched with a lean, structured-output-only prompt.
+**What it is:** Run deterministic `route-task.py` first. Dispatch the lean structured-output Classifier only when the preflight cannot safely prove an inline-fast route.
 
-**When applicable:** Always — triage produces structured JSON (`types[], complexity, risk, ambiguity, flow, personas[]`). Structured classification requires less reasoning depth than open-ended generation; a focused prompt reduces latency. Inherits the session model like all other agents.
+**When applicable:** Every new-work request runs deterministic preflight; uncertain, explicit, gated, or non-fast requests then use the Classifier. Both paths produce the same triage contract.
 
 **`--thorough` behavior:** Does NOT change this lever. Lean classification is high-quality for the structured JSON output shape; no accuracy tradeoff justifies a more expensive prompt.
 
@@ -265,9 +265,9 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L8 — Aggressive P4 thresholds (D8)
 
-**What it is:** P4 triage thresholds tightened — skip multi-dim Analyst at `ambiguity < 0.6` (was 0.4); bounce to decomposition at `ambiguity < 0.4` (was 0.2). Requests at ambiguity 0.4-0.6 operationally rarely benefit from multi-dim analysis. The 2-question floor (Step 5) is preserved non-negotiably.
+**What it is:** P4 skips the multi-dim Analyst at `ambiguity < 0.6` and bounces clear trivial/simple work to decomposition at `ambiguity < 0.4`. Requests below 0.2 ask no clarification unless inspection exposes a material unknown.
 
-**When applicable:** Whenever `ambiguity < 0.6 AND complexity != high` (skip multi-dim) or `ambiguity < 0.4 AND complexity == low` (bounce). Borderline rounding rule unchanged: round up on the fence — never skip on ambiguous boundary cases.
+**When applicable:** Whenever `ambiguity < 0.6 AND complexity != complex` (skip multi-dim) or `ambiguity < 0.4 AND complexity IN [trivial, simple]` (bounce). Borderline rounding rule unchanged: round up on the fence.
 
 **`--thorough` behavior:** Reverts to round-1 thresholds: skip multi-dim at `ambiguity < 0.4`; bounce at `ambiguity < 0.2`. All ceremony runs on higher-ambiguity cases.
 
@@ -332,7 +332,7 @@ What round 2 does NOT change:
 - Implementation work still hits a per-batch Reviewer (L5 drops the wrap-up Reviewer, not the batch Reviewer)
 - Per-sub-task commit cadence — preserved unconditionally
 - SECURITY_VIOLATION halt — preserved unconditionally
-- 2-question plan floor (Step 5) — preserved unconditionally even when P4/L8 skip other ceremony
+- Material-question rule — clear grounded work asks none; unresolved implementation choices still ask
 - Borderline rounding rule — preserved (round up on ambiguity boundary; never skip on the fence)
 
 What round 2 relaxes:
