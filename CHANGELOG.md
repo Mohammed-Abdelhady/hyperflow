@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.13.0] — 2026-07-16
+
+### Added
+- Persist token efficiency metrics
+
+### Changed
+- Document token-efficient orchestration
+- Enforce token-efficient execution
+- Make lean mode the true default
+
+
 ## [5.12.0] — 2026-07-16
 
 ### Added
@@ -1218,7 +1229,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.12.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.13.0...HEAD
+[5.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.12.0...v5.13.0
 [5.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.11.0...v5.12.0
 [5.11.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.10.0...v5.11.0
 [5.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.8.0...v5.10.0
