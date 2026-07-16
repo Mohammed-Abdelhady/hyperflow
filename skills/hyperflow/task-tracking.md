@@ -18,7 +18,7 @@ Persist active task state across sessions as individual files in `.hyperflow/tas
 ---
 id: implement-user-auth
 status: in-progress | blocked | in-review | completed
-complexity: simple | medium | complex
+complexity: simple | moderate | complex
 created: 2026-05-15T14:30:00Z
 updated: 2026-05-15T15:00:00Z
 ---

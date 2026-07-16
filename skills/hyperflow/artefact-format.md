@@ -42,7 +42,7 @@ A markdown table that summarises the artefact's current state. The user reads th
 | Branch     | `feat/<slug>`                                    |
 | Commits    | 7 since main · per-task cadence                  |
 | Wall-clock | 12m elapsed · ETA ~8m                            |
-| Tokens     | 30 agents · ~365k total                          |
+| Tokens     | 9 agents · 44.5k total · execution 24.0k · review 7.5k · verification 3.0k |
 | Specialists| `api-reviewer, security-reviewer · debugger`     |
 ```
 
@@ -51,7 +51,7 @@ Field rules:
 - **Status** — one word from the artefact's lifecycle vocabulary
 - **Progress** — only on task files; spec files use `Section 4 / 5 approved` style; audit files omit the row (use Verdict instead — see audit additions below)
 - **Branch / Commits** — only on task files (omit rows on spec/audit files)
-- **Wall-clock / Tokens** — only when live (omit rows on completed-and-archived files; or replace with totals + `· final`)
+- **Wall-clock / Tokens** — only when live (omit rows on completed-and-archived files; or replace with totals + `· final`). `Tokens` is projected from the usage ledger and keeps this parseable order: `<agents> agents · <total> total · execution <n> · review <n> · verification <n>`; add `planning <n>` before execution when the task artefact spans planning. Never add free-form commentary inside this row.
 - **Specialists** — the Brain-decided responsible specialist agents ([`../../agents/README.md`](../../agents/README.md)) for this artefact; present on spec + task files so `dispatch`/`audit` inherit the roster (omit only when none apply)
 - Progress-bar string goes in backticks so the box-drawing characters render as inline code and don't trigger markdown italics on `*` or emphasis on `_`
 - Always exactly two columns (Field / Value). Markdown auto-pads to the widest cell — no character counting required
@@ -163,7 +163,7 @@ Spec files add three extra sections beyond the task-file template:
 2. **Components** — bullet list of named components (compact subcommand handler, Compaction Writer, etc.) with one-line role. Lets the Planner cross-reference Section 1 names without re-reading the architecture prose.
 3. **Trade-offs accepted / rejected** — explicit list at the end of `## 3. Key decisions`. What the design said no to and why. Most useful section for future implementers and audit reviewers.
 
-When the [`architect`](../../agents/architect.md) agent authored the design (architect-typed / high-complexity / multi-subsystem work), `## 1. Architecture` embeds a Mermaid component/container graph and `## 2. Data flow` embeds a Mermaid data-flow diagram — the diagram precedes the implementation. These are fenced ` ```mermaid ` blocks (not the plain-Unicode dependency diagram above, which stays ASCII); the Step 8 final-spec Reviewer checks both graphs are present.
+When the [`architect`](../../agents/architect.md) agent authored the design (architect-typed / complex / multi-subsystem work), `## 1. Architecture` embeds a Mermaid component/container graph and `## 2. Data flow` embeds a Mermaid data-flow diagram — the diagram precedes the implementation. These are fenced ` ```mermaid ` blocks (not the plain-Unicode dependency diagram above, which stays ASCII); the Step 8 final-spec Reviewer checks both graphs are present.
 
 ## Audit file additions
 

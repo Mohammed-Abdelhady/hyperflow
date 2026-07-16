@@ -81,12 +81,12 @@ For escalation decisions, use these approximate token budget values:
 
 | Profile | Baseline budget |
 |---|---|
-| fast | 30k tokens |
-| standard | 100k tokens |
-| deep | 300k tokens |
-| scientific | 300k tokens |
-| research | 80k tokens |
-| creative | 150k tokens |
+| fast | 10k tokens |
+| standard | 50k tokens |
+| deep | 200k tokens |
+| scientific | 200k tokens |
+| research | 60k tokens |
+| creative | 100k tokens |
 
 Source of truth: `flow-profiles.md` — values must match.
 
@@ -185,54 +185,42 @@ Risk escalation always supersedes complexity escalation. A "fast" task that disc
 
 ## Token accounting protocol
 
-Token accounting is not optional and not approximate. The orchestrator tracks exact token usage from every agent after every dispatch. This data drives the overrun thresholds, feeds the usage summary, and is the audit trail if a user asks why a task consumed more than expected.
+Token accounting is mandatory for every dispatched agent. Each chain writes metadata-only JSONL through `scripts/usage-ledger.py`; prompt text, response text, patches, file contents, and secrets never enter the ledger. Capture result metadata when the agent returns, then append exactly once before leaving the boundary where `accepted_commit` is known.
 
-The orchestrator tracks token usage from every agent after each dispatch:
+Canonical record fields, in order:
 
 ```text
-agent_id | role        | input_tokens | output_tokens | total_tokens | timestamp
----------|-------------|--------------|---------------|--------------|----------
-t-01     | triage      | 1200         | 340           | 1540         | T+0s
-w-01     | searcher    | 3100         | 890           | 3990         | T+12s
-w-02     | implementer | 4200         | 1100          | 5300         | T+12s
-r-01     | reviewer    | 6800         | 420           | 7220         | T+28s
+chain_id · phase · batch · task · attempt · role
+input_tokens · output_tokens · total_tokens · cached_input_tokens
+context_hash · context_tokens · estimated · accepted_commit · timestamp
 ```
 
-After each batch completes:
+Rules:
 
-1. Sum tokens by role (orchestrator vs. workers vs. reviewers).
-2. Compute the running total across all batches so far.
-3. Compare against the profile's baseline budget (defined in `flow-profiles.md`).
-4. Apply the thresholds in the Budget overrun handling table below.
-5. Append the batch summary to the in-memory usage log for the final summary.
+1. `phase` is one of the budget phases: `triage`, `planning`, `execution`, `review`, `verification`.
+2. `attempt` is 1-based; retries are separate records. `total_tokens` must equal input + output.
+3. Use provider input/output/cache metadata when available. If unavailable, estimate conservatively as `input_tokens = ceil(prompt characters / 4)`, `output_tokens = ceil(response characters / 4)`, set `estimated=true`, and keep the raw text out of the ledger.
+4. `context_hash` fingerprints only the repeated shared-context block; `context_tokens` measures that block. Repeated hashes after their first occurrence produce the duplicate-context metric.
+5. `accepted_commit=true` belongs only to the producing agent result that led to one accepted commit. Failed attempts, Composer/review calls, and non-committed outputs use `false`.
+6. Unknown fields are forbidden. A ledger validation/write failure stops the chain before further agent spend.
 
-Token counts must come from the actual API response metadata, not estimated from prompt length. If a model call does not return token metadata, log a warning and use a conservative estimate of 2× prompt character count ÷ 4.
+At every natural boundary run `usage-ledger.py summary --chain-id <chain-id>`. It is the source of truth for total/per-phase tokens, duplicate-context tokens/ratio, retry cost, cache-hit rate, estimated-record count, accepted commits, and tokens per accepted commit. The task-file `Tokens` row and terminal Usage block are projections of this summary, not independently maintained counters.
 
 ---
 
 ## Budget overrun handling
 
-| Multiplier | Indicator | Behavior |
-|---|---|---|
-| 1.0× — 1.5× | gray (internal log) | Log to running counter; no user-facing output |
-| 1.5× — 2.0× | yellow `⚠ APPROACHING BUDGET` | Print warning to user; suggest downgrade if remaining work is light |
-| 2.0×+ | red `⚠ OVER BUDGET` | Halt batch; call `AskUserQuestion` to confirm continuation |
+Hard totals and per-phase caps are enforced by `scripts/budget-guard.py`, not by narrative multipliers. Check only at natural boundaries: after triage, after planning, after each complete execution/review batch, after final review, and after verification. Do not interrupt an in-flight agent.
 
-**Exception:** For `scientific` and `deep` profiles where the user explicitly requested thoroughness (e.g., "full audit", "exhaustive review", "I want every edge case covered"), the halt threshold rises to 3.0×. Flag with red at 2.0× anyway, but do not halt until 3.0×.
+Pass the ledger summary's chain total and phase total to the guard with `--boundary --reserved-tokens <next-call-reservation>`. Reserve a conservative upper bound for the next agent call or concurrent wave; use `0` only when no more agent work can launch. When one boundary accumulated several phases, evaluate every phase that gained records in canonical order; checking only the last phase would hide an earlier cap. Apply each deterministic result before the next dispatch:
 
-When `AskUserQuestion` fires on budget overrun, present the following structured choices:
+| Decision | Behavior |
+|---|---|
+| `continue` | Advance normally. |
+| `degrade` | Persist the target profile, preserve completed work, and use it for remaining dispatches. Allowed only when the guard returned a target and the remaining work is safely degradable. |
+| `halt` | Stop before another agent call; print exact used/cap values and Evidence + Usage for completed work. |
 
-```text
-⚠ OVER BUDGET: this task has used <X>k tokens against a <Y>k profile budget (<Z>× over).
-Remaining work estimate: ~<N>k tokens if continued at current profile.
-
-How would you like to proceed?
-A) Continue at current profile (<Z>× total estimated)
-B) Downgrade to <lower-profile> to reduce remaining cost (~<M>k estimated)
-C) Stop here — summarize what was completed and what remains
-```
-
-The orchestrator must not guess the user's preference and continue. It must pause and wait for a response. If the user does not respond within the session, default to option C (stop and summarize).
+If a cap is reached during an in-flight wave, record the results and enforce at the immediately following boundary. Never silently continue unmetered, invent a larger budget, or ask a mid-batch cost question. Scientific/research paths that cannot safely degrade halt at their cap.
 
 ---
 
@@ -241,34 +229,31 @@ The orchestrator must not guess the user's preference and continue. It must paus
 Print this block at the end of every task, regardless of profile. On dispatch / handoff builds it prints **after** the structured Evidence block (work product — see [output-style.md](output-style.md) §7); on other skills it remains the final block after task output. Usage is cost and process accounting only — never a replacement for Evidence or the task result itself.
 
 ```text
-── Hyperflow Usage ─────────────────────────────────
-Triage:      moderate   · flow: standard   · types: [api, db]
-Profile:     standard   · budget: 100k     · actual: 87k  (under)
-Spec depth:  light      · 1 question       · 2.3k tokens
-─────────────────────────────────────────────────────
-Total                    5 agents    87.1k tokens
-─────────────────────────────────────────────────────
-Escalations: 0   · Downgrades: 0   · Overruns: none
+── Hyperflow Usage ─────────────────────────────────────────
+Profile: standard              budget 50.0k
+Planning                       2 agents    8.2k tokens
+Execution                      3 agents   24.0k tokens
+Review                         2 agents    7.5k tokens
+Verification                   1 agent     3.0k tokens
+Duplicate context                         5.4k · 12.7%
+Cache hit                                  31.0%
+Retry cost                                 2.1k tokens
+Accepted commits                          2 · 21.4k tokens/commit
+Estimated records                         0
+Total                           8 agents   42.7k tokens
+Ledger                          .hyperflow/usage/<chain-id>.jsonl
+────────────────────────────────────────────────────────────
 ```
 
-For tasks with escalation, replace the last line with:
+For tasks with escalation, add a line before Total:
 
 ```text
-Escalations: 1 (fast → standard, reason: scope-expansion)
-Downgrades: 0   · Overruns: none
+Escalations                    1 · fast → standard · scope-expansion
 ```
 
-For budget overruns:
+For a guard halt, add `Budget: halted · <phase> <used>/<cap> · total <used>/<cap>` before the Total row. For a safe degradation, add `Budget: degraded <from> → <to> at <phase> boundary`.
 
-```text
-Escalations: 0   · Downgrades: 0   · Overruns: 1 (1.7× at batch 3, yellow)
-```
-
-The `actual` field reads `under`, `over`, `yellow` (1.5×–2.0×), or `red` (>2.0×). No icons or emoji — plain words only.
-
-The `types` field mirrors what triage identified (e.g., `[api, db, config]`). If escalation surfaced new types mid-flight, append them with a `*` marker: `[api, db, config*]` where `*` means discovered during execution.
-
-If the task was downgraded, the profile line reads: `Profile: deep → standard · budget: 200k → 100k · actual: 78k (under)` to make the downgrade visible at a glance.
+If the task was downgraded, the profile line reads `Profile: deep → standard · budget 200.0k → 50.0k`; the separate Budget line identifies the boundary. Never preserve the old profile's unused allowance after degradation.
 
 ---
 
@@ -284,7 +269,7 @@ If the task was downgraded, the profile line reads: `Profile: deep → standard 
 
 **Do not print the usage summary before work is complete.** The summary is a terminal output — it signals to the user that the task is done. Printing it mid-flight creates false closure and confusion about whether the task finished.
 
-**Do not track tokens at task level only.** Token accounting must be per-agent and per-batch so the orchestrator can catch overruns early, not only at the end. A task that goes 2× over budget on batch 1 of 5 should halt then, not after all 5 batches complete.
+**Do not track tokens at task level only.** Token accounting must be per-agent, per-phase, and per-batch so the guard catches a phase/total cap at the first natural boundary, not after all batches complete.
 
 **Do not re-run completed sub-tasks after escalation unless the escalation reason invalidates them.** If a worker found and documented 3 files correctly before escalating, those 3 files are already known — do not search them again. Escalation adds capacity, it does not reset progress.
 

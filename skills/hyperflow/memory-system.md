@@ -146,17 +146,17 @@ The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-s
 
 ## Read Protocol (Session Start)
 
-Steps 1–3 are automatic — `scripts/memory-index.py` runs from the session-start hook and injects their output. The orchestrator does not perform them.
+`scripts/memory-index.py` always rebuilds derived state at session start. Injection depends on mode.
 
-1. Rebuild `index.md` + `.checksums` from the category files; the index arrives in context under `## Project Memory Index`.
-2. Inject all **hot** entries in full (≤ 7 days) under `## Project memory — hot entries`.
-3. Inject `anti-patterns.md` in full — always, regardless of age or tags. It is permanently hot-tier (see Registered Memory Files above).
+1. Rebuild `index.md` + `.checksums` from the category files in every mode.
+2. In default/thorough mode, inject the index, hot entries, and `anti-patterns.md` as before.
+3. In lean mode (the default), inject only paths to `index.md` and `session-context.md`; infer task tags, then read matching hot/warm entries and anti-patterns on demand.
 
 The orchestrator performs the rest:
 
-4. Infer tags from the current task description. Read **warm** entries whose tags overlap — the index names the file each entry lives in.
+4. Infer tags from the current task description. Read **hot and warm** entries whose tags overlap — the index names the source file.
 5. Skip **cold** entries unless the user explicitly requests them (`hyperflow: memory show <tag>`).
-6. Inject the loaded entries into worker prompts under `## Learnings from prior sessions`. Inject `anti-patterns.md` under a separate `## Known anti-patterns` header.
+6. Inject only the loaded entries into worker prompts. Load relevant anti-pattern entries under a separate header; do not inject the whole file in lean mode.
 
 Workers receive only the subset matching their task's inferred tags — never the full dump.
 

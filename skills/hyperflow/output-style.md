@@ -212,17 +212,26 @@ Next       audit/deploy gates
 
 ## 8. Usage Summary
 
-Printed after every completed task, **after** Evidence. The summary surfaces `Wall-clock` and `Cumulative` rows so parallelism is provable from the numbers alone — without trusting the dispatch labels. Usage is cost accounting only — it does **not** replace Evidence.
+Printed after every completed task, **after** Evidence. Agent/token rows come from `scripts/usage-ledger.py summary`; never reconstruct them from scrollback or task prose. The summary surfaces canonical phase totals plus `Wall-clock` and `Cumulative` so cost and parallelism are auditable. Usage does **not** replace Evidence.
 
 ```
 ── Hyperflow Usage ─────────────────────────────────────────
-Triage                          1 agent     1.8k tokens
-Spec depth: standard            1 agent     3.2k tokens
-Profile: deep                   —           —
+Profile: standard              budget 50.0k
+Triage                         1 agent      1.8k tokens
+Planning                       2 agents     8.2k tokens
+Execution                      3 agents    24.0k tokens
+Review                         2 agents     7.5k tokens
+Verification                   1 agent      3.0k tokens
+Duplicate context                          5.4k · 12.7%
+Cache hit                                   31.0%
+Retry cost                                  2.1k tokens
+Accepted commits                           2 · 21.4k tokens/commit
+Estimated records                          0
 Wall-clock                      3m 47s
 Cumulative                      14m 22s    (ratio 0.26 — parallel)
 Escalations                     0
-Total                          14 agents  243.1k tokens
+Total                           9 agents    44.5k tokens
+Ledger                          .hyperflow/usage/<chain-id>.jsonl
 ────────────────────────────────────────────────────────────
 ```
 
@@ -235,6 +244,11 @@ Rules:
 - Agent counts right-aligned in 3-char column
 - Token counts right-aligned in 7-char column, formatted as `Xk` or `X.Xk`
 - Breakdown after tokens (optional): `(3 reviewers: 38.4k · 1 final: 13.7k)` — middle dots between items
+- Phase names are exactly `Triage`, `Planning`, `Execution`, `Review`, `Verification`; omit only zero phases.
+- Duplicate-context ratio = repeated `context_tokens` (same non-empty hash after its first occurrence in that chain) ÷ total input tokens. Cache-hit rate = cached input ÷ total input.
+- `Estimated records` is always visible. A non-zero value makes clear that some provider metadata was unavailable.
+- `Accepted commits` and tokens/commit come from `accepted_commit`; never infer commit count from prose.
+- Inline-fast prints `Profile: fast · inline foreground`, `0 agents`, `Total 0 agents · tokens n/a`, affected-gate results, and the one accepted commit in Evidence. It has no ledger row because no agent call occurred.
 
 ## 9. Section Headers
 

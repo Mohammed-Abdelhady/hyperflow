@@ -38,6 +38,9 @@ Read these files only if needed. Locations differ — check both groups:
 
 Read a file once if the task touches its domain. Do not re-read files already in your context window.
 
+## Learnings from prior batches
+[Rolling replacement snapshot only: maximum 6 semantically unique bullets and 300 tokens. Keep active decisions, contracts, and gotchas; replace duplicates/obsolete bullets. Never include transcripts, completed-task narration, or raw patches. Omit on the first batch.]
+
 ## Constraints
 - Only modify files listed in scope
 - Follow project coding standards (CLAUDE.md)
@@ -103,6 +106,10 @@ Read these files only if needed. Locations differ — check both groups:
   - patterns.md       — reusable solution patterns
 
 Read a file once if the task touches its domain. Do not re-read files already in your context window.
+
+## Learnings from prior batches
+- Keep this injected block to ≤6 unique bullets and ≤300 tokens.
+- Include active decisions/contracts/gotchas only; replace obsolete duplicates.
 
 ## Constraints
 - Only modify files listed in scope

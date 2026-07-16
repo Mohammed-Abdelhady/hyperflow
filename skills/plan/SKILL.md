@@ -41,13 +41,13 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 | Step | Sub-phase | Workers | Reviewers / decision agents | Notes |
 |---|---|---|---|---|
 | 0 — Setup | atomic | — | — | Silent: parse flags, set max-thinking. NO startup gate, NO questions |
-| 1 — Triage | atomic | Classifier | **Triage Reviewer** | P4-skip Reviewer; P3-concurrent with Step 3 |
+| 1 — Triage | atomic | Deterministic preflight or Classifier | **Triage Reviewer** | Preflight resolves only inline-fast outside explicit plan; P4-skip Reviewer; P3-concurrent with Step 3 |
 | 2 — Amplify (skippable) | atomic | Writer — rewrite prompt | **Reviewer** — 8-dim rubric, one revision | Skips on clear/structured prompt |
 | 3 — Context | 3a + 3b (P1) | Searcher ×2 per sub-phase | **Reviewer** per sub-phase | 3a surface map · 3b semantic + convention scan |
-| 4 — Multi-dim analysis (P4) | 4a + 4b + 4c (P1) | Writer ×1–2 per sub-phase | **Reviewer** per sub-phase + **Analyst** synthesis | Skips when ambiguity < 0.6 ∧ complexity ≠ high |
-| 5 — Clarify (gate) | atomic | — | — | `AskUserQuestion`; design path floor 2 · bounce path 0–3 |
-| 6 — Synthesis + approaches (P4) | 6a + 6b | Writer ×1–2 per sub-phase | **Reviewer** (batched) | Skips approaches when ambiguity < 0.6 ∧ complexity ≠ high |
-| 7 — Design sections (P1+P2) | 7a + 7b + 7c | Writer ×1–2 per sub-phase (**`architect`** authors 7a §1/§2 on architect-typed / high-complexity / multi-subsystem tasks — embeds Mermaid graphs; **`designer`** authors the visual/experiential decisions on ui/creative-typed tasks — grounds them in `.hyperflow/design/system.md`; **`mobile`** authors the platform/device decisions on mobile/native-typed tasks — grounds them in `../hyperflow/mobile.md`) | **Reviewer** per sub-phase + 1 batched | File-first; one combined approval gate |
+| 4 — Multi-dim analysis (P4) | 4a + 4b + 4c (P1) | Writer ×1–2 per sub-phase | **Reviewer** per sub-phase + **Analyst** synthesis | Skips when ambiguity < 0.6 ∧ complexity ≠ complex |
+| 5 — Clarify (gate) | atomic | — | — | `AskUserQuestion` only for material unknowns; bounce path 0–3 |
+| 6 — Synthesis + approaches (P4) | 6a + 6b | Writer ×1–2 per sub-phase | **Reviewer** (batched) | Skips approaches when ambiguity < 0.6 ∧ complexity ≠ complex |
+| 7 — Design sections (P1+P2) | 7a + 7b + 7c | Writer ×1–2 per sub-phase (**`architect`** authors 7a §1/§2 on architect-typed / complex / multi-subsystem tasks — embeds Mermaid graphs; **`designer`** authors the visual/experiential decisions on ui/creative-typed tasks — grounds them in `.hyperflow/design/system.md`; **`mobile`** authors the platform/device decisions on mobile/native-typed tasks — grounds them in `../hyperflow/mobile.md`) | **Reviewer** per sub-phase + 1 batched | File-first; one combined approval gate |
 | 8 — Spec finalize | atomic | Writer | **Reviewer** (final-integration) | Renames draft → `.hyperflow/specs/<slug>.md` |
 | 9 — Decompose | 9a + 9b + 9c | Planner ×1 (9a) · Searcher ×2 (9b) · **brief Writer ×1 per non-trivial sub-task (9c)** | **Reviewer** per sub-phase | 9a batch graph → 9b sizing → 9c authors a full build-ready brief per non-trivial sub-task (`briefs=auto`) |
 | 10 — Write task file (P3 w/ 11) | 10a + 10b + 10c | Writer ×2 per sub-phase | **Reviewer** per sub-phase + 1 final verify | Flat task file or feature/phase tree |
@@ -60,7 +60,7 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 
 | Gate | When | Format |
 |---|---|---|
-| Smart questions | Step 5, design path | `AskUserQuestion` — 2–5 questions (floor 2) |
+| Smart questions | Step 5, design path | `AskUserQuestion` — 0–5 material questions, scaled by ambiguity |
 | Synthesis + approach | Step 6, after batched review | `AskUserQuestion` — confirm synthesis · pick approach |
 | Design section approval | Step 7, one combined gate | `AskUserQuestion` — approve all / revise §N |
 | **Build location** | Step 12, after the task file is written — **ALWAYS** | `AskUserQuestion` — this session / another session / stop (+ handoff: review / deploy when another session) |
@@ -84,9 +84,9 @@ Then proceed straight to Step 1. Any `session=` / `commit=` / `branch=` / `push=
 
 Step 1 (Classifier) and Step 3 (context Searchers) are independent — dispatch both in one message, wait for both. Under `--thorough`, run Step 1 first, then Step 3.
 
-Dispatch `Classifier — triaging request` per [`../hyperflow/task-triage.md`](../hyperflow/task-triage.md), producing `{ types[], complexity, risk, scope, ambiguity, flow, personas[], specialists[] }`. This drives: the P4 gates (Steps 4/6) and bounce gate (Step 5); the question budget at Step 5 (`0.0–0.5` → 2, `0.5–0.8` → 3, `0.8–1.0` → 4–5); the downstream flow profile ([`../hyperflow/flow-profiles.md`](../hyperflow/flow-profiles.md)); and persona/specialist stitching. On a gated flow the responsible specialist roster is finalized once via the [Brain](../../agents/brain.md) (DOCTRINE rule 17) and inherited by every later phase. Persist and propagate as `triage=<base64-json>`.
+Run deterministic preflight per [`../hyperflow/task-triage.md`](../hyperflow/task-triage.md). Explicit plan requests always return `classifier`; dispatch `Classifier — triaging request` and produce `{ types[], complexity, risk, scope, ambiguity, flow, personas[], specialists[] }`. This drives P4, the bounce gate, Step 5's question budget (`<0.2` → 0, `0.2–0.5` → 0–2 material questions, `0.5–0.8` → 2–3, `0.8–1.0` → 4–5), flow profile, and persona/specialist stitching. Persist and propagate as `triage=<base64-json>`.
 
-**Triage Reviewer (rule 15).** P4-skip when ALL of `complexity == low`, `ambiguity < 0.2`, `scope ∈ {0-file, 1-file}`, `risk != high` — consume the Classifier output as-is and print the skip line. Otherwise dispatch `**Triage Reviewer** — validating classification against request and project profile` (reads the request + `.hyperflow/profile.md`). Verdict ∈ {`PASS`, `RECLASSIFY` (use corrected triage, print one line), `ESCALATE` (add ambiguity to Step 5's queue)}. On Reviewer error follow failure-recovery §5 — never consume unvalidated triage.
+**Triage Reviewer (rule 15).** Skip when `complexity IN [trivial, simple]`, `ambiguity < 0.2`, `scope IN [single-file, multi-file]`, `risk=reversible`, and both gated flags are false. Otherwise dispatch `**Triage Reviewer** — validating classification against request and project profile`. Verdict ∈ {`PASS`, `RECLASSIFY`, `ESCALATE`}. On Reviewer error follow failure-recovery §5.
 
 ### Step 2 — Amplify / prompt hygiene (atomic · skippable)
 
@@ -108,7 +108,7 @@ Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `.hyperflow/m
 
 ### Step 4 — Multi-dimensional analysis (P4-skippable)
 
-**P4 gate:** skip entirely (jump to Step 5) when `ambiguity < 0.6 AND complexity != high` — round up on the border (0.59 → run). `--thorough` always runs. If run, sub-phases fan out in parallel (P1), then the Analyst aggregates:
+**P4 gate:** skip entirely (jump to Step 5) when `ambiguity < 0.6 AND complexity != complex` — round up on the border. `--thorough` always runs. If run, sub-phases fan out in parallel (P1), then the Analyst aggregates:
 
 - **4a — Intent + technical-fit:** `Writer — user-intent: real need + success` ∥ `Writer — technical-fit: how it fits existing architecture`. → `**Reviewer**`.
 - **4b — Scope + risks:** `Writer — scope/constraints: MVP vs max, limits` ∥ `Writer — risks: failure modes, irreversibility`. → `**Reviewer**`.
@@ -119,9 +119,9 @@ Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `.hyperflow/m
 
 Pre-flight: read `.hyperflow/memory/project-decisions.md`; skip any candidate already answered there (print one line) unless the cached answer conflicts with this task (then ask "decisions say X — does this task change that?").
 
-**Bounce gate (decompose-only path):** when `ambiguity < 0.4 AND complexity == low`, the request is clear — skip the design phase (Steps 6–8). Ask **0–3** post-analysis questions tied to specific findings the Searchers surfaced (no floor — zero when research is conclusive), then jump to **Step 9**. Print `That's clear enough to skip the design phase — decomposing directly.`
+**Bounce gate (decompose-only path):** when `ambiguity < 0.4 AND complexity IN [trivial, simple]`, the request is clear — skip Steps 6–8. Ask **0–3** post-analysis questions only for specific unresolved findings, then jump to Step 9.
 
-**Design path (everything else):** ask via `AskUserQuestion`, **floor of 2 questions always** (the two minimums give the user a place to redirect even when the request looks unambiguous). Budget by triage depth: light 2 · standard 3 · deep 4–5. Never stack more than 2 questions per call. Multi-option lists (3+) mark a `(Recommended)` choice (the Analyst's leading hypothesis first); binary lists carry no marker. Question order: intent → constraints → assumptions → scope → edge-case stance (pick the first N for depth N).
+**Design path (everything else):** ask via `AskUserQuestion` only when an answer changes implementation. Budget by triage depth: none 0 · light 0–2 · standard 2–3 · deep 4–5. Never stack more than 2 questions per call. Multi-option lists (3+) mark a `(Recommended)` choice; binary lists carry no marker.
 
 After answers, append structural decisions (database, auth, testing, framework defaults) to `.hyperflow/memory/project-decisions.md` under a category heading with date + source slug — inline write, §12.1-trivial. Skip task-specific answers.
 
@@ -130,7 +130,7 @@ After answers, append structural decisions (database, auth, testing, framework d
 Step 5 (synthesis) and 6a both depend on the answers but not on each other — dispatch concurrently (P3); one batched Reviewer covers both (P2). `--thorough` runs them sequentially.
 
 - **Synthesis:** `Writer — requirement synthesis` produces a one-paragraph "the goal is X, constraints Y, excluding Z."
-- **6a — Approach candidates (P4-skip when `ambiguity < 0.6 ∧ complexity != high`):** `Writer — lightweight candidates` ∥ `Writer — heavyweight candidates`. Each approach: Name · What · Pros · Cons · Fit.
+- **6a — Approach candidates (P4-skip when `ambiguity < 0.6 ∧ complexity != complex`):** `Writer — lightweight candidates` ∥ `Writer — heavyweight candidates`. Each approach: Name · What · Pros · Cons · Fit.
 - **6b — Trade-off eval (sequential on 6a):** `Writer — fit analysis` ∥ `Writer — risk analysis` scoring each candidate.
 
 `**Reviewer** — batched: synthesis + approaches` ([`../hyperflow/reviewer-prompt-batched.md`](../hyperflow/reviewer-prompt-batched.md)) returns per-draft verdicts; re-dispatch only the failing draft. When 6a/6b are P4-skipped, annotate "Approach: derived from synthesis (ambiguity low)". Then present synthesis + approaches and confirm via `AskUserQuestion` — recommend one approach, the choice is the user's.
@@ -141,7 +141,7 @@ Step 5 (synthesis) and 6a both depend on the answers but not on each other — d
 
 Sub-phases dispatch in ONE parallel message (P1), each with a per-sub-phase Reviewer firing as it returns; then one batched Reviewer (P2) reads all 5 sections for cross-section coherence. Each section Writer records a `Responsible specialist(s):` line from the Brain-finalized roster, carried into the Step 8 status block.
 
-**System-design tasks produce architecture graphs.** On architect-typed / high-complexity / multi-subsystem work the [`architect`](../../agents/architect.md) agent owns §1/§2 and embeds a Mermaid component/container graph (§1) and a Mermaid data-flow diagram (§2) directly in the draft — the diagram precedes the implementation. The Step 7 approval gate already points the user at the draft file, so the graphs are reviewed there with no extra gate.
+**System-design tasks produce architecture graphs.** On architect-typed / complex / multi-subsystem work the [`architect`](../../agents/architect.md) agent owns §1/§2 and embeds a Mermaid component/container graph (§1) and a Mermaid data-flow diagram (§2) directly in the draft — the diagram precedes the implementation. The Step 7 approval gate already points the user at the draft file, so the graphs are reviewed there with no extra gate.
 
 **Design-time consultation.** Any decision agent in this phase may consult a peer directly (its own `Agent` tool, ≤ 3 consults, depth-1, allowlist = the `agents/` registry) per [`../hyperflow/consultation.md`](../hyperflow/consultation.md) — e.g. the `architect` asks `motion` whether a proposed interaction is feasible before committing it to §2, or the `designer` asks `motion` for a motion-heavy screen. Agent-agnostic: future decision agents inherit this without an edit here.
 
@@ -149,7 +149,7 @@ Sub-phases dispatch in ONE parallel message (P1), each with a per-sub-phase Revi
 
 **Mobile-typed tasks define the platform & device strategy.** On mobile / native / responsive-app work the [`mobile`](../../agents/mobile.md) agent authors the mobile decisions — framework choice + rationale (React Native / Flutter / native iOS / Android), app architecture (navigation / offline-first / lifecycle-aware state), the platform accessibility floor (VoiceOver/TalkBack, 44pt/48dp targets, Dynamic Type), and the device-size test matrix + tooling (Maestro/Detox/XCUITest/Espresso) — into §1 (architecture, composing with the `architect`) and §3 (decisions), grounded in [`../hyperflow/mobile.md`](../hyperflow/mobile.md). No source code is written.
 
-- **7a — Structural:** when triage `types` includes `architect`, OR `complexity == high`, OR the surface spans ≥ 2 subsystems, dispatch the [`architect`](../../agents/architect.md) agent to author both sections — `architect — §1 Architecture (C4 decomposition + Mermaid component/container graph)` ∥ `architect — §2 Data flow (Mermaid data-flow diagram per new cross-boundary path)`; it folds the frontend-at-scale decisions (debounce/virtualize/paginate/cache/code-split/state-topology) into §1 or §3 when a frontend surface is in scope and flags every hard-to-reverse choice for an ADR in §3. Otherwise (clear single-component task) `Writer — §1 Architecture` ∥ `Writer — §2 Data flow`. → `**Reviewer**` (the section reviewer is a separate agent; the architect's reviewer role applies later, on structural change in `dispatch`/`audit`).
+- **7a — Structural:** when triage `types` includes `architect`, OR `complexity == complex`, OR the surface spans ≥ 2 subsystems, dispatch the [`architect`](../../agents/architect.md) agent to author both sections — `architect — §1 Architecture (C4 decomposition + Mermaid component/container graph)` ∥ `architect — §2 Data flow (Mermaid data-flow diagram per new cross-boundary path)`; it folds the frontend-at-scale decisions (debounce/virtualize/paginate/cache/code-split/state-topology) into §1 or §3 when a frontend surface is in scope and flags every hard-to-reverse choice for an ADR in §3. Otherwise (clear single-component task) `Writer — §1 Architecture` ∥ `Writer — §2 Data flow`. → `**Reviewer**` (the section reviewer is a separate agent; the architect's reviewer role applies later, on structural change in `dispatch`/`audit`).
 - **7b — Decisions:** when triage `types` includes `ui` OR `creative`, dispatch the [`designer`](../../agents/designer.md) agent to author the visual/experiential half — `designer — §3 Design decisions (design-system tokens + signature + references)` ∥ `Writer — §4 Edge cases`; the designer ensures `.hyperflow/design/system.md` exists first and applies the matching taste skill. Otherwise `Writer — §3 Key decisions` ∥ `Writer — §4 Edge cases`. → `**Reviewer**`.
 - **7c — File structure:** `Writer — §5 File structure`. → `**Reviewer**`.
 
@@ -174,7 +174,7 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 9a fires first; 9b/9c depend on it and run concurrently.
 
-- **9a — Batch graph:** `**Planner** — producing batch graph` with the Step 3 context aggregate + triage + applicable templates — when the `architect` agent authored §1, the Planner consumes its decomposition as the batch-boundary source rather than re-deriving it from [`../hyperflow/task-templates.md`](../hyperflow/task-templates.md) (CRUD / API / UI / Migration / Refactor / Bug Fix, else bespoke). Per sub-task: Worker role · Read/Modify/Create files · parallel-vs-sequential deps · complexity estimate · **≥1 responsible specialist** (from the Brain-finalized triage `specialists[]`, inherited from the spec status block when the design phase ran). Then `**Reviewer** — validating decomposition completeness + batch boundaries` (every finding maps to ≥1 sub-task; no sub-task spans >1 subsystem without a split; topological ordering). **Oversize-split mandate (Layer 3):** split any sub-task hitting >5 files, >500 LOC, 2+ subsystems, `complexity=high`, mixed concerns, or >10-min human review — until every piece is low/medium. Splitting is a cost AND quality optimisation. **Mode:** Planner emits `mode: flat | feature` per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md) — `feature` only when ≥2 sequential dependent stages/milestones exist; a 1-phase "feature" is `NEEDS_REVISION`.
+- **9a — Batch graph:** `**Planner** — producing batch graph` with the Step 3 context aggregate + triage + applicable templates — when the `architect` agent authored §1, the Planner consumes its decomposition as the batch-boundary source rather than re-deriving it from [`../hyperflow/task-templates.md`](../hyperflow/task-templates.md) (CRUD / API / UI / Migration / Refactor / Bug Fix, else bespoke). Per sub-task: Worker role · Read/Modify/Create files · parallel-vs-sequential deps · complexity estimate · **≥1 responsible specialist** (from the Brain-finalized triage `specialists[]`, inherited from the spec status block when the design phase ran). Then `**Reviewer** — validating decomposition completeness + batch boundaries` (every finding maps to ≥1 sub-task; no sub-task spans >1 subsystem without a split; topological ordering). **Oversize-split mandate (Layer 3):** split any sub-task hitting >5 files, >500 LOC, 2+ subsystems, `complexity=complex`, mixed concerns, or >10-min human review — until every piece is simple/moderate. Splitting is a cost AND quality optimisation. **Mode:** Planner emits `mode: flat | feature` per [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md) — `feature` only when ≥2 sequential dependent stages/milestones exist; a 1-phase "feature" is `NEEDS_REVISION`.
 - **9b — Complexity sizing:** `Searcher — LOC estimation` ∥ `Searcher — subsystem cross-cut check`. → `**Reviewer**`.
 - **9c — Per-sub-task briefs (the heavy lift; `briefs=auto` default):** for each **non-trivial** sub-task, a `Writer — authoring brief T<id>` writes the full [`../hyperflow/worker-prompt.md`](../hyperflow/worker-prompt.md) body to `.hyperflow/tasks/<slug>/T<id>.md` — Task · Why · Scope IN/OUT · Files-in-scope with the **exact change described** (spec-level prose, no code skeletons) · Acceptance criteria · the **realistic Test-case set + ≥1 end-to-end/integration scenario** (named tool, real input→outcome; or explicit `E2E: N/A — <why>`) · Related context (file:line patterns to mirror) · Gotchas. Grounded in the Step 3 context aggregate + the spec; names ≥1 responsible specialist. **Trivial** sub-tasks (1 file ∧ ~≤10 LOC ∧ obvious) get NO brief — only the terse roster line. Brief Writers fan out in parallel (one per non-trivial sub-task), then `**Reviewer** — briefs vs design + completeness`: every non-trivial sub-task has a brief; every brief carries Acceptance criteria + ≥1 E2E case + a populated specialist; no brief contradicts the spec. `briefs=terse` skips 9c entirely (one-liner roster only — the legacy output; use when the same strong model will build).
 
@@ -229,7 +229,7 @@ Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `H
 - Front-loading a session-strategy or operational (commit/branch/push) gate at startup — those are gone; the build decision waits for Step 12 and `dispatch` owns operational.
 - Producing a plan only in chat — every run that decomposes must `Write` the task file to `.hyperflow/tasks/<slug>.md`.
 - Shortcutting the reasoning to save tokens — plan runs at max thinking.
-- Asking > 5 questions total, or < 2 on the design path (the floor is mandatory even when the request looks clear), or stacking 3+ questions in one call.
+- Asking > 5 questions total, asking any question whose answer does not change implementation, or stacking 3+ questions in one call.
 - Skipping alternatives unless P4 skip or the bounce path is in effect.
 - Asking what the codebase reveals; adding features the user didn't request (YAGNI).
 - Sequentializing independent siblings (Steps 1+3, 7a/7b/7c, 9b/9c, 10 + 11) when P1/P3 apply.
@@ -239,7 +239,7 @@ Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `H
 
 ## Overview
 
-`plan` is the chain's single front door and runs at maximum thinking depth. It asks nothing at startup. Triage and context map concurrently (P3); amplify sharpens a rough prompt only when one is given; multi-dim analysis and approach proposals skip on low ambiguity (P4). A clear-enough request bounces past the design phase straight to decomposition; an ambiguous one walks the spec section-by-section (file-first, P1+P2) under a 2-question floor. The Planner then produces the batch graph (oversize-split enforced), Writers emit the flat task file or feature/phase tree (P3 with the memory append). Plan then **stops** and fires the build-location gate — it never implements: the user chooses to build here (hands to `/hyperflow:dispatch`), build in another session (writes a committed handoff package), or keep the plan for later.
+`plan` is the explicit think-heavy front door. It asks nothing at startup. Triage and context map concurrently; optional analysis and approaches skip on low ambiguity; clear requests can decompose without clarification while ambiguous ones walk the file-first spec. Plan stops at the build-location gate and never implements by itself.
 
 ## Prerequisites
 

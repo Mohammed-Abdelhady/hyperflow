@@ -112,6 +112,37 @@
       },
       "additionalProperties": false
     },
+    "budgets": {
+      "description": "Hard token budgets enforced at natural phase boundaries. User configuration may override any listed profile or phase.",
+      "type": "object",
+      "properties": {
+        "hardTotals": {
+          "type": "object",
+          "properties": {
+            "fast": { "type": "integer", "minimum": 1000, "default": 10000 },
+            "standard": { "type": "integer", "minimum": 1000, "default": 50000 },
+            "deep": { "type": "integer", "minimum": 1000, "default": 200000 },
+            "research": { "type": "integer", "minimum": 1000, "default": 60000 },
+            "creative": { "type": "integer", "minimum": 1000, "default": 100000 },
+            "scientific": { "type": "integer", "minimum": 1000, "default": 200000 }
+          },
+          "additionalProperties": false
+        },
+        "phaseCaps": {
+          "type": "object",
+          "properties": {
+            "fast": { "$ref": "#/$defs/phaseCaps" },
+            "standard": { "$ref": "#/$defs/phaseCaps" },
+            "deep": { "$ref": "#/$defs/phaseCaps" },
+            "research": { "$ref": "#/$defs/phaseCaps" },
+            "creative": { "$ref": "#/$defs/phaseCaps" },
+            "scientific": { "$ref": "#/$defs/phaseCaps" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "handoff": {
       "description": "Two-session handoff transport settings (skills/hyperflow/session-handoff.md). Controls the committed handoff package written on a session=two scope run.",
       "type": "object",
@@ -186,6 +217,19 @@
           },
           "additionalProperties": false
         }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "phaseCaps": {
+      "type": "object",
+      "properties": {
+        "triage": { "type": "integer", "minimum": 1 },
+        "planning": { "type": "integer", "minimum": 1 },
+        "execution": { "type": "integer", "minimum": 1 },
+        "review": { "type": "integer", "minimum": 1 },
+        "verification": { "type": "integer", "minimum": 1 }
       },
       "additionalProperties": false
     }

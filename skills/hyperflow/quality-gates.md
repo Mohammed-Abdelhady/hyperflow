@@ -54,7 +54,7 @@ Override with chain arg `gates=light|standard|full` when present (wins over auto
 | Tier | Signals (any) |
 |------|----------------|
 | **full** | profile ∈ {`deep`, `scientific`} · OR ≥ 16 files in roster · OR ≥ 3 batches · OR multi-subsystem · OR triage `security: true` · OR `--thorough` |
-| **standard** | multi-batch · OR 4–15 files · OR complexity medium · OR default when not light |
+| **standard** | multi-batch · OR 4–15 files · OR complexity moderate · OR default when not light |
 | **light** | single batch ∧ ≤ 3 sub-tasks ∧ ≤ 5 files ∧ profile ∈ {`fast`, `standard`} ∧ no security/integration_risk flags |
 
 File count = planned files from the task roster (union of sub-task `files`), not only batch 1.

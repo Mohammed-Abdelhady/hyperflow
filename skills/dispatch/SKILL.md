@@ -25,17 +25,18 @@ Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool 
 |---|---|---|---|---|
 | 0 — Mode confirm | — (exempt) | — | — | `AskUserQuestion` only |
 | 0.5 — Operational choices | — (exempt) | — | — | `AskUserQuestion` only |
-| 1 — Load task | — (atomic · §12.2.8) | — | — | Read + schema check = single mechanical decision; no parallel angles |
-| 2a — Pre-dispatch | Composer × N parallel — one per sub-task; stitches persona + injects learnings | **Reviewer** — reviews prompt set for completeness | Parallel worker prompts built before any fan-out fires |
+| 0.75 — Inline-fast | Foreground orchestrator | inline diff review | Deterministic fast triage only; no task file, Composer, worker, or agent Reviewer |
+| 1 — Load task | — (atomic · §12.2.8) | — | — | Normal flows only; read + schema check = one mechanical decision |
+| 2a — Pre-dispatch | Inline composition; at most one batch Composer for complex missing briefs | — | Existing briefs are loaded verbatim and mechanically decorated; no prompt-set review call |
 | 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel | **Domain specialist Reviewer** — the `Specialist:`-matched agent, batched over full batch (P2) or per-sub-task fallback | One Reviewer call per batch; security/correctness specialists run with `--thorough` |
 | 2c — Gate run | Worker — **light** lint/typecheck/tests on affected files only | **Reviewer** — judges gate output | Never full-project suite mid-batch |
-| 2d — Learnings + commit | Writer — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; learnings appended to context |
+| 2d — Learnings + commit | Writer — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; rolling learnings snapshot is replaced |
 | 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
 | 3.5 — Chain-end quality gates | Worker — full lint/typecheck/tests/(build) when tier ≥ standard | **Reviewer** — judges suite | Skipped on light tier; independent of D7 |
 | 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
 | 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy + PR (when `pr=ask`); visual PRs require screenshots per [pr-exit.md](references/pr-exit.md) |
 
-Iron rule — `review agents ≥ batches + 1` (one batched Reviewer per batch + final integration when not skipped). The batched Reviewer counts as 1 per batch regardless of how many sub-tasks are in the batch. If less, a per-step reviewer was skipped.
+Normal-flow iron rule — `review agents = batches + integration_review(0|1)` (one batched Reviewer per batch, plus final integration when D7 does not skip it). The batched Reviewer counts as 1 per batch regardless of sub-task count. Deterministic inline-fast is the explicit exception: zero agent Reviewers and one foreground diff review.
 
 ## Review Levels (scale by flow profile)
 
@@ -68,7 +69,7 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 
 ## Inputs
 
-- **Task artefact** — positional arg (slug or path): either a flat `.hyperflow/tasks/<slug>.md` **or** a feature folder `.hyperflow/features/<slug>/` (see [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md)). Default — the most-recently-modified of either.
+- **Task artefact** — positional arg (slug or path): either a flat `.hyperflow/tasks/<slug>.md` **or** a feature folder `.hyperflow/features/<slug>/` (see [`../hyperflow/feature-phases.md`](../hyperflow/feature-phases.md)). Default — the most-recently-modified of either. Omitted only for a propagated deterministic `route=inline_fast` / `triage_source=deterministic` fast request.
 - **Handoff package** — a positional slug/path resolving to `.hyperflow-handoff/<slug>/` (see [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)). When present, dispatch is a **second-session build**: it rehydrates `artefact/` into `.hyperflow/` (Step 1.0) and reads `session`/`handoff`/chain args from `HANDOFF.md`. `on_complete` (review|deploy) governs Step 5.
 - **`session=<one|two>`** — passed in by `/hyperflow:plan` (or read from a handoff package's `HANDOFF.md`). If absent, assume `one`. In a two-session build, `handoff=<review|deploy>` governs the end-of-build behavior at Step 5.
 - **`--from-batch <n>`** — resume from a specific batch (skip prior batches).
@@ -91,7 +92,24 @@ When operational args (`commit=`, `branch=`, `push=`) were NOT already propagate
 
 Skip when operational args are already propagated (re-asking is an invented-gate violation).
 
-Dispatch owns this gate (plan no longer asks operational choices at startup — it stops at a build-location gate and lets dispatch decide commit/branch/push when a build actually starts). The 3 questions are **commit cadence · branch behaviour · push at end**, with the canonical option text, recommended-default logic, the `Per-task (deferred)` queue behaviour, and the `commit=/branch=/push=` propagation contract in [`../hyperflow/git-workflow.md`](../hyperflow/git-workflow.md). Recommended defaults: commit `Per-task` (unless `complexity=low ∧ sub-tasks≤2` → `Single`); branch `Create` on main/master else `Stay`; push `Ask at deploy gate` always. Skip only when the args are already propagated (re-asking is an invented-gate violation).
+Dispatch owns this gate (plan no longer asks operational choices at startup — it stops at a build-location gate and lets dispatch decide commit/branch/push when a build actually starts). The 3 questions are **commit cadence · branch behaviour · push at end**, with the canonical option text, recommended-default logic, the `Per-task (deferred)` queue behaviour, and the `commit=/branch=/push=` propagation contract in [`../hyperflow/git-workflow.md`](../hyperflow/git-workflow.md). Recommended defaults: commit `Per-task` (unless `complexity=trivial|simple ∧ sub-tasks≤2` → `Single`); branch `Create` on main/master else `Stay`; push `Ask at deploy gate` always. Skip only when the args are already propagated (re-asking is an invented-gate violation).
+
+### Step 0.75 — Inline-fast branch (deterministic fast triage only)
+
+Enter this branch only when the propagated triage was produced by the deterministic preflight and still proves all of: `route=inline_fast`, `flow=fast`, `complexity=trivial`, `risk=reversible`, `ambiguity<0.2`, exactly 1–2 observed ordinary files, and `security=false`, `integration_risk=false`, no migration/generated surface, and no thorough mode. Classifier-produced `flow=fast` is not sufficient. The branch bypasses task-file creation/loading, Composer calls, worker calls, and agent Reviewer calls.
+
+Before any mutation, perform a foreground read-only discovery pass over the named files and their direct callers/imports. If discovery finds a third file that must change, cross-file integration beyond those two files, irreversible state, a security-sensitive path, generated output, a migration, or unresolved ambiguity, print `Inline-fast escalated — <reason>` and route to standard planning/dispatch **before writing anything**. Never start fast and escalate after a partial edit.
+
+When eligibility survives discovery:
+
+1. Capture the task-owned pre-edit state and exact 1–2 path allowlist; reject overlapping pre-existing edits rather than absorbing them.
+2. Apply the requested edit directly in the foreground. No `Agent` dispatch is used.
+3. Run affected-file lint/typecheck/tests appropriate to those paths.
+4. Perform an inline review of the task-owned working-tree diff: exact request match, allowlist only, no accidental generated/secret content, tests cover the changed behavior, and no out-of-scope hunk. Fix and re-run affected gates inline when needed.
+5. Stage only the allowlisted paths and create exactly one conventional commit. If the requested commit policy forbids a commit, the request is not inline-fast eligible; route to the normal flow.
+6. Print Evidence then Usage. Usage identifies `Profile: fast · inline foreground`, `0 agents`, gate results, and the single accepted commit. There are no ledger records because no agent result exists; never invent token counts for foreground orchestration.
+
+Then continue directly to Step 5. Steps 1–4 are skipped for this branch.
 
 ### Step 1.0 — Handoff rehydration (handoff pickup only)
 
@@ -104,6 +122,8 @@ When invoked on a handoff package (`.hyperflow-handoff/<slug>/`), before loading
 Then continue Step 1 normally. (Non-handoff runs skip Step 1.0.)
 
 ### Step 1 — Load the task (atomic · §12.2.8)
+
+Normal flows only. The inline-fast branch has already exited to Step 5.
 
 Detect the artefact mode:
 - **Flat** — `.hyperflow/tasks/<slug>.md` (the terse roster). Read it; extract batches, sub-tasks, flow-profile, and operational args. For each roster line carrying a `Brief: <slug>/T<id>.md` pointer, note the brief path — Step 2a loads it verbatim (do not inline its body here).
@@ -155,9 +175,21 @@ phase is `completed`. For each phase:
 
 In **flat mode**, skip Step 1.5 — Step 2 runs once over the single task file's batches as before.
 
+### Usage ledger + budget boundaries (all normal-flow agent calls)
+
+Create one chain ID and ledger path `.hyperflow/usage/<chain-id>.jsonl` before the first agent dispatch. Capture every agent result's usage metadata immediately and append it exactly once with `scripts/usage-ledger.py record` before leaving the natural boundary where its verdict is known. The canonical fields are: `chain_id`, `phase`, `batch`, `task`, `attempt`, `role`, `input_tokens`, `output_tokens`, `total_tokens`, `cached_input_tokens`, `context_hash`, `context_tokens`, `estimated`, `accepted_commit`, `timestamp`. Unknown/raw fields are forbidden; never store prompt text, response text, secrets, file contents, or patches. `context_hash` is a SHA-256-style fingerprint of the repeated shared-context block only, and `context_tokens` is that block's measured/estimated size.
+
+Use actual input/output/cache metadata when exposed. When it is unavailable, use the conservative estimator defined in [escalation.md](../hyperflow/escalation.md), set `estimated=true`, preserve `total_tokens=input_tokens+output_tokens`, and never report an estimate as exact. Set `attempt` to the real 1-based attempt. Set `accepted_commit=true` only on the producing agent result that led to one accepted commit; hold the record in memory until the review/commit outcome is known so the append-only ledger is not rewritten. Failed/retried/review-only results use `accepted_commit=false` and are still recorded.
+
+Map phases consistently: batch Composer → `planning`; implementer/searcher/writer output → `execution`; batch/final Reviewer → `review`; gate worker + gate Reviewer → `verification`. Triage and upstream planning calls use `triage` / `planning` in their owning skills.
+
+At each natural boundary—after a complete batch, after final integration review, and after chain-end verification—run `usage-ledger.py summary --chain-id <chain-id>`. For **every phase that gained records since the prior boundary**, in order (`planning`, `execution`, `review`, `verification`), call `scripts/budget-guard.py --profile <profile> --phase <phase> --total-used <chain-total> --phase-used <phase-total> --boundary --reserved-tokens <next-call-reservation>` (add `--allow-degrade` only when remaining work can safely use the lower profile). Reserve a conservative upper bound for the next agent call or concurrent wave; use `0` only when the chain is ending and no further agent can launch. Do not check only the last phase in a mixed batch. Apply `continue|degrade|halt` before dispatching the next phase/batch. Never interrupt an in-flight agent, and never delay a hard decision past the next natural boundary. A ledger/guard error is an accounting failure: stop before more agent spend rather than silently continuing unmetered.
+
 ### Step 2 — For each batch
 
 Print the batch header: `Batch <n> — <one-line description>`.
+
+Before fan-out, capture `batch_base` as the immutable git object for the task-owned paths. After workers return, create `batch_head` as an ephemeral git commit/tree snapshot from an isolated temporary index containing **only** the batch allowlist (including created/deleted files); do not move the branch, alter the user's index, or include unrelated dirty files. Every batch review receives the exact range `batch_base..batch_head`. If an exact isolated snapshot cannot be produced, stop the review step—never substitute a pasted patch or transcript.
 
 **Mode resolution (one-time per chain, before Step 2a fires for the first batch):** run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and cache the resulting word (`default` / `lean` / `thorough`). Subsequent batches use the cached value.
 
@@ -165,25 +197,28 @@ Sub-phases 2a–2d run in order for every batch (P1 sequential — each depends 
 
 #### Step 2a — Pre-dispatch (P1 · sequential after mode resolution)
 
-For each sub-task in the batch, dispatch a Composer Worker in parallel (one Composer per sub-task — N total). Each Composer:
-- **Loads the pre-authored brief verbatim when one exists.** If the roster line carries a `Brief: <slug>/T<id>.md` pointer (plan's `briefs=auto` default), read that file and use its body — Task / Why / Scope / Files / Acceptance criteria / Test cases (incl. the E2E case) / Gotchas — as the worker-prompt body **unchanged**. Do NOT re-derive those sections; plan already authored them on the strong model. The Composer's only job is then to *append* context (below). **Fallback (no brief):** trivial sub-task or a legacy terse task file → author the brief inline per [worker-prompt.md](references/worker-prompt.md), the pre-existing behavior. This loader path is what lets dispatch run faithfully on a cheaper model or a second session.
-- Selects the worker persona (Implementer / Searcher / Writer) from the sub-task brief.
-- Stitches the persona header + Project Context per resolved mode:
+Compose the batch prompts with the smallest safe path:
+
+- **Existing brief (normal case): inline composition.** Load each `Brief: <slug>/T<id>.md` body verbatim and mechanically append the selected persona header, Project Context, specialist output contract, and bounded rolling learnings. This is deterministic decoration of an already-authored contract, so it runs inline—no Composer agent and no prompt-set Reviewer.
+- **Missing trivial/simple brief:** author the compact prompt inline from the complete roster line. If the roster lacks enough scope or acceptance detail, stop and return to planning; do not let a worker guess.
+- **Missing complex brief:** dispatch exactly **one batch Composer** for all complex missing briefs in this batch, not one Composer per sub-task. It returns the missing complete prompts as a set. A malformed result re-dispatches that one Composer once; there is no separate prompt-set Reviewer call.
+- Select the worker persona (Implementer / Searcher / Writer) from each sub-task brief.
+- Stitch the persona header + Project Context per resolved mode:
   - **mode = default / thorough** → inline excerpts from `.hyperflow/profile.md`, `architecture.md`, `conventions.md` matching the worker's role.
   - **mode = lean** → render the lean Project Context block: a `Project Context (load on demand):` heading + paths to `.hyperflow/memory/session-context.md`, `.hyperflow/profile.md`, `.hyperflow/architecture.md`, `.hyperflow/conventions.md`, `.hyperflow/testing.md`, `.hyperflow/memory/index.md` with one-line descriptions each. Workers read on demand. Saves ~2k tokens × N; same content, lazy access.
-- Injects accumulated `Learnings from prior batches` (in all modes).
-- Outputs a complete worker prompt ready for fan-out.
+- Inject the rolling `Learnings from prior batches` block in all modes. It is a replacement snapshot, not an append-only history: maximum 6 unique bullets and 300 tokens total. Keep only active decisions, contracts, and gotchas that can change the next batch; deduplicate semantically and drop resolved/obsolete bullets.
+- Output complete worker prompts ready for fan-out.
 
-Use the [worker-prompt.md](references/worker-prompt.md) template for each Composer output. Persona stitching (top-3), memory injection (all tag matches), and all clarification gates remain unchanged regardless of mode.
+Use the [worker-prompt.md](references/worker-prompt.md) template for every rendered prompt. Persona stitching (top-3), memory injection (all tag matches), and all clarification gates remain unchanged regardless of mode.
 
-Each Composer also reads the sub-task's `Specialist:` field from the task file and stitches that specialist's
+The inline decorator (or the single batch Composer when required) also reads the sub-task's `Specialist:` field from the task file and stitches that specialist's
 **output-contract expectations** ([`../../agents/README.md`](../../agents/README.md)) into the worker prompt, so
 workers produce review-ready output for the specialist that will judge it (e.g. an `api-reviewer` sub-task tells the
 worker to document status codes + validation up front). It also fills the worker-prompt `{{CONSULT_PEER_HINT}}` slot
 from that specialist's `Composes with:` line (the recommended peers); if the line is absent it renders "any
 specialist as needed". The hint only ranks peers — the worker may consult any agent in `agents/` ([consultation.md](../hyperflow/consultation.md)).
 
-After all Composers return, dispatch one **Reviewer** over the full prompt set: confirms persona selection is correct, context block is well-formed, learnings are injected. Verdict: `PASS` / `NEEDS_REVISION`. NEEDS_REVISION re-dispatches only the affected Composer(s).
+No worker transcript, prior prompt, or prompt-set review is forwarded into Step 2b. The worker receives its own brief plus the bounded blocks above only.
 
 #### Step 2b — Worker fan-out (P1 · sequential after 2a · internal parallelism P1)
 
@@ -197,13 +232,15 @@ When all workers have returned, dispatch **one** batched per-batch **Reviewer** 
 - **Per-sub-task fallback (mixed caps or `--thorough`):** dispatch a separate reviewer per sub-task per [reviewer-prompt.md](references/reviewer-prompt.md). Print `**Reviewer** — reviewing <subtask> (L1–L<n>)`.
 - **Per-batch vs final-integration split:** per-batch reviewers are anchored to one batch's diff and catch L1–L<n> issues there. The final integration Reviewer at Step 3 sees the cumulative diff across all batches and catches cross-batch contradictions no single batch-anchored reviewer could see. Running both passes covers more ground than running either alone.
 
+**Bounded review handoff (mandatory for every Reviewer):** pass only the brief/task-file references, review-level cap, exact `Diff range: <batch_base>..<batch_head>`, the explicit path allowlist, and `git diff --stat <batch_base>..<batch_head> -- <paths>`. The Reviewer reads the range with git and inspects only relevant hunks/files. Never paste the full patch, worker transcript, worker reasoning, prior reviewer transcript, or conversation history into the prompt. A focused re-review gets a new exact snapshot range plus the unresolved finding lines only.
+
 _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention. The asymmetric paths are intentional.)_
 
 **Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate (add a deeper review pass) → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
 
 Parse the per-sub-task verdicts:
 - `SECURITY_VIOLATION` — **halt the chain** immediately. Surface the finding; do not commit anything in the batch.
-- Worker returned `OVERSIZE: <reason>` with `SUGGESTED-SPLIT:` — do NOT proceed. Dispatch a Planner consultation: `**Planner — mid-flight split** — split <sub-task-id> per Worker's OVERSIZE signal`. Pass the Worker's reason, suggested split, the original brief, and batch context. The Planner returns a final split plan (N new sub-tasks, each `complexity = low | medium`). Remove the original; dispatch the N new sub-tasks as a new sub-batch. The per-batch Reviewer fires after the new sub-batch completes. No user question — splitting an oversized brief is a mechanical reshape.
+- Worker returned `OVERSIZE: <reason>` with `SUGGESTED-SPLIT:` — do NOT proceed. Dispatch a Planner consultation: `**Planner — mid-flight split** — split <sub-task-id> per Worker's OVERSIZE signal`. Pass the Worker's reason, suggested split, the original brief, and batch context. The Planner returns a final split plan (N new sub-tasks, each `complexity = simple | moderate`). Remove the original; dispatch the N new sub-tasks as a new sub-batch. The per-batch Reviewer fires after the new sub-batch completes. No user question — splitting an oversized brief is a mechanical reshape.
 - Worker (or batched Reviewer) returned `CONSULT: <peer> — <question>` — do NOT mark the sub-task done. Broker per [consultation.md](../hyperflow/consultation.md): resolve `<peer>` to `agents/<name>.md` (any registered agent), dispatch it with the consultation brief (`CONSULT-CONTEXT` + "answer in ≤8 lines, you are consulted not taking over"), then re-dispatch only that Worker/Reviewer with `Consultation answer from <peer>:` injected. Cap 2 consults/worker; a consulted peer may not itself consult (depth-1). If `<peer>` doesn't resolve or errors, fall back to failure-recovery (ESCALATE) — never block. No user question — a consult is a mechanical handoff.
 - `NEEDS_FIX` — re-dispatch only that sub-task's Worker with the fix list. After the fix, dispatch a single focused reviewer for just that sub-task (not a full re-batch). Repeat until `PASS` (max 3 retries before re-scoping the sub-task).
 - `PASS` — sub-task handed to Step 2d for commit.
@@ -226,9 +263,9 @@ Record the batch result in the Evidence log (`B<n> affected pass|fail`).
 For each sub-task whose verdict is `PASS`:
 - **Commit immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files that sub-task touched. Write a conventional commit (`feat(<scope>): <title>` derived from the task file). One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits, even though they were reviewed in a single batched Reviewer call.
 - **Append to the chain-local Evidence log** (in-memory; rendered at Step 4): `{ id, title, verdict: PASS, one_liner, commit_sha, files[] }`. Prefer the worker's one-line "what you did" summary; fall back to the commit subject. Also record batch-level `Gates` and `Reviews` rows when Step 2c / the per-batch Reviewer finish. Collect **before** any later task-file delete.
-- **Update the task file's `## Status` block** after each commit lands: tick `[ ]` → `[x]`, increment `Sub-tasks: <done>/<total>`, add tokens to `Tokens used:` running totals, refresh `Wall-clock:` and `Last update:`, recompute `ETA:` once ≥3 sub-tasks are done. This is what `/hyperflow:status` reads for live progress.
+- **Update the task file's `## Status` table** after each commit lands: tick `[ ]` → `[x]`, update the `Progress` row, update the `Tokens` row with agent count + total and execution/review/verification phase totals from the ledger summary, refresh the `Wall-clock` row and ETA text. Preserve the exact two-column `| Field | Value |` table shape; `/hyperflow:status` reads it and falls back to legacy `Sub-tasks:` / `Tokens used:` lines only for older artefacts.
 
-Dispatch one Writer in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. The learnings are appended to the in-memory `Learnings from prior batches` context (injected at Step 2a of subsequent batches). Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
+Dispatch one Writer in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. It rewrites the in-memory rolling `Learnings from prior batches` snapshot: ≤6 semantically unique bullets and ≤300 tokens total; new active decisions/contracts/gotchas replace obsolete or duplicate bullets rather than accumulating beside them. Never include transcripts, completed-task narration, or raw patches. Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
 
 The two activities (commits + learnings synthesis) run concurrently — the Writer synthesizes while commits land sequentially per the commit cadence arg.
 
@@ -251,7 +288,7 @@ If ANY of these conditions fails, the final integration review runs.
 
 **Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). If the integration Reviewer errors, retry once with the prior error injected. On a second failure, re-dispatch with the prior error in context. Third failure → abort the integration review; chain completes with a partial integration verdict surfaced to the user.
 
-Dispatch a **Reviewer** over the full changed-file set across every batch (all sub-task commits from Step 2d). Dispatch it **as the broadest matching specialist(s)** from the task file's `Specialists` roster (Brain-decided) — when the diff spans several surfaces, inject the union of their charters so the integration pass carries the right domain lenses. Use the same level cap as the batch reviewers (per flow profile). On a gated flow the specialist runs web-research-first before the verdict.
+Dispatch a **Reviewer** over the full changed-file set across every batch (all sub-task commits from Step 2d). Dispatch it **as the broadest matching specialist(s)** from the task file's `Specialists` roster (Brain-decided) — when the diff spans several surfaces, inject the union of their charters so the integration pass carries the right domain lenses. Use the same level cap as the batch reviewers (per flow profile). On a gated flow the specialist runs web-research-first before the verdict. Its bounded handoff contains the chain's exact immutable `<chain_base>..<chain_head>` range, explicit changed paths, diff stat, and task/spec references only—never full patches or worker/reviewer transcripts.
 
 Print: `**Reviewer** — final integration review (L1–L<n>)`
 
@@ -290,7 +327,7 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 3. Before appending: `grep -F` the proposed entry's first-line title against `.hyperflow/memory/*.md` files (inline dedup-check — replaces the dropped Reviewer dedup pass). If a match exists, edit the existing entry rather than append a duplicate.
 4. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
 5. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
-6. **Print Evidence then Usage** — render the structured Evidence block, then the Usage block, both per [output-style.md](references/output-style.md) (§7 Evidence, §8 Usage). Order is mandatory: Evidence first. Partial / halt-after-work still print Evidence for what landed.
+6. **Print Evidence then Usage** — render the structured Evidence block, then render Usage from `usage-ledger.py summary --chain-id <chain-id>` per [output-style.md](references/output-style.md) (§7 Evidence, §8 Usage). Include canonical phase totals plus duplicate-context, retry, cache, estimated-record, accepted-commit, and tokens-per-accepted-commit metrics. Order is mandatory: Evidence first. Partial / halt-after-work still print Evidence and Usage for what landed/spent.
 7. Mark dispatch-end compact readiness by writing `.hyperflow/.dispatch-auto-compact-ready` with the current UTC timestamp. This short-lived marker is consumed by the `PreCompact` hook and is the only signal that allows automatic compaction; do not write it before every sub-task, batch, gate, or partial stop has completed.
 
 **When the Writer dispatch IS required:** if memory append requires non-trivial prose generation (e.g., synthesizing learnings from a multi-batch run with cross-cutting patterns), dispatch `Writer — finalizing dispatch artifacts` for the memory write. At that point the step is no longer §12.1-trivial and the Writer Agent handles it. The chore commit still follows immediately; no Reviewer is dispatched for wrap-up.
@@ -422,7 +459,7 @@ Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`
 - Every batch produces **one** per-batch Reviewer dispatch — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case.
 - Plus **one** final integration Reviewer at the end (Step 3) **when not skipped per D7** — this is the Reviewer that sees the cumulative diff across batches.
 - **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — delete task file + memory append + chore commit is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
-- Therefore — `review agents in usage summary >= batches + 1`. Floor lowered from +2 to +1 per round 2 D5: the wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If your dispatch run includes a final integration review (conditions for D7 skip not met), the floor adapts: `>= batches + 1` still holds because the integration review is the "+1". If the integration review skips AND all batches pass, `review agents = batches` exactly — which satisfies the floor since the +1 was the integration review that ran implicitly. The batched Reviewer counts as **1** per batch regardless of sub-task count. If less, a per-step reviewer was skipped. The task was done wrong.
+- Therefore normal-flow `review agents = batches + integration_review(0|1)`. The wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If D7 skips integration, `review agents = batches`; otherwise `review agents = batches + 1`. Inline-fast has `0 agents` and must show the foreground diff review in Evidence.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
 - **Evidence + Usage fire ONLY at terminal wrap-up (or hard halt) — after Step 4, never mid-batch.** Print **Evidence first**, then Usage, per [output-style.md](references/output-style.md). Omitting Evidence after a terminal dispatch is a doctrine violation. Printing `── Hyperflow Evidence ──` or `── Hyperflow Usage ──` while sub-tasks remain pending (non-halt) is a doctrine violation. In `auto` mode, either block is a terminal signal — the chain is finished.
 - **Quality gates are tiered.** Per-batch Step 2c is always **light** (affected files only). Full-project lint/test mid-batch on multi-batch or standard/full-tier work is a doctrine violation. Chain-end Step 3.5 runs the full suite once when `gate_tier` ∈ {standard, full}; light tier skips it. Deploy still runs its own full pre-push suite later (no trust-skip).
@@ -436,15 +473,15 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute
 
 ## Overview
 
-`/hyperflow:dispatch` is the workhorse phase — it reads a task file from `/hyperflow:plan` and executes it through the orchestrator pattern.
+`/hyperflow:dispatch` is the workhorse phase. Normal flows read a task file from `/hyperflow:plan`; deterministic inline-fast executes a proven 1–2-file reversible edit directly without creating a task file or dispatching agents.
 
 Parallel workers dispatched in a single message, per-batch Reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
 
-Doctrine floor: review agents ≥ batches + 1 (per-batch reviewer + final integration when not skipped per D7; wrap-up Reviewer dropped per D5 / §12.1).
+Normal-flow floor: one Reviewer per batch + one final integration Reviewer when D7 does not skip it. Inline-fast: zero agent Reviewers + one foreground diff review.
 
 ## Prerequisites
 
-- A task file exists at `.hyperflow/tasks/<slug>.md` (produced by `/hyperflow:plan`).
+- A task file exists at `.hyperflow/tasks/<slug>.md` (produced by `/hyperflow:plan`), unless deterministic triage propagated `route=inline_fast` with an exact 1–2-file allowlist.
 - `.hyperflow/profile.md`, `architecture.md`, `conventions.md` populated (Layer 0 context injected into worker prompts).
 - Git repository for per-sub-task commits.
 - For Step 5: `AskUserQuestion` popup available, or Codex chat fallback available — required for audit + deploy gates. Headless mode with no interactive channel skips gates with explicit warning.
@@ -454,15 +491,15 @@ Doctrine floor: review agents ≥ batches + 1 (per-batch reviewer + final integr
 The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if-invoked-directly--structural-gate) through [Step 5 — End of Auto-Chain](#step-5--end-of-auto-chain--audit--deploy-gates) above. Summary:
 
 1. Resolve session context (inherited `session=` / handoff `HANDOFF.md` / default `one`) — dispatch is the build endpoint, no session question.
-2. Load task file from `.hyperflow/tasks/` — Read + schema check inline (atomic · §12.2.8).
+2. Run Step 0.75 eligibility/discovery. Inline-fast edits + affected gates + inline diff review + one commit, then jumps to Step 5. Normal flow loads the task file from `.hyperflow/tasks/`.
 3. Per batch, run four sub-phases in sequence:
-   - **Step 2a** — Composer Workers in parallel build worker prompts; Reviewer confirms prompt set.
+   - **Step 2a** — Existing briefs decorated inline; trivial complete roster prompts authored inline; at most one batch Composer for complex missing briefs. No prompt-set Reviewer.
    - **Step 2b** — Worker fan-out (N parallel Workers); batched Reviewer over the batch; parse verdicts (PASS / NEEDS_FIX / SECURITY_VIOLATION / OVERSIZE).
    - **Step 2c** — Layer 5 quality gates via a Worker + Reviewer.
    - **Step 2d** — Per-sub-task commits + learnings synthesis via Writer.
 4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 3.5 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
 5. Chain-end quality gates (Step 3.5) — full suite when `gate_tier` ≥ standard; skip on light. Independent of D7.
-6. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then Usage** (Gates row includes tier + chain-end), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
+6. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then ledger-derived Usage** (phase totals + efficiency metrics), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
 7. ONE combined `AskUserQuestion` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual PRs run the screenshot pipeline before `gh pr create`.
 
 ## Output
@@ -483,7 +520,17 @@ Risks      none
 Next       audit/deploy gates
 ─────────────────────────────────────────
 ── Hyperflow Usage ──────────────────────
-11 agents  206.4k tokens  (5 implementers + 1 writer + 1 searcher + 3 batch reviewers + 1 final)
+Planning       1 agent      4.1k tokens
+Execution      7 agents    98.2k tokens
+Review         3 agents    31.0k tokens
+Verification   2 agents     8.5k tokens
+Duplicate context          14.2k · 10.0%
+Cache hit                   28.0%
+Retry cost                   0.0k tokens
+Accepted commits               3 · 47.3k tokens/commit
+Estimated records              0
+Total          13 agents   141.8k tokens
+Ledger         .hyperflow/usage/<chain-id>.jsonl
 ─────────────────────────────────────────
 ```
 
@@ -496,6 +543,7 @@ Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commit
 | Failure | Behavior |
 |---|---|
 | No task file at `.hyperflow/tasks/` | Stop and suggest `/hyperflow:plan` first. |
+| Inline-fast discovery expands beyond 2 files or finds risk | Escalate to standard planning/dispatch before mutation; no partial fast edit. |
 | Worker times out or returns nothing | Re-scope the sub-task into smaller pieces; redispatch. Max 2 re-scope attempts before surfacing the failure. |
 | Reviewer returns `NEEDS_FIX` | Re-dispatch worker with the fix list. Max 3 retries before surfacing the failure to the user. |
 | Reviewer returns `SECURITY_VIOLATION` | **Halt the chain immediately.** Print finding; do not commit, do not auto-continue. User decides remediation. |
@@ -505,6 +553,7 @@ Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commit
 | `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print audit/deploy as a `Hyperflow Question` chat block and wait for the user's answers. |
 | No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
 | Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
+| Usage ledger or budget guard fails | Stop before another agent dispatch; surface the accounting command/error. Never continue unmetered. |
 | Visual PR without screenshots | **Block** `gh pr create`; ask for image paths or cancel; print recovery. Never open a frontend/mobile PR with text-only body. |
 | `gh` unauthenticated on PR yes | Print `gh auth login` + draft create command; do not half-post. |
 

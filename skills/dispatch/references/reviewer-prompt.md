@@ -16,8 +16,16 @@ The orchestrator determines complexity BEFORE dispatching the reviewer:
 ## Review scope
 [Files changed, task assigned, complexity classification]
 
-## Worker output
-[Paste worker's summary]
+## Contract references
+[Exact task/brief/spec paths containing acceptance criteria]
+
+## Review evidence (bounded)
+Diff range: [exact immutable `<base>..<head>`]
+Paths: [explicit changed-path allowlist]
+Diff stat: [output of `git diff --stat <base>..<head> -- <paths>`]
+Review command: `git diff --no-ext-diff --unified=3 <base>..<head> -- <paths>`
+
+Read the range and contract references directly. Never accept a pasted full patch, worker transcript/reasoning, prior review transcript, or conversation history.
 
 ## Level 1: Requirements
 - Does the output match the task spec exactly?
@@ -82,10 +90,14 @@ Files: src/middleware/auth.ts, src/middleware/auth.test.ts, src/types/auth.ts, s
 Task: Create JWT auth middleware with refresh logic
 Complexity: Complex (4 files, new feature, security-sensitive)
 
-## Worker output
-1. Created auth middleware with RS256 verification
-2. Added refresh token rotation
-3. Tests cover valid/expired/malformed tokens
+## Contract references
+.hyperflow/tasks/auth/T1.md
+
+## Review evidence (bounded)
+Diff range: 91ac4d2..d38f110
+Paths: src/middleware/auth.ts, src/middleware/auth.test.ts, src/types/auth.ts, src/types/session.ts
+Diff stat: 4 files changed, 212 insertions(+), 9 deletions(-)
+Review command: git diff --no-ext-diff --unified=3 91ac4d2..d38f110 -- src/middleware/auth.ts src/middleware/auth.test.ts src/types/auth.ts src/types/session.ts
 
 ## Level 1: Requirements
 - JWT validation with RS256? Refresh logic? Rate limiting?

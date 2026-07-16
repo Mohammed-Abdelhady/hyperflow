@@ -16,6 +16,24 @@
       "flowGate": ["deep", "research", "scientific", "security"]
     }
   },
+  "budgets": {
+    "hardTotals": {
+      "fast": 10000,
+      "standard": 50000,
+      "deep": 200000,
+      "research": 60000,
+      "creative": 100000,
+      "scientific": 200000
+    },
+    "phaseCaps": {
+      "fast": { "triage": 1000, "planning": 1000, "execution": 6000, "review": 1000, "verification": 1000 },
+      "standard": { "triage": 2000, "planning": 10000, "execution": 25000, "review": 8000, "verification": 5000 },
+      "deep": { "triage": 3000, "planning": 40000, "execution": 110000, "review": 35000, "verification": 12000 },
+      "research": { "triage": 2000, "planning": 8000, "execution": 35000, "review": 10000, "verification": 5000 },
+      "creative": { "triage": 2000, "planning": 25000, "execution": 45000, "review": 20000, "verification": 8000 },
+      "scientific": { "triage": 3000, "planning": 30000, "execution": 90000, "review": 55000, "verification": 22000 }
+    }
+  },
   "security": {
     "blockedFiles": [
       ".env",
