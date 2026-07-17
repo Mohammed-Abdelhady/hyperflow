@@ -1,0 +1,22 @@
+{
+  "hf": 1,
+  "type": "audit",
+  "slug": "2026-07-17-visual-artefacts",
+  "title": "Audit — Visual Artefacts diff",
+  "status": "completed",
+  "created": "2026-07-17",
+  "updated": "2026-07-17",
+  "specialists": ["security-reviewer", "backend-reviewer"],
+  "payload": {
+    "verdict": "NEEDS_FIX",
+    "scope": "main..HEAD (18 files · 640 insertions)",
+    "level": "L3",
+    "counts": { "critical": 0, "important": 2, "suggestion": 3, "praise": 2 },
+    "findings": [
+      { "severity": "important", "file": "scripts/view.py", "line": 42, "issue": "Server bind address is derived from config without asserting 127.0.0.1.", "fix": "Hard-code the bind host to 127.0.0.1; never read it from user config.", "why": "A 0.0.0.0 bind would expose artefact data on the LAN and break the privacy promise." },
+      { "severity": "important", "file": "scripts/artefact.py", "line": 88, "issue": "Payload read from stdin is not size-bounded.", "fix": "Cap the read and reject payloads over a sane limit.", "why": "A runaway agent could write an unbounded file into .hyperflow/." },
+      { "severity": "suggestion", "file": "viewer/app.js", "line": 12, "issue": "Unknown artefact type renders a blank panel.", "fix": "Show an explicit unsupported-type message.", "why": "Silent blanks read as a bug." },
+      { "severity": "praise", "file": "scripts/artefact_lib.py", "line": 1, "issue": "Validator is stdlib-only and dependency-free.", "fix": "", "why": "Matches the repo's zero-dependency contract exactly." }
+    ]
+  }
+}

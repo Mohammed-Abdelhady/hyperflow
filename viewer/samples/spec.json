@@ -1,0 +1,48 @@
+{
+  "hf": 1,
+  "type": "spec",
+  "slug": "visual-artefacts",
+  "title": "Visual Artefacts — compact-data artefacts + a local viewer",
+  "status": "approved",
+  "created": "2026-07-17",
+  "updated": "2026-07-17",
+  "specialists": ["architect", "designer", "motion", "devops"],
+  "payload": {
+    "tldr": "Agents emit a compact validated JSON envelope instead of hand-writing verbose markdown; a self-contained local viewer (served on 127.0.0.1, zero upload) reconstructs a rich interactive UI from it. Local-first, so the token win never costs the privacy promise.",
+    "components": [
+      { "name": "Artefact envelope", "role": "One versioned JSON wrapper every artefact conforms to." },
+      { "name": "scripts/artefact.py", "role": "Deterministic writer: validate, stamp, write JSON + slim stub." },
+      { "name": "scripts/render-artefact.py", "role": "JSON to full markdown, on demand." },
+      { "name": "Local viewer", "role": "Dependency-free render[type] registry + component library." },
+      { "name": "hyperflow view", "role": "Serves the viewer on 127.0.0.1 and opens the artefact." }
+    ],
+    "architecture": {
+      "summary": "Model / view / control split, all local. The agent writes the model (payload JSON); a pre-built templated renderer produces the view; artefact.py is the control seam that validates and stamps.",
+      "mermaid": "flowchart LR\n  A[Agent writes payload] --> B[artefact.py validate+stamp]\n  B --> C[(slug.json source of truth)]\n  C --> D[slim stub .md]\n  C --> E[render-artefact.py to markdown]\n  C --> F[hyperflow view 127.0.0.1]\n  F --> G[viewer render type]"
+    },
+    "dataFlow": {
+      "summary": "plan/dispatch/audit produce a payload; artefact.py writes JSON + stub; the viewer fetches the JSON over localhost and renders. Chat shows one line: a hyperflow view link.",
+      "mermaid": "flowchart LR\n  P[plan/dispatch/audit] -->|payload| W[artefact.py] --> J[(json)] --> V[viewer fetch] --> DOM"
+    },
+    "decisions": [
+      { "decision": "Local viewer, zero upload", "rationale": "Preserves the memory-stays-in-your-repo promise while capturing the token win.", "tradeoff": "Link is local, not shareable." },
+      { "decision": "JSON-primary + slim stub", "rationale": "Biggest saving while staying greppable and git-diffable.", "tradeoff": "Full markdown must be regenerated on demand." },
+      { "decision": "Vanilla viewer, not Next.js", "rationale": "A framework needing Node + build + server contradicts zero-daemon/offline.", "tradeoff": "No framework ergonomics; gained: runs from a bare checkout with only Python." },
+      { "decision": "Localhost-only bind (127.0.0.1)", "rationale": "A LAN-exposed server would leak artefact data off-box.", "tradeoff": "None — hard requirement, tested." }
+    ],
+    "edgeCases": [
+      "Viewer disabled mid-project: render-artefact.py --all rehydrates full markdown.",
+      "Port in use: probe the next 10, then error with the occupied port named; never bind 0.0.0.0.",
+      "No browser (headless): print the localhost URL and the render-artefact.py fallback.",
+      "prefers-reduced-motion: animations degrade to instant state changes.",
+      "Offline: no CDN, no external font/script — must pass an airplane-mode load."
+    ],
+    "fileStructure": [
+      { "path": "config/artefact.schema.json", "change": "new", "note": "envelope + per-type payload $defs" },
+      { "path": "scripts/artefact.py", "change": "new", "note": "write/validate/stamp/stub" },
+      { "path": "scripts/render-artefact.py", "change": "new", "note": "JSON to markdown" },
+      { "path": "viewer/", "change": "new", "note": "self-contained bundle" },
+      { "path": "skills/hyperflow/artefact-data.md", "change": "new", "note": "DRY doctrine source" }
+    ]
+  }
+}
