@@ -89,6 +89,26 @@ class WriterTests(unittest.TestCase):
         lib.stub_path(self.root, "spec", "demo").unlink()
         self.assertEqual(artefact.main(["artefact.py", "check", "--project-root", str(self.root)]), 1)
 
+    def test_traversal_slug_rejected(self) -> None:
+        for bad in ("../evil", "a/b", "..", "Up", "with space", "dot.name"):
+            rc = self._write("spec", bad, _payload("spec"))
+            self.assertEqual(rc, 3, bad)
+        # nothing escaped .hyperflow/
+        self.assertFalse((self.root.parent / "evil.json").exists())
+
+    def test_bad_hf_const_rejected(self) -> None:
+        schema = lib.load_schema(REPO_ROOT / "config")
+        env = _sample("spec")
+        env["hf"] = True  # bool must not satisfy const 1 / type integer
+        self.assertTrue(lib.validate_envelope(env, schema))
+
+    def test_check_reports_unreadable_json(self) -> None:
+        bad = lib.artefact_json_path(self.root, "spec", "broken")
+        bad.parent.mkdir(parents=True, exist_ok=True)
+        bad.write_text("{ not json", encoding="utf-8")
+        rc = artefact.main(["artefact.py", "check", "--project-root", str(self.root)])
+        self.assertEqual(rc, 1)
+
     def test_writer_has_no_network_imports(self) -> None:
         for name in ("artefact.py", "artefact_lib.py", "render-artefact.py"):
             src = (SCRIPTS / name).read_text()

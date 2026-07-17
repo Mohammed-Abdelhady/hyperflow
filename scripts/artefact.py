@@ -39,10 +39,12 @@ _PLUGIN_CONFIG = Path(__file__).resolve().parent.parent / "config"
 
 
 def _read_payload(source: str) -> dict:
+    # Bound the read on BOTH paths so a huge file is never fully materialized.
     if source == "-":
         raw = sys.stdin.buffer.read(_MAX_PAYLOAD_BYTES + 1)
     else:
-        raw = Path(source).read_bytes()[: _MAX_PAYLOAD_BYTES + 1]
+        with open(source, "rb") as handle:
+            raw = handle.read(_MAX_PAYLOAD_BYTES + 1)
     if len(raw) > _MAX_PAYLOAD_BYTES:
         raise lib.ArtefactError(f"payload exceeds {_MAX_PAYLOAD_BYTES} bytes — refusing to write")
     text = raw.decode("utf-8")
@@ -56,9 +58,17 @@ def _cmd_write(args: argparse.Namespace) -> int:
     project_root = Path(args.project_root).resolve()
     schema = lib.load_schema(_PLUGIN_CONFIG)
 
+    # Reject a hostile slug before it is ever interpolated into a path.
+    try:
+        lib.safe_slug(args.slug)
+    except lib.ArtefactError as exc:
+        print(f"artefact: {exc}", file=sys.stderr)
+        return 3
+
+    # ValueError covers UnicodeDecodeError and json.JSONDecodeError.
     try:
         payload = _read_payload(args.payload)
-    except (OSError, json.JSONDecodeError, lib.ArtefactError) as exc:
+    except (OSError, ValueError, lib.ArtefactError) as exc:
         print(f"artefact: {exc}", file=sys.stderr)
         return 3
 
@@ -86,14 +96,23 @@ def _cmd_write(args: argparse.Namespace) -> int:
             print(f"  - {err}", file=sys.stderr)
         return 2
 
-    json_path.parent.mkdir(parents=True, exist_ok=True)
-    json_path.write_text(json.dumps(env, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    # Defense in depth: every written path must resolve inside .hyperflow/.
+    hf_root = (project_root / ".hyperflow").resolve()
+    stub = None if args.no_stub else lib.stub_path(project_root, args.type, args.slug)
+    for target in (json_path, stub):
+        if target is not None and not target.resolve().is_relative_to(hf_root):
+            print(f"artefact: refusing to write outside .hyperflow/: {target}", file=sys.stderr)
+            return 3
 
-    if not args.no_stub:
-        stub = lib.stub_path(project_root, args.type, args.slug)
+    try:
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(json.dumps(env, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         if stub is not None:
             stub.parent.mkdir(parents=True, exist_ok=True)
             stub.write_text(lib.render_stub(env), encoding="utf-8")
+    except OSError as exc:
+        print(f"artefact: write failed: {exc}", file=sys.stderr)
+        return 3
 
     print(f"Artefact written → hyperflow view {args.slug}  ({json_path})")
     return 0
@@ -105,9 +124,12 @@ def _cmd_check(args: argparse.Namespace) -> int:
     problems: list[str] = []
     count = 0
 
-    for path, env in lib.iter_artefacts(project_root):
+    for path, env, err in lib.iter_artefacts(project_root):
         count += 1
         rel = path.relative_to(project_root)
+        if err is not None:
+            problems.append(f"{rel}: unreadable ({err})")
+            continue
         errors = lib.validate_envelope(env, schema)
         problems.extend(f"{rel}: {e}" for e in errors)
         if isinstance(env, dict) and env.get("type") in lib.TYPES:
