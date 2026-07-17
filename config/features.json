@@ -1,6 +1,6 @@
 {
   "$schema": "./features.schema.json",
-  "version": "5.13.0",
+  "version": "5.14.0",
   "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
   "subtitle": "Tiny proven-safe edits run inline; planners, parallel workers, and 22 specialists handle orchestrated work. 18 skills, adaptive depth, persistent per-project memory.",
   "layers": [
@@ -409,7 +409,7 @@
     }
   ],
   "capabilities": [
-    "Local visual artefact viewer (opt-in, on by default): agents emit compact validated JSON per artefact instead of verbose markdown, and a self-contained viewer served on 127.0.0.1 renders it as interactive graphs — zero upload, works offline, disable with viewer.enabled=false for classic markdown",
+    "Local visual artefact viewer (opt-in, on by default): agents emit compact validated JSON per artefact instead of verbose markdown, and a self-contained viewer served on 127.0.0.1 renders it as interactive graphs \u2014 zero upload, works offline, disable with viewer.enabled=false for classic markdown",
     "Parallel worker dispatch (independent subtasks run simultaneously)",
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
     "Codex/OpenCode/Grok portable workflow adapter for big tasks",
