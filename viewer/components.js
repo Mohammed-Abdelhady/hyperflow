@@ -107,6 +107,7 @@
     return el("div", { class: "grid" }, ...entries.map((e) =>
       el("div", { class: "card" },
         el("h4", null, e.title),
+        e.task && el("p", { class: "dag-meta", style: "margin:0 0 6px" }, "task: " + e.task),
         el("p", null, e.decision),
         (e.tags && e.tags.length) && el("p", { class: "tag", style: "margin-top:8px" }, "tags: " + e.tags.join(", ")))));
   }

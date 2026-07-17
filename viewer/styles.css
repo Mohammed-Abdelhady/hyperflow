@@ -87,7 +87,7 @@ table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .risk-low { color: var(--worker); } .risk-medium { color: var(--memory); } .risk-high { color: var(--security); }
 
 /* Status dots */
-.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; background: var(--fg-dim); }
 .st-completed { background: var(--worker); } .st-in_progress { background: var(--git); animation: pulse 1.6s infinite; }
 .st-pending { background: var(--border); } .st-needs_fix { background: var(--security); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
