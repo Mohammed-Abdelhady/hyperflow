@@ -201,6 +201,7 @@ Oldest: 2026-02-14   Newest: 2026-05-16
 ## Resources
 
 - [memory-system.md](references/memory-system.md) — full protocol: files, tiers, tagging, pruning rules.
+- [artefact-data.md](../hyperflow/artefact-data.md) — viewer mode: memory entries are the leaner `{title, task, decision, tags}` shape (tags required for tag-matched injection), viewable as a card gallery via `hyperflow view`; the markdown category files remain the on-disk form CRUD operates on.
 - [compaction.md](references/compaction.md) — `/hyperflow:cache compact` protocol: stub format, archive sidecar, idempotency.
 - [output-style.md](references/output-style.md) — label and table conventions.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules.
