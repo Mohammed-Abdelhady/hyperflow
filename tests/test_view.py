@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -59,6 +60,15 @@ class ViewTests(unittest.TestCase):
         self.assertEqual(view._target_hash("visual-artefacts", "spec"), "spec/visual-artefacts")
         self.assertEqual(view._target_hash("spec", None), "sample/spec")
         self.assertEqual(view._target_hash("my-plan", None), "spec/my-plan")
+
+    def test_find_type_resolves_slug_to_its_type(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "artefacts"
+            (root / "audit").mkdir(parents=True)
+            (root / "audit" / "my-audit.json").write_text("{}", encoding="utf-8")
+            self.assertEqual(view.find_type(root, "my-audit"), "audit")
+            self.assertIsNone(view.find_type(root, "nope"))
+            self.assertIsNone(view.find_type(root, "spec"))  # bare type name -> sample route
 
     def test_translate_path_serves_bundle(self) -> None:
         h = _handler(REPO_ROOT / ".hyperflow" / "artefacts")

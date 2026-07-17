@@ -24,7 +24,6 @@ Stdlib only.
 from __future__ import annotations
 
 import argparse
-import functools
 import http.server
 import json
 import os
@@ -71,6 +70,10 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return str(root)  # traversal attempt — clamp back to the root
         return str(target)
 
+    def list_directory(self, path):  # no directory listings, even on loopback
+        self.send_error(404, "Not found")
+        return None
+
     def log_message(self, *_args) -> None:  # quiet by default
         return
 
@@ -101,6 +104,17 @@ def resolve_artefacts_root(project_root: Path, artefacts_dir: str | None) -> Pat
     return project_root / ".hyperflow" / "artefacts"
 
 
+def find_type(artefacts_root: Path, slug: str) -> str | None:
+    """Resolve which artefact type owns <slug> by scanning the artefacts root,
+    so `hyperflow view <slug>` (no --type) works for every type, not just spec."""
+    if slug in TYPES:  # a bare type name means "show me that type's sample"
+        return None
+    for art_type in TYPES:
+        if (artefacts_root / art_type / f"{slug}.json").exists():
+            return art_type
+    return None
+
+
 def _target_hash(slug: str | None, art_type: str | None) -> str:
     if not slug:
         return "gallery"
@@ -120,11 +134,14 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv[1:])
 
     project_root = Path(args.project_root).resolve()
-    handler_cls = functools.partial(_Handler)  # instantiate fresh; class attr set below
     _Handler.artefacts_root = resolve_artefacts_root(project_root, args.artefacts_dir)
 
-    server, port = _bind(args.port, handler_cls)
-    url = f"http://{BIND_HOST}:{port}/index.html#{_target_hash(args.slug, args.type)}"
+    art_type = args.type
+    if args.slug and not art_type:
+        art_type = find_type(_Handler.artefacts_root, args.slug)
+
+    server, port = _bind(args.port, _Handler)
+    url = f"http://{BIND_HOST}:{port}/index.html#{_target_hash(args.slug, art_type)}"
 
     print(f"Hyperflow viewer → {url}")
     print(f"Serving {VIEWER_DIR} (artefacts from {_Handler.artefacts_root}) · Ctrl-C to stop")
