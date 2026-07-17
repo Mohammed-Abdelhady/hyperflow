@@ -4,6 +4,36 @@
   "description": "Hyperflow configuration. Lives at ~/.hyperflow/config.json. Agents run on the current session model — there is no model configuration.",
   "type": "object",
   "properties": {
+    "viewer": {
+      "description": "Visual artefact viewer (skills/hyperflow/artefact-data.md). When enabled, artefact-producing skills emit compact JSON via scripts/artefact.py and a local viewer renders it; when disabled, skills write full markdown exactly as before. The viewer is local-only — data never leaves the machine.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Emit compact JSON artefacts + slim stubs and offer the local viewer. When false, skills write full markdown (classic mode). Default: true.",
+          "default": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Preferred localhost port for `hyperflow view`. Probed, then the next 10; always bound to 127.0.0.1, never 0.0.0.0.",
+          "default": 7777,
+          "minimum": 1024,
+          "maximum": 65535
+        },
+        "markdown": {
+          "type": "string",
+          "description": "When to keep full markdown alongside the JSON: 'on-demand' (regenerate via render-artefact.py when asked), 'always' (also write full markdown on every artefact write), or 'never' (JSON + slim stub only).",
+          "enum": ["on-demand", "always", "never"],
+          "default": "on-demand"
+        },
+        "autoOpen": {
+          "type": "boolean",
+          "description": "Automatically open the browser when an artefact is written in viewer mode. Default: false.",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
     "security": {
       "description": "Security layer configuration. Controls blocked files, commands, and secret detection.",
       "type": "object",
