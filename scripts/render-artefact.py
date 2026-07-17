@@ -47,7 +47,7 @@ def _status_rows(env: dict[str, Any], extra: list[tuple[str, str]]) -> str:
 
 def render_spec(env: dict[str, Any]) -> str:
     p = env["payload"]
-    parts = [f"## Status\n\n{_status_rows(env, [])}", f"# {env['title']}", f"## TL;DR\n\n{p.get('tldr', '')}"]
+    parts = [f"# {env['title']}", f"## Status\n\n{_status_rows(env, [])}", f"## TL;DR\n\n{p.get('tldr', '')}"]
     if p.get("components"):
         parts.append("## Components\n\n" + "\n".join(f"- **{c.get('name','')}** — {c.get('role','')}" for c in p["components"]))
     arch = p.get("architecture", {})
@@ -76,7 +76,7 @@ def render_spec(env: dict[str, Any]) -> str:
 
 def render_task(env: dict[str, Any]) -> str:
     p = env["payload"]
-    parts = [f"## Status\n\n{_status_rows(env, [])}", f"# {env['title']}", f"## Goal\n\n{p.get('goal','')}"]
+    parts = [f"# {env['title']}", f"## Status\n\n{_status_rows(env, [])}", f"## Goal\n\n{p.get('goal','')}"]
     if p.get("scope"):
         rows = "\n".join(
             f"| {s.get('surface','')} | {s.get('files',0)} | {s.get('created',0)} | {s.get('modified',0)} | {s.get('risk','')} |"
@@ -114,7 +114,7 @@ def render_feature(env: dict[str, Any]) -> str:
         + (f" (depends on {ph['dependsOn']})" if ph.get("dependsOn") else "")
         for ph in p.get("phases", [])
     )
-    parts = [f"## Status\n\n{_status_rows(env, [])}", f"# Feature: {env['title']}", f"## Goal\n\n{p.get('goal','')}", "## Phases\n\n" + phases]
+    parts = [f"# Feature: {env['title']}", f"## Status\n\n{_status_rows(env, [])}", f"## Goal\n\n{p.get('goal','')}", "## Phases\n\n" + phases]
     if p.get("graph"):
         parts.append("## Phase dependency graph\n\n```\n" + p["graph"] + "\n```")
     return "\n\n".join(parts) + "\n"
@@ -128,7 +128,7 @@ def render_audit(env: dict[str, Any]) -> str:
     c = p.get("counts", {})
     counts = " · ".join(f"{c.get(s,0)} {s.capitalize()}" for s in _SEV_ORDER)
     rows = [("Verdict", f"`{p.get('verdict','')}`"), ("Scope", p.get("scope","")), ("Level", p.get("level","")), ("Findings", counts)]
-    parts = [f"## Status\n\n{_table(rows)}", f"# {env['title']}"]
+    parts = [f"# {env['title']}", f"## Status\n\n{_table(rows)}"]
     for sev in _SEV_ORDER:
         items = [f for f in p.get("findings", []) if f.get("severity") == sev]
         for f in items:
@@ -211,8 +211,14 @@ def _cmd_all(project_root: Path) -> int:
         stub = lib.stub_path(project_root, env.get("type", ""), env.get("slug", ""))
         if stub is None:
             continue
+        try:
+            markdown = render(env)
+        except (lib.ArtefactError, KeyError, TypeError) as exc:
+            print(f"render-artefact: skipped un-renderable {path.name} ({exc})", file=sys.stderr)
+            skipped += 1
+            continue
         stub.parent.mkdir(parents=True, exist_ok=True)
-        stub.write_text(render(env), encoding="utf-8")
+        stub.write_text(markdown, encoding="utf-8")
         written += 1
     note = f" ({skipped} skipped)" if skipped else ""
     print(f"render-artefact: rehydrated {written} markdown file(s){note}")
