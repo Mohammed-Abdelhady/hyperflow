@@ -341,3 +341,7 @@ BLOCKED — worker attempted to read .env
 4. **No free-form trailing prose.** Never "Done! I completed X." Work product is the structured **Evidence** block (§7). Cost is the **Usage** block (§8). Both are mandatory at terminal dispatch; neither replaces the other.
 5. **No decorative chars.** Em-dash for separators, middle dots for inline lists. Never `⚡`, `✓`, `✗`, `▸`, `→`, etc.
 6. **Bold for review roles.** Only `**Reviewer**` and `**Debugger**` are bolded. Workers stay plain.
+
+## Viewer mode
+
+When `viewer.enabled` is true, the one-line artefact hand-off in chat points at the viewer instead of the file: `Artefact → hyperflow view <slug>` (plan's build-location line reads `Plan ready — hyperflow view <slug> · N batches`). Still one line, still no artefact content echoed into chat — the rule is unchanged, only the target. Classic mode keeps the `.hyperflow/<path>` file reference. Emit contract: [`artefact-data.md`](artefact-data.md).
