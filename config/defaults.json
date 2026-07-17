@@ -1,4 +1,10 @@
 {
+  "viewer": {
+    "enabled": true,
+    "port": 7777,
+    "markdown": "on-demand",
+    "autoOpen": false
+  },
   "handoff": {
     "autoPush": true,
     "remote": "origin",
