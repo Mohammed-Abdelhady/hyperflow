@@ -7,6 +7,12 @@ Persist active task state across sessions as individual files in `.hyperflow/tas
 > format in [artefact-format.md](artefact-format.md)). `dispatch` loads each brief verbatim. When the task completes,
 > delete the `<slug>/` brief dir alongside `<slug>.md` (or let auto-archive move both).
 
+> **Viewer mode.** When `viewer.enabled` is true the task artefact's source of truth is
+> `.hyperflow/artefacts/task/<slug>.json` (or `feature/<slug>.json`) and `<slug>.md` is a ≤6-line stub; dispatch
+> updates the JSON `status`/batch progress as sub-tasks pass, and the stub is rewritten from it (they cannot drift).
+> `render-artefact.py <slug>` reproduces the full roster on demand; `/hyperflow:status` reads the JSON first, the
+> stub as fallback. Classic mode keeps the full markdown roster described below. See [artefact-data.md](artefact-data.md).
+
 > **Two modes.** This flat one-file-per-task model is used for **single-phase work**. Work large enough to split
 > into **≥ 2 sequential phases** uses the **feature/phase folder structure** instead — a `.hyperflow/features/<slug>/`
 > tree whose phase sub-folders each encapsulate their own `tasks/`, design, research, and decisions. See
