@@ -11,6 +11,12 @@ convenience, not a daemon.
 
 Usage:
   view.py [slug] [--type T] [--project-root DIR] [--port N] [--no-open]
+          [--artefacts-dir DIR]
+
+--artefacts-dir points /artefacts/ at an explicit artefacts root — e.g. a
+two-session handoff package's `artefact/artefacts/` — so a reviewer can visualize
+a handed-off plan without rehydrating it into .hyperflow/. Defaults to
+<project-root>/.hyperflow/artefacts.
 
 Stdlib only.
 """
@@ -87,6 +93,14 @@ def _bind(start_port: int, handler_cls) -> tuple[http.server.HTTPServer, int]:
     )
 
 
+def resolve_artefacts_root(project_root: Path, artefacts_dir: str | None) -> Path:
+    """Where /artefacts/ maps to: an explicit dir (handoff package) or the
+    project's own .hyperflow/artefacts."""
+    if artefacts_dir:
+        return Path(artefacts_dir).resolve()
+    return project_root / ".hyperflow" / "artefacts"
+
+
 def _target_hash(slug: str | None, art_type: str | None) -> str:
     if not slug:
         return "gallery"
@@ -102,11 +116,12 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--port", type=int, default=_default_port())
     parser.add_argument("--no-open", action="store_true")
+    parser.add_argument("--artefacts-dir", help="override the artefacts root (e.g. a handoff package)")
     args = parser.parse_args(argv[1:])
 
     project_root = Path(args.project_root).resolve()
     handler_cls = functools.partial(_Handler)  # instantiate fresh; class attr set below
-    _Handler.artefacts_root = project_root / ".hyperflow" / "artefacts"
+    _Handler.artefacts_root = resolve_artefacts_root(project_root, args.artefacts_dir)
 
     server, port = _bind(args.port, handler_cls)
     url = f"http://{BIND_HOST}:{port}/index.html#{_target_hash(args.slug, args.type)}"
