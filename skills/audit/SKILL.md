@@ -401,6 +401,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
+- [artefact-data.md](../hyperflow/artefact-data.md) — viewer-mode emit contract: when `viewer.enabled`, write findings as the compact `audit` JSON via `scripts/artefact.py` + a slim stub, viewable with `hyperflow view <slug>` (classic markdown otherwise).
 - [review-levels.md](references/review-levels.md) — full checklist for L1-L5.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer template.
 - [security.md](references/security.md) — security scan policy (mandatory at L3+).

@@ -327,4 +327,5 @@ Active tasks  (none)
 ## Resources
 
 - [output-style.md](references/output-style.md) — em-dash style, no decorative chars, plain status words.
+- [artefact-data.md](../hyperflow/artefact-data.md) — viewer mode: read `.hyperflow/artefacts/<type>/<slug>.json` first (parse `status`/batch progress from JSON), fall back to the slim stub, then the legacy full-markdown status block.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (status is exempt from per-step agent dispatch).
