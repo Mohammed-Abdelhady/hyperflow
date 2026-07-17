@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.14.0] — 2026-07-17
+
+### Added
+- Add viewer-mode artefact emit contract (artefact-data.md)
+- Let hyperflow view target a handoff package's artefacts dir
+- Add hyperflow view server bound to 127.0.0.1
+- Add self-contained local artefact viewer with SVG graph rendering
+- Add viewer config block (default on, reversible classic mode)
+- Add render-artefact.py to rehydrate markdown from JSON
+- Add artefact writer with stdlib schema validation
+- Add compact JSON artefact envelope schema + samples
+
+### Fixed
+- Show memory entry task line; give status dots a default color
+- Lead rehydrated markdown with the H1 title; make --all resilient
+- Resolve any artefact type for hyperflow view; disable directory listing
+- Correct mermaid edge labels, dependency-aware batch edges, empty-graph guard
+- Sanitize slugs, bound file reads, harden validation per review
+
+### Changed
+- Add visual-artefacts viewer screenshots
+- Copy artefacts JSON during handoff rehydration
+- Document the local visual artefact viewer (README, features.json, orchestration)
+- Carry compact JSON artefacts through the two-session handoff
+- Reference the viewer-mode contract from artefact skills
+- Branch core references between classic and viewer mode
+- Cover bind address, port fallback, and path-traversal clamping
+- Cover writer round-trip, schema rejection, and rehydration
+
+
 ## [5.13.0] — 2026-07-16
 
 ### Added
@@ -1229,7 +1259,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.13.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...HEAD
+[5.14.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.13.0...v5.14.0
 [5.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.12.0...v5.13.0
 [5.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.11.0...v5.12.0
 [5.11.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.10.0...v5.11.0
