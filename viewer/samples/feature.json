@@ -1,0 +1,20 @@
+{
+  "hf": 1,
+  "type": "feature",
+  "slug": "visual-artefacts",
+  "title": "Visual Artefacts",
+  "status": "planning",
+  "created": "2026-07-17",
+  "updated": "2026-07-17",
+  "specialists": ["architect", "designer", "motion", "devops"],
+  "payload": {
+    "goal": "Agents emit compact validated JSON for every planning artefact; a local zero-upload viewer renders it richly.",
+    "phases": [
+      { "n": 1, "name": "contract", "goal": "JSON envelope + schemas + artefact.py/render-artefact.py + config", "status": "in_progress", "dependsOn": "" },
+      { "n": 2, "name": "viewer", "goal": "self-contained local viewer + component library + hyperflow view", "status": "pending", "dependsOn": "phase-1" },
+      { "n": 3, "name": "integration", "goal": "wire the mode switch into skills + doctrine; leaner memory", "status": "pending", "dependsOn": "phase-1" },
+      { "n": 4, "name": "contract-docs", "goal": "README/features.json/docs + validator + verification", "status": "pending", "dependsOn": "phase-2 + phase-3" }
+    ],
+    "graph": "phase-1-contract -> phase-2-viewer\nphase-1-contract -> phase-3-integration\nphase-2 + phase-3 -> phase-4-contract-docs"
+  }
+}

@@ -351,11 +351,23 @@ Net effect: durable learnings compound in memory, the working folders only ever 
 
 ---
 
+## Visual artefacts — model / view split
+
+By default Hyperflow separates an artefact's **model** from its **view**. Instead of hand-writing status tables, ASCII dependency diagrams, and progress bars into `.hyperflow/*.md`, each artefact-producing skill emits a compact validated JSON payload via `scripts/artefact.py`, which stamps it, validates it against `config/artefact.schema.json`, writes `.hyperflow/artefacts/<type>/<slug>.json`, and leaves a ≤6-line greppable stub at the canonical path. A self-contained local viewer renders the JSON.
+
+- **`hyperflow view [slug]`** (`scripts/view.py`) serves the viewer on `127.0.0.1` (loopback only — never `0.0.0.0`) and opens the artefact, or a gallery of every template. Architecture / data-flow diagrams, batch execution graphs, and feature-phase graphs render as real node/edge canvases with drawn connectors; nothing is uploaded and no external asset is fetched (works offline).
+- **The saving is on presentation, not substance.** Decisions, briefs, and acceptance criteria are still written — they are information. What agents stop writing is layout. `scripts/render-artefact.py <slug>` regenerates the full markdown on demand.
+- **Optional and reversible.** `viewer.enabled=false` returns every skill to full-markdown output (classic mode) with no migration. Two-session handoff packages carry the JSON so a build or review session can `hyperflow view --artefacts-dir <pkg>/artefact/artefacts`.
+- **Contract:** [`skills/hyperflow/artefact-data.md`](../skills/hyperflow/artefact-data.md).
+
+---
+
 ## References
 
 | File | Contents |
 |---|---|
 | `skills/hyperflow/DOCTRINE.md` | Full rule set — Layers 0–9, 12 numbered rules, red flags |
+| `skills/hyperflow/artefact-data.md` | Viewer-mode emit contract — envelope, per-type payloads, mode switch, `hyperflow view` |
 | `skills/hyperflow/flow-profiles.md` | The 6 flow profiles and escalation paths |
 | `skills/hyperflow/personas-A.md`, `personas-B.md` | All 15 persona definitions |
 | `skills/hyperflow/review-levels.md` | L1–L5 checklist |

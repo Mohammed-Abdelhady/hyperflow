@@ -4,6 +4,8 @@ How long-form artefacts written under `.hyperflow/` should be structured so the 
 
 Applies to every planning artefact the orchestrator produces. **All artefacts live under `.hyperflow/`** — never at repo root, never in `docs/`, never in ad-hoc folders. See [DOCTRINE.md](DOCTRINE.md) rule 8 file-first clause for the canonical-location table and banned-location list.
 
+> **Viewer mode.** This file describes the **classic** (full-markdown) artefact format, used when `viewer.enabled` is `false`. When the visual artefact viewer is enabled (the default), agents instead emit a compact validated JSON payload via `scripts/artefact.py` plus a ≤6-line stub at the canonical path, and the local viewer renders it — the full markdown here is regenerated on demand by `scripts/render-artefact.py`. The emit contract and the mode switch live in [`artefact-data.md`](artefact-data.md). Everything below still governs (a) classic mode and (b) the exact markdown `render-artefact.py` reproduces.
+
 | Artefact | Path | Written by |
 |---|---|---|
 | Task decomposition (single-phase) | `.hyperflow/tasks/<slug>.md` | `scope` Step 4 |

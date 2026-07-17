@@ -1,0 +1,17 @@
+{
+  "hf": 1,
+  "type": "review",
+  "slug": "batch-1-contract",
+  "title": "Batch 1 review — contract",
+  "status": "completed",
+  "created": "2026-07-17",
+  "updated": "2026-07-17",
+  "specialists": ["backend-reviewer"],
+  "payload": {
+    "verdict": "PASS",
+    "findings": [
+      { "severity": "suggestion", "anchor": "config/artefact.schema.json", "issue": "Consider documenting the $defs dispatch in a comment.", "fix": "Add a one-line note in artefact-data.md instead (JSON has no comments)." },
+      { "severity": "praise", "anchor": "scripts/artefact_lib.py", "issue": "Clean separation of validate / build / stub.", "fix": "" }
+    ]
+  }
+}

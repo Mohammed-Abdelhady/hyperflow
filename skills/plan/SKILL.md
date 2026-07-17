@@ -265,6 +265,7 @@ Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `H
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — shared rules (rule 8 structural gates, rule 12 per-step agents, rule 17 Brain roster).
+- [artefact-data.md](../hyperflow/artefact-data.md) — viewer-mode emit contract: when `viewer.enabled`, the spec/task/feature/memory artefacts are written as compact JSON via `scripts/artefact.py` + a slim stub, and the build-location line reads `hyperflow view <slug>` (classic markdown otherwise).
 - [prompt-rubric.md](references/prompt-rubric.md) — 8-dimension prompt-quality rubric + domain-injection skeleton (Step 2).
 - [examples.md](references/examples.md) — worked transcripts (illustrative, not load-bearing).
 - [latency-patterns.md](../hyperflow/latency-patterns.md) — P1–P5 patterns, wall-clock table, `--thorough` rules.

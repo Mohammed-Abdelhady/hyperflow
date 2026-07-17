@@ -1,0 +1,17 @@
+{
+  "hf": 1,
+  "type": "memory",
+  "slug": "decisions",
+  "title": "Project decisions",
+  "status": "active",
+  "created": "2026-07-17",
+  "updated": "2026-07-17",
+  "specialists": [],
+  "payload": {
+    "entries": [
+      { "title": "Model/view split for artefacts", "task": "visual-artefacts", "decision": "Agents emit compact validated JSON; a pre-built renderer produces the view. Saving is on presentation, not substance.", "tags": ["architecture", "tokens", "artefacts"] },
+      { "title": "Local viewer, zero upload", "task": "visual-artefacts", "decision": "Renderer ships in the plugin, served on 127.0.0.1; no data leaves the machine.", "tags": ["privacy", "architecture"] },
+      { "title": "Leaner memory keeps tags", "task": "visual-artefacts", "decision": "Memory entries reduce to title/task/decision plus tags — tags are required for lazy tag-matched injection.", "tags": ["memory", "tokens"] }
+    ]
+  }
+}

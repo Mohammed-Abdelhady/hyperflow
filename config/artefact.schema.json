@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hyperflow Artefact Envelope",
+  "description": "The compact JSON every planning artefact conforms to. Agents emit the payload only; scripts/artefact.py wraps it in this envelope, stamps dates, validates, and writes the slim markdown stub. The local viewer (viewer/) renders it. One source of truth for the artefact contract — see skills/hyperflow/artefact-data.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["hf", "type", "slug", "title", "status", "payload"],
+  "properties": {
+    "hf": { "type": "integer", "const": 1, "description": "Envelope schema version. Bump on a breaking change." },
+    "type": {
+      "type": "string",
+      "enum": ["spec", "task", "feature", "dispatch", "audit", "memory", "review"],
+      "description": "Artefact type; selects the payload schema from $defs."
+    },
+    "slug": { "type": "string", "description": "Kebab-case identifier, unique per type." },
+    "title": { "type": "string", "description": "Human title shown in the viewer header and the stub." },
+    "status": { "type": "string", "description": "Per-type lifecycle word (pending|in_progress|approved|completed|needs_fix|…)." },
+    "created": { "type": "string", "description": "ISO date, stamped by artefact.py — never supplied by the agent." },
+    "updated": { "type": "string", "description": "ISO date, stamped by artefact.py on every write." },
+    "specialists": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Brain-decided responsible specialist agents for this artefact."
+    },
+    "payload": { "type": "object", "description": "Type-specific body, validated against $defs[type] by artefact.py." }
+  },
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tldr", "decisions"],
+      "properties": {
+        "tldr": { "type": "string" },
+        "components": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "role": { "type": "string" } } } },
+        "architecture": { "type": "object", "properties": { "summary": { "type": "string" }, "mermaid": { "type": "string" } } },
+        "dataFlow": { "type": "object", "properties": { "summary": { "type": "string" }, "mermaid": { "type": "string" } } },
+        "decisions": { "type": "array", "items": { "type": "object", "required": ["decision"], "properties": { "decision": { "type": "string" }, "rationale": { "type": "string" }, "tradeoff": { "type": "string" } } } },
+        "edgeCases": { "type": "array", "items": { "type": "string" } },
+        "fileStructure": { "type": "array", "items": { "type": "object", "properties": { "path": { "type": "string" }, "change": { "type": "string" }, "note": { "type": "string" } } } }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "batches"],
+      "properties": {
+        "goal": { "type": "string" },
+        "scope": { "type": "array", "items": { "type": "object", "properties": { "surface": { "type": "string" }, "files": { "type": "integer" }, "created": { "type": "integer" }, "modified": { "type": "integer" }, "risk": { "type": "string" } } } },
+        "batches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "tasks"],
+            "properties": {
+              "name": { "type": "string" },
+              "parallel": { "type": "boolean" },
+              "dependsOn": { "type": "array", "items": { "type": "string" } },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "task"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "role": { "type": "string" },
+                    "task": { "type": "string" },
+                    "read": { "type": "array", "items": { "type": "string" } },
+                    "modify": { "type": "array", "items": { "type": "string" } },
+                    "create": { "type": "array", "items": { "type": "string" } },
+                    "complexity": { "type": "string" },
+                    "specialist": { "type": "string" },
+                    "brief": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "verification": { "type": "array", "items": { "type": "string" } },
+        "commits": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "phases"],
+      "properties": {
+        "goal": { "type": "string" },
+        "phases": { "type": "array", "items": { "type": "object", "required": ["n", "name"], "properties": { "n": { "type": "integer" }, "name": { "type": "string" }, "goal": { "type": "string" }, "status": { "type": "string" }, "dependsOn": { "type": "string" } } } },
+        "graph": { "type": "string" }
+      }
+    },
+    "dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "batches": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "tasks": { "type": "array", "items": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" }, "status": { "type": "string" }, "tokens": { "type": "integer" }, "wallclock": { "type": "string" } } } } } } },
+        "totals": { "type": "object", "properties": { "agents": { "type": "integer" }, "tokens": { "type": "integer" }, "elapsed": { "type": "string" } } }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict"],
+      "properties": {
+        "verdict": { "type": "string" },
+        "scope": { "type": "string" },
+        "level": { "type": "string" },
+        "counts": { "type": "object", "properties": { "critical": { "type": "integer" }, "important": { "type": "integer" }, "suggestion": { "type": "integer" }, "praise": { "type": "integer" } } },
+        "findings": { "type": "array", "items": { "type": "object", "required": ["severity", "issue"], "properties": { "severity": { "type": "string" }, "file": { "type": "string" }, "line": { "type": "integer" }, "issue": { "type": "string" }, "fix": { "type": "string" }, "why": { "type": "string" } } } }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entries"],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "task", "decision"],
+            "properties": {
+              "title": { "type": "string" },
+              "task": { "type": "string" },
+              "decision": { "type": "string" },
+              "tags": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict"],
+      "properties": {
+        "verdict": { "type": "string" },
+        "findings": { "type": "array", "items": { "type": "object", "required": ["severity"], "properties": { "severity": { "type": "string" }, "anchor": { "type": "string" }, "issue": { "type": "string" }, "fix": { "type": "string" } } } }
+      }
+    }
+  }
+}
