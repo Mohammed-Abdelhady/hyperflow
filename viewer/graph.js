@@ -21,8 +21,9 @@
       if (head) { dir = head[1].toUpperCase().replace("TD", "TB"); continue; }
       if (!line.includes("-->")) continue;
       const segs = line.split("-->").map((s) => s.trim());
-      let prev = null, pendingLabel = "";
+      let prev = null;
       for (let seg of segs) {
+        // A leading |label| belongs to the edge INTO this node (mermaid: A -->|lbl| B).
         const lbl = seg.match(/^\|(.+?)\|\s*(.*)$/);
         let edgeLabel = "";
         if (lbl) { edgeLabel = lbl[1]; seg = lbl[2].trim(); }
@@ -31,8 +32,7 @@
         const id = m[1], shape = m[2] ? "store" : m[3] ? "decision" : "step";
         const label = m[2] || m[3] || m[4] || id;
         if (!nodes.has(id)) nodes.set(id, { id, label, shape });
-        if (prev) edges.push({ from: prev, to: id, label: pendingLabel });
-        pendingLabel = edgeLabel;
+        if (prev) edges.push({ from: prev, to: id, label: edgeLabel });
         prev = id;
       }
     }
@@ -91,6 +91,7 @@
 
   // ---- render ------------------------------------------------------------
   function render(model, opts = {}) {
+    if (!model.nodes || !model.nodes.length) return HF.emptyState("Nothing to diagram", "This artefact has no graph nodes yet.");
     const { pos, w, h, horizontal } = layout(model);
     const canvas = el("div", { class: "hf-canvas" });
     canvas.style.width = w + "px";
@@ -198,20 +199,21 @@
   // Build a graph model from batches (task nodes + dependency edges).
   function fromBatches(batches) {
     const nodes = [], edges = [];
+    batches.forEach((b) => (b.tasks || []).forEach((t) => nodes.push({
+      id: t.id, tag: t.id, label: t.task,
+      sub: [t.role, t.complexity].filter(Boolean).join(" · "),
+      chip: t.specialist, shape: "step", status: t.status,
+    })));
+    const has = new Set(nodes.map((n) => n.id));
     batches.forEach((b, bi) => {
-      (b.tasks || []).forEach((t) => {
-        nodes.push({
-          id: t.id, tag: t.id, label: t.task,
-          sub: [t.role, t.complexity].filter(Boolean).join(" · "),
-          chip: t.specialist, shape: "step", status: t.status,
-        });
-      });
-      // edges: this batch depends on prior batch's tasks (batch-level flow)
-      if (bi > 0) {
-        const prev = batches[bi - 1].tasks || [];
-        const cur = b.tasks || [];
-        if (prev.length && cur.length) edges.push({ from: prev[0].id, to: cur[0].id, label: b.name });
-      }
+      const cur = b.tasks || [];
+      if (!cur.length) return;
+      // Prefer the batch's declared dependsOn (task ids); else chain from the
+      // previous batch's first task so the flow is still legible.
+      const deps = (b.dependsOn && b.dependsOn.length)
+        ? b.dependsOn.filter((d) => has.has(d))
+        : (bi > 0 && (batches[bi - 1].tasks || [])[0] ? [batches[bi - 1].tasks[0].id] : []);
+      deps.forEach((from) => edges.push({ from, to: cur[0].id, label: bi > 0 ? b.name : "" }));
     });
     return { dir: batches.length > 3 ? "LR" : "TB", nodes, edges };
   }
