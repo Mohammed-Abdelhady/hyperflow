@@ -154,7 +154,10 @@ On a handoff pickup, before dispatch Step 1:
    run, fall back to the package's `context/` copies.
 3. Copy `artefact/tasks/<slug>.md` → `.hyperflow/tasks/<slug>.md` (flat), or `artefact/features/<slug>/` →
    `.hyperflow/features/<slug>/` (feature), if not already present.
-4. Leave `STATUS=planned` until the build completes.
+4. **Viewer mode:** also copy `artefact/artefacts/**` → `.hyperflow/artefacts/` — in viewer mode the `.md` files
+   above are slim stubs, so this JSON is the actual plan content the build reads and `hyperflow view` renders. Skip
+   when the package carries no `artefact/artefacts/` (classic-mode package).
+5. Leave `STATUS=planned` until the build completes.
 
 ## Provider notes
 
