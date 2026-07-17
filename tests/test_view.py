@@ -45,6 +45,15 @@ class ViewTests(unittest.TestCase):
         finally:
             first.server_close()
 
+    def test_artefacts_root_defaults_to_project(self) -> None:
+        root = view.resolve_artefacts_root(Path("/proj"), None)
+        self.assertEqual(root, Path("/proj") / ".hyperflow" / "artefacts")
+
+    def test_artefacts_root_override_for_handoff_package(self) -> None:
+        override = REPO_ROOT / ".hyperflow" / "artefacts"
+        root = view.resolve_artefacts_root(Path("/proj"), str(override))
+        self.assertEqual(root, override.resolve())
+
     def test_target_hash(self) -> None:
         self.assertEqual(view._target_hash(None, None), "gallery")
         self.assertEqual(view._target_hash("visual-artefacts", "spec"), "spec/visual-artefacts")
