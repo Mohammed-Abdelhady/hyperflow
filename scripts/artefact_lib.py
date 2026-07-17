@@ -15,10 +15,22 @@ from __future__ import annotations
 
 import datetime
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review"]
+
+# Slugs become path segments — a hostile slug ("../../etc") would let the writer
+# escape .hyperflow/. Restrict to kebab-case; no separators, no dots.
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def safe_slug(slug: str) -> str:
+    """Return slug if it is a safe path segment, else raise ArtefactError."""
+    if not isinstance(slug, str) or not _SLUG_RE.match(slug):
+        raise ArtefactError(f"invalid slug {slug!r}: must match {_SLUG_RE.pattern}")
+    return slug
 
 # Types whose canonical artefact IS a single markdown file that becomes the
 # slim stub. Others (dispatch, review, memory) are stored as JSON only in v1 —
@@ -65,6 +77,10 @@ _TYPE_CHECKS = {
 
 
 def _resolve(ref: str, root: dict[str, Any]) -> dict[str, Any]:
+    # Limitation: a $ref replaces the node wholesale (sibling keywords are
+    # dropped). Fine for this schema — the only $ref is the code-injected
+    # {"$ref": "#/$defs/<type>"} with no siblings. Do NOT point this validator
+    # at config/schema.json (it uses $ref-with-siblings + minimum/maximum).
     if not ref.startswith("#/"):
         raise ArtefactError(f"unsupported $ref: {ref}")
     node: Any = root
@@ -88,7 +104,14 @@ def _check(inst: Any, sch: dict[str, Any], root: dict[str, Any], path: str, erro
         errors.append(f"{loc}: expected {expected}, got {type(inst).__name__}")
         return  # type mismatch — deeper checks would be noise
 
-    if expected == "object" and isinstance(inst, dict):
+    # Enforce object/array structure even when a schema node omits an explicit
+    # "type" but carries object/array keywords (a legal, common schema shape).
+    is_object = expected == "object" or (
+        expected is None and any(k in sch for k in ("properties", "required", "additionalProperties"))
+    )
+    is_array = expected == "array" or (expected is None and "items" in sch)
+
+    if is_object and isinstance(inst, dict):
         props = sch.get("properties", {})
         for req in sch.get("required", []):
             if req not in inst:
@@ -101,7 +124,7 @@ def _check(inst: Any, sch: dict[str, Any], root: dict[str, Any], path: str, erro
             if key in props:
                 _check(value, props[key], root, f"{loc}.{key}", errors)
 
-    if expected == "array" and isinstance(inst, list):
+    if is_array and isinstance(inst, list):
         item_schema = sch.get("items")
         if item_schema:
             for i, element in enumerate(inst):
@@ -140,6 +163,7 @@ def build_envelope(
 ) -> dict[str, Any]:
     if art_type not in TYPES:
         raise ArtefactError(f"unknown artefact type: {art_type} (expected one of {TYPES})")
+    safe_slug(slug)
     return {
         "hf": 1,
         "type": art_type,
@@ -187,9 +211,14 @@ def read_envelope(path: Path) -> dict[str, Any]:
 
 
 def iter_artefacts(project_root: Path):
-    """Yield (path, envelope) for every artefact JSON under .hyperflow/artefacts/."""
+    """Yield (path, envelope, error) for every artefact JSON under
+    .hyperflow/artefacts/. A file that cannot be read yields (path, None, msg)
+    so callers report it and keep walking instead of aborting the whole scan."""
     base = project_root / ".hyperflow" / "artefacts"
     if not base.is_dir():
         return
     for path in sorted(base.rglob("*.json")):
-        yield path, read_envelope(path)
+        try:
+            yield path, read_envelope(path), None
+        except ArtefactError as exc:
+            yield path, None, str(exc)

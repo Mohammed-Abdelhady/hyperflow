@@ -190,6 +190,7 @@ def _resolve_one(project_root: Path, arg: str, art_type: str | None) -> Path:
     p = Path(arg)
     if p.suffix == ".json" and p.exists():
         return p
+    lib.safe_slug(arg)  # also blocks glob metacharacters / traversal in the lookup
     base = project_root / ".hyperflow" / "artefacts"
     matches = [m for m in base.rglob(f"{arg}.json") if art_type is None or m.parent.name == art_type]
     if not matches:
@@ -201,14 +202,20 @@ def _resolve_one(project_root: Path, arg: str, art_type: str | None) -> Path:
 
 def _cmd_all(project_root: Path) -> int:
     written = 0
-    for path, env in lib.iter_artefacts(project_root):
+    skipped = 0
+    for path, env, err in lib.iter_artefacts(project_root):
+        if err is not None:
+            print(f"render-artefact: skipped unreadable {path.name} ({err})", file=sys.stderr)
+            skipped += 1
+            continue
         stub = lib.stub_path(project_root, env.get("type", ""), env.get("slug", ""))
         if stub is None:
             continue
         stub.parent.mkdir(parents=True, exist_ok=True)
         stub.write_text(render(env), encoding="utf-8")
         written += 1
-    print(f"render-artefact: rehydrated {written} markdown file(s)")
+    note = f" ({skipped} skipped)" if skipped else ""
+    print(f"render-artefact: rehydrated {written} markdown file(s){note}")
     return 0
 
 

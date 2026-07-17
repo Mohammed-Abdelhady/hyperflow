@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["hf", "type", "slug", "title", "status", "payload"],
   "properties": {
-    "hf": { "const": 1, "description": "Envelope schema version. Bump on a breaking change." },
+    "hf": { "type": "integer", "const": 1, "description": "Envelope schema version. Bump on a breaking change." },
     "type": {
       "type": "string",
       "enum": ["spec", "task", "feature", "dispatch", "audit", "memory", "review"],
