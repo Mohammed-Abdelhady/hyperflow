@@ -59,7 +59,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hf-node-chip { align-self: flex-start; font-size: .64rem; color: var(--fg-dim);
   border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; }
-.hf-node-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.hf-node-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--fg-dim); }
 
 /* Scroll reveal */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1); }
