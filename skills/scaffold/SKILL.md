@@ -215,5 +215,6 @@ No files written.
 ## Resources
 
 - [project-analysis.md](references/project-analysis.md) — what each generated file captures.
+- [artefact-data.md](../hyperflow/artefact-data.md) — the visual artefact viewer is on by default (`viewer.enabled` in `config/defaults.json`); scaffold need not generate anything for it, but note it exists so `hyperflow view` works once artefacts are produced.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (Layer 0 project analysis).
 - [output-style.md](references/output-style.md) — summary block formatting.

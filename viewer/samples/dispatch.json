@@ -1,0 +1,25 @@
+{
+  "hf": 1,
+  "type": "dispatch",
+  "slug": "visual-artefacts",
+  "title": "Dispatch — Visual Artefacts",
+  "status": "in_progress",
+  "created": "2026-07-17",
+  "updated": "2026-07-17",
+  "specialists": ["architect", "backend-reviewer"],
+  "payload": {
+    "batches": [
+      {
+        "name": "Phase 1 — contract",
+        "tasks": [
+          { "id": "T1", "status": "completed", "tokens": 4200, "wallclock": "1m10s" },
+          { "id": "T2", "status": "completed", "tokens": 6100, "wallclock": "1m40s" },
+          { "id": "T3", "status": "in_progress", "tokens": 3800, "wallclock": "0m55s" },
+          { "id": "T4", "status": "pending", "tokens": 0, "wallclock": "" },
+          { "id": "T5", "status": "pending", "tokens": 0, "wallclock": "" }
+        ]
+      }
+    ],
+    "totals": { "agents": 3, "tokens": 14100, "elapsed": "3m45s" }
+  }
+}

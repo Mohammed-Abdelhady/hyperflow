@@ -103,6 +103,8 @@ Rules:
 
 Write new entries in this form — it is the only one that carries tags, and without tags an entry can never be warm-tier injected on a tag match.
 
+> **Viewer mode (leaner entries).** When `viewer.enabled` is true, memory is emitted as the compact `memory` artefact — each entry is `{ title, task, decision, tags }` only (the verbose `What/Why/Evidence` prose is dropped to save tokens; the viewer renders the entries as a card gallery). `tags` stays **required**: without it the warm-tier tag-matched injection above cannot fire, so the leaner schema keeps exactly the field the tiering depends on. The markdown category files above remain the on-disk form the index parser reads; `render-artefact.py` reproduces them from the JSON. See [`artefact-data.md`](artefact-data.md).
+
 The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-slug)` heading that earlier runs emitted, so existing entries stay indexed and tiered. They just never match a tag.
 
 ### Examples

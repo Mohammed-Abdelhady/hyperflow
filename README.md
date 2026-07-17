@@ -173,6 +173,15 @@ Learnings live at `.hyperflow/memory/` — plain markdown, committed with your r
 - **Derived index** — `index.md` is rebuilt from the memory files at every session start, so a stored learning is
   never left unindexed and invisible. Writers append to the category file; nothing to register.
 
+## Visual artefacts (local viewer)
+
+Plans, specs, task graphs, audits, and memory don't have to be walls of markdown. With the viewer on (the default), each artefact-producing agent emits a **compact validated JSON payload** instead of hand-writing status tables, ASCII diagrams, and progress bars — and a self-contained local viewer renders it as **interactive graphs**.
+
+- **`hyperflow view [slug]`** — serves the viewer on `127.0.0.1` and opens the artefact (or a gallery of every template). Architecture and data-flow diagrams, batch execution graphs, and feature-phase graphs render as real node/edge canvases; decisions flip, sections reveal on scroll.
+- **Zero upload, works offline.** The renderer ships in the plugin and binds loopback only — **nothing leaves your machine**, no daemon, no API key, no external asset. Same privacy posture as memory.
+- **Saves tokens.** Agents stop writing presentation; the substance (decisions, briefs, acceptance criteria) still gets written. A ≤6-line greppable, git-diffable stub stays at each canonical path; `render-artefact.py <slug>` regenerates the full markdown on demand.
+- **Fully optional.** Prefer classic markdown? Set `viewer.enabled=false` in `config/defaults.json` (or `~/.hyperflow/config.json`) and every skill writes full markdown exactly as before. Config: `viewer.enabled` (default `true`), `viewer.port` (`7777`), `viewer.markdown` (`on-demand`/`always`/`never`), `viewer.autoOpen` (`false`).
+
 ## Guardrails
 
 Autonomy without the foot-guns — a hardened default config ships in the box (`config/defaults.json`):

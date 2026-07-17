@@ -409,6 +409,7 @@
     }
   ],
   "capabilities": [
+    "Local visual artefact viewer (opt-in, on by default): agents emit compact validated JSON per artefact instead of verbose markdown, and a self-contained viewer served on 127.0.0.1 renders it as interactive graphs — zero upload, works offline, disable with viewer.enabled=false for classic markdown",
     "Parallel worker dispatch (independent subtasks run simultaneously)",
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
     "Codex/OpenCode/Grok portable workflow adapter for big tasks",

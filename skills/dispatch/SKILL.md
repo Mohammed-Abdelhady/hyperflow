@@ -564,6 +564,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
+- [artefact-data.md](../hyperflow/artefact-data.md) — viewer-mode emit contract: when `viewer.enabled`, update the task/dispatch JSON status/progress via `scripts/artefact.py` (the stub is rewritten from it, never hand-edited); a handoff pickup rehydrates `artefact/artefacts/**` back into `.hyperflow/artefacts/`.
 - [worker-prompt.md](references/worker-prompt.md) — implementer/searcher/writer template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer template (per-sub-task fallback).
 - [reviewer-prompt-batched.md](../hyperflow/reviewer-prompt-batched.md) — batched reviewer template (P2).

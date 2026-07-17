@@ -21,8 +21,9 @@ is configurable via `handoff.packageDir` (default `.hyperflow-handoff`).
     ├── HANDOFF.md          # manifest written by the planning session
     ├── STATUS              # one word: planned | built | reviewed
     ├── artefact/           # COMMITTED COPY of the gitignored original
-    │   ├── tasks/<slug>.md          # flat single-phase task file
-    │   └── features/<slug>/…        # OR the whole multi-phase feature tree
+    │   ├── tasks/<slug>.md          # flat single-phase task file (stub in viewer mode)
+    │   ├── features/<slug>/…        # OR the whole multi-phase feature tree
+    │   └── artefacts/<type>/<slug>.json  # viewer mode: the compact JSON (the substance)
     ├── context/            # standalone snapshot so the build env needs no scaffold
     │   ├── conventions.md
     │   ├── profile.md
@@ -32,6 +33,7 @@ is configurable via `handoff.packageDir` (default `.hyperflow-handoff`).
 ```
 
 - `artefact/` mirrors the exact `.hyperflow/tasks|features/` shape — dispatch rehydrates by copying it back.
+- **Viewer mode:** the `tasks/<slug>.md` / feature files are slim stubs, so the artefact's substance is the JSON. `plan` also copies `.hyperflow/artefacts/**` into `artefact/artefacts/`, and dispatch's rehydration restores it to `.hyperflow/artefacts/` so the build reads it and `hyperflow view` works in the build session. Either session can visualize the plan without rehydrating via `hyperflow view --artefacts-dir <pkg>/artefact/artefacts` (see [artefact-data.md](artefact-data.md)). No new privacy exposure — the package already travels via the user's git remote. Classic mode carries the full markdown only, as before.
 - `context/` lets the second environment build without re-running `/hyperflow:scaffold`.
 - `STATUS` is a single grep-cheap token the session-start hook reads without parsing markdown.
 
@@ -152,7 +154,10 @@ On a handoff pickup, before dispatch Step 1:
    run, fall back to the package's `context/` copies.
 3. Copy `artefact/tasks/<slug>.md` → `.hyperflow/tasks/<slug>.md` (flat), or `artefact/features/<slug>/` →
    `.hyperflow/features/<slug>/` (feature), if not already present.
-4. Leave `STATUS=planned` until the build completes.
+4. **Viewer mode:** also copy `artefact/artefacts/**` → `.hyperflow/artefacts/` — in viewer mode the `.md` files
+   above are slim stubs, so this JSON is the actual plan content the build reads and `hyperflow view` renders. Skip
+   when the package carries no `artefact/artefacts/` (classic-mode package).
+5. Leave `STATUS=planned` until the build completes.
 
 ## Provider notes
 
