@@ -52,6 +52,29 @@
     return layer;
   }
 
+  // Barycenter crossing-minimization: reorder each layer's nodes (in place) by
+  // the average position of their predecessors, a couple of down-sweeps. Cuts
+  // edge crossings on graphs with more than a handful of nodes.
+  function orderLayers(byLayer, edges) {
+    const layers = [...byLayer.keys()].sort((a, b) => a - b);
+    const posInLayer = new Map();
+    const reindex = () => byLayer.forEach((g) => g.forEach((n, i) => posInLayer.set(n.id, i)));
+    reindex();
+    for (let sweep = 0; sweep < 2; sweep++) {
+      for (const L of layers) {
+        if (L === layers[0]) continue;
+        const group = byLayer.get(L);
+        const bary = new Map();
+        group.forEach((n, i) => {
+          const preds = edges.filter((e) => e.to === n.id).map((e) => posInLayer.get(e.from)).filter((v) => v != null);
+          bary.set(n.id, preds.length ? preds.reduce((a, b) => a + b, 0) / preds.length : i);
+        });
+        group.sort((a, b) => bary.get(a.id) - bary.get(b.id));
+        reindex();
+      }
+    }
+  }
+
   function layout(model) {
     const horizontal = model.dir !== "TB" && model.dir !== "BT";
     const layer = assignLayers(model.nodes, model.edges);
@@ -61,6 +84,7 @@
       (byLayer.get(L) || byLayer.set(L, []).get(L)).push(n);
     });
     const maxRows = Math.max(...[...byLayer.values()].map((a) => a.length));
+    orderLayers(byLayer, model.edges);
     const pos = new Map();
     for (const [L, group] of byLayer) {
       const span = group.length;

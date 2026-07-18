@@ -55,6 +55,14 @@ test("layout: positive canvas dimensions and positions for every node", () => {
   assert.ok(pos.get("C").x > pos.get("A").x);  // later layer is further right (LR)
 });
 
+test("layout: barycenter ordering reduces crossings", () => {
+  // A (left) -> D, B (right) -> C. Barycenter should reorder layer 1 to [D, C]
+  // so the edges don't cross (D lands left, under A).
+  const model = { dir: "TB", nodes: [{ id: "A" }, { id: "B" }, { id: "C" }, { id: "D" }], edges: [{ from: "A", to: "D" }, { from: "B", to: "C" }] };
+  const { pos } = core.layout(model);
+  assert.ok(pos.get("D").x < pos.get("C").x, "D should sit left of C after barycenter ordering");
+});
+
 test("edgePath: returns an SVG path", () => {
   const d = core.edgePath({ x: 0, y: 0 }, { x: 300, y: 0 }, true);
   assert.match(d, /^M[\d.]+,[\d.]+ C/);
