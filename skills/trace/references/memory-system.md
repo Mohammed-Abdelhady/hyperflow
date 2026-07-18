@@ -1,6 +1,6 @@
 # Project Memory System
 
-Advanced project-scoped memory replacing the global `~/.claude/hyperflow-memory.md` approach. All data lives inside the project root under `.hyperflow/memory/`.
+Advanced project-scoped memory replacing the legacy global memory file (`~/.claude/hyperflow-memory.md` path name kept for migration only). All live data lives inside the project root under `.hyperflow/memory/`. Protocols below are provider-neutral: hooks and scripts are host-agnostic; Writer/Reviewer steps use `spawn` or labelled inline phases per `skills/hyperflow/runtime-contract.md`.
 
 ## Storage Layout
 
@@ -41,7 +41,7 @@ Files in `.hyperflow/memory/` that have a defined producer, consumer, and inject
 |------|------|----------|----------|-------|
 | `learnings.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | General patterns and gotchas |
 | `decisions.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Architectural decisions |
-| `pitfalls.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Failed approaches |
+| `pitfalls.md` | hot/warm/cold (age-based) | orchestrator / trace Step 7 Writer | all workers (tag-matched) | Failed approaches — primary sink for trace |
 | `patterns.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Reusable code patterns |
 | `conventions.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Project-specific conventions |
 | `anti-patterns.md` | **hot — always injected** | audit Step 4d (anti-pattern curation Writer) | all workers, all sessions | See below |
@@ -51,7 +51,7 @@ Files in `.hyperflow/memory/` that have a defined producer, consumer, and inject
 
 Always loaded at session start alongside other hot-tier entries. Every worker prompt receives it regardless of task tags.
 
-- **Producer:** audit Step 4d dispatches a Writer that reads the existing file, extracts up to 3 new entries from `[Critical]` and `[Important]` findings, and appends or increments frequency counters. The Step 4d Reviewer validates dedup and frequency accuracy before the write lands.
+- **Producer:** audit Step 4d dispatches a Writer via `spawn` (or labelled inline Writer) that reads the existing file, extracts up to 3 new entries from `[Critical]` and `[Important]` findings, and appends or increments frequency counters. The Step 4d Reviewer validates dedup and frequency accuracy before the write lands — separate review, always.
 - **Consumer:** injected into every worker prompt under `## Known anti-patterns` at session start. Workers use it to avoid repeating mistakes that prior audits flagged.
 - **Format:**
   ```markdown
@@ -67,7 +67,7 @@ Always loaded at session start alongside other hot-tier entries. Every worker pr
 
 Not hot-tier. Only spec Step 4 reads and writes it. Injecting it into every worker prompt would be waste — workers don't make structural project decisions; they implement them.
 
-- **Producer:** spec Step 4 post-collection append — after the user answers the Smart Questions, the orchestrator scans answers for structural decisions (database choice, auth strategy, test framework, framework patterns, project-level defaults) and appends each one inline (no Agent dispatch; trivial per DOCTRINE §12.1).
+- **Producer:** spec Step 4 post-collection append — after the user answers structural questions (`structured_question` or Hyperflow Question chat fallback), the orchestrator scans answers for structural decisions (database choice, auth strategy, test framework, framework patterns, project-level defaults) and appends each one inline (no `spawn`; trivial per DOCTRINE §12.1).
 - **Consumer:** spec Step 4 pre-flight memoization check — before generating the question list, spec reads this file and skips any question whose answer is already recorded. If a cached answer conflicts with the current task's requirements, the question fires anyway, framed as "project-decisions.md says X — does this task change that?"
 - **Format:**
   ```markdown
@@ -76,6 +76,17 @@ Not hot-tier. Only spec Step 4 reads and writes it. Injecting it into every work
   ```
 - **Compaction:** same threshold policy as other memory files. Entries are structural and rarely go stale, so compaction is infrequent in practice.
 - **Scope:** only structural, project-wide decisions belong here. Task-specific answers (e.g., "use a modal for this feature") are excluded.
+
+### pitfalls.md (trace Step 7)
+
+Trace Step 7 dispatches a Writer to append one generalized pitfall after the root fix and regression test land. Entry must include:
+
+- The bug pattern (generalized, not project-only trivia)
+- Why existing tests missed it
+- Prevention strategy
+- Tags: exactly one type tag `pitfall` plus ≥1 domain tags (e.g. `auth`, `async`, `state`)
+
+Orchestrator (or integration Reviewer gate) confirms the entry before the chain hands off. Write via `edit` / project write tools; never invent file contents that were not appended. Separate Step 7 Reviewer covers cumulative fix + test + memory.
 
 ## Tag Taxonomy
 
@@ -103,6 +114,8 @@ Rules:
 
 Write new entries in this form — it is the only one that carries tags, and without tags an entry can never be warm-tier injected on a tag match.
 
+> **Viewer mode (leaner entries).** When `viewer.enabled` is true, memory is emitted as the compact `memory` artefact — each entry is `{ title, task, decision, tags }` only (the verbose `What/Why/Evidence` prose is dropped to save tokens; the viewer renders the entries as a card gallery). `tags` stays **required**: without it the warm-tier tag-matched injection above cannot fire, so the leaner schema keeps exactly the field the tiering depends on. The markdown category files above remain the on-disk form the index parser reads; `render-artefact.py` reproduces them from the JSON. See [`../../hyperflow/artefact-data.md`](../../hyperflow/artefact-data.md).
+
 The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-slug)` heading that earlier runs emitted, so existing entries stay indexed and tiered. They just never match a tag.
 
 ### Examples
@@ -118,10 +131,10 @@ The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-s
 **Why it matters:** Leads to runtime null-dereference errors that only appear in production data paths.
 **Evidence:** src/services/order.ts:88, commit a3f92c1.
 
-### [2026-05-02] Tailwind v4 uses CSS variable tokens, not tailwind.config  `[ui, dependency-quirk]`
-**What:** Color and spacing customizations live in CSS custom properties (`--color-*`), not `tailwind.config.js`.
-**Why it matters:** Any attempt to extend via config is silently ignored in v4.
-**Evidence:** tailwind.css:3-40.
+### [2026-05-02] Fixture TTL must track TOKEN_REFRESH_TTL  `[auth, pitfall]`
+**What:** Hardcoded refresh TTL in test fixtures drifts when the production constant changes.
+**Why it matters:** Suite passes locally on stale constants and fails after constant bumps.
+**Evidence:** test/auth/refresh.test.ts, src/auth/constants.ts.
 ```
 
 ## Hot / Warm / Cold Tiering
@@ -146,31 +159,31 @@ The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-s
 
 ## Read Protocol (Session Start)
 
-Steps 1–3 are automatic — `scripts/memory-index.py` runs from the session-start hook and injects their output. The orchestrator does not perform them.
+`scripts/memory-index.py` always rebuilds derived state at session start. Injection depends on mode.
 
-1. Rebuild `index.md` + `.checksums` from the category files; the index arrives in context under `## Project Memory Index`.
-2. Inject all **hot** entries in full (≤ 7 days) under `## Project memory — hot entries`.
-3. Inject `anti-patterns.md` in full — always, regardless of age or tags. It is permanently hot-tier (see Registered Memory Files above).
+1. Rebuild `index.md` + `.checksums` from the category files in every mode.
+2. In default/thorough mode, inject the index, hot entries, and `anti-patterns.md` as before.
+3. In lean mode (the default), inject only paths to `index.md` and `session-context.md`; infer task tags, then read matching hot/warm entries and anti-patterns on demand.
 
 The orchestrator performs the rest:
 
-4. Infer tags from the current task description. Read **warm** entries whose tags overlap — the index names the file each entry lives in.
+4. Infer tags from the current task description. Read **hot and warm** entries whose tags overlap — the index names the source file.
 5. Skip **cold** entries unless the user explicitly requests them (`hyperflow: memory show <tag>`).
-6. Inject the loaded entries into worker prompts under `## Learnings from prior sessions`. Inject `anti-patterns.md` under a separate `## Known anti-patterns` header.
+6. Inject only the loaded entries into worker prompts. Load relevant anti-pattern entries under a separate header; do not inject the whole file in lean mode.
 
 Workers receive only the subset matching their task's inferred tags — never the full dump.
 
 ## Write Protocol (After Each Batch)
 
-1. Orchestrator reviews worker outputs for candidate learnings.
+1. Orchestrator reviews worker outputs for candidate learnings (trace Step 7 always candidates a pitfall when a root fix lands).
 2. Apply the test: "Would a worker on this project benefit from knowing this in 2 weeks?"
 3. Discard ephemeral learnings (task-specific facts that won't recur).
 4. Deduplicate against existing entries: if the same fact already exists (semantic match, not exact string), skip or update rather than append.
-5. Append to the appropriate file using the entry format above.
+5. Append to the appropriate file using the entry format above (via `edit` / write tools).
 
 There is no index step — `index.md` and `.checksums` are derived at the next session start (see Derived State above). Appending to the category file is the whole write.
 
-Write only from the orchestrator — never delegate memory writes to workers.
+Write only from the orchestrator (or a Writer brief the orchestrator owns) — never let an unreviewed worker patch memory as a side effect of a code fix.
 
 ## Compression Protocol
 
@@ -202,14 +215,14 @@ Run at session start, after tiering is computed.
 
 Workers receive only the memory subset relevant to their task:
 
-1. Orchestrator infers tags from the worker's task description (e.g., "implement login flow" → `auth`, `api`, `state`).
+1. Orchestrator infers tags from the worker's task description (e.g., "debug login refresh" → `auth`, `api`, `state`).
 2. Filter loaded entries to those sharing at least one tag.
 3. Inject filtered entries under `## Learnings from prior sessions` in the worker prompt.
 4. Never inject the full memory dump into any worker prompt.
 
 ## Migration from Legacy
 
-On first session start in a project that has no `.hyperflow/memory/` but has `~/.claude/hyperflow-memory.md`:
+On first session start in a project that has no `.hyperflow/memory/` but has the legacy global file at `~/.claude/hyperflow-memory.md`:
 
 1. Parse the legacy file for entries belonging to the current project path.
 2. Map each bullet point to a `learnings.md` entry, tagging as `pattern` + best-guess domain.
@@ -222,7 +235,7 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 | Command | Effect |
 |---------|--------|
 | `hyperflow: memory off` | Disable memory reads and writes for the current session |
-| `hyperflow: memory clear` | Wipe `.hyperflow/memory/` — prompts for confirmation first |
+| `hyperflow: memory clear` | Wipe `.hyperflow/memory/` — requires confirmation via `structured_question` (or Hyperflow Question chat fallback); stop if unanswered |
 | `hyperflow: memory show <tag>` | List all entries (including cold) matching the tag |
 | `hyperflow: memory show all` | Dump full index |
 
@@ -232,6 +245,7 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 - No code snippets in memory entries — patterns and facts only.
 - Memory writes never block task execution. If a write fails, log and continue.
 - Users may edit any category file directly — it is plain markdown. `index.md` and `.checksums` are derived and get overwritten.
+- No AI attribution in memory entries or commit messages around them.
 
 ## Compaction Protocol
 
@@ -249,4 +263,4 @@ The Date/tag parser accepts BOTH `[domain, type]` (new) and `` `[domain, type]` 
 
 Idempotency is guaranteed by source-side stub-line match and archive-side header match (both check date + title + tags). Re-running `/hyperflow:cache compact` on a fully compacted file produces no new writes.
 
-See `skills/cache/references/compaction.md` for the full protocol (Compaction Writer dispatch, Dedup Reviewer reuse, Archive-sidecar writer details).
+See `skills/cache/references/compaction.md` for the full protocol (Compaction Writer dispatch via `spawn` or inline, Dedup Reviewer reuse, Archive-sidecar writer details).

@@ -2,6 +2,8 @@
 
 End-of-chain contract for opening a GitHub pull request after a build. Owned by `/hyperflow:dispatch`. Full detail lives here so `SKILL.md` stays lean.
 
+Semantic host ops (see `skills/hyperflow/runtime-contract.md`): `structured_question` for gates, `shell` for git/gh, `edit` for media paths and body files. External writes remain **explicitly gated** — never open, comment, or push on a silent default.
+
 ## When the PR question fires
 
 | `pr=` value | Behaviour |
@@ -15,7 +17,7 @@ Issue chains (`gh_issue=<n>`) still use the same gate. They only **add**:
 - `Closes #<n>` in the PR body  
 - optional courtesy comment on the issue (`comment=ask|never`)
 
-Unauthenticated `gh` → do not open; print `gh auth login` + full `gh pr create` recovery. Never half-post. Never force-push. Never push to `main`/`master` directly — feature branch only.
+Unauthenticated `gh` (via `shell`) → do not open; print `gh auth login` + full `gh pr create` recovery. Never half-post. Never force-push. Never push to `main`/`master` directly — feature branch only.
 
 ## Visual-required detection
 
@@ -37,17 +39,17 @@ Run **before** `gh pr create`, after the user said Yes (or `pr=auto`).
 
 ### 1. Try auto-capture (best effort, short timeout)
 
-1. Prefer a project script if `.hyperflow/testing.md` or `package.json` documents one (`screenshot`, `capture`, Maestro/Detox).
-2. Web: if Playwright CLI or MCP is available and a local/staging base URL is known (README, `.env.example` `PORT`, common `localhost:3000`), capture the primary changed route.
+1. Prefer a project script if `.hyperflow/testing.md` or `package.json` documents one (`screenshot`, `capture`, Maestro/Detox) — run via `shell`.
+2. Web: if Playwright CLI or a host capture tool is available and a local/staging base URL is known (README, `.env.example` `PORT`, common `localhost:3000`), capture the primary changed route.
 3. Mobile: only if a project screenshot/Maestro/Detox path exists; otherwise go to user-supply.
-4. On success: write files under `docs/pr-media/<slug>/` (e.g. `after.png`), commit `chore(pr-media): <slug>`, include in the branch push.
+4. On success: write files under `docs/pr-media/<slug>/` (e.g. `after.png`) via `edit` / project write tools, commit with `shell` as `chore(pr-media): <slug>`, include in the branch push.
 
 ### 2. User-supply fallback (mandatory if capture fails)
 
-Fire a **second** `AskUserQuestion` (not crammed into the audit/deploy/PR triple):
+Fire a **second** `structured_question` (not crammed into the audit/deploy/PR triple):
 
 - Options: provide path(s) / cancel PR  
-- Or free-form path list via chat on portable surfaces  
+- When structured UI is missing: exact **Hyperflow Question** chat block from the runtime contract, end the turn, resume on the next user answer — never skip, never invent paths  
 
 Copy validated image files into `docs/pr-media/<slug>/`, commit, push.
 
@@ -63,7 +65,9 @@ Minimum: **≥1** image. Before/after preferred when both exist; not required fo
 
 ## PR create steps
 
-1. Resolve default base branch: `main`, else `master`, else remote default (`gh repo view --json defaultBranchRef`).
+All git/gh steps use the `shell` op inside the security blocklist. Never force-push; never push to `main`/`master`.
+
+1. Resolve default base branch: `main`, else `master`, else remote default (`gh repo view --json defaultBranchRef` when `gh` is authenticated).
 2. `git push -u origin <feature-branch>` (never force, never to main/master).
 3. Build body from the template below (include Screenshots section iff visual-required).
 4. Image markdown URLs after push:
@@ -100,7 +104,7 @@ Omit `## Issue` when `gh_issue` is absent.
 
 ## Gate UI (Step 5)
 
-When `pr=ask`, question [3] in the combined audit/deploy gate:
+When `pr=ask`, question [3] in the combined audit/deploy gate uses `structured_question` (or the Hyperflow Question chat fallback):
 
 ```
 [3] Open a pull request for this chain?
@@ -110,8 +114,18 @@ When `pr=ask`, question [3] in the combined audit/deploy gate:
 
 Binary action gate — no `(Recommended)` marker. Combined call still ≤ 4 questions.
 
+### Declined / skipped
+
+| Outcome | Required behaviour |
+|---|---|
+| User answers **No** | No push for PR, no `gh pr create`, no issue comment. Print ready-to-run `gh pr create` only. |
+| `pr=never` | Same as No for external writes; print the command in wrap-up. |
+| Visual-required + no media | PR path **blocked** until ≥1 image lands under `docs/pr-media/<slug>/`. |
+| `comment=never` or comment declined | Do not post on the issue even if a PR opens. |
+
 ## Evidence
 
 On PR opened: Next may include `PR #<n> · <url>`.  
 On blocked media: Risks / Next note the block.  
-On skipped (`pr=never` or user No): print the ready command only.
+On skipped (`pr=never` or user No): print the ready command only.  
+Never invent PR numbers, URLs, or media paths when the create step did not run.
