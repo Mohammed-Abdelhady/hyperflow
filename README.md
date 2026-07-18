@@ -213,7 +213,7 @@ Shipped defaults in `config/defaults.json`:
 
 ---
 
-## Skills (18)
+## Skills (Eighteen skills · 18)
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
