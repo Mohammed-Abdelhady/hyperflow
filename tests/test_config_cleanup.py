@@ -35,6 +35,7 @@ CLEANUP_KEYS = (
     "usageRetentionDays",
     "logMaxLines",
     "dryRun",
+    "dropOrphanRefs",
 )
 
 FULL_CLEANUP = {
@@ -45,6 +46,7 @@ FULL_CLEANUP = {
     "usageRetentionDays": 30,
     "logMaxLines": 2000,
     "dryRun": False,
+    "dropOrphanRefs": False,
 }
 
 
@@ -153,6 +155,7 @@ class CleanupSchemaStructureTests(unittest.TestCase):
             "usageRetentionDays": ("integer", 30, 1),
             "logMaxLines": ("integer", 2000, 100),
             "dryRun": ("boolean", False, None),
+            "dropOrphanRefs": ("boolean", False, None),
         }
         self.assertEqual(tuple(self.props), CLEANUP_KEYS)
         for key, (typ, default, minimum) in expected.items():

@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,9 @@ DEFAULTS: dict[str, Any] = {
     "usageRetentionDays": 30,
     "logMaxLines": 2000,
     "dryRun": False,
+    # Opt-in: quarantine durable memory entries whose Evidence no longer resolves.
+    # Default false → an auto-reap never removes a durable entry (memory-system.md:188).
+    "dropOrphanRefs": False,
 }
 
 MEMORY_COMPACTION_DEFAULT = 300
@@ -55,6 +59,8 @@ STATUS_LINE_RE = re.compile(
 )
 EVIDENCE_RE = re.compile(r"^\*\*Evidence:\*\*\s*(.+?)\s*$", re.MULTILINE | re.IGNORECASE)
 HEADING_RE = re.compile(r"^(#{2,3})\s+")
+# Leading entry date `### [YYYY-MM-DD] …` → monthly quarantine bucket.
+ENTRY_DATE_RE = re.compile(r"^#{2,3}\s+\[(\d{4})-(\d{2})-\d{2}\]")
 # Path-like evidence (skip bare commit SHAs).
 PATHISH_RE = re.compile(
     r"(?P<path>(?:~|/|\./|\.\./)?[\w./@+-]+\.[A-Za-z0-9]{1,12})(?::\d+(?:-\d+)?)?"
@@ -582,27 +588,78 @@ def reap_commits_queue(
         report["skipped"].append({"path": rel, "reason": "rmtree-failed"})
 
 
-def _resolve_evidence_path(project_root: Path, raw: str) -> Path | None:
-    """Map an Evidence string to a filesystem path, or None if not path-like."""
+def _resolve_evidence_paths(project_root: Path, hf: Path, raw: str) -> list[Path]:
+    """Map an Evidence token to candidate filesystem paths ([] if not path-like).
+
+    A relative token is resolved against BOTH the project root (``hf.parent``) and
+    the ``.hyperflow`` root itself, so a `.hyperflow`-relative citation (e.g.
+    ``memory/x.md`` or ``tasks/foo.md``) is not read as a false orphan. Absolute
+    tokens resolve to themselves. An entry survives if ANY candidate exists.
+    """
     token = raw.strip().split(",")[0].strip()
     # Drop trailing "commit …" already handled by split.
     if COMMIT_ONLY_RE.fullmatch(token):
-        return None
+        return []
     m = PATHISH_RE.search(token)
     if not m:
         # Bare relative path without extension? still try if it looks like a path.
         if "/" in token or token.startswith("."):
             candidate = token.split(":")[0].strip()
         else:
-            return None
+            return []
     else:
         candidate = m.group("path")
     if candidate.startswith("~"):
         candidate = os.path.expanduser(candidate)
     p = Path(candidate)
-    if not p.is_absolute():
-        p = project_root / p
-    return p
+    if p.is_absolute():
+        return [p]
+    return [project_root / p, hf / p]
+
+
+def _evidence_present(
+    project_root: Path,
+    hf: Path,
+    raw: str,
+    *,
+    archived_rels: frozenset[str],
+) -> bool | None:
+    """Whether an Evidence token still resolves. None when it is not path-like.
+
+    Present when any candidate exists, when the (hf-relative) target was just
+    archived this run (still cited at its pre-move location), or when a same-named
+    artefact lives under ``hf/archive/**`` (archived ≠ deleted). Errs toward
+    "present" so durable knowledge is never lost on a coincidence.
+    """
+    candidates = _resolve_evidence_paths(project_root, hf, raw)
+    if not candidates:
+        return None
+    if any(p.exists() for p in candidates):
+        return True
+    hf_r = hf.resolve()
+    for p in candidates:
+        try:
+            rel = p.resolve().relative_to(hf_r)
+        except (ValueError, OSError):
+            continue
+        if str(rel).replace("\\", "/") in archived_rels:
+            return True
+    return _relocated_under_archive(hf, candidates)
+
+
+def _relocated_under_archive(hf: Path, candidates: list[Path]) -> bool:
+    """True when a candidate's basename now lives somewhere under ``hf/archive``."""
+    archive = hf / "archive"
+    if not archive.is_dir():
+        return False
+    names = {p.name for p in candidates if p.name}
+    try:
+        for found in archive.rglob("*"):
+            if found.name in names and found.is_file():
+                return True
+    except Exception:
+        return False
+    return False
 
 
 def _split_memory_entries(text: str) -> tuple[str, list[str]]:
@@ -631,16 +688,65 @@ def _split_memory_entries(text: str) -> tuple[str, list[str]]:
     return "".join(preamble), ["".join(e) for e in entries]
 
 
+def _entry_month(chunk: str) -> str:
+    """Monthly bucket (YYYY-MM) from the entry's own date header, else current UTC."""
+    m = ENTRY_DATE_RE.search(chunk)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}"
+    return datetime.now(timezone.utc).strftime("%Y-%m")
+
+
+def _quarantine_entries(memory: Path, chunks: list[str]) -> bool:
+    """Append dropped entries to memory/archive/YYYY-MM.md (shared monthly sidecar).
+
+    Grouped by each entry's own date, append-only — matches the compaction archive
+    convention (skills/cache/references/compaction.md). Returns False on any I/O
+    failure so the caller leaves the category file untouched (never lose the entry).
+    """
+    archive_dir = memory / "archive"
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        return False
+    for chunk in chunks:
+        sidecar = archive_dir / f"{_entry_month(chunk)}.md"
+        block = chunk if chunk.endswith("\n") else chunk + "\n"
+        try:
+            existed = sidecar.exists() and sidecar.stat().st_size > 0
+            with sidecar.open("a", encoding="utf-8") as fh:
+                if existed:
+                    fh.write("\n")
+                fh.write(block)
+        except Exception:
+            return False
+    return True
+
+
 def drop_orphaned_memory_refs(
     hf: Path,
     *,
     dry_run: bool,
+    enabled: bool = False,
+    archived_rels: frozenset[str] | None = None,
 ) -> int:
-    """Drop memory entries whose Evidence path no longer exists. Returns count."""
+    """Optionally quarantine memory entries whose Evidence no longer resolves.
+
+    Default (``enabled=False``) is non-destructive: an auto-reap NEVER removes a
+    durable entry — the caller still rebuilds the index and flags oversized files.
+    When enabled (``cleanup.dropOrphanRefs``), an entry survives if ANY path-like
+    Evidence token still resolves (checked against both the project root and the
+    ``.hyperflow`` root, counting just-archived and archived targets as present).
+    A dropped entry is quarantined to ``memory/archive/YYYY-MM.md`` BEFORE the
+    category file is rewritten; if that write fails the category file is left
+    unchanged. Returns the number of quarantined entries (0 when disabled).
+    """
+    if not enabled:
+        return 0
     memory = hf / "memory"
     if not memory.is_dir() or not is_under(hf, memory):
         return 0
     project_root = hf.parent
+    excluded = archived_rels or frozenset()
     durable = [
         p
         for p in memory.glob("*.md")
@@ -658,33 +764,39 @@ def drop_orphaned_memory_refs(
         if not entries:
             continue
         kept: list[str] = []
-        file_dropped = 0
+        orphaned: list[str] = []
         for chunk in entries:
             m = EVIDENCE_RE.search(chunk)
             if not m:
                 kept.append(chunk)
                 continue
-            evidence_raw = m.group(1)
-            targets: list[Path] = []
-            for part in re.split(r"[,;]", evidence_raw):
+            present = False
+            had_pathish = False
+            for part in re.split(r"[,;]", m.group(1)):
                 part = part.strip()
                 if not part or part.lower().startswith("commit "):
                     continue
-                resolved = _resolve_evidence_path(project_root, part)
-                if resolved is not None:
-                    targets.append(resolved)
-            if not targets:
+                result = _evidence_present(
+                    project_root, hf, part, archived_rels=excluded
+                )
+                if result is None:
+                    continue
+                had_pathish = True
+                if result:
+                    present = True
+                    break
+            # Survive unless every path-like Evidence target is missing.
+            if present or not had_pathish:
                 kept.append(chunk)
-                continue
-            # Orphan when every path-like evidence target is missing.
-            if any(t.exists() for t in targets):
-                kept.append(chunk)
-                continue
-            file_dropped += 1
-        if file_dropped == 0:
+            else:
+                orphaned.append(chunk)
+        if not orphaned:
             continue
-        dropped += file_dropped
         if dry_run:
+            dropped += len(orphaned)
+            continue
+        # Archive-first: quarantine before rewriting so a failed write loses nothing.
+        if not _quarantine_entries(memory, orphaned):
             continue
         new_text = preamble + "".join(kept)
         if not new_text.strip():
@@ -692,7 +804,8 @@ def drop_orphaned_memory_refs(
         try:
             path.write_text(new_text, encoding="utf-8")
         except Exception:
-            dropped -= file_dropped
+            continue  # category untouched; quarantine already holds the copy
+        dropped += len(orphaned)
     return dropped
 
 
@@ -783,9 +896,23 @@ def reap(
     reap_commits_queue(hf, dry_run=effective_dry, report=report)
 
     # ── Memory class (never delete durable category files) ───────────────────
-    orphans = drop_orphaned_memory_refs(hf, dry_run=effective_dry)
+    # Entry-dropping is opt-in (cleanup.dropOrphanRefs); default reap quarantines
+    # nothing. Exclude this slug's just-archived source paths from the missing-check
+    # so a freshly-moved artefact is not read as an orphan (archive ≠ delete) —
+    # cleaner than reordering the archive/memory phases.
+    archived_rels = frozenset(
+        e["path"]
+        for e in report["archived"]
+        if isinstance(e, dict) and isinstance(e.get("path"), str)
+    )
+    orphans = drop_orphaned_memory_refs(
+        hf,
+        dry_run=effective_dry,
+        enabled=bool(cfg.get("dropOrphanRefs", False)),
+        archived_rels=archived_rels,
+    )
     report["memory"]["orphansDropped"] = orphans
-    # Rebuild index after orphan drops so the derived table matches.
+    # Safe optimizations always run: rebuild index so the derived table matches.
     rebuilt = rebuild_memory_index(hf, dry_run=effective_dry)
     report["memory"]["indexRebuilt"] = rebuilt
     report["memory"]["compacted"] = flag_oversized_memory(

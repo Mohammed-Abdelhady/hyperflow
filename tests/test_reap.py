@@ -17,6 +17,7 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "reap.py"
@@ -77,6 +78,15 @@ class FixtureBase(unittest.TestCase):
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+        # Isolate HOME so config-dependent subprocesses (archive-artefacts.py,
+        # memory-index.py) fall back to DEFAULTS deterministically.
+        home = self.root / "_home"
+        home.mkdir(parents=True, exist_ok=True)
+        env_patch = patch.dict(
+            os.environ, {"HOME": str(home), "USERPROFILE": str(home)}
+        )
+        env_patch.start()
+        self.addCleanup(env_patch.stop)
         self.hf = self.root / ".hyperflow"
         for sub in (
             "tasks",
@@ -311,32 +321,72 @@ class IdempotencyTests(FixtureBase):
 
 
 class OrphanMemoryTests(FixtureBase):
-    def test_orphaned_evidence_dropped_valid_kept(self) -> None:
-        slug = self._write_completed("mem-orph")
+    """Three durable entries: (1) `.hyperflow`-relative Evidence, (2) cites the
+    slug's just-archived task file, (3) genuinely dead source. Default reap must
+    keep all three; `dropOrphanRefs=true` must quarantine only (3)."""
+
+    def _write_three_entries(self, slug: str) -> Path:
+        # Existing .hyperflow-relative target for entry (1).
+        (self.hf / "memory" / "decisions.md").write_text(
+            "# Decisions\n\n- keep this alive\n", encoding="utf-8"
+        )
         learnings = self.hf / "memory" / "learnings.md"
         learnings.write_text(
             "# Learnings\n\n"
-            "### [2026-01-01] Valid entry  `[ok]`\n"
-            "**What:** still true\n"
-            "**Why it matters:** keep\n"
-            "**Evidence:** README.md:1\n\n"
-            "### [2026-01-02] Orphan entry  `[gone]`\n"
-            "**What:** was about a deleted file\n"
-            "**Why it matters:** should go\n"
-            "**Evidence:** does-not-exist-anywhere.ts:42\n",
+            "### [2026-01-01] HF-relative evidence  `[keep]`\n"
+            "**What:** cites a .hyperflow-relative path\n"
+            "**Why it matters:** must not false-orphan\n"
+            "**Evidence:** memory/decisions.md:1\n\n"
+            "### [2026-01-02] Just-archived artefact  `[keep]`\n"
+            "**What:** cites the slug's task file reap archives this run\n"
+            "**Why it matters:** archive is not delete\n"
+            f"**Evidence:** tasks/{slug}.md\n\n"
+            "### [2026-01-03] Dead source  `[gone]`\n"
+            "**What:** cites a file that never existed\n"
+            "**Why it matters:** genuinely orphaned\n"
+            "**Evidence:** src/gone-forever.ts:99\n",
             encoding="utf-8",
         )
-        (self.root / "README.md").write_text("# root\n", encoding="utf-8")
+        return learnings
+
+    def test_default_reap_drops_zero_entries(self) -> None:
+        slug = self._write_completed("mem-def")
+        learnings = self._write_three_entries(slug)
 
         report = reap_mod.reap(self.hf, slug, cfg=dict(reap_mod.DEFAULTS))
-        self.assertGreaterEqual(report["memory"]["orphansDropped"], 1)
+
+        self.assertEqual(report["memory"]["orphansDropped"], 0)
         text = learnings.read_text(encoding="utf-8")
-        self.assertIn("Valid entry", text)
-        self.assertIn("still true", text)
-        self.assertNotIn("Orphan entry", text)
-        self.assertNotIn("does-not-exist-anywhere.ts", text)
-        # Category file itself never deleted
+        self.assertIn("HF-relative evidence", text)
+        self.assertIn("Just-archived artefact", text)
+        self.assertIn("Dead source", text)
+        # No quarantine sidecar written on a default (non-destructive) reap.
+        self.assertFalse((self.hf / "memory" / "archive").exists())
+
+    def test_enabled_quarantines_only_dead_source(self) -> None:
+        slug = self._write_completed("mem-en")
+        learnings = self._write_three_entries(slug)
+
+        cfg = dict(reap_mod.DEFAULTS)
+        cfg["dropOrphanRefs"] = True
+        report = reap_mod.reap(self.hf, slug, cfg=cfg)
+
+        self.assertEqual(report["memory"]["orphansDropped"], 1)
+        text = learnings.read_text(encoding="utf-8")
+        # Survivors: .hyperflow-relative + just-archived artefact.
+        self.assertIn("HF-relative evidence", text)
+        self.assertIn("Just-archived artefact", text)
+        # Dead-source entry removed from the category file...
+        self.assertNotIn("Dead source", text)
+        self.assertNotIn("src/gone-forever.ts", text)
+        # Category file itself never deleted.
         self.assertTrue(learnings.is_file())
+        # ...and quarantined (not hard-deleted) to the monthly sidecar.
+        sidecar = self.hf / "memory" / "archive" / "2026-01.md"
+        self.assertTrue(sidecar.is_file())
+        archived = sidecar.read_text(encoding="utf-8")
+        self.assertIn("Dead source", archived)
+        self.assertIn("src/gone-forever.ts:99", archived)
 
 
 class SlugSafetyTests(FixtureBase):
