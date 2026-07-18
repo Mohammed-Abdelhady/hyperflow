@@ -17,6 +17,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document the full `cleanup.*` block and reap lifecycle in orchestration docs
 - Lifecycle wrap-up disposes finished artefact scopes via `scripts/reap.py` instead of ad-hoc task-file deletes
 
+## [5.15.0] — 2026-07-18
+
+### Added
+- Require Codex certification before tagging
+- Machine-readable automatic network and write contract
+- Complete runtime-contract wiring for entry skills
+- Wire portable runtime-contract into skill bodies
+- Render specialist charters for Codex
+- Make Codex lifecycle and AGENTS updates safe
+- Define portable workflow operations
+- Enforce Codex plugin contracts
+- Add provider capability resolution
+- Auto-scaffold on first use, elevate permissions setup, gh auth preflight
+- Add reference-drift detector (advisory; distinguishes drift from tailored subsets)
+- Self-contained read-only artefact export (zero upload, offline)
+- Artefact index route + searchable home screen (real artefacts)
+- Telemetry/ROI dashboard — stat tiles + sparkline usage view
+- Add usage-aggregate.py cross-chain ledger rollup
+- Wire onNode->brief, measured edge anchors, viewer.markdown=always; drop dead tokens.json
+- Accessibility — skip-link, scoped live region, graph roles, flip state, route focus
+- Live dispatch progress via poll+re-render, stops at terminal
+- Reproduce artefact-format.md faithfully (status metrics, diagram, cost, briefs)
+- Widen payload contract (cost/progress/briefs) + add usage type
+
+### Fixed
+- Clear shellcheck SC2120 and tighten Codex claim honesty
+- Harden cert evidence, transcript reads, and audit-fix docs
+- Read Codex aliases from hook-runtime after launcher split
+- Align TYPES with artefact_lib (include usage)
+- HTML-escape artefact title in export to prevent XSS
+- Keyboard-activate graph nodes, usage view coherence, poll leak guard + SR announce
+
+### Changed
+- Sync certified support surfaces
+- Gate Codex claims on certification
+- Publish certified support and privacy matrix
+- Separate App and app-server certification
+- Add CLI workflow conformance
+- Add isolated plugin lifecycle conformance
+- Enforce shared-reference portability
+- Migrate shared workflow references
+- Migrate shared orchestration prompts
+- Normalize PR and diagnosis references
+- Normalize execution references
+- Normalize cache deploy scaffold references
+- Normalize shared runtime references
+- Normalize canonical orchestration references
+- Normalize provider lifecycle handling
+- Freeze existing provider behavior
+- Rewrite product story around memory, rules, and templates
+- Split rarely-loaded detail out of DOCTRINE.md
+- Proof link to real reviewed PRs + prepared official-registry submission checklist
+- Unify landing hero to the issue→PR line + add visual-artefacts viewer section
+- Barycenter crossing-minimization + drag-to-pan for large graphs
+- Extract graph-core.js + node unit tests for parser/layout
+- Cover migrate-cache version ordering, no-op, migration, idempotency, no-clobber
+- Cover archive-artefacts promotion, dedup idempotency, prune
+
 ## [5.14.0] — 2026-07-17
 
 ### Added
@@ -1269,7 +1327,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.15.0...HEAD
+[5.15.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...v5.15.0
 [5.14.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.13.0...v5.14.0
 [5.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.12.0...v5.13.0
 [5.12.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.11.0...v5.12.0

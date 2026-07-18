@@ -12,11 +12,11 @@
   Point it at a GitHub issue and get a reviewed PR when that is the job. More broadly, Hyperflow is how the agent
   <em>learns your repo across sessions</em>, follows a fixed doctrine (not vibes), reuses task templates, and keeps
   Worker outputs under specialist review.<br/>
-  Claude Code, Codex, OpenCode, Grok, Antigravity, and Cursor. Your session model. Zero extra API keys.
+  Claude Code, Codex CLI (preview), OpenCode, Grok, Antigravity, and Cursor. Your session model. Zero extra API keys.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v5.14.0-blueviolet?style=flat-square" alt="version v5.14.0" />
+  <img src="https://img.shields.io/badge/version-v5.15.0-blueviolet?style=flat-square" alt="version v5.15.0" />
   &nbsp;
   <img src="https://img.shields.io/github/actions/workflow/status/Mohammed-Abdelhady/hyperflow/plugin-validation.yml?style=flat-square&label=validation" alt="plugin validation status" />
   &nbsp;
@@ -24,7 +24,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Claude%20marketplace-published-22C55E?style=flat-square" alt="Published on the official Claude plugin marketplace" />
   &nbsp;
-  <img src="https://img.shields.io/badge/works%20with-Codex%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Grok%20%7C%20Antigravity%20%7C%20Cursor-2EA39F?style=flat-square" alt="works with Codex, Claude Code, OpenCode, Grok, Antigravity, and Cursor" />
+  <img src="https://img.shields.io/badge/works%20with-Codex%20CLI%20(preview)%20%7C%20Claude%20Code%20%7C%20OpenCode%20%7C%20Grok%20%7C%20Antigravity%20%7C%20Cursor-2EA39F?style=flat-square" alt="works with Codex CLI (preview), Claude Code, OpenCode, Grok, Antigravity, and Cursor" />
 </p>
 
 <p align="center">
