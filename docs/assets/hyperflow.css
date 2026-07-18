@@ -1094,3 +1094,8 @@ footer {
   border: 1px solid var(--border, #334155);
   box-shadow: 0 24px 60px -30px rgba(0, 0, 0, .6);
 }
+
+/* Proof note under the issue→PR transcript */
+.proof-note { margin: 1.25rem 0 0; font-size: .9rem; color: var(--muted, #94A3B8); }
+.proof-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.proof-note a:hover { color: var(--fg, #F8FAFC); }
