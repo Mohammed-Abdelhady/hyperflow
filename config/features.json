@@ -192,6 +192,13 @@
       "chain": "standalone"
     },
     {
+      "name": "reap",
+      "command": "/hyperflow:reap",
+      "tagline": "Post-completion cleanup",
+      "purpose": "Archive a finished task's artefact scope, delete ephemeral leftovers, optimise durable memory \u2014 never source code; also the lifecycle phase at dispatch/deploy/handoff termini",
+      "chain": "standalone"
+    },
+    {
       "name": "hyperflow",
       "command": "/hyperflow:hyperflow",
       "tagline": "Single-agent adapter",

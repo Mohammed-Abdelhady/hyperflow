@@ -52,6 +52,7 @@ REQUIRED_CODEX_ALIAS_TARGETS = frozenset(
         "sticky",
         "bridge",
         "flush",
+        "reap",
         "handoff",
         "background",
         "scaffold",

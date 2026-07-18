@@ -47,6 +47,7 @@
       "sticky",
       "bridge",
       "flush",
+      "reap",
       "hyperflow"
     ],
     "interface": {

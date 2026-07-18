@@ -387,6 +387,7 @@
             "/hyperflow:sticky": "sticky",
             "/hyperflow:bridge": "bridge",
             "/hyperflow:flush": "flush",
+            "/hyperflow:reap": "reap",
             "/hyperflow:background": "background",
             "/hyperflow:scaffold": "scaffold"
           }
@@ -490,6 +491,7 @@
             "issue",
             "plan",
             "pr",
+            "reap",
             "scaffold",
             "status",
             "sticky",

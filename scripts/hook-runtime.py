@@ -803,6 +803,7 @@ Codex loads Hyperflow as plugin skills, not as native Claude-style slash command
 | `/hyperflow:sticky`, `hyperflow sticky` | `sticky` |
 | `/hyperflow:bridge`, `hyperflow bridge` | `bridge` |
 | `/hyperflow:flush`, `hyperflow flush` | `flush` |
+| `/hyperflow:reap`, `hyperflow reap` | `reap` |
 | `/hyperflow:handoff`, `hyperflow handoff` | `handoff` |
 | `/hyperflow:background`, `hyperflow background` | `background` |
 | `/hyperflow:scaffold`, `hyperflow scaffold` | `scaffold` |

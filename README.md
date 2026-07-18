@@ -188,7 +188,7 @@ No always-on daemon. Skills run in your terminal on the current session model.
 | `workflow` | Big-task / migration lane (native or portable adapter) |
 | `audit` / `pr` | Review gates (L1–L5); PR reviews real code |
 | `deploy` | Pre-push gates; push only with explicit yes |
-| `cache` / `handoff` / `status` / `scaffold` / `sticky` / `bridge` | Memory, two-session packages, snapshot, setup, routing mode, portable doctrine |
+| `cache` / `handoff` / `status` / `scaffold` / `sticky` / `bridge` / `flush` / `reap` / `background` | Memory, two-session packages, snapshot, setup, routing mode, portable doctrine, deferred-commit flush, post-completion cleanup, background agents |
 
 **Paths:** clear reversible 1–2 ordinary-file work can take **inline-fast** (0 dispatched agents, foreground diff review). Everything else uses Worker → Reviewer. Flow profiles (`fast` … `scientific`) hard-cap tokens (10k–200k).
 
@@ -216,7 +216,7 @@ Shipped defaults in `config/defaults.json`:
 
 ---
 
-## Skills (Eighteen skills · 18)
+## Skills (Nineteen skills · 19)
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
@@ -237,6 +237,7 @@ Shipped defaults in `config/defaults.json`:
 | `sticky` | `/hyperflow:sticky` | Auto-routing mode |
 | `bridge` | `/hyperflow:bridge` | Embed portable doctrine into `CLAUDE.md` |
 | `flush` | `/hyperflow:flush` | Flush deferred-commit queue |
+| `reap` | `/hyperflow:reap` | Post-completion cleanup (`/hyperflow:reap`, "clean up the finished task", "reap this task", "garbage collect") |
 | `hyperflow` | `/hyperflow:hyperflow` | Portable doctrine on single-agent hosts |
 
 ---
