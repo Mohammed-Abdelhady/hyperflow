@@ -38,6 +38,27 @@ _MAX_PAYLOAD_BYTES = 1_000_000
 _PLUGIN_CONFIG = Path(__file__).resolve().parent.parent / "config"
 
 
+def _markdown_mode() -> str:
+    """config viewer.markdown: 'on-demand' (slim stub) | 'always' (full markdown) | 'never'."""
+    try:
+        cfg = json.loads((_PLUGIN_CONFIG / "defaults.json").read_text(encoding="utf-8"))
+        return cfg.get("viewer", {}).get("markdown", "on-demand")
+    except (OSError, ValueError):
+        return "on-demand"
+
+
+def _stub_content(env: dict) -> str:
+    """The .md content for the canonical path: full markdown when viewer.markdown
+    is 'always', else the slim ≤6-line stub."""
+    if _markdown_mode() == "always":
+        try:
+            import render_lib
+            return render_lib.render(env)
+        except Exception:  # noqa: BLE001 — render is best-effort; fall back to the stub
+            return lib.render_stub(env)
+    return lib.render_stub(env)
+
+
 def _read_payload(source: str) -> dict:
     # Bound the read on BOTH paths so a huge file is never fully materialized.
     if source == "-":
@@ -109,7 +130,7 @@ def _cmd_write(args: argparse.Namespace) -> int:
         json_path.write_text(json.dumps(env, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         if stub is not None:
             stub.parent.mkdir(parents=True, exist_ok=True)
-            stub.write_text(lib.render_stub(env), encoding="utf-8")
+            stub.write_text(_stub_content(env), encoding="utf-8")
     except OSError as exc:
         print(f"artefact: write failed: {exc}", file=sys.stderr)
         return 3
