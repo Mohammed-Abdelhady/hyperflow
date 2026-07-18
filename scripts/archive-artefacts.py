@@ -288,8 +288,9 @@ def feature_is_completed(fdir: Path) -> bool:
         text = fm.read_text(errors="replace")
     except Exception:
         return False
-    # Match a Status table row: | Status | completed |
-    return bool(re.search(r"^\|\s*Status\s*\|\s*completed\b", text, re.MULTILINE | re.IGNORECASE))
+    # Match a Status table row: | Status | complete | or | Status | completed |
+    # (accept both, mirroring reap.feature_is_terminal — divergence-free config source).
+    return bool(re.search(r"^\|\s*Status\s*\|\s*complete(?:d)?\b", text, re.MULTILINE | re.IGNORECASE))
 
 
 def find_twins(hf: Path, slug: str) -> list[Path]:
@@ -361,11 +362,18 @@ def archive_slug(hf: Path, slug: str, cfg: dict | None = None) -> dict:
     Scope: tasks/<slug>.md, tasks/<slug>/, specs/<slug>.md, specs/<slug>.draft.md,
     features/<slug>/, artefacts/*/<slug>.json.
 
+    The ``features/<slug>/`` tree is archived only when its ``feature.md`` reads
+    completed; an incomplete feature is left in place (recorded in the returned
+    ``skipped`` list) even when a same-named terminal ``tasks/<slug>.md`` exists,
+    so a slug collision can never move a partial feature.
+
     ``cfg`` lets an in-process caller (reap.py) supply its already-resolved
     cleanup config so no second ``load_cfg``/``$HOME`` read happens. Targeted
     slug archival is unconditional — it does not consult ``cleanup.auto`` (that
     gate guards only the daily sweep). Accepted for a single, divergence-free
     config source across the reaper and the archiver.
+
+    Returns ``{"archived": [...], "promoted": [...], "skipped": [...]}``.
     """
     validate_slug(slug)
     if not hf.is_dir() or hf.name != ".hyperflow":
@@ -374,14 +382,16 @@ def archive_slug(hf: Path, slug: str, cfg: dict | None = None) -> dict:
     hf_r = hf.resolve()
     archived: list[dict] = []
     promoted: list[dict] = []
+    skipped: list[dict] = []
 
-    # Ordered scope candidates (file or dir). Only existing, under-hf paths move.
+    # Ordered flat-scope candidates (file or dir). Only existing, under-hf paths
+    # move. The feature tree is handled separately — it must never be archived
+    # while incomplete, even when a same-named terminal flat task exists.
     candidates: list[tuple[str, Path]] = [
         ("tasks", hf_r / "tasks" / f"{slug}.md"),
         ("tasks", hf_r / "tasks" / slug),
         ("specs", hf_r / "specs" / f"{slug}.md"),
         ("specs", hf_r / "specs" / f"{slug}.draft.md"),
-        ("features", hf_r / "features" / slug),
     ]
     for type_, path in candidates:
         if not path.exists():
@@ -389,6 +399,23 @@ def archive_slug(hf: Path, slug: str, cfg: dict | None = None) -> dict:
         if not is_under(hf_r, path):
             raise ArchiveError(f"path escapes .hyperflow root: {path}")
         archive_one(hf_r, type_, path, archived=archived, promoted=promoted)
+
+    # Feature tree — archive only when the feature itself is completed (spec §4:
+    # never archive a partial feature). A terminal flat task sharing this slug
+    # does not authorize moving an in-progress feature folder.
+    feature_dir = hf_r / "features" / slug
+    if feature_dir.is_dir():
+        if not is_under(hf_r, feature_dir):
+            raise ArchiveError(f"path escapes .hyperflow root: {feature_dir}")
+        if feature_is_completed(feature_dir):
+            archive_one(
+                hf_r, "features", feature_dir,
+                archived=archived, promoted=promoted,
+            )
+        else:
+            skipped.append(
+                {"path": rel_hf(hf_r, feature_dir), "reason": "feature not completed"}
+            )
 
     for twin in find_twins(hf_r, slug):
         if not is_under(hf_r, twin):
@@ -398,7 +425,7 @@ def archive_slug(hf: Path, slug: str, cfg: dict | None = None) -> dict:
         if moved_to is not None:
             archived.append({"path": src_rel, "dest": rel_hf(hf_r, moved_to)})
 
-    return {"archived": archived, "promoted": promoted}
+    return {"archived": archived, "promoted": promoted, "skipped": skipped}
 
 
 def prune_archive(hf: Path, prune_days: int) -> int:
@@ -499,8 +526,6 @@ def main() -> None:
         return
 
     cfg = load_cfg()
-    if not cfg.get("auto", True):
-        return
     stale = max(1, int(cfg.get("staleDays", 7)))
     prune = max(stale, int(cfg.get("pruneDays", 30)))
 
@@ -567,6 +592,11 @@ def main() -> None:
                 f"promoted {pcount} line(s) to memory",
                 file=sys.stderr,
             )
+        return
+
+    # Daily-sweep master switch — honored only for the unattended walk below.
+    # Targeted --file / --slug modes above run regardless of cleanup.auto.
+    if not cfg.get("auto", True):
         return
 
     # Daily gate — don't re-walk the tree on every session this day.
