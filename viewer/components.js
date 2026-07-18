@@ -116,5 +116,41 @@
     return el("div", { class: "empty" }, el("div", { class: "big" }, big), sub && el("div", null, sub));
   }
 
-  window.HF = { el, section, statusHead, table, scopeTable, progressRing, findings, memoryGallery, emptyState };
+  function statTile(label, value, sub, opts) {
+    opts = opts || {};
+    return el("div", { class: "stat-tile" + (opts.tone ? " tone-" + opts.tone : "") },
+      el("div", { class: "stat-value" }, String(value)),
+      el("div", { class: "stat-label" }, label),
+      sub && el("div", { class: "stat-sub" }, sub));
+  }
+
+  // Sparkline: area fill + line + emphasized endpoint, from an array of numbers.
+  function sparkline(values, opts) {
+    opts = opts || {};
+    const ns = "http://www.w3.org/2000/svg", W = 120, H = 34, P = 3;
+    const vals = values.length ? values : [0];
+    const max = Math.max(...vals, 1), min = Math.min(...vals, 0);
+    const span = (max - min) || 1;
+    const pts = vals.map((v, i) => {
+      const x = vals.length > 1 ? P + i * (W - 2 * P) / (vals.length - 1) : W / 2;
+      const y = H - P - ((v - min) / span) * (H - 2 * P);
+      return [x, y];
+    });
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "spark"); svg.setAttribute("width", W); svg.setAttribute("height", H);
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("aria-hidden", "true");
+    const line = pts.map((p) => p.join(",")).join(" ");
+    const area = document.createElementNS(ns, "polygon");
+    area.setAttribute("class", "spark-area");
+    area.setAttribute("points", `${P},${H - P} ${line} ${W - P},${H - P}`);
+    const poly = document.createElementNS(ns, "polyline");
+    poly.setAttribute("class", "spark-line"); poly.setAttribute("points", line);
+    const last = pts[pts.length - 1];
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("class", "spark-dot"); dot.setAttribute("cx", last[0]); dot.setAttribute("cy", last[1]); dot.setAttribute("r", "2.5");
+    svg.append(area, poly, dot);
+    return svg;
+  }
+
+  window.HF = { el, section, statusHead, table, scopeTable, progressRing, findings, memoryGallery, emptyState, statTile, sparkline };
 })();

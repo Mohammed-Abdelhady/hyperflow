@@ -51,8 +51,16 @@ per-type payload `$defs`).
 ```
 
 Per-type payload fields are defined in the schema `$defs` — read them there, not
-here, so there is one source of truth. The v1 types: `spec`, `task`, `feature`,
-`dispatch`, `audit`, `memory`, `review`.
+here, so there is one source of truth. The types: `spec`, `task`, `feature`,
+`dispatch`, `audit`, `memory`, `review`, `usage`.
+
+**Widened fields (optional, back-compatible).** `task` payloads may carry `cost`
+`{agents,tokens,perCommit}`, `progress` `{done,total}`, `branch`, and per-sub-task
+`briefBody` (the full brief markdown) + `acceptance[]` — so `render-artefact.py`
+reproduces the classic layout losslessly. `dispatch.totals.terminal` tells the
+viewer when to stop live-polling. The `usage` type carries the aggregated ledger
+(`totals`, `phases`, `ratios`, `chains`) for the telemetry view. All additions are
+optional: existing artefacts without them still validate and render.
 
 ## How an agent writes an artefact (the ONLY supported call)
 
@@ -111,6 +119,17 @@ The `memory` payload stores only `{ title, task, decision, tags }` per entry —
 the verbose prose of classic memory entries is dropped. `tags` is retained (not
 optional): the tag-matched lazy-injection tier ([`memory-system.md`](memory-system.md))
 breaks without it. See [`memory-system.md`](memory-system.md) for the full rule.
+
+## Live dispatch
+
+When viewer mode is on, `dispatch` keeps a `dispatch` artefact live: it writes it
+once at the start (all tasks `pending`, `totals.terminal:false`) and **rewrites it
+via `artefact.py` after each task PASS** (updating that task's `status`/`tokens`/
+`wallclock` and the running `totals`). At wrap-up it sets `totals.terminal:true`.
+The viewer polls the dispatch JSON every ~2.5s and re-renders only on change,
+stopping when `terminal` is true — so the "Live progress" label and the
+`in_progress` pulse reflect real state, not decoration. Same rewrite-same-slug
+mechanic as any other artefact; no sockets, no server push.
 
 ## Handoff mode
 

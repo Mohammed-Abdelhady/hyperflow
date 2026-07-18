@@ -240,6 +240,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 ## Prerequisites
 
 - Git repository with a remote configured (for the push step).
+- **`gh auth` preflight (push/PR steps):** before the push gate, if the push target needs `gh` (PR creation) and `gh auth status` fails, tell the user to run `gh auth login` up front and keep commits local — never fail mid-push. (Matches the proactive preflight `issue` / `pr` already run at their Step 2.)
 - Lint / typecheck / build / test scripts detectable in `package.json` or via `.hyperflow/testing.md`. Missing scripts are skipped silently (not failed).
 - `scripts/release.sh` (or `release-please` / `changesets`) optional — if present, runs at Step 5; otherwise release is user-managed.
 - For security sweep: the security-reviewer and vulnerability-reviewer specialist agents are dispatched. Sweep is mandatory; failure to dispatch = halt.

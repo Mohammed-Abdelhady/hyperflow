@@ -100,10 +100,10 @@
     <section class="hero" id="hero" aria-labelledby="hero-heading">
       <div class="container">
         <p class="hero-eyebrow">Codex · Claude Code · OpenCode · Grok · Antigravity · Cursor</p>
-        <h1 id="hero-heading">One session.<br />A whole engineering team.</h1>
+        <h1 id="hero-heading">Point it at a GitHub issue.<br />Get back a reviewed pull request.</h1>
         <p class="hero-sub">
-          Tiny proven-safe edits run inline; planners design, parallel workers build, and
-          22 domain specialists review the normal orchestrated path — from a GitHub issue to a reviewed PR in one command.
+          One session becomes a whole engineering team: tiny proven-safe edits run inline; planners design,
+          parallel workers build, and 22 domain specialists review the normal orchestrated path.
           On your session model, zero config. Learnings persist in local per-project
           memory — never uploaded, never mixed across repos.
         </p>
@@ -214,6 +214,10 @@
 <span class="c-hot">✓ PR #43 opened — Closes #42</span></pre>
               </div>
             </div>
+            <p class="proof-note">
+              Transcript is illustrative.
+              <a href="https://github.com/Mohammed-Abdelhady/hyperflow/pulls?q=is%3Apr+is%3Amerged" target="_blank" rel="noopener">See real reviewed pull requests in the repo →</a>
+            </p>
             <div class="card reveal" style="margin-top: 1.5rem;">
               <span class="badge badge-plan">Maintainer side</span>
               <h3><code>/hyperflow:pr #43</code></h3>
@@ -333,6 +337,26 @@
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ── Visual artefacts ──────────────────────────────────────────── -->
+    <section id="viewer" aria-labelledby="viewer-heading">
+      <div class="container">
+        <p class="section-label">Visual artefacts</p>
+        <h2 id="viewer-heading">See the plan, not a wall of markdown.</h2>
+        <p class="section-intro">
+          Plans, specs, task graphs, audits, and token/ROI telemetry render as interactive graphs in a
+          self-contained local viewer — <code>hyperflow view</code>, served on <code>127.0.0.1</code>. Agents emit
+          compact JSON instead of hand-writing verbose markdown, so it saves tokens; the renderer ships in the
+          plugin and binds loopback only, so <strong>nothing leaves your machine</strong>. Prefer classic markdown?
+          One config flag turns it off.
+        </p>
+        <figure class="viewer-shot reveal">
+          <img src="pr-media/visual-artefacts/feature-phase-graph.png" width="1512" height="806"
+               loading="lazy" decoding="async"
+               alt="The Hyperflow viewer rendering a feature as a phase dependency graph: P1 contract branching to P2 viewer and P3 integration, both converging on P4." />
+        </figure>
       </div>
     </section>
 

@@ -51,6 +51,21 @@ class RenderTests(unittest.TestCase):
         self.assertIn("## Execution plan", md)
         self.assertIn("Brief:", md)
 
+    def test_task_fidelity_status_and_cost(self) -> None:
+        # artefact-format.md status-block metrics + cost table + brief bodies + scope total
+        md = render.render(_sample("task"))
+        self.assertIn("| Progress |", md)
+        self.assertIn("| Branch |", md)
+        self.assertIn("| Commits |", md)
+        self.assertIn("**Total**", md)
+        self.assertIn("## Estimated cost", md)
+        self.assertIn("## Briefs", md)
+
+    def test_usage_renders(self) -> None:
+        md = render.render(_sample("usage"))
+        self.assertIn("tokens/commit", md)
+        self.assertIn("## Phases", md)
+
     def test_memory_roundtrip_preserves_decision(self) -> None:
         env = _sample("memory")
         md = render.render(env)
