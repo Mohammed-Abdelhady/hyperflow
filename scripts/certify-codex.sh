@@ -604,19 +604,24 @@ print("PASS: latest-only failure leaves min/current certified and intact")
 PY
   log "PASS: latest-only freeze semantics"
 
-  log "self-test: App claim without attestation is required failure (live config)"
-  if ! grep -q 'desktop-app' "$tmp/out-missing.txt"; then
-    die "self-test FAIL: expected desktop-app row when package claims App"
+  log "self-test: forced App claim without attestation fails (HYPERFLOW_CLAIM_APP=1)"
+  # Live metadata may be CLI-only (claims_app=false after claim gating). Force the claim
+  # path so the attestation hard-stop remains covered.
+  set +e
+  HYPERFLOW_CLAIM_APP=1 bash "$0" --precheck >"$tmp/out-app-claim.txt" 2>&1
+  local app_rc=$?
+  set -e
+  if [[ $app_rc -eq 0 || $app_rc -eq 2 ]]; then
+    die "self-test FAIL: forced App claim precheck should hard-fail (got $app_rc)"
   fi
-  if ! grep -q 'FAIL: desktop-app' "$tmp/out-missing.txt" && ! grep -q 'desktop-app: package claims' "$tmp/out-missing.txt"; then
-    # Accept either FAIL row format
-    if ! grep -E 'FAIL: desktop-app|desktop-app: package claims' "$tmp/out-missing.txt"; then
-      # print for debug then fail
-      grep 'desktop-app' "$tmp/out-missing.txt" || true
-      die "self-test FAIL: App claim should produce desktop-app failure"
-    fi
+  if ! grep -q 'desktop-app' "$tmp/out-app-claim.txt"; then
+    die "self-test FAIL: expected desktop-app row when HYPERFLOW_CLAIM_APP=1"
   fi
-  log "PASS: App claim without attestation fails"
+  if ! grep -E 'FAIL: desktop-app|desktop-app: package claims|claims_app=True' "$tmp/out-app-claim.txt" >/dev/null; then
+    grep 'desktop-app' "$tmp/out-app-claim.txt" || true
+    die "self-test FAIL: forced App claim should produce desktop-app failure"
+  fi
+  log "PASS: forced App claim without attestation fails"
 
   log "self-test: no git mutation during certify"
   local before after

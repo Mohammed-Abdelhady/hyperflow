@@ -123,10 +123,31 @@ class TestCertifyCodexScript(unittest.TestCase):
         self.assertEqual(before, after, msg="certify-codex.sh must not mutate git")
 
     def test_app_claim_requires_attestation_row(self) -> None:
+        # Live package may be CLI-only after claim gating; force the App claim path.
+        proc = _run(
+            ["bash", str(CERTIFY), "--precheck"],
+            env={"HYPERFLOW_CLAIM_APP": "1"},
+            timeout=300,
+        )
+        combined = proc.stdout + proc.stderr
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("desktop-app", combined)
+        self.assertRegex(
+            combined,
+            r"FAIL: desktop-app|package claims Codex App|claims_app=True",
+        )
+
+    def test_live_metadata_without_app_claim_skips_app_attestation(self) -> None:
         proc = _run(["bash", str(CERTIFY), "--precheck"], timeout=300)
         combined = proc.stdout + proc.stderr
         self.assertIn("desktop-app", combined)
-        self.assertRegex(combined, r"FAIL: desktop-app|package claims Codex App")
+        # Either not claimed (PASS) or claimed without cert (FAIL) — both valid shapes.
+        self.assertTrue(
+            "not claimed" in combined
+            or "FAIL: desktop-app" in combined
+            or "package claims" in combined,
+            msg=combined[-800:],
+        )
 
 
 class TestReleasePrecheckIntegration(unittest.TestCase):
