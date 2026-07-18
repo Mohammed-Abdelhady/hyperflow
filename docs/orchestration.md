@@ -349,6 +349,7 @@ Both read the same `cleanup` block from `~/.hyperflow/config.json` (schema: `con
 | `usageRetentionDays` | integer ≥ 1 | `30` | Retention for `.hyperflow/usage/*.jsonl` ledgers. Reap hard-deletes older files; the active chain ledger (`.active-chain-id`) is never deleted while in flight. |
 | `logMaxLines` | integer ≥ 100 | `2000` | Max lines kept in `.hyperflow/.session-start.log` after reap truncation (tail retained). |
 | `dryRun` | boolean | `false` | Global dry-run override for reap (and archive when honored): report the plan, **mutate nothing**. CLI `--dry-run` ORs with this flag. |
+| `dropOrphanRefs` | boolean | `false` | Opt in to pruning durable memory entries whose Evidence paths no longer resolve. When `false` (default) an auto-reap removes **no** durable entry — it only rebuilds the index and flags oversized files. When `true`, an orphaned entry is **quarantined** to `memory/archive/YYYY-MM.md` (never hard-deleted). |
 
 Full example:
 
@@ -361,7 +362,8 @@ Full example:
     "reapOnComplete": true,
     "usageRetentionDays": 30,
     "logMaxLines": 2000,
-    "dryRun": false
+    "dryRun": false,
+    "dropOrphanRefs": false
   }
 }
 ```
@@ -411,7 +413,7 @@ python3 <plugin-root>/scripts/reap.py /path/to/project/.hyperflow --slug <slug> 
 |---|---|---|
 | **Archive** (reversible) | `tasks/<slug>.md`, `tasks/<slug>/` brief dir, `specs/<slug>.md`, `specs/<slug>.draft.md`, `features/<slug>/`, `artefacts/*/<slug>.json` twins | Promote learnings → durable memory, then **move** to `.hyperflow/archive/<type>/YYYY-MM/` via `archive-artefacts.py --slug` |
 | **Ephemeral** (hard-delete) | Stale `usage/*.jsonl` past `usageRetentionDays`; `.session-start.log` over `logMaxLines`; terminal `background/bg-*.md` older than 7d; empty/settled `commits-queue/` | Delete or truncate (regenerable) |
-| **Memory** (preserve + optimize) | Durable `memory/*.md` categories | **Never** wipe category files; drop orphaned Evidence refs, rebuild `memory/index.md`, flag oversized files for `/hyperflow:cache compact` |
+| **Memory** (preserve + optimize) | Durable `memory/*.md` categories | **Never** wipe category files; an **auto-reap drops no durable entry** — always-on work is rebuilding `memory/index.md` and flagging oversized files for `/hyperflow:cache compact`. Entry-dropping is opt-in (`cleanup.dropOrphanRefs`, default `false`) and **quarantines** orphaned entries to `memory/archive/YYYY-MM.md` (never hard-deleted) |
 | **Never touch** | `.version`, `.last-cleanup`, `.active-chain-id`, `.chain-base`, active usage ledger, in-flight work, `.hyperflow-handoff/**`, application source | Skipped |
 
 **Report:** JSON on stdout (`slug`, `dryRun`, `archived[]`, `deleted[]`, `bytesFreed`, `memory{indexRebuilt,orphansDropped,compacted[]}`, `skipped[]`). Lifecycle skills print a Reap Report block and append one JSON line to `.hyperflow/archive/.reap-log.jsonl`. Reap is **idempotent** — a second pass on the same completed slug is a clean no-op. Path safety: slug must match `^[a-z0-9-]+$`; every target is resolved under `.hyperflow/` (traversal refused).

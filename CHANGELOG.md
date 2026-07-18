@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Post-completion reap — slug-scoped archive-first cleanup at dispatch wrap-up, deploy end, and handoff complete (gated on `cleanup.reapOnComplete`), plus `/hyperflow:reap <slug>`
-- `cleanup` config block fully schema-validated: `auto`, `staleDays`, `pruneDays`, `reapOnComplete`, `usageRetentionDays`, `logMaxLines`, `dryRun`
-- Ephemeral retention for unbounded `usage/*.jsonl` ledgers and `.session-start.log` truncation; durable memory preserved and optimized (never wiped)
+- `cleanup` config block fully schema-validated: `auto`, `staleDays`, `pruneDays`, `reapOnComplete`, `usageRetentionDays`, `logMaxLines`, `dryRun`, `dropOrphanRefs`
+- Ephemeral retention for unbounded `usage/*.jsonl` ledgers and `.session-start.log` truncation; durable memory optimized in place — an auto-reap drops no durable entry (index rebuild + compaction advisory only). Entry pruning is opt-in (`cleanup.dropOrphanRefs`, default off) and quarantines orphaned entries to `memory/archive/YYYY-MM.md`, never hard-deleting
 
 ### Changed
 - Document the full `cleanup.*` block and reap lifecycle in orchestration docs
