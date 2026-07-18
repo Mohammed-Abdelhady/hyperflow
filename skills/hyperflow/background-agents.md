@@ -6,20 +6,40 @@ Two distinct features both called "background agents" — task-level (this doctr
 
 | Layer | What it is | Surface | Use when |
 |---|---|---|---|
-| **Task-level** (this doctrine) | Individual worker / observer agents dispatched with `Agent({ ..., run_in_background: true })` within one Claude Code session. Managed via `/hyperflow:background list / show / cancel / prune`. | hyperflow plugin | Latency reduction inside a single chain (Layer 5 gates fired while next batch runs); CI watcher after push; speculative prefetch refreshing `.hyperflow/<analysis>.md` |
+| **Task-level** (this doctrine) | Individual worker / observer agents dispatched with the host `background` op when present (Claude: `Agent({ ..., run_in_background: true })`) within one session. Managed via `/hyperflow:background list / show / cancel / prune`. | hyperflow plugin | Latency reduction inside a single chain (Layer 5 gates fired while next batch runs); CI watcher after push; speculative prefetch refreshing `.hyperflow/<analysis>.md` |
 | **Session-level** (Claude Code v2.1.139+, May 2026) | An entire Claude Code session runs detached in its own process. Managed via `claude agents` dashboard, launched via `claude --bg`, `/bg`, or `←←` keyboard shortcut. Optional `/goal <condition>` sets an autonomous completion criterion. Idle sessions auto-retire after 5 min. | Claude Code CLI native | Forking a long-running hyperflow chain (`/bg /hyperflow:plan "build user auth"`) so the user keeps the main session free; running multiple parallel features simultaneously across separate background sessions |
 
 They compose: a user can run `/bg /hyperflow:dispatch <slug>` to fire a hyperflow chain in a backgrounded session; inside that session, dispatch can still fire `run_in_background: true` workers for its Layer 5 gates and CI watcher. The two layers cover different scales.
 
 Choose by the unit of work:
-- One agent on one task → `run_in_background: true` + `/hyperflow:background`
-- Whole interactive session → `/bg` + `claude agents`
+- One agent on one task → host background op + `/hyperflow:background` **when the host supports it**
+- Whole interactive session → `/bg` + `claude agents` (Claude-native only)
 
 Docs: [Claude Code Agent View](https://code.claude.com/docs/en/agent-view) · [Changelog](https://code.claude.com/docs/en/changelog.md).
 
+## Codex and hosts without background lifecycle
+
+Canonical op: `background` ([runtime-contract.md](runtime-contract.md)). Codex (and several portable hosts) currently
+advertise **no** background candidates in `config/providers.json` — degraded policy is **foreground-only**.
+
+| Capability | Behavior |
+|---|---|
+| `background` present | Task-level patterns below apply; still no background Reviewers. |
+| `background` absent (Codex default) | Run the same work as a **foreground** labelled phase. Do **not** fake `PushNotification`, pretend async completion hooks, or claim a background registry entry completed off-thread. |
+| `spawn` present, `background` absent | Collaboration children (`spawn` / `wait` / `message` / `follow_up`) may still run for workers/investigators; treat them as awaited (or same-turn) children, not notify-on-complete observers. Compose charters with [`../../scripts/render-specialist-brief.py`](../../scripts/render-specialist-brief.py). |
+| Neither `spawn` nor `background` | Labelled inline worker phase, then **separate** labelled inline reviewer phase. Role separation is non-negotiable. |
+
+Honesty rules: never invent host notifications; never report estimated background completion as observed; registry
+persistence and `/hyperflow:background *` management commands apply only when real background agents were fired.
+
 ## Task-level background agents (the rest of this file)
 
-Background agents are dispatched with `run_in_background: true`. The orchestrator does not wait — the chain progresses, and the agent's result is integrated later (or surfaced via notification). Use them for work that does not gate the next decision.
+**Prerequisite:** host `background` op is actually callable. On Codex and other foreground-only hosts, skip this
+section's dispatch patterns and use the table above.
+
+Background agents are dispatched with the host background mode (Claude: `run_in_background: true`). The orchestrator
+does not wait — the chain progresses, and the agent's result is integrated later (or surfaced via notification **only
+when the host provides one**). Use them for work that does not gate the next decision.
 
 ## When to use
 
