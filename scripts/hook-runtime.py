@@ -410,6 +410,33 @@ def is_safe_transcript_path(
     if not path.is_file():
         return False
 
+    # Reject credential-shaped basenames even if they sit under an allowlisted root.
+    blocked_names = {
+        ".env",
+        ".env.local",
+        ".env.production",
+        "credentials",
+        "credentials.json",
+        "id_rsa",
+        "id_ed25519",
+        "id_ecdsa",
+        ".npmrc",
+        ".pypirc",
+        "secrets.yaml",
+        "secrets.yml",
+        "service-account.json",
+    }
+    name_l = path.name.lower()
+    if name_l in blocked_names or name_l.endswith(".pem") or name_l.endswith(".key"):
+        return False
+    # Path segments that should never be treated as transcripts.
+    blocked_parts = {".ssh", ".aws", ".gnupg", ".docker"}
+    try:
+        if any(part.lower() in blocked_parts for part in path.parts):
+            return False
+    except Exception:
+        return False
+
     candidates: list[Path] = []
     if project_root is not None:
         try:
