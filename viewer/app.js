@@ -122,24 +122,33 @@
       try {
         const env = await getJSON(`/artefacts/dispatch/${slug}.json`);
         const text = JSON.stringify(env);
-        if (text !== lastText) { lastText = text; renderEnv(env); }
+        if (text !== lastText) { lastText = text; renderEnv(env, false); }
         if (isTerminal(env)) stopPoll();
       } catch (_e) { stopPoll(); }
     }, POLL_MS);
   }
 
-  function mount(nodes) {
+  function announce(msg) { const live = document.getElementById("hf-live"); if (live) live.textContent = msg; }
+
+  function mount(nodes, focus = true) {
     app.replaceChildren();
     for (const n of nodes) if (n) app.append(n);
     HF.armReveals(app);
     HF.armSpotlight(app);
+    if (focus) {
+      // Move focus to the artefact heading on a route change so keyboard/SR
+      // users land on the new content (not during live-poll re-renders).
+      const h = app.querySelector("h1, h2");
+      if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: false }); }
+    }
   }
 
-  function renderEnv(env) {
+  function renderEnv(env, focus = true) {
     const fn = render[env.type];
-    if (!fn) return mount([HF.emptyState("Unsupported artefact type", `No renderer for "${env.type}".`)]);
-    mount(fn(env));
+    if (!fn) return mount([HF.emptyState("Unsupported artefact type", `No renderer for "${env.type}".`)], focus);
+    mount(fn(env), focus);
     setSource(`${env.type}/${env.slug}`);
+    if (focus) announce(`Loaded ${env.type}: ${env.title || env.slug}`);
   }
 
   async function showArtefact(type, slug) {
