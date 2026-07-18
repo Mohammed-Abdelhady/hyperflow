@@ -1,0 +1,270 @@
+name: release-certification
+
+# T14 — remote candidate branch + exact stable-tag certification lanes.
+# Candidate PASS is required before a maintainer pushes the stable tag.
+# Stable-tag jobs are read-only smoke; failure halts announcement (fix-forward only).
+
+on:
+  push:
+    branches:
+      - "release-candidate/**"
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "certify mode"
+        type: choice
+        options:
+          - candidate
+          - stable-tag
+          - precheck
+        default: candidate
+      ref:
+        description: "Optional git ref to check out (empty = event ref)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  precheck-static:
+    name: Static certification precheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests (privacy + compatibility)
+        run: |
+          python3 -m unittest tests.test_privacy_contract tests.test_codex_compatibility -v
+
+      - name: Offline workflow canaries (includes redaction)
+        run: python3 tests/codex/workflow_canaries.py --offline-static
+
+      - name: Certify self-test
+        run: ./scripts/certify-codex.sh --self-test
+
+      - name: Status report (non-blocking)
+        run: ./scripts/certify-codex.sh --status
+
+  candidate:
+    name: Remote candidate certification
+    runs-on: ubuntu-latest
+    needs: [precheck-static]
+    if: >
+      startsWith(github.ref, 'refs/heads/release-candidate/') ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'candidate')
+    steps:
+      - name: Checkout candidate ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Record candidate identity
+        id: identity
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')" >> "$GITHUB_OUTPUT"
+          git rev-parse HEAD
+          git log -1 --oneline
+
+      - name: Plugin validation
+        run: ./scripts/validate-plugin.py
+
+      - name: Full unit suite
+        run: python3 -m unittest discover tests -v
+
+      - name: Offline Codex lifecycle (SKIP exit 0 without codex)
+        run: |
+          ./scripts/test-codex-plugin.sh
+          ./scripts/test-codex-hooks.sh
+
+      - name: Candidate certificate gate
+        env:
+          HYPERFLOW_EXPECT_COMMIT: ${{ steps.identity.outputs.sha }}
+          HYPERFLOW_EXPECT_VERSION: ${{ steps.identity.outputs.version }}
+        run: ./scripts/certify-codex.sh --candidate
+
+      - name: Candidate failure remediation
+        if: failure()
+        run: |
+          cat <<'EOF'
+          ════════════════════════════════════════════════════════════
+          CANDIDATE CERTIFICATION FAILED
+          ════════════════════════════════════════════════════════════
+          Stable tag must NOT be pushed.
+
+          Fix-forward on the release-candidate branch:
+            1. Land certificate evidence / conformance fixes on the candidate.
+            2. Re-run this workflow until ./scripts/certify-codex.sh --candidate passes.
+            3. Only then: ./scripts/release.sh --phase finalize --version <X.Y.Z>
+
+          Never rewrite history of an already-pushed stable tag.
+          Never use HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1 for a public stable release.
+          ════════════════════════════════════════════════════════════
+          EOF
+
+      - name: Upload candidate evidence (redacted paths only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-${{ steps.identity.outputs.version }}-${{ github.run_id }}
+          path: |
+            config/codex-compatibility.json
+            config/privacy-contract.json
+            package.json
+            .codex-plugin/plugin.json
+          if-no-files-found: error
+
+  stable-tag:
+    name: Exact stable-tag smoke (read-only)
+    runs-on: ubuntu-latest
+    needs: [precheck-static]
+    if: >
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'stable-tag')
+    steps:
+      - name: Checkout tag/ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Record tag identity
+        id: identity
+        run: |
+          SHA="$(git rev-parse HEAD)"
+          VERSION="$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # When on a tag, verify tag name matches package version
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            if [[ "$TAG" != "$VERSION" ]]; then
+              echo "FAIL: tag v$TAG does not match package.json version $VERSION"
+              echo "Halt announcement. Fix-forward with a patch release; do not retag."
+              exit 1
+            fi
+          fi
+          echo "stable-tag smoke for v$VERSION @ $SHA"
+
+      - name: Read-only stable-tag certificate gate
+        env:
+          HYPERFLOW_EXPECT_COMMIT: ${{ steps.identity.outputs.sha }}
+          HYPERFLOW_EXPECT_VERSION: ${{ steps.identity.outputs.version }}
+        run: ./scripts/certify-codex.sh --stable-tag
+
+      - name: Manifest version consistency
+        run: |
+          V="${{ steps.identity.outputs.version }}"
+          python3 - "$V" <<'PY'
+          import json, sys
+          from pathlib import Path
+          v = sys.argv[1]
+          paths = [
+              "package.json",
+              ".claude-plugin/plugin.json",
+              ".codex-plugin/plugin.json",
+              ".claude-plugin/marketplace.json",
+          ]
+          bad = []
+          for rel in paths:
+              data = json.loads(Path(rel).read_text(encoding="utf-8"))
+              if rel.endswith("marketplace.json"):
+                  # marketplace may nest versions; require top-level plugins match
+                  found = json.dumps(data)
+                  if f'"version": "{v}"' not in found and f'"version":"{v}"' not in found:
+                      bad.append(rel)
+              else:
+                  if str(data.get("version")) != v:
+                      bad.append(f"{rel}={data.get('version')}")
+          skill = Path("skills/hyperflow/VERSION").read_text(encoding="utf-8").strip()
+          if skill != v:
+              bad.append(f"skills/hyperflow/VERSION={skill}")
+          if bad:
+              print("FAIL: version mismatch after stable tag:", bad)
+              print("Halt announcement. Issue a fix-forward patch release.")
+              sys.exit(1)
+          print(f"PASS: all manifests report {v}")
+          PY
+
+      - name: Post-push failure remediation
+        if: failure()
+        run: |
+          cat <<'EOF'
+          ════════════════════════════════════════════════════════════
+          STABLE-TAG SMOKE FAILED
+          ════════════════════════════════════════════════════════════
+          Announcement and distribution guidance MUST halt.
+
+          Required recovery (fix-forward only):
+            1. Preserve CI evidence / logs (do not delete the failed run).
+            2. Do NOT delete, retag, or force-push the stable tag.
+            3. Cut a fix-forward patch release from a new candidate branch, or
+               withdraw any draft distribution surface that cited this tag.
+            4. Open a compatibility / release incident with the failing rows.
+
+          Never rewrite stable history.
+          ════════════════════════════════════════════════════════════
+          EOF
+
+      - name: Upload stable-tag evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-stable-${{ steps.identity.outputs.version }}-${{ github.run_id }}
+          path: |
+            config/codex-compatibility.json
+            config/privacy-contract.json
+            package.json
+            .codex-plugin/plugin.json
+            skills/hyperflow/VERSION
+          if-no-files-found: error
+
+  dispatch-precheck:
+    name: Manual precheck
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'precheck'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Certify precheck
+        run: ./scripts/certify-codex.sh --precheck

@@ -2,7 +2,8 @@
 
 Maintainer checklist for cutting a release and keeping downstream consumers in sync.
 Sections 1–2 are the mechanics; **section 3 is the part that goes stale — re-verify it
-on every release** (section 4's script automates the check).
+on every release** (section 4's script automates the check). **Section 5 is the Codex
+certification hard-stop** — required before any version mutation or stable tag push.
 
 ## 1. Pre-release
 
@@ -11,13 +12,70 @@ on every release** (section 4's script automates the check).
 - [ ] `templates/claude-md-doctrine.md` is current — it is **generated** from `skills/hyperflow/DOCTRINE.md`; after any doctrine edit run `python3 scripts/generate-portable-doctrine.py` and commit the result (`validate-plugin.py` fails when it drifts)
 - [ ] `./scripts/validate-plugin.py` passes locally
 - [ ] `plugin-validation` workflow is green on `main`
-
-## 2. Cut and publish
-
+- [ ] `./scripts/certify-codex.sh --status` reviewed; required rows green for a full-support claim (or accept that prepare will hard-stop)
 - [ ] Working tree is clean before running `release.sh` — it stages `CHANGELOG.md`, the manifests, `README.md`, `templates/claude-md-doctrine.md`, `CLAUDE.md`, and `config/features.json` **whole**, so uncommitted edits in any of those files would ride the `chore(release):` commit
-- [ ] `./scripts/release.sh` — auto-detects the bump, writes CHANGELOG, bumps all manifests, commits `chore(release): vX.Y.Z`, tags
-- [ ] `git push && git push origin vX.Y.Z`
+
+## 2. Cut and publish (two-phase candidate protocol)
+
+Certification runs **before** any version mutation. Stable tags are pushed only after a
+remote candidate branch passes.
+
+```text
+precheck → prepare (local commit + tag) → candidate branch CI → finalize → push stable tag
+                ↑ dry-run / fail leaves tree unchanged here
+```
+
+### 2a. Precheck / dry-run (no mutation)
+
+```bash
+./scripts/release.sh --precheck          # certificate gate only
+./scripts/release.sh --dry-run           # precheck + version plan; tree unchanged
+./scripts/certify-codex.sh --status      # non-blocking report
+```
+
+On certification failure the working tree, `HEAD`, and tags are unchanged. Prove it:
+
+```bash
+before=$(git status --porcelain; git rev-parse HEAD; git tag -l)
+./scripts/release.sh --precheck || true
+after=$(git status --porcelain; git rev-parse HEAD; git tag -l)
+test "$before" = "$after" && echo "unchanged"
+```
+
+Uncertified preview only (never for a public stable release):
+
+```bash
+HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1 ./scripts/release.sh --dry-run
+```
+
+### 2b. Prepare locally
+
+- [ ] `./scripts/release.sh` — precheck → CHANGELOG → `bump-version.sh` (prepare-only) → local `chore(release): vX.Y.Z` commit → **local** annotated tag
+- [ ] Tag exists only on the maintainer machine at this point — **not** on `origin`
+
+### 2c. Remote candidate certification
+
+- [ ] `./scripts/release.sh --phase candidate --version X.Y.Z` — points `release-candidate/vX.Y.Z` at the prepared commit
+- [ ] `git push -u origin release-candidate/vX.Y.Z`
+- [ ] `.github/workflows/release-certification.yml` **candidate** job green
+- [ ] On failure: fix-forward **on the candidate branch**; do **not** push the stable tag
+
+### 2d. Finalize and publish stable ref
+
+- [ ] `./scripts/release.sh --phase finalize --version X.Y.Z` — re-runs certificate precheck
+- [ ] `git push origin HEAD && git push origin vX.Y.Z`
+- [ ] `release-certification.yml` **stable-tag** job green (exact-tag read-only smoke)
 - [ ] `plugin-validation` green on the release commit
+- [ ] Announce only after stable-tag smoke PASS
+
+### 2e. `bump-version.sh` semantics
+
+`scripts/bump-version.sh` mutates manifests only. It **never** tags, pushes, or publishes.
+`release.sh` invokes it with `HYPERFLOW_RELEASE_PHASE=prepare` after precheck. Direct use:
+
+```bash
+HYPERFLOW_BUMP_ALLOW_DIRECT=1 ./scripts/bump-version.sh X.Y.Z
+```
 
 ## 3. Downstream sync — the dependents registry
 
@@ -92,3 +150,90 @@ version-pinned reference → needs a PR or a ping), **transitive** (mirror of a 
 or **self-healing** (doctrine embeds → auto-bridge handles it). Update the section-3 table, the
 registry array in `scripts/verify-downstreams.sh`, and the "Last verified" date, and land the
 edit in the same commit series as the release.
+
+## 5. Codex certification
+
+Machine policy: [`config/codex-compatibility.json`](config/codex-compatibility.json).  
+Privacy inventory: [`config/privacy-contract.json`](config/privacy-contract.json).  
+Aggregator: [`scripts/certify-codex.sh`](scripts/certify-codex.sh).  
+CI: [`.github/workflows/release-certification.yml`](.github/workflows/release-certification.yml).
+
+### Support matrix (required vs optional)
+
+| Surface / check | Release hard-stop? | Notes |
+|---|---|---|
+| CLI `minimum` certified + `certificateIds` | **Yes** | Floor; never inferred from plugin-list alone |
+| CLI `currentStable` certified + `certificateIds` | **Yes** | Shipping claim lane |
+| CLI `latestStable` | No (freeze-only) | Scheduled canary; failure freezes latest claim and opens an issue — does **not** redefine min/current |
+| app-server `minimum` + `currentStable` | **Yes** | Independent of CLI |
+| app-server `latestStable` | No (freeze-only) | Same freeze policy as CLI latest |
+| Desktop App attestation | **Only if package claims App** | Detected from `.codex-plugin/plugin.json` keywords/description; CI provenance required; hand-written schema-valid JSON does not unlock |
+| Privacy contract inventory | **Yes** | `tests.test_privacy_contract` + `config/privacy-contract.json` |
+| Redaction evidence | **Yes** | Offline workflow canaries + attestation schema `redaction` requirement |
+| Windows / WSL | Unsupported until certified | Never inferred green |
+
+Independence rules (enforced by policy flags and certifier):
+
+- Never infer App support from CLI or app-server PASS.
+- Plugin list success is not workflow certification.
+- Latest-only failure freezes latest; min/current stay as last certified.
+
+### Evidence locations
+
+| Artefact | Path / lane |
+|---|---|
+| Compatibility policy + lane rows | `config/codex-compatibility.json` |
+| Certificate ID files (runtime/CI) | `.hyperflow/artefacts/codex-certificates/*.json` |
+| Privacy contract | `config/privacy-contract.json` + `PRIVACY.md` |
+| App attestation schema | `tests/fixtures/codex/app-attestation.schema.json` |
+| App verifier | `scripts/test-codex-app.sh --attestation <file>` |
+| CLI lifecycle evidence | `scripts/test-codex-plugin.sh`, `scripts/test-codex-hooks.sh` |
+| CLI workflow canaries | `tests/codex/workflow_canaries.py` |
+| App-server smoke | `tests/codex/app_server_smoke.py` |
+| Candidate / stable-tag CI | `.github/workflows/release-certification.yml` artifacts |
+
+Certificate files under `.hyperflow/` are local/CI evidence (project `.hyperflow/` is gitignored). The checked-in source of truth for lane status is `config/codex-compatibility.json` (`status`, `version`, `certificateIds`).
+
+### Candidate flow (command sequence)
+
+```bash
+# 0) Optional status
+./scripts/certify-codex.sh --status
+
+# 1) Prepare (blocked if required certs missing)
+./scripts/release.sh                 # or: --dry-run first
+
+# 2) Candidate branch for remote certification
+./scripts/release.sh --phase candidate --version X.Y.Z
+git push -u origin release-candidate/vX.Y.Z
+# → release-certification.yml candidate job
+
+# 3) Finalize only after candidate green
+./scripts/release.sh --phase finalize --version X.Y.Z
+git push origin HEAD
+git push origin vX.Y.Z
+# → release-certification.yml stable-tag job (read-only smoke)
+
+# 4) Announce only after stable-tag smoke PASS
+```
+
+### Fix-forward recovery
+
+| Failure point | Action |
+|---|---|
+| Precheck / dry-run fail | Tree unchanged. Land conformance fixes + certificates. Do not force tags. |
+| Prepare succeeded, candidate CI fail | Fix-forward on `release-candidate/vX.Y.Z`. **Do not** push stable tag. |
+| Stable tag pushed, smoke fail | **Halt announcement** and distribution guidance. Preserve CI evidence. **Never** delete/retag/force-push the stable tag. Cut a **fix-forward patch release** from a new candidate, or withdraw draft distribution surfaces that cited the bad tag. |
+| Latest-only scheduled fail | Freeze latest claim; open compatibility issue; leave min/current as last certified. Normal min/current releases may continue per matrix. |
+| Privacy / redaction drift | Security halt until disclosed/reviewed or removed. |
+| App claim without CI attestation | Block until `scripts/test-codex-app.sh` accepts a CI-issued attestation. |
+
+### Certifier modes
+
+```bash
+./scripts/certify-codex.sh              # precheck (default hard-stop)
+./scripts/certify-codex.sh --status     # report only
+./scripts/certify-codex.sh --candidate  # remote candidate mode
+./scripts/certify-codex.sh --stable-tag # post-push exact-tag smoke
+./scripts/certify-codex.sh --self-test  # missing-cert blocks + freeze semantics
+```
