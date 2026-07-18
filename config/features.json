@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
   "version": "5.14.0",
-  "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
-  "subtitle": "Tiny proven-safe edits run inline; planners, parallel workers, and 22 specialists handle orchestrated work. 18 skills, adaptive depth, persistent per-project memory.",
+  "tagline": "Rules, multi-session memory, templates, and a reviewed multi-agent chain for AI coding CLIs",
+  "subtitle": "Project learnings persist under .hyperflow/memory/. Doctrine auto-routes work. Task templates decompose. Workers build; specialists review. Issue to PR when that is the job.",
   "layers": [
     {
       "n": 0,
