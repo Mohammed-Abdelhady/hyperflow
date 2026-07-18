@@ -195,6 +195,21 @@ class OpenArtefactTests(unittest.TestCase):
         self._write_task("taskonly")
         self.assertEqual(open_mod.resolve_type(self.hf, "taskonly", "spec"), "task")
 
+    def test_markdown_fallback_opens_plan_with_no_json_artefact(self) -> None:
+        # A decompose-only plan: only classic markdown, NO artefacts/ JSON.
+        slug = "md-only-plan"
+        (self.hf / "tasks").mkdir(parents=True, exist_ok=True)
+        (self.hf / "tasks" / f"{slug}.md").write_text(
+            "# Md Only Plan\n\n| A | B |\n|---|---|\n| 1 | 2 |\n", encoding="utf-8"
+        )
+        self._write_config(enabled=True, auto_open=True)
+        with patch.object(open_mod.webbrowser, "open", return_value=True) as mock_open:
+            code, out, _err = self._run(str(self.hf), slug, "--type", "spec")
+        self.assertEqual(code, 0)
+        mock_open.assert_called_once()
+        self.assertIn(f"task-{slug}.html", mock_open.call_args[0][0])
+        self.assertTrue((self.hf / "exports" / f"task-{slug}.html").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
