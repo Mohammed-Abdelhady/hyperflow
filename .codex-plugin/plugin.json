@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "5.14.0",
-  "description": "Point it at a GitHub issue, get back a reviewed pull request — in Codex App and CLI. Decision agents plan and review; workers execute in parallel on your session model; memory stays in your repo.",
+  "description": "Point it at a GitHub issue, get back a reviewed PR in Codex App and CLI. Inline-fast for proven 1-2 file fixes; Worker to Reviewer for the rest. Lean mode default, local visual artefacts, project memory that stays in your repo.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -17,14 +17,16 @@
     "multi-agent",
     "orchestration",
     "code-review",
+    "visual-artefacts",
     "project-memory",
+    "lean-mode",
     "skills"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Hyperflow",
-    "shortDescription": "Orchestrate Codex tasks with memory, routing, and review",
-    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, task decomposition, a specialist review of every step (Worker → Reviewer), parallel worker execution, persistent project memory, security guardrails, and gated release.",
+    "shortDescription": "Issue to reviewed PR: routing, workers, specialists, local memory",
+    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, lean mode by default, inline-fast for proven 1-2 file fixes, task decomposition, Worker to Reviewer specialist checks, parallel workers, local visual artefacts and ROI, persistent project memory, security guardrails, and gated release.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [
@@ -36,7 +38,7 @@
     "privacyPolicyURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md",
     "termsOfServiceURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
     "defaultPrompt": [
-      "Use Hyperflow to scope this feature",
+      "Use Hyperflow to plan this feature",
       "Audit this diff with Hyperflow",
       "Debug this failing test with Hyperflow"
     ],

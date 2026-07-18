@@ -17,7 +17,7 @@ workflow    →   workflow runtime/adapter   →   final synthesis
 big task        native or portable path        checked result
 ```
 
-Start with anything from a rough idea to a clear task. **`plan`** sharpens the prompt, designs the approach, and decomposes it into a task file — bouncing straight to decomposition when the approach is already clear. `plan → dispatch` are **chain-starters**: invoking either auto-advances forward through the rest. `audit` and `deploy` are **gates** — never auto-invoked, they fire only on an explicit user `Yes` to a gate question. `scaffold` is a one-time project setup (run once per repo to build the `.hyperflow/` cache), so it sits before the flow rather than inside it.
+Start with anything from a rough idea to a clear task. **`plan`** sharpens the prompt, designs the approach, and decomposes it into a task file, bouncing straight to decomposition when the approach is already clear. `plan → dispatch` (and `issue`) are **chain-starters**: invoking any of them auto-advances forward through the rest. If `.hyperflow/` is missing, chain-starters **auto-scaffold** first (idempotent). `audit` and `deploy` are **gates**: they fire only on an explicit user `Yes`. Manual `/hyperflow:scaffold` still works when you want setup without starting a chain.
 
 Auto-routed implementation requests first run a deterministic preflight. Only an observed, clear, reversible change in exactly 1–2 ordinary files can take the foreground **inline-fast** branch; gated, generated, migration, ambiguous, or explicitly thorough work keeps the normal `plan → dispatch` path.
 

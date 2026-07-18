@@ -1,18 +1,19 @@
 # Privacy
 
-Hyperflow is a local-only Codex, Claude Code, and OpenCode plugin. It makes no outbound network calls at runtime, has no analytics, has no telemetry, and never proxies or intercepts the data that flows between your editor and your configured LLM provider.
+Hyperflow is a local-only plugin for Codex, Claude Code, OpenCode, and related AI coding CLIs. It does not phone home, does not sell analytics, and does not proxy or intercept traffic between your editor and your configured LLM provider.
 
-This page documents exactly what the plugin reads, writes, and exposes on your machine. If anything below is inaccurate, please open an issue: <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
+This page documents what the plugin reads, writes, and exposes on your machine. If anything below is inaccurate, open an issue: <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
 
 ## TL;DR
 
 | Question | Answer |
 |---|---|
-| Does the plugin phone home? | No. Zero outbound network calls at runtime. |
-| Does the plugin collect analytics or telemetry? | No. |
-| Does the plugin send my code, prompts, or memory anywhere? | No. The plugin runs inside your editor's process and writes only to your local filesystem. |
-| Where does my project data live? | `.hyperflow/` inside your project (gitignored by default) and `~/.hyperflow/config.json` (optional, written only if you run the installer wizard). |
-| What about my LLM provider? | Your editor talks to its configured LLM provider (Anthropic, etc.) exactly as it would without the plugin. The plugin does not intercept, proxy, or modify that traffic. |
+| Does the plugin phone home? | No. Zero outbound network calls from plugin runtime code. |
+| Does the plugin send cloud analytics? | No. No PostHog/Mixpanel/Sentry-style SDKs. |
+| Does the plugin send my code, prompts, or memory anywhere? | No. It runs in your editor process and writes only to the local filesystem (plus whatever your LLM host already sends to *its* provider). |
+| Local usage ledger? | Yes, for **normal orchestrated** runs only: metadata (phase totals, cache hits, token counts, timestamps). No prompts, responses, file contents, patches, or secrets. Powers the optional local ROI dashboard. Inline-fast creates no ledger records. |
+| Where does project data live? | `.hyperflow/` inside your project (gitignored by default) and optional `~/.hyperflow/config.json`. |
+| What about my LLM provider? | Your editor talks to its configured provider as usual. The plugin does not intercept that traffic. |
 
 ## What the plugin reads
 

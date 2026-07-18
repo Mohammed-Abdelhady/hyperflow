@@ -1,6 +1,6 @@
 # Installation
 
-Get from zero to a reviewed pull request in two commands. This guide covers the quick install per tool, where Hyperflow runs, the security configuration it ships with, and how to verify it's active.
+Get from zero to a reviewed pull request in two install commands, then type a goal (first chain-starter auto-scaffolds the project). This guide covers install per tool, where Hyperflow runs, security defaults, lean mode notes, and how to verify it is active.
 
 ---
 
