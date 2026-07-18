@@ -45,9 +45,18 @@ def _resolve(project_root: Path, arg: str, art_type: str | None) -> Path:
     return matches[0]
 
 
+def _inline_breakout_safe(text: str) -> str:
+    """Neutralize `</` so inlined CSS/JS cannot close surrounding tags.
+
+    Bundles are local/trusted today; still harden so a future untrusted snippet
+    cannot break out of `<style>` / `<script>` (same posture as JSON data).
+    """
+    return text.replace("</", "<\\/")
+
+
 def build_html(env: dict) -> str:
-    css = "\n".join((_VIEWER / f).read_text(encoding="utf-8") for f in _CSS)
-    js = "\n".join((_VIEWER / f).read_text(encoding="utf-8") for f in _JS)
+    css = _inline_breakout_safe("\n".join((_VIEWER / f).read_text(encoding="utf-8") for f in _CSS))
+    js = _inline_breakout_safe("\n".join((_VIEWER / f).read_text(encoding="utf-8") for f in _JS))
     # Escape any </ so an artefact string can't break out of the inline <script>.
     data = json.dumps(env, ensure_ascii=False).replace("</", "<\\/")
     # Escape the title before it hits the <title> tag — an artefact title is

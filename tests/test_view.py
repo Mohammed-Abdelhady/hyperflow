@@ -28,6 +28,24 @@ def _handler(artefacts_root: Path):
 
 
 class ViewTests(unittest.TestCase):
+    def test_types_match_artefact_lib(self) -> None:
+        """view.py must share artefact_lib.TYPES so --type / find_type never lag schema."""
+        lib_spec = importlib.util.spec_from_file_location(
+            "artefact_lib", REPO_ROOT / "scripts" / "artefact_lib.py"
+        )
+        lib = importlib.util.module_from_spec(lib_spec)
+        lib_spec.loader.exec_module(lib)
+        self.assertEqual(list(view.TYPES), list(lib.TYPES))
+        self.assertIn("usage", view.TYPES)
+
+    def test_find_type_resolves_usage_slug(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "artefacts"
+            (root / "usage").mkdir(parents=True)
+            (root / "usage" / "roi-week.json").write_text("{}", encoding="utf-8")
+            self.assertEqual(view.find_type(root, "roi-week"), "usage")
+            self.assertIsNone(view.find_type(root, "usage"))  # bare type -> sample route
+
     def test_bind_host_is_loopback(self) -> None:
         self.assertEqual(view.BIND_HOST, "127.0.0.1")
         # no code literal binds 0.0.0.0 (the docstring may name it as forbidden)

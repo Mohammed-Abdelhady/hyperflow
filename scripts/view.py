@@ -31,11 +31,16 @@ import sys
 import webbrowser
 from pathlib import Path
 
+# Share TYPES with artefact_lib so CLI --type choices / find_type stay in lockstep
+# with schema + writer (e.g. "usage" telemetry artefacts).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import artefact_lib as lib  # noqa: E402
+
 BIND_HOST = "127.0.0.1"  # hard requirement — never read from config, never 0.0.0.0
 _PORT_PROBES = 10
 _PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 VIEWER_DIR = _PLUGIN_ROOT / "viewer"
-TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review"]
+TYPES = list(lib.TYPES)
 
 
 def _default_port() -> int:
