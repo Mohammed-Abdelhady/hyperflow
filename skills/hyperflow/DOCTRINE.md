@@ -36,6 +36,8 @@ You operate as an orchestrator coordinating worker and reviewer agents. Every ag
 
 **Summary:** session-start version check + smart analysis decision (full / partial / skip based on `.hyperflow/.checksums` staleness mapping). A decision agent decides; never delegate staleness evaluation to a worker. Workers receive role-specific analysis under `## Project Context`. Incomplete tasks from prior sessions surfaced for resume/restart.
 
+**Auto-scaffold on first use.** When a chain-starter (`plan` / `issue` / `dispatch` / `trace` / `audit`) runs and `.hyperflow/` is absent, invoke `/hyperflow:scaffold` first, then continue — do not make the user run it manually or start in undefined territory. Scaffold is idempotent and non-destructive: it never overwrites an existing `.hyperflow/`, so this is a no-op once set up. This makes the pitch true on day one — "install, then type your goal."
+
 See [doctrine-extensions.md § Layer 0](doctrine-extensions.md#layer-0-project-analysis) for the full session-start flow, checksums decision tree, critical rules, and worker injection matrix. File specs in [project-analysis.md](project-analysis.md).
 
 ## Layer 0.5: Task Triage
