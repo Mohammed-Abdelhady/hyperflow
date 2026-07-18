@@ -1,0 +1,160 @@
+name: codex-app-conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      run_live_app_server:
+        description: "Run live app-server smoke when codex is available on the runner"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  offline-app-server:
+    name: App-server offline-static (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Offline-static app-server smoke
+        run: python3 tests/codex/app_server_smoke.py --offline-static
+
+      - name: Compatibility + attestation unit tests
+        run: python3 -m unittest tests.test_codex_compatibility -v
+
+      - name: Upload offline evidence summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-server-offline-${{ matrix.os }}
+          path: |
+            config/codex-compatibility.json
+            tests/fixtures/codex/app-attestation.schema.json
+          if-no-files-found: error
+
+  live-app-server:
+    name: App-server live (optional)
+    runs-on: ubuntu-latest
+    # Live lane is opt-in: scheduled/main may enable when codex is preinstalled;
+    # otherwise the smoke script prints SKIP and exits 0.
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' && inputs.run_live_app_server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Live app-server smoke (SKIP if codex unavailable)
+        run: python3 tests/codex/app_server_smoke.py --live
+        env:
+          # Never enable analytics for conformance.
+          HYPERFLOW_APP_SERVER_LISTEN: "stdio://"
+
+  app-attestation:
+    name: Desktop App attestation verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ensure attestation script is executable
+        run: chmod +x scripts/test-codex-app.sh
+
+      - name: Self-test attestation policy
+        run: ./scripts/test-codex-app.sh --self-test
+
+      - name: Reject hand-written schema-shaped attestation without provenance
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          python3 - <<'PY' >"$tmp"
+          import json
+          from datetime import datetime, timedelta, timezone
+          now = datetime.now(timezone.utc)
+          att = {
+            "schemaVersion": 1,
+            "kind": "codex-desktop-app-attestation",
+            "certificateId": "cert-ci-handwritten",
+            "issuer": "local-maintainer",
+            "reviewer": "local-maintainer",
+            "commit": "a" * 40,
+            "tag": None,
+            "createdAt": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "expiresAt": (now + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "evidenceDigestSha256": "b" * 64,
+            "immutableCiRef": "local-file://hand-written",
+            "platform": {"os": "macos", "arch": "aarch64"},
+            "appBuild": {
+              "product": "codex-desktop",
+              "version": "0.0.0",
+              "buildId": "local",
+              "channel": "dev",
+            },
+            "pluginVersion": "5.14.0",
+            "redaction": {"status": "redacted", "rules": ["paths"]},
+            "checks": [{"id": "install", "result": "pass"}],
+          }
+          # Intentionally omit provenance — cannot unlock App claim.
+          print(json.dumps(att, indent=2))
+          PY
+          if ./scripts/test-codex-app.sh --attestation "$tmp"; then
+            echo "FAIL: hand-written attestation without provenance was accepted" >&2
+            exit 1
+          fi
+          echo "PASS: hand-written attestation without provenance rejected"
+
+      - name: Optional verify committed candidate attestation
+        if: hashFiles('tests/fixtures/codex/app-attestation.sample.json') != ''
+        run: |
+          EXPECT_COMMIT="${{ github.sha }}" \
+            ./scripts/test-codex-app.sh --attestation tests/fixtures/codex/app-attestation.sample.json
+
+      - name: Emit independent surface note
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path("config/codex-compatibility.json").read_text())
+          assert c["policy"]["neverInferAppFromCli"]
+          assert c["policy"]["neverInferAppFromAppServer"]
+          print("desktopApp.status =", c["desktopApp"]["status"])
+          print("cli.currentStable.status =", c["cli"]["lanes"]["currentStable"]["status"])
+          print("appServer.currentStable.status =", c["appServer"]["lanes"]["currentStable"]["status"])
+          print("independent certificate lanes OK")
+          PY
