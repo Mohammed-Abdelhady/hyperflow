@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.16.0] — 2026-07-18
+
+### Added
+- Auto-open the plan HTML at Step 12 when viewer.autoOpen
+- Add plan-completion auto-open engine
+- Invoke reap at dispatch deploy and handoff termini
+- Register reap across hosts and README
+- Add reap skill and phase contract
+- Add scope-aware reap engine
+- Archive brief dirs, JSON twins, and --slug mode
+- Add schema-validated cleanup block
+- Require Codex certification before tagging
+- Machine-readable automatic network and write contract
+- Complete runtime-contract wiring for entry skills
+- Wire portable runtime-contract into skill bodies
+- Render specialist charters for Codex
+- Make Codex lifecycle and AGENTS updates safe
+- Define portable workflow operations
+- Enforce Codex plugin contracts
+- Add provider capability resolution
+- Auto-scaffold on first use, elevate permissions setup, gh auth preflight
+- Add reference-drift detector (advisory; distinguishes drift from tailored subsets)
+- Self-contained read-only artefact export (zero upload, offline)
+- Artefact index route + searchable home screen (real artefacts)
+- Telemetry/ROI dashboard — stat tiles + sparkline usage view
+- Add usage-aggregate.py cross-chain ledger rollup
+- Wire onNode->brief, measured edge anchors, viewer.markdown=always; drop dead tokens.json
+- Accessibility — skip-link, scoped live region, graph roles, flip state, route focus
+- Live dispatch progress via poll+re-render, stops at terminal
+- Reproduce artefact-format.md faithfully (status metrics, diagram, cost, briefs)
+- Widen payload contract (cost/progress/briefs) + add usage type
+
+### Fixed
+- Gate dry-run archive plan by feature completion to match live
+- Atomic log truncation, anchored terminal detection, arg-parse and rmtree hardening
+- Run targeted mode regardless of auto and guard incomplete feature
+- Archive in-process and abort GC on archive failure
+- Make durable-memory prune non-destructive and opt-in
+- Clear shellcheck SC2120 and tighten Codex claim honesty
+- Harden cert evidence, transcript reads, and audit-fix docs
+- Read Codex aliases from hook-runtime after launcher split
+- Align TYPES with artefact_lib (include usage)
+- HTML-escape artefact title in export to prevent XSS
+- Keyboard-activate graph nodes, usage view coherence, poll leak guard + SR announce
+
+### Changed
+- Document plan-completion auto-open toggle
+- Mark post-completion-reap reviewed
+- Align memory guarantee with opt-in dropOrphanRefs behavior
+- Cover compaction advisory, index rebuild, idempotency, config modes
+- Correct post-completion-reap Diff range
+- Finalize post-completion-reap Evidence head
+- Build complete post-completion-reap
+- Document reap config and verify end-to-end
+- Define reap as terminal cleanup phase
+- Plan post-completion-reap for second-session build
+- Include AGENTS.md doctrine refresh for v5.15.0
+- V5.15.0
+- Sync certified support surfaces
+- Gate Codex claims on certification
+- Publish certified support and privacy matrix
+- Separate App and app-server certification
+- Add CLI workflow conformance
+- Add isolated plugin lifecycle conformance
+- Enforce shared-reference portability
+- Migrate shared workflow references
+- Migrate shared orchestration prompts
+- Normalize PR and diagnosis references
+- Normalize execution references
+- Normalize cache deploy scaffold references
+- Normalize shared runtime references
+- Normalize canonical orchestration references
+- Normalize provider lifecycle handling
+- Freeze existing provider behavior
+- Rewrite product story around memory, rules, and templates
+- Split rarely-loaded detail out of DOCTRINE.md
+- Proof link to real reviewed PRs + prepared official-registry submission checklist
+- Unify landing hero to the issue→PR line + add visual-artefacts viewer section
+- Barycenter crossing-minimization + drag-to-pan for large graphs
+- Extract graph-core.js + node unit tests for parser/layout
+- Cover migrate-cache version ordering, no-op, migration, idempotency, no-clobber
+- Cover archive-artefacts promotion, dedup idempotency, prune
+
+
 ### Added
 - Plan-completion auto-open of the static, self-contained plan HTML (`.hyperflow/exports/spec-<slug>.html`, both Mermaid graphs inlined) as a pre-gate review template, gated on `viewer.autoOpen` (default off); headless prints the export path
 - Post-completion reap — slug-scoped archive-first cleanup at dispatch wrap-up, deploy end, and handoff complete (gated on `cleanup.reapOnComplete`), plus `/hyperflow:reap <slug>`
@@ -1327,7 +1411,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.15.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.16.0...HEAD
+[5.16.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...v5.16.0
 [5.15.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...v5.15.0
 [5.14.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.13.0...v5.14.0
 [5.13.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.12.0...v5.13.0
