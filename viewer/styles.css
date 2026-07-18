@@ -90,6 +90,19 @@ table.data th { color: var(--fg-dim); font-weight: 600; font-size: .76rem; text-
 table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .risk-low { color: var(--worker); } .risk-medium { color: var(--memory); } .risk-high { color: var(--security); }
 
+/* Telemetry: stat tiles + sparkline */
+.stat-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.stat-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 14px; border-top: 2px solid var(--border); }
+.stat-tile.tone-good { border-top-color: var(--worker); }
+.stat-tile.tone-warn { border-top-color: var(--memory); }
+.stat-value { font-size: 1.7rem; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; color: var(--fg-dim); margin-top: 4px; }
+.stat-sub { font-size: .74rem; color: var(--fg-dim); margin-top: 6px; }
+svg.spark { display: block; width: 100%; max-width: 320px; height: 40px; color: var(--worker); }
+.spark-area { fill: color-mix(in srgb, var(--worker) 18%, transparent); stroke: none; }
+.spark-line { fill: none; stroke: var(--worker); stroke-width: 1.6; stroke-linejoin: round; }
+.spark-dot { fill: var(--worker); }
+
 /* Status dots */
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; background: var(--fg-dim); }
 .st-completed { background: var(--worker); } .st-in_progress { background: var(--git); animation: pulse 1.6s infinite; }
