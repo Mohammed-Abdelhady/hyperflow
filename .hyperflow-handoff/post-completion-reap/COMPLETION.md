@@ -7,9 +7,9 @@
 | Status | built |
 | Built by | grok (session 2 dispatch) |
 | Base | `3b13041718baf7b3a5ed12c716bd9e676b11707f` |
-| Head | `945e256290fe40ed1e0a47046ea76332c38ec3c8` |
+| Head | `dd065b1d976fe404447f5613c6f76a339aa6027e` |
 | Diff range | `3b13041718baf7b3a5ed12c716bd9e676b11707f..${HEAD}` |
-| Commits | 8 |
+| Commits | 9 |
 | Branch | `feat/portable-runtime-ops` |
 | Result | built · 8/8 sub-tasks |
 
@@ -29,6 +29,7 @@
 
 ### Commits
 ```
+dd065b1 chore(handoff): build complete post-completion-reap
 945e256 docs(cleanup): document reap config and verify end-to-end
 c72ea8d docs(doctrine): define reap as terminal cleanup phase
 d7bab59 feat(lifecycle): invoke reap at dispatch deploy and handoff termini
@@ -40,23 +41,22 @@ d7bab59 feat(lifecycle): invoke reap at dispatch deploy and handoff termini
 ```
 
 ### Files
- 28 files changed, 2933 insertions(+), 132 deletions(-)
+ 31 files changed, 2997 insertions(+), 134 deletions(-)
 
 ### Gates
-- tier full · unit: test_config_cleanup + test_archive_artefacts + test_reap PASS
+- tier full · unit: test_config_cleanup + test_archive_artefacts + test_reap PASS (60)
 - validate-plugin.py PASS
 - E2E fixture: dry-run zero mutation · live archive+preserve+delete · idempotent · traversal refuse
 
 ### Reviews
-- Security-sensitive T2/T3 path-safety + slug validation enforced in code/tests
-- Lifecycle wiring gate cleanup.reapOnComplete; handoff package never touched by reap
+- Path-safety and slug validation on T2/T3 deletion/archive paths
+- Lifecycle gate cleanup.reapOnComplete; .hyperflow-handoff never reaped
 
 ### Risks
-- App/OIDC crypto binding for other features unrelated
-- Real in-flight tasks (full-codex-support) deliberately not reaped in tests
+- None blocking; verify on fixtures only during tests
 
 ### Next
-Return to session 1 and run:
+Return to session 1:
 `/hyperflow:handoff review post-completion-reap`
 or
-`/hyperflow:audit 3b13041718baf7b3a5ed12c716bd9e676b11707f..945e256290fe40ed1e0a47046ea76332c38ec3c8 level=3`
+`/hyperflow:audit 3b13041718baf7b3a5ed12c716bd9e676b11707f..dd065b1d976fe404447f5613c6f76a339aa6027e level=3`
