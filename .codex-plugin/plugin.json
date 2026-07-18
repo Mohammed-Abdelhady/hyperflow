@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "5.14.0",
-  "description": "Rules, multi-session project memory, templates, and reviewed multi-agent workflows for Codex App and CLI. Issue to PR when you need it. Memory and doctrine stay in your project.",
+  "description": "Rules, multi-session project memory, templates, and reviewed multi-agent workflows for Codex CLI (preview; desktop App support pending certification). Issue to PR when you need it. Memory and doctrine stay in your project.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -12,7 +12,6 @@
   "keywords": [
     "codex",
     "codex-cli",
-    "codex-app",
     "ai-coding",
     "multi-agent",
     "orchestration",
@@ -20,14 +19,15 @@
     "multi-session",
     "task-templates",
     "code-review",
-    "skills"
+    "skills",
+    "preview"
   ],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Hyperflow",
-    "shortDescription": "Memory, rules, templates, and reviewed multi-agent chains for Codex",
-    "longDescription": "Hyperflow gives Codex a full engineering system: intent routing, multi-session project memory under .hyperflow/memory/, task templates, portable doctrine/rules, Worker-to-Reviewer specialist checks, parallel workers, optional local visual artefacts, security guardrails, and gated release. Plan and build across two sessions via git handoff packages when needed.",
+    "shortDescription": "Memory, rules, templates, and reviewed multi-agent chains for Codex CLI (preview)",
+    "longDescription": "Hyperflow gives Codex CLI a full engineering system (preview until lanes are certificate-backed): intent routing, multi-session project memory under .hyperflow/memory/, task templates, portable doctrine/rules, Worker-to-Reviewer specialist checks via host orchestration with inline labelled fallbacks when subagents or parallel tool calls are unavailable, optional local visual artefacts, security guardrails, and gated release. Plan and build across two sessions via git handoff packages when needed. Desktop App support is pending certification and is not claimed from CLI install alone.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [
