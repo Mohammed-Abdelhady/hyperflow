@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Slug | `post-completion-reap` |
-| Status | `planned` |
+| Status | `built` |
 | Artefact type | flat task (8 sub-tasks · 4 batches) |
 | Artefact path | `artefact/tasks/post-completion-reap.md` (+ `artefact/tasks/post-completion-reap/T1–T8.md`) |
 | Spec | `artefact/specs/post-completion-reap.md` |
