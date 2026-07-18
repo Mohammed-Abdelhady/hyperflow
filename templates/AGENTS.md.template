@@ -1,4 +1,3 @@
-<!-- hyperflow-shim-start v${HYPERFLOW_VERSION} -->
 # AGENTS.md — ${PROJECT_NAME}
 
 ## Hyperflow
@@ -7,13 +6,30 @@ This project uses **hyperflow v${HYPERFLOW_VERSION}** for autonomous multi-agent
 
 **Activation:** On session start, load and follow the `hyperflow` skill (Codex, OpenCode, Cursor, Grok, and compatible tools). If you do not have access to the skill mechanism, read `~/.hyperflow/config.json` when present and follow the portable doctrine at https://github.com/Mohammed-Abdelhady/hyperflow.
 
+**Roles — current session model only:**
+- Every agent runs on the **current session model**. There is no model-tier routing and no model configuration. Roles differ by responsibility, not by model.
+- Workers (Implementer / Searcher / Writer) execute. Reviewers review. Workers never review; reviewers never coordinate.
+
 **Behavior overrides:**
 - Decompose every task into worker subtasks (parallel where independent)
-- Thinking-tier model reviews every worker output before it is considered done
+- A reviewer reviews every worker output before it is considered done
 - Required Hyperflow gates still fire. If popup questions are unavailable, ask as a short `Hyperflow Question` chat block and wait for the answer.
 - Never ask invented confirmation questions such as "should I proceed?"
 - Print agent labels (`⚡ [Role] description`) before each dispatch
 - Print a usage summary at task end
+- One conventional commit per distinct task (`feat:` / `fix:` / `docs:` / `refactor:` / `chore:` / `perf:` / `style:` / `test:`)
+
+**Auto-routing by intent** (first match wins; case-insensitive). Bypass when the message starts with `/` or contains "without hyperflow" / "just answer":
+
+| Verb / phrase | Workflow |
+|---|---|
+| `brainstorm`, `design`, `explore`, "what if", "should we", "unsure about" | Read code → ask only material questions → propose 2-3 approaches → design section-by-section with user approval per section |
+| `scope`, `decompose`, "plan out", "break down" | Map affected surface → produce batched task graph → write to `.hyperflow/tasks/<slug>.md` |
+| `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow` | Use portable workflow adapter / scope→build when native dynamic workflows are unavailable |
+| `build`, `implement`, `add`, `refactor`, "wire up" | Inspect → inline-fast for proven reversible 1-2-file work; otherwise decompose → parallel workers → batch review → commits → integration review |
+| `debug`, `fix it`, `solve`, "why is X", "Y fails", stack trace | Systematic root-cause: 5 Whys + parallel hypothesis testing. Never blind-patch symptoms |
+| `audit`, `review`, "check for issues", "security check" | Multi-level review (L1 syntax → L5 exhaustive) → write findings to `.hyperflow/audits/<timestamp>.md` → ask fix-gate |
+| `ship`, `push`, `release`, `deploy` | Pre-push gates (lint + typecheck + build + tests + security sweep) → ask before push → never `--no-verify`, never force-push to main |
 
 **Project context (read on session start):**
 - `.hyperflow/profile.md` — project identity and tech stack
@@ -35,5 +51,3 @@ This project uses **hyperflow v${HYPERFLOW_VERSION}** for autonomous multi-agent
 - `.hyperflow/tasks/` — in-progress task tracking
 
 After each batch of worker outputs, append durable learnings to `.hyperflow/memory/` using the tagged entry format documented in the hyperflow skill.
-
-<!-- hyperflow-shim-end -->

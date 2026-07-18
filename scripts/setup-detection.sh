@@ -41,7 +41,8 @@ OPTIONS:
                      cursor       — writes AGENTS.md (Cursor reads it natively)
                      grok         — writes AGENTS.md + .grok/rules/hyperflow.md
                      all          — claude-code + opencode + codex + agents + antigravity + cursor + grok
-  --force          Overwrite existing files (default: skip with warning)
+  --force          Refresh managed Hyperflow blocks / overwrite full files
+                   (default: skip when block or file already present)
   --dry-run        Print what would be created without writing files
   --help           Show this help message
 
@@ -173,7 +174,7 @@ load_template() {
   fi
 }
 
-# ── File write helper ─────────────────────────────────────────────────────────
+# ── File write helper (full-file overwrite — workflows / grok rules only) ──────
 CREATED_FILES=()
 
 write_file() {
@@ -200,17 +201,27 @@ write_file() {
   CREATED_FILES+=("$path")
 }
 
-# ── Claude Code: append-or-create logic ───────────────────────────────────────
-write_claude_md() {
-  local path="$ROOT/CLAUDE.md"
-  # Bug 1+marker fix: embed version in start marker; shell is single source
+# ── Managed-block write (AGENTS.md / CLAUDE.md) ────────────────────────────────
+# Owns only the marked Hyperflow block. User content outside markers is
+# byte-preserved on create, append, refresh, and --force.
+# Template bodies must NOT include markers; this function wraps them once.
+write_managed_md() {
+  local path="$1"
+  local template_name="$2"
+  local label="$3"
+
   local version
   version="${HYPERFLOW_VERSION:-$(cat "$SCRIPT_DIR/../skills/hyperflow/VERSION" 2>/dev/null || echo "unknown")}"
   local start_marker="<!-- hyperflow-shim-start v${version} -->"
   local end_marker="<!-- hyperflow-shim-end -->"
-  # Bug 2 fix: template has no markers; shell adds them exactly once
   local section
-  section="$(load_template "CLAUDE.md.template")"
+  section="$(load_template "$template_name")"
+  # Strip markers if an older template still embeds them (avoid double-wrap).
+  section="$(printf '%s\n' "$section" | awk '
+    /hyperflow-shim-start/{skip=1; next}
+    skip && /hyperflow-shim-end/{skip=0; next}
+    !skip{print}
+  ')"
 
   local block
   block="${start_marker}
@@ -219,7 +230,11 @@ ${end_marker}"
 
   if [[ "$DRY_RUN" == true ]]; then
     if [[ -f "$path" ]]; then
-      echo -e "${BLUE}==> [dry-run] Would append hyperflow section to: ${path}${RESET}"
+      if grep -q "hyperflow-shim-start" "$path" 2>/dev/null; then
+        echo -e "${BLUE}==> [dry-run] Would refresh hyperflow ${label} block in: ${path}${RESET}"
+      else
+        echo -e "${BLUE}==> [dry-run] Would append hyperflow ${label} block to: ${path}${RESET}"
+      fi
     else
       echo -e "${BLUE}==> [dry-run] Would create: ${path}${RESET}"
     fi
@@ -227,31 +242,65 @@ ${end_marker}"
     return
   fi
 
+  local dir
+  dir="$(dirname "$path")"
+  [[ -d "$dir" ]] || mkdir -p "$dir"
+
   if [[ -f "$path" ]]; then
-    # Check if shim already present (prefix match handles version-embedded marker)
     if grep -q "hyperflow-shim-start" "$path"; then
       if [[ "$FORCE" == false ]]; then
-        echo -e "${YELLOW}⚠  Hyperflow section already present in ${path} (skipping — use --force to update)${RESET}"
+        # Idempotent: already has a managed block — skip unless force refresh.
+        echo -e "${YELLOW}⚠  Hyperflow ${label} block already present in ${path} (skipping — use --force to update)${RESET}"
         return
       fi
-      # Bug 3 fix: correct awk strips lines between markers (inclusive) without leaving stale end-marker
-      local tmpfile
+      # Replace the managed block in-place; prefix/suffix outside markers stay byte-identical.
+      local tmpfile blockfile
       tmpfile="$(mktemp)"
-      awk -v s="hyperflow-shim-start" -v e="hyperflow-shim-end" '
-        index($0,s){skip=1; next}
-        skip && index($0,e){skip=0; next}
-        !skip{print}
+      blockfile="$(mktemp)"
+      printf '%s\n' "$block" > "$blockfile"
+      awk -v s="hyperflow-shim-start" -v e="hyperflow-shim-end" -v bf="$blockfile" '
+        BEGIN {
+          while ((getline line < bf) > 0) {
+            if (n++) blk = blk ORS line
+            else blk = line
+          }
+          close(bf)
+        }
+        index($0, s) {
+          if (!done) { print blk; done = 1 }
+          skip = 1
+          next
+        }
+        skip && index($0, e) { skip = 0; next }
+        !skip { print }
       ' "$path" > "$tmpfile"
       mv "$tmpfile" "$path"
-      echo -e "${BLUE}==> Replacing existing hyperflow section in ${path}${RESET}"
+      rm -f "$blockfile"
+      echo -e "${GREEN}✓  Refreshed hyperflow ${label} block in: ${path}${RESET}"
+    else
+      # Existing user content, no managed block — append one.
+      # Ensure a clean separator without rewriting prior bytes.
+      if [[ -s "$path" ]] && [[ -n "$(tail -c1 "$path" 2>/dev/null || true)" ]]; then
+        printf '\n' >> "$path"
+      fi
+      printf '\n%s\n' "$block" >> "$path"
+      echo -e "${GREEN}✓  Appended hyperflow ${label} block to: ${path}${RESET}"
     fi
-    printf '\n%s\n' "$block" >> "$path"
-    echo -e "${GREEN}✓  Appended hyperflow section to: ${path}${RESET}"
   else
     printf '%s\n' "$block" > "$path"
     echo -e "${GREEN}✓  Created: ${path}${RESET}"
   fi
   CREATED_FILES+=("$path")
+}
+
+# ── Claude Code: managed CLAUDE.md block ──────────────────────────────────────
+write_claude_md() {
+  write_managed_md "$ROOT/CLAUDE.md" "CLAUDE.md.template" "shim"
+}
+
+# ── AGENTS.md (Codex / OpenCode / Cursor / Grok / Antigravity) ────────────────
+write_agents_md() {
+  write_managed_md "$ROOT/AGENTS.md" "AGENTS.md.template" "shim"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -263,13 +312,13 @@ main() {
   [[ "$DRY_RUN" == true ]] && echo -e "    Mode:         dry-run"
   echo ""
 
-  # AGENTS.md — OpenCode / Codex / Cursor / Grok / Antigravity
+  # AGENTS.md — OpenCode / Codex / Cursor / Grok / Antigravity (managed block)
   if [[ "$need_agents_md" == true ]]; then
-    echo -e "${BLUE}==> AGENTS.md (OpenCode / Codex / Cursor / Grok)${RESET}"
-    write_file "$ROOT/AGENTS.md" "$(load_template "AGENTS.md.template")"
+    echo -e "${BLUE}==> AGENTS.md (OpenCode / Codex / Cursor / Grok / Antigravity)${RESET}"
+    write_agents_md
   fi
 
-  # CLAUDE.md — Claude Code (append mode)
+  # CLAUDE.md — Claude Code only (never written for codex-only --tools)
   if [[ "$need_claude_md" == true ]]; then
     echo -e "${BLUE}==> CLAUDE.md (Claude Code)${RESET}"
     write_claude_md
