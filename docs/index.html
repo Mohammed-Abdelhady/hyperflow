@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hyperflow — Multi-Agent Orchestration for AI Coding CLIs</title>
-  <meta name="description" content="Turn a GitHub issue into a reviewed PR. Hyperflow orchestrates AI coding agents on Claude Code, Codex, OpenCode & Cursor — every step reviewed, memory kept local." />
+  <title>Hyperflow — Rules, memory, templates, reviewed multi-agent chains</title>
+  <meta name="description" content="Hyperflow is an engineering system for AI coding agents: multi-session project memory, doctrine/rules, task templates, and Worker-to-Reviewer orchestration. Issue to reviewed PR when you need it. Claude Code, Codex, OpenCode, Grok, Antigravity, Cursor." />
   <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta name="theme-color" content="#0B0F1A" />
 
@@ -15,19 +15,19 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hyperflow" />
-  <meta property="og:title" content="Hyperflow — Multi-Agent Orchestration for AI Coding CLIs" />
-  <meta property="og:description" content="Turn a GitHub issue into a reviewed PR. Hyperflow orchestrates AI coding agents on Claude Code, Codex, OpenCode & Cursor — every step reviewed, memory kept local." />
+  <meta property="og:title" content="Hyperflow — Rules, memory, templates, reviewed multi-agent chains" />
+  <meta property="og:description" content="Project learnings survive sessions. Doctrine auto-routes work. Templates decompose. Workers build; specialists review. Local only; your session model." />
   <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:alt" content="Hyperflow — from GitHub issue to reviewed PR: plan, dispatch, audit, deploy" />
+  <meta property="og:image:alt" content="Hyperflow: multi-session memory, doctrine, templates, issue to PR" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Hyperflow — Multi-Agent Orchestration for AI Coding CLIs" />
-  <meta name="twitter:description" content="Turn a GitHub issue into a reviewed PR. Normal-flow work uses specialist reviews; proven-safe tiny edits use inline diff review." />
+  <meta name="twitter:title" content="Hyperflow — Rules, memory, templates, reviewed multi-agent chains" />
+  <meta name="twitter:description" content="Multi-session project memory, portable doctrine, task templates, and reviewed multi-agent orchestration for AI coding CLIs." />
   <meta name="twitter:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -46,7 +46,7 @@
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux",
         "softwareVersion": "5.14.0",
-        "description": "Point it at a GitHub issue, get back a reviewed pull request. Multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity & Cursor — every step reviewed, memory that stays in your repo.",
+        "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex, OpenCode, Grok, Antigravity, Cursor.",
         "url": "https://mohammed-abdelhady.github.io/hyperflow/",
         "downloadUrl": "https://github.com/Mohammed-Abdelhady/hyperflow",
         "license": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
@@ -100,12 +100,12 @@
     <section class="hero" id="hero" aria-labelledby="hero-heading">
       <div class="container">
         <p class="hero-eyebrow">Codex · Claude Code · OpenCode · Grok · Antigravity · Cursor</p>
-        <h1 id="hero-heading">Point it at a GitHub issue.<br />Get back a reviewed pull request.</h1>
+        <h1 id="hero-heading">Not just a chat.<br />An engineering system for agents.</h1>
         <p class="hero-sub">
-          One session becomes a whole engineering team: tiny proven-safe edits run inline; planners design,
-          parallel workers build, and 22 domain specialists review the normal orchestrated path.
-          On your session model, zero config. Learnings persist in local per-project
-          memory — never uploaded, never mixed across repos.
+          Hyperflow is doctrine, multi-session project memory, task templates, and a reviewed multi-agent chain.
+          Point it at a GitHub issue when you want a PR. Day to day it remembers what your repo taught it,
+          auto-routes intent, decomposes with templates, and keeps workers under specialist review.
+          Your session model. Local by default. Zero extra API keys.
         </p>
         <div class="hero-cta" role="group" aria-label="Install Hyperflow">
           <span class="cmd"><span class="prompt">$</span> <span id="hero-cmd">curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash</span>
@@ -310,17 +310,23 @@
     <section id="memory" aria-labelledby="memory-heading">
       <div class="container">
         <p class="section-label">Memory</p>
-        <h2 id="memory-heading">Learnings persist. Locally.</h2>
+        <h2 id="memory-heading">Learnings survive the session.</h2>
         <div class="grid-2">
           <div>
             <p class="section-intro">
-              Every run distills what it learned — conventions, gotchas, decisions —
-              into plain markdown under <code>.hyperflow/memory/</code>. Carried into
-              every future session, version-controllable with your repo.
+              Agents forget. Hyperflow keeps project-scoped memory under
+              <code>.hyperflow/memory/</code>: learnings, decisions, pitfalls, patterns,
+              conventions, hot-tier anti-patterns, and structural project-decisions for future specs.
             </p>
             <p>
-              <strong>Never uploaded. Never mixed across repos.</strong> There is no
-              telemetry, no account, no cloud sync — the memory is a folder you own.
+              Entries are tagged and tiered (hot / warm / cold). Session start rebuilds a derived index
+              and injects what the next task needs. Audits write anti-patterns; plans memoize structural answers.
+              Manage with <code>/hyperflow:cache</code>. Default gitignore keeps memory on your machine;
+              use handoff packages when another environment must continue the work.
+            </p>
+            <p>
+              <strong>No cloud brain. No cross-repo mix.</strong> Optional local usage ledger is metadata-only
+              (no prompts or file contents) for ROI tiles in the viewer.
             </p>
           </div>
           <div class="terminal reveal">
@@ -330,10 +336,15 @@
             </div>
             <div class="terminal-body">
               <pre class="filetree" aria-label="Example memory folder">.hyperflow/memory/
-├── <span class="c-mem">conventions.md</span>   <span class="c-dim"># naming, structure, idioms</span>
-├── <span class="c-mem">decisions.md</span>     <span class="c-dim"># why X over Y, with dates</span>
-├── <span class="c-mem">gotchas.md</span>       <span class="c-dim"># the bug that cost an hour</span>
-└── <span class="c-mem">profile.md</span>       <span class="c-dim"># stack, gates, test commands</span></pre>
+├── <span class="c-mem">index.md</span>            <span class="c-dim"># derived index (auto)</span>
+├── <span class="c-mem">learnings.md</span>        <span class="c-dim"># patterns &amp; gotchas</span>
+├── <span class="c-mem">decisions.md</span>        <span class="c-dim"># why X over Y</span>
+├── <span class="c-mem">pitfalls.md</span>         <span class="c-dim"># failed approaches</span>
+├── <span class="c-mem">patterns.md</span>         <span class="c-dim"># reusable shapes</span>
+├── <span class="c-mem">conventions.md</span>      <span class="c-dim"># project rules learned</span>
+├── <span class="c-mem">anti-patterns.md</span>    <span class="c-dim"># hot: always injected</span>
+├── <span class="c-mem">project-decisions.md</span> <span class="c-dim"># memoized for specs</span>
+└── <span class="c-mem">archive/</span>            <span class="c-dim"># cold compacted months</span></pre>
             </div>
           </div>
         </div>
@@ -375,12 +386,12 @@
               <tr><th scope="col">Profile</th><th scope="col">Use when</th><th scope="col">Shape</th></tr>
             </thead>
             <tbody>
-              <tr><td><strong>fast</strong></td><td>Typos, small fixes, single-file edits</td><td>1 worker, light review</td></tr>
-              <tr><td><strong>standard</strong></td><td>Typical features and refactors</td><td>Parallel batches, per-batch review</td></tr>
-              <tr><td><strong>deep</strong></td><td>Cross-cutting changes, risky surfaces</td><td>Full fan-out, integration review</td></tr>
+              <tr><td><strong>fast</strong></td><td>Clear, reversible 1–2 ordinary-file fixes (inline-fast preflight)</td><td>0 dispatched workers; foreground edit + allowlisted diff review</td></tr>
+              <tr><td><strong>standard</strong></td><td>Typical features and refactors</td><td>1–2 workers; per-batch review</td></tr>
+              <tr><td><strong>deep</strong></td><td>Cross-cutting or risky surfaces</td><td>3+ workers; integration review</td></tr>
               <tr><td><strong>research</strong></td><td>Unknowns needing external evidence</td><td>Web-research-first specialists</td></tr>
               <tr><td><strong>creative</strong></td><td>Design systems, visual work</td><td>Designer + taste review</td></tr>
-              <tr><td><strong>scientific</strong></td><td>Numerical, data, ML correctness</td><td>Reproducibility discipline</td></tr>
+              <tr><td><strong>scientific</strong></td><td>Numerical, data, ML correctness</td><td>Reproducibility discipline + TDD bias</td></tr>
             </tbody>
           </table>
         </div>
@@ -480,14 +491,17 @@
             <span class="install-block-title">First run</span>
           </div>
           <div class="install-code">
-            <span class="comment"># Set up a new project (builds .hyperflow/ cache)</span><br />
-            /hyperflow:scaffold<br />
-            <br />
-            <span class="comment"># Start the full chain from a feature description</span><br />
+            <span class="comment"># Type a goal (first chain-starter auto-scaffolds .hyperflow/ if missing)</span><br />
             /hyperflow:plan "add user auth with login page and middleware"<br />
             <br />
-            <span class="comment"># Or start straight from a GitHub issue</span><br />
-            /hyperflow:issue https://github.com/you/app/issues/42
+            <span class="comment"># Or start from a GitHub issue</span><br />
+            /hyperflow:issue https://github.com/you/app/issues/42<br />
+            <br />
+            <span class="comment"># Inspect multi-session memory</span><br />
+            /hyperflow:cache show<br />
+            <br />
+            <span class="comment"># Optional: local graphs + dashboard</span><br />
+            hyperflow view
           </div>
         </div>
 
@@ -506,7 +520,7 @@
     <div class="footer-inner">
       <div class="footer-left">
         <a href="#hero" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta"><span class="footer-version">v5.14.0</span> · MIT License</span>
+        <span class="footer-meta"><span class="footer-version">v5.14.0</span> · MIT · © 2026 Mohammed Abdelhady</span>
       </div>
       <ul class="footer-links" role="list">
         <li><a href="installation.html">Installation</a></li>

@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "5.14.0",
-  "description": "Point it at a GitHub issue, get back a reviewed pull request. Multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity & Cursor — every step reviewed, memory that stays in your repo.",
+  "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex, OpenCode, Grok, Antigravity, Cursor.",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -15,19 +15,27 @@
     "type": "git",
     "url": "https://github.com/Mohammed-Abdelhady/hyperflow"
   },
+  "homepage": "https://mohammed-abdelhady.github.io/hyperflow/",
+  "bugs": {
+    "url": "https://github.com/Mohammed-Abdelhady/hyperflow/issues"
+  },
   "keywords": [
     "ai-coding",
     "multi-agent",
     "orchestration",
+    "project-memory",
+    "multi-session",
+    "task-templates",
+    "doctrine",
     "claude-code",
     "claude-code-plugin",
     "codex",
-    "codex-plugin",
     "opencode",
     "grok",
-    "xai",
-    "parallel-execution",
+    "cursor",
+    "antigravity",
     "code-review",
+    "visual-artefacts",
     "skills"
   ]
 }
