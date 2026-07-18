@@ -329,35 +329,94 @@ The hook blocks automatic compaction before dispatch end or when the estimate is
 
 ---
 
-## Auto-archive — finished work cleans itself up
+## Hygiene — cleanup config, daily sweep, and post-completion reap
 
-`.hyperflow/{tasks,audits,specs}/` would grow forever if every run left its files behind. A daily-gated session-start step keeps the project tidy:
+`.hyperflow/{tasks,audits,specs,features}/` would grow forever if every run left its files behind. Hyperflow keeps the tree healthy with **two complementary paths**:
 
-- For each `*.md` in those folders older than `cleanup.staleDays` (default **7**), the archiver extracts the `## Learnings` / `## Decisions` / `## Anti-patterns` (or `## Pitfalls`) sections and appends them — whole-line de-duped — to `.hyperflow/memory/learnings.md` / `decisions.md` / `anti-patterns.md`. Only **then** is the source file moved to `.hyperflow/archive/<type>/YYYY-MM/`.
-- Anything under `.hyperflow/archive/**` older than `cleanup.pruneDays` (default **30**) gets deleted; empty directories collapse.
-- A marker (`.hyperflow/.last-cleanup`) gates the walk to once per 24h per project — repeat session-starts are free.
+1. **Daily session-start sweep** — mtime-driven safety net for leftovers and interrupted runs (`archive-artefacts.py`).
+2. **Post-completion reap** — slug-scoped, terminal-gated pass that fires when a lifecycle truly ends (`reap.py`), archive-first and memory-preserving.
 
-Tune or disable it in `~/.hyperflow/config.json`:
+Both read the same `cleanup` block from `~/.hyperflow/config.json` (schema: `config/schema.json`). Missing keys fall back to the defaults below.
+
+### `cleanup.*` config reference
+
+| Key | Type | Default | Effect |
+|---|---|---:|---|
+| `auto` | boolean | `true` | Master switch for the **daily** session-start archive/prune sweep. Does not disable slug-scoped reap. |
+| `staleDays` | integer ≥ 1 | `7` | Age (days) after which tasks/audits/specs (and completed features) are archived by the daily sweep. |
+| `pruneDays` | integer ≥ 1 | `30` | Age (days) after which entries under `.hyperflow/archive/` are deleted; empty dirs collapse. |
+| `reapOnComplete` | boolean | `true` | Fire slug-scoped **reap** at lifecycle termini (dispatch wrap-up, deploy end, handoff `complete`). When `false`, lifecycle skills skip reap with an explicit notice; the daily sweep remains the safety net. |
+| `usageRetentionDays` | integer ≥ 1 | `30` | Retention for `.hyperflow/usage/*.jsonl` ledgers. Reap hard-deletes older files; the active chain ledger (`.active-chain-id`) is never deleted while in flight. |
+| `logMaxLines` | integer ≥ 100 | `2000` | Max lines kept in `.hyperflow/.session-start.log` after reap truncation (tail retained). |
+| `dryRun` | boolean | `false` | Global dry-run override for reap (and archive when honored): report the plan, **mutate nothing**. CLI `--dry-run` ORs with this flag. |
+
+Full example:
 
 ```json
 {
-  "cleanup": { "auto": true, "staleDays": 7, "pruneDays": 30 }
+  "cleanup": {
+    "auto": true,
+    "staleDays": 7,
+    "pruneDays": 30,
+    "reapOnComplete": true,
+    "usageRetentionDays": 30,
+    "logMaxLines": 2000,
+    "dryRun": false
+  }
 }
 ```
+
+### Daily session-start sweep
+
+When `cleanup.auto` is true, a daily-gated session-start step keeps the project tidy:
+
+- For each artefact older than `cleanup.staleDays` (default **7**), the archiver extracts the `## Learnings` / `## Decisions` / `## Anti-patterns` (or `## Pitfalls`) sections and appends them — whole-line de-duped — to `.hyperflow/memory/learnings.md` / `decisions.md` / `anti-patterns.md`. Only **then** is the source moved to `.hyperflow/archive/<type>/YYYY-MM/`.
+- Anything under `.hyperflow/archive/**` older than `cleanup.pruneDays` (default **30**) gets deleted; empty directories collapse.
+- A marker (`.hyperflow/.last-cleanup`) gates the walk to once per 24h per project — repeat session-starts are free.
 
 Force a sweep on demand:
 
 ```bash
-python3 ~/.hyperflow/repo/scripts/archive-artefacts.py /path/to/project/.hyperflow --force
+python3 <plugin-root>/scripts/archive-artefacts.py /path/to/project/.hyperflow --force
 ```
 
-Or archive **one specific file immediately** (on-completion mode — what closing skills call when a chain finishes successfully, bypassing staleness):
+Archive **one specific file** (on-completion helper used by lower-level callers, bypassing staleness):
 
 ```bash
-python3 ~/.hyperflow/repo/scripts/archive-artefacts.py /path/to/project/.hyperflow --file .hyperflow/tasks/<slug>.md
+python3 <plugin-root>/scripts/archive-artefacts.py /path/to/project/.hyperflow --file .hyperflow/tasks/<slug>.md
 ```
 
-Net effect: durable learnings compound in memory, the working folders only ever hold what's still in flight, and finished work is cleaned up the moment the chain closes.
+### Post-completion reap lifecycle
+
+When a chain **actually finishes**, ad-hoc deletes are not the disposition path. Lifecycle skills run a **reap phase** that calls `scripts/reap.py` for the finished slug:
+
+| Call site | When | Gate |
+|---|---|---|
+| `dispatch` | Step 4 wrap-up (after terminal status + memory + Evidence freeze) | `cleanup.reapOnComplete`; **skip** when `on_complete=deploy` (deploy owns terminal reap); skip partial/halted builds |
+| `deploy` | End of successful deploy for a scoped slug | `cleanup.reapOnComplete` |
+| `handoff` | `complete <slug>` after the handoff package is archived under `.hyperflow-handoff/` | `cleanup.reapOnComplete`; package archive stays handoff-owned — reap only touches `.hyperflow/` |
+| Manual | `/hyperflow:reap <slug> [--dry-run] [--force]` | Operator; `--force` requires interactive confirmation on non-terminal slugs |
+
+Exact invocation (first arg is always the **`.hyperflow` directory**):
+
+```bash
+python3 <plugin-root>/scripts/reap.py /path/to/project/.hyperflow --slug <slug> [--dry-run] [--force] [--json]
+```
+
+**Terminal gate:** flat task `Status`/`State` must be `complete`/`completed`, or `features/<slug>/feature.md` `Status` `completed`. Non-terminal → no-op with `skipped: non-terminal` (exit 0) unless `--force`.
+
+**Disposition policy** (what one reap does for `<slug>`):
+
+| Class | Members | Action |
+|---|---|---|
+| **Archive** (reversible) | `tasks/<slug>.md`, `tasks/<slug>/` brief dir, `specs/<slug>.md`, `specs/<slug>.draft.md`, `features/<slug>/`, `artefacts/*/<slug>.json` twins | Promote learnings → durable memory, then **move** to `.hyperflow/archive/<type>/YYYY-MM/` via `archive-artefacts.py --slug` |
+| **Ephemeral** (hard-delete) | Stale `usage/*.jsonl` past `usageRetentionDays`; `.session-start.log` over `logMaxLines`; terminal `background/bg-*.md` older than 7d; empty/settled `commits-queue/` | Delete or truncate (regenerable) |
+| **Memory** (preserve + optimize) | Durable `memory/*.md` categories | **Never** wipe category files; drop orphaned Evidence refs, rebuild `memory/index.md`, flag oversized files for `/hyperflow:cache compact` |
+| **Never touch** | `.version`, `.last-cleanup`, `.active-chain-id`, `.chain-base`, active usage ledger, in-flight work, `.hyperflow-handoff/**`, application source | Skipped |
+
+**Report:** JSON on stdout (`slug`, `dryRun`, `archived[]`, `deleted[]`, `bytesFreed`, `memory{indexRebuilt,orphansDropped,compacted[]}`, `skipped[]`). Lifecycle skills print a Reap Report block and append one JSON line to `.hyperflow/archive/.reap-log.jsonl`. Reap is **idempotent** — a second pass on the same completed slug is a clean no-op. Path safety: slug must match `^[a-z0-9-]+$`; every target is resolved under `.hyperflow/` (traversal refused).
+
+Net effect: durable insight compounds in memory, working folders only hold work still in flight, finished scopes leave a recoverable archive trail, and ephemeral session bloat is bounded.
 
 ---
 
