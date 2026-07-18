@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "kind": "codex-hook-payload-fixture",
+  "description": "Safe hook payloads for scripts/test-codex-hooks.sh. Placeholders {{PROJECT_ROOT}}, {{NESTED_CWD}}, {{UNRELATED_CWD}}, {{TEMP_HOME}}, {{CODEX_HOME}} are substituted by the harness.",
+  "cases": [
+    {
+      "id": "session-start-startup",
+      "hook": "session-start",
+      "event": "SessionStart",
+      "cwd": "{{PROJECT_ROOT}}",
+      "payload": {
+        "cwd": "{{PROJECT_ROOT}}",
+        "source": "startup",
+        "trigger": "startup",
+        "hook_event_name": "SessionStart",
+        "session_id": "fixture-session-startup"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContainsAny": [
+          "fixture-session-start",
+          "additionalContext",
+          "content"
+        ],
+        "jsonKeysAny": [
+          "content",
+          "hookSpecificOutput"
+        ]
+      }
+    },
+    {
+      "id": "session-start-nested-cwd",
+      "hook": "session-start",
+      "event": "SessionStart",
+      "cwd": "{{NESTED_CWD}}",
+      "payload": {
+        "cwd": "{{NESTED_CWD}}",
+        "source": "startup",
+        "trigger": "startup",
+        "hook_event_name": "SessionStart",
+        "session_id": "fixture-session-nested"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContainsAny": [
+          "fixture-session-start",
+          "content"
+        ]
+      }
+    },
+    {
+      "id": "session-start-from-unrelated-cwd",
+      "hook": "session-start",
+      "event": "SessionStart",
+      "cwd": "{{UNRELATED_CWD}}",
+      "runMode": "registered-launcher",
+      "payload": {
+        "cwd": "{{PROJECT_ROOT}}",
+        "source": "resume",
+        "trigger": "resume",
+        "hook_event_name": "SessionStart",
+        "session_id": "fixture-session-unrelated"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContainsAny": [
+          "fixture-session-start",
+          "content"
+        ]
+      }
+    },
+    {
+      "id": "precompact-auto-block",
+      "hook": "pre-compact",
+      "event": "PreCompact",
+      "cwd": "{{PROJECT_ROOT}}",
+      "payload": {
+        "cwd": "{{PROJECT_ROOT}}",
+        "trigger": "auto",
+        "hook_event_name": "PreCompact",
+        "transcript_path": "{{PROJECT_ROOT}}/missing-transcript.jsonl"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContainsAny": [
+          "fixture-block-auto-compact",
+          "block"
+        ],
+        "jsonEquals": {
+          "decision": "block"
+        }
+      }
+    },
+    {
+      "id": "precompact-manual-allow-shape",
+      "hook": "pre-compact",
+      "event": "PreCompact",
+      "cwd": "{{PROJECT_ROOT}}",
+      "payload": {
+        "cwd": "{{PROJECT_ROOT}}",
+        "trigger": "manual",
+        "hook_event_name": "PreCompact",
+        "transcript_path": ""
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContainsAny": [
+          "fixture-block-auto-compact",
+          "decision",
+          "continue"
+        ]
+      }
+    },
+    {
+      "id": "malformed-payload-nonfatal",
+      "hook": "session-start",
+      "event": "SessionStart",
+      "cwd": "{{PROJECT_ROOT}}",
+      "rawStdin": "{not-json!!!",
+      "expect": {
+        "exitCode": 0,
+        "allowNonJsonStdout": true
+      }
+    },
+    {
+      "id": "trust-bypass-isolation-marker",
+      "hook": "session-start",
+      "event": "SessionStart",
+      "cwd": "{{PROJECT_ROOT}}",
+      "requiresIsolationBypass": true,
+      "payload": {
+        "cwd": "{{PROJECT_ROOT}}",
+        "source": "startup",
+        "hook_event_name": "SessionStart",
+        "session_id": "fixture-trust-bypass"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContainsAny": [
+          "fixture-session-start"
+        ]
+      }
+    }
+  ]
+}

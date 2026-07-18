@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/config/providers.schema.json",
+  "$comment": "Zero-dep subset: type, required, properties, items, enum, minItems, pattern (+ annotations). Enforced by scripts/validate-plugin.py and tests/test_provider_runtime.py.",
+  "title": "Hyperflow provider capability registry",
+  "description": "Machine-readable provider signals, canonical operation candidate mappings, lifecycle events, install/update commands, and degraded-policy notes. Candidates never prove a tool is callable — live inventory always wins.",
+  "type": "object",
+  "required": [
+    "version",
+    "schema_version",
+    "canonical_operations",
+    "install_modes",
+    "lifecycle_event_names",
+    "providers"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Registry document version (semver)."
+    },
+    "schema_version": {
+      "type": "integer",
+      "description": "Integer schema generation; bump when required shape changes."
+    },
+    "canonical_operations": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of semantic operations every provider entry must map.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "spawn",
+          "wait",
+          "message",
+          "follow_up",
+          "interrupt",
+          "list",
+          "structured_question",
+          "skill_continuation",
+          "edit",
+          "shell",
+          "web_research",
+          "background",
+          "usage_metrics"
+        ]
+      }
+    },
+    "install_modes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "source-checkout",
+          "codex-marketplace",
+          "claude-marketplace",
+          "unknown"
+        ]
+      }
+    },
+    "lifecycle_event_names": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "session.start",
+          "session.after_clear",
+          "session.before_compact",
+          "session.after_compact"
+        ]
+      }
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "signals",
+          "operations",
+          "lifecycle_events",
+          "install_commands",
+          "update_commands",
+          "degraded_policy"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Stable provider identifier (matches features.json providers[].key)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable provider label."
+          },
+          "signals": {
+            "type": "object",
+            "required": [
+              "env_prefixes",
+              "env_keys",
+              "plugin_root_env",
+              "path_markers"
+            ],
+            "properties": {
+              "env_prefixes": {
+                "type": "array",
+                "description": "Environment variable name prefixes that imply this host (e.g. CODEX, CLAUDE_CODE).",
+                "items": { "type": "string" }
+              },
+              "env_keys": {
+                "type": "array",
+                "description": "Exact environment variable names that imply this host.",
+                "items": { "type": "string" }
+              },
+              "plugin_root_env": {
+                "type": "array",
+                "description": "Env vars naming the installed plugin root for this host.",
+                "items": { "type": "string" }
+              },
+              "path_markers": {
+                "type": "array",
+                "description": "Path fragments that identify this host when present under a resolved root.",
+                "items": { "type": "string" }
+              }
+            }
+          },
+          "operations": {
+            "type": "object",
+            "required": [
+              "spawn",
+              "wait",
+              "message",
+              "follow_up",
+              "interrupt",
+              "list",
+              "structured_question",
+              "skill_continuation",
+              "edit",
+              "shell",
+              "web_research",
+              "background",
+              "usage_metrics"
+            ],
+            "description": "Canonical operation → ordered candidate host tool names. First live match wins.",
+            "properties": {
+              "spawn": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "wait": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "message": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "follow_up": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "interrupt": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "list": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "structured_question": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "skill_continuation": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "edit": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "shell": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "web_research": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "background": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "usage_metrics": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          },
+          "lifecycle_events": {
+            "type": "object",
+            "required": [
+              "session.start",
+              "session.after_clear",
+              "session.before_compact",
+              "session.after_compact"
+            ],
+            "description": "Normalized Hyperflow lifecycle event → host event name candidates.",
+            "properties": {
+              "session.start": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "session.after_clear": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "session.before_compact": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "session.after_compact": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          },
+          "install_commands": {
+            "type": "array",
+            "description": "Documented install command strings for this host (not executed by the resolver).",
+            "items": { "type": "string" }
+          },
+          "update_commands": {
+            "type": "array",
+            "description": "Documented update command strings keyed by install mode prose inside the string.",
+            "items": { "type": "string" }
+          },
+          "degraded_policy": {
+            "type": "object",
+            "description": "Per-operation fallback notes when candidates are missing from live inventory.",
+            "properties": {
+              "spawn": { "type": "string" },
+              "wait": { "type": "string" },
+              "message": { "type": "string" },
+              "follow_up": { "type": "string" },
+              "interrupt": { "type": "string" },
+              "list": { "type": "string" },
+              "structured_question": { "type": "string" },
+              "skill_continuation": { "type": "string" },
+              "edit": { "type": "string" },
+              "shell": { "type": "string" },
+              "web_research": { "type": "string" },
+              "background": { "type": "string" },
+              "usage_metrics": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

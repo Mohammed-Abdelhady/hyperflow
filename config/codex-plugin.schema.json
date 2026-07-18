@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/config/codex-plugin.schema.json",
+  "$comment": "DERIVED conformance schema (NOT an official OpenAI/Codex publication). Provenance: observed Codex plugin manifests under local Codex plugin cache (openai-curated-remote/* and openai-bundled/*) plus Hyperflow packaging requirements; source docs referenced by full-codex-support research (plugin manifests, skills, hooks, marketplace lifecycle). Observed Codex CLI context: 0.141.0 (research note in .hyperflow/specs/full-codex-support.md). Retrieval date: 2026-07-18. Observed common keys: name, version, description, author, homepage, repository, license, keywords, skills, interface; optional apps, mcpServers, openaiCapabilities, bundledContentVariant. interface keys observed: displayName, shortDescription, longDescription, developerName, category, capabilities, websiteURL, privacyPolicyURL, termsOfServiceURL, defaultPrompt, brandColor, screenshots, composerIcon, logo, logoDark, brandColorDark, supportURL. Deviations from pure observation: (1) require hooks pointing at a hooks.json path for Hyperflow certified lanes (OpenAI curated samples often ship hooks.json at package root without a manifest field); (2) do not require apps, mcpServers, or asset paths (composerIcon/logo); (3) screenshots may be empty; (4) ignore openaiCapabilities/bundledContentVariant. Never label this schema 'official'.",
+  "title": "Hyperflow Codex plugin manifest (derived)",
+  "description": "Derived JSON Schema subset for .codex-plugin/plugin.json. Validated offline by scripts/validate-plugin.py.",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "description",
+    "author",
+    "homepage",
+    "repository",
+    "license",
+    "skills",
+    "hooks",
+    "interface"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "description": { "type": "string" },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "homepage": { "type": "string" },
+    "repository": { "type": "string" },
+    "license": { "type": "string" },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "skills": {
+      "type": "string",
+      "pattern": "^\\./.+"
+    },
+    "hooks": {
+      "type": "string",
+      "pattern": "^\\./.+"
+    },
+    "apps": {
+      "type": "string",
+      "pattern": "^\\./.+"
+    },
+    "mcpServers": {
+      "type": "string",
+      "pattern": "^\\./.+"
+    },
+    "interface": {
+      "type": "object",
+      "required": [
+        "displayName",
+        "shortDescription",
+        "longDescription",
+        "developerName",
+        "category",
+        "capabilities",
+        "websiteURL",
+        "defaultPrompt",
+        "brandColor"
+      ],
+      "properties": {
+        "displayName": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "longDescription": { "type": "string" },
+        "developerName": { "type": "string" },
+        "category": { "type": "string" },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "websiteURL": { "type": "string" },
+        "privacyPolicyURL": { "type": "string" },
+        "termsOfServiceURL": { "type": "string" },
+        "supportURL": { "type": "string" },
+        "defaultPrompt": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "brandColor": { "type": "string" },
+        "brandColorDark": { "type": "string" },
+        "composerIcon": { "type": "string" },
+        "logo": { "type": "string" },
+        "logoDark": { "type": "string" },
+        "screenshots": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

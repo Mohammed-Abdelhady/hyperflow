@@ -1,6 +1,6 @@
 # Project Memory System
 
-Advanced project-scoped memory replacing the global `~/.claude/hyperflow-memory.md` approach. All data lives inside the project root under `.hyperflow/memory/`.
+Advanced project-scoped memory. All data lives inside the project root under `.hyperflow/memory/` (not host-global paths). Session-start injection is driven by the normalized lifecycle event `session.start` ([runtime-contract.md](../../hyperflow/runtime-contract.md)); the host adapter maps that event (Claude `SessionStart`, Codex session hooks, etc.).
 
 ## Storage Layout
 
@@ -103,6 +103,8 @@ Rules:
 
 Write new entries in this form — it is the only one that carries tags, and without tags an entry can never be warm-tier injected on a tag match.
 
+> **Viewer mode (leaner entries).** When `viewer.enabled` is true, memory is emitted as the compact `memory` artefact — each entry is `{ title, task, decision, tags }` only (the verbose `What/Why/Evidence` prose is dropped to save tokens; the viewer renders the entries as a card gallery). `tags` stays **required**: without it the warm-tier tag-matched injection above cannot fire, so the leaner schema keeps exactly the field the tiering depends on. The markdown category files above remain the on-disk form the index parser reads; `render-artefact.py` reproduces them from the JSON. See [`artefact-data.md`](../../hyperflow/artefact-data.md).
+
 The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-slug)` heading that earlier runs emitted, so existing entries stay indexed and tiered. They just never match a tag.
 
 ### Examples
@@ -146,17 +148,17 @@ The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-s
 
 ## Read Protocol (Session Start)
 
-Steps 1–3 are automatic — `scripts/memory-index.py` runs from the session-start hook and injects their output. The orchestrator does not perform them.
+`scripts/memory-index.py` always rebuilds derived state at session start. Injection depends on mode.
 
-1. Rebuild `index.md` + `.checksums` from the category files; the index arrives in context under `## Project Memory Index`.
-2. Inject all **hot** entries in full (≤ 7 days) under `## Project memory — hot entries`.
-3. Inject `anti-patterns.md` in full — always, regardless of age or tags. It is permanently hot-tier (see Registered Memory Files above).
+1. Rebuild `index.md` + `.checksums` from the category files in every mode.
+2. In default/thorough mode, inject the index, hot entries, and `anti-patterns.md` as before.
+3. In lean mode (the default), inject only paths to `index.md` and `session-context.md`; infer task tags, then read matching hot/warm entries and anti-patterns on demand.
 
 The orchestrator performs the rest:
 
-4. Infer tags from the current task description. Read **warm** entries whose tags overlap — the index names the file each entry lives in.
+4. Infer tags from the current task description. Read **hot and warm** entries whose tags overlap — the index names the source file.
 5. Skip **cold** entries unless the user explicitly requests them (`hyperflow: memory show <tag>`).
-6. Inject the loaded entries into worker prompts under `## Learnings from prior sessions`. Inject `anti-patterns.md` under a separate `## Known anti-patterns` header.
+6. Inject only the loaded entries into worker prompts. Load relevant anti-pattern entries under a separate header; do not inject the whole file in lean mode.
 
 Workers receive only the subset matching their task's inferred tags — never the full dump.
 
@@ -209,13 +211,15 @@ Workers receive only the memory subset relevant to their task:
 
 ## Migration from Legacy
 
-On first session start in a project that has no `.hyperflow/memory/` but has `~/.claude/hyperflow-memory.md`:
+On first session start in a project that has no `.hyperflow/memory/` but has a legacy global memory file (`~/.claude/hyperflow-memory.md`, or any older host-global Hyperflow memory path the adapter still recognizes):
 
 1. Parse the legacy file for entries belonging to the current project path.
 2. Map each bullet point to a `learnings.md` entry, tagging as `pattern` + best-guess domain.
 3. Write migrated entries to `learnings.md`.
-4. Print: `Hyperflow — migrated N entries from ~/.claude/hyperflow-memory.md`
+4. Print: `Hyperflow — migrated N entries from <legacy-path>`
 5. Do not delete the legacy file — the user may have other projects in it.
+
+New installs write only under `.hyperflow/memory/`. Do not invent host-global memory as the primary store.
 
 ## User Controls
 

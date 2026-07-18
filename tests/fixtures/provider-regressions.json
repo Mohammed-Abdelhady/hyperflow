@@ -1,0 +1,543 @@
+{
+  "version": 1,
+  "description": "Behavioral freeze of Claude Code and OpenCode provider contracts before portable runtime migration. Assert semantics and stable structured fields, not incidental whitespace. Update only with an explicit reason in a task-owned commit.",
+  "intentional_update": {
+    "mechanism": "Bump fixture version and document reason in the same commit that changes live behavior; never silence a failing assertion without a reason field here.",
+    "reason": null
+  },
+  "cases": [
+    {
+      "id": "claude-native-ops",
+      "provider": "claude-code",
+      "capability_profile": "native-full",
+      "summary": "Claude exposes Agent spawn, AskUserQuestion, and Skill continuation as first-class operations.",
+      "invariants": [
+        {
+          "kind": "provider_ops",
+          "provider_key": "claude-code",
+          "ops": {
+            "spawn": ["Agent"],
+            "structured_question": ["AskUserQuestion"],
+            "skill_continuation": ["Skill"],
+            "edit": ["Edit", "Write"],
+            "shell": ["Bash"],
+            "web_research": ["WebSearch", "WebFetch"],
+            "background": ["Agent"]
+          }
+        },
+        {
+          "kind": "provider_ops_empty",
+          "provider_key": "claude-code",
+          "ops": ["wait", "message", "follow_up", "interrupt", "list", "usage_metrics"]
+        },
+        {
+          "kind": "provider_lifecycle",
+          "provider_key": "claude-code",
+          "events": {
+            "session.start": ["SessionStart"],
+            "session.after_clear": ["SessionStart"],
+            "session.before_compact": ["PreCompact"],
+            "session.after_compact": ["SessionStart"]
+          }
+        },
+        {
+          "kind": "provider_signals",
+          "provider_key": "claude-code",
+          "env_prefixes": ["CLAUDE_CODE", "CLAUDE"],
+          "plugin_root_env": ["CLAUDE_PLUGIN_ROOT"]
+        }
+      ]
+    },
+    {
+      "id": "claude-native-chain",
+      "provider": "claude-code",
+      "capability_profile": "native-full",
+      "summary": "plan/dispatch/audit transitions use native Skill and AskUserQuestion and preserve structural gates.",
+      "invariants": [
+        {
+          "kind": "skill_allowed_tools",
+          "path": "skills/plan/SKILL.md",
+          "must_include": ["Agent", "AskUserQuestion", "Skill"]
+        },
+        {
+          "kind": "skill_allowed_tools",
+          "path": "skills/dispatch/SKILL.md",
+          "must_include": ["Agent", "Skill", "AskUserQuestion"]
+        },
+        {
+          "kind": "skill_allowed_tools",
+          "path": "skills/audit/SKILL.md",
+          "must_include": ["Agent", "Skill", "AskUserQuestion"]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/plan/SKILL.md",
+          "all_of": [
+            "build-location gate",
+            "AskUserQuestion",
+            "invoke `Skill` with `skill: dispatch`",
+            "Plan never implements",
+            "Hyperflow Question"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/dispatch/SKILL.md",
+          "all_of": [
+            "AskUserQuestion",
+            "skill: audit",
+            "skill: deploy",
+            "does **NOT** auto-invoke audit or deploy",
+            "Worker"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/audit/SKILL.md",
+          "all_of": [
+            "Fix gate",
+            "AskUserQuestion",
+            "/hyperflow:plan",
+            "Hyperflow Question",
+            "never silently auto-fix"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/hyperflow/DOCTRINE.md",
+          "all_of": [
+            "structural gate",
+            "SECURITY_VIOLATION:",
+            "AskUserQuestion"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "claude-hooks",
+      "provider": "claude-code",
+      "capability_profile": "native-full",
+      "summary": "SessionStart and PreCompact registration and output semantics stay stable.",
+      "invariants": [
+        {
+          "kind": "hooks_json_events",
+          "path": "hooks/hooks.json",
+          "required_events": ["SessionStart", "PreCompact"]
+        },
+        {
+          "kind": "hooks_json_commands",
+          "path": "hooks/hooks.json",
+          "must_mention": ["session-start", "pre-compact", "CLAUDE_PLUGIN_ROOT"]
+        },
+        {
+          "kind": "file_contains",
+          "path": "hooks/session-start",
+          "all_of": [
+            "system-prompt-inject",
+            "hyperflow-runtime:",
+            "CLAUDE_CODE",
+            "resolve-mode.py",
+            "lean"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "hooks/pre-compact",
+          "all_of": [
+            ".precompact.md",
+            "decision",
+            "block",
+            "dispatch-auto-compact-ready"
+          ]
+        },
+        {
+          "kind": "session_start_runtime",
+          "provider_env": {
+            "CLAUDE_CODE_ENTRYPOINT": "cli",
+            "CLAUDE_PLUGIN_ROOT": "$REPO_ROOT"
+          },
+          "expect_content_substrings": [
+            "<!-- hyperflow-runtime: claude-code -->",
+            "# Hyperflow v",
+            "· lean"
+          ],
+          "forbid_content_substrings": [
+            "## Codex function aliases",
+            "multi_agent_v1.spawn_agent"
+          ],
+          "expect_json_type": "system-prompt-inject"
+        }
+      ]
+    },
+    {
+      "id": "claude-named-specialists",
+      "provider": "claude-code",
+      "capability_profile": "native-full",
+      "summary": "Named specialist agents under agents/ match features.json and remain file-discovered.",
+      "invariants": [
+        {
+          "kind": "agent_roster",
+          "agents_dir": "agents",
+          "expected_names": [
+            "accessibility-reviewer",
+            "algorithm-reviewer",
+            "analyst",
+            "api-reviewer",
+            "architect",
+            "backend-reviewer",
+            "brain",
+            "compliance-reviewer",
+            "data-ml-reviewer",
+            "database-optimization-reviewer",
+            "database-reviewer",
+            "debugger",
+            "designer",
+            "devops-reviewer",
+            "frontend-reviewer",
+            "mobile",
+            "motion",
+            "performance-reviewer",
+            "researcher",
+            "searcher",
+            "security-reviewer",
+            "vulnerability-reviewer"
+          ]
+        },
+        {
+          "kind": "features_specialists_match_agents",
+          "features_path": "config/features.json",
+          "agents_dir": "agents"
+        },
+        {
+          "kind": "file_contains",
+          "path": "agents/README.md",
+          "all_of": [
+            "agents/<name>.md",
+            "auto-discovered",
+            "current session model",
+            "brain"
+          ]
+        },
+        {
+          "kind": "agent_frontmatter",
+          "path": "agents/security-reviewer.md",
+          "name": "security-reviewer",
+          "tools_must_include": ["Read", "Grep", "Glob"]
+        },
+        {
+          "kind": "agent_frontmatter",
+          "path": "agents/brain.md",
+          "name": "brain",
+          "tools_must_include": ["Read", "Grep", "Glob"]
+        }
+      ]
+    },
+    {
+      "id": "claude-dynamic-workflow",
+      "provider": "claude-code",
+      "capability_profile": "native-full",
+      "summary": "workflow skill routes Claude Code to native dynamic workflows, not the portable adapter.",
+      "invariants": [
+        {
+          "kind": "skill_allowed_tools",
+          "path": "skills/workflow/SKILL.md",
+          "must_include": ["AskUserQuestion", "Skill"]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/workflow/SKILL.md",
+          "all_of": [
+            "### Claude Code Native Workflow",
+            "dynamic workflow",
+            "v2.1.154",
+            "Research and planning",
+            "Parallel implementation or investigation",
+            "Adversarial verification",
+            "Quality gates",
+            "Final synthesis"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/workflow/SKILL.md",
+          "none_of": [
+            "Claude Code does not provide Claude Code's dynamic workflow runtime"
+          ]
+        },
+        {
+          "kind": "features_skill",
+          "features_path": "config/features.json",
+          "name": "workflow",
+          "command": "/hyperflow:workflow",
+          "purpose_contains": ["Claude Code native", "portable adapter"]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/hyperflow/auto-routing.md",
+          "all_of": [
+            "/hyperflow:workflow",
+            "Claude Code v2.1.154"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "opencode-task-ops",
+      "provider": "opencode",
+      "capability_profile": "task-or-inline",
+      "summary": "OpenCode spawn candidates are Task/subagent only; no Codex collaboration tool names required.",
+      "invariants": [
+        {
+          "kind": "provider_ops",
+          "provider_key": "opencode",
+          "ops": {
+            "spawn": ["Task", "task", "subagent"],
+            "edit": ["edit", "Edit", "write", "Write"],
+            "shell": ["bash", "Bash", "shell"],
+            "web_research": ["websearch", "webfetch", "WebSearch", "WebFetch"]
+          }
+        },
+        {
+          "kind": "provider_ops_empty",
+          "provider_key": "opencode",
+          "ops": [
+            "wait",
+            "message",
+            "follow_up",
+            "interrupt",
+            "list",
+            "structured_question",
+            "skill_continuation",
+            "background",
+            "usage_metrics"
+          ]
+        },
+        {
+          "kind": "provider_lifecycle",
+          "provider_key": "opencode",
+          "events": {
+            "session.start": [],
+            "session.after_clear": [],
+            "session.before_compact": [],
+            "session.after_compact": []
+          }
+        },
+        {
+          "kind": "provider_ops_exclude",
+          "provider_key": "opencode",
+          "forbidden_anywhere": [
+            "collaboration.spawn_agent",
+            "multi_agent_v1.spawn_agent",
+            "Agent",
+            "Skill",
+            "AskUserQuestion"
+          ]
+        },
+        {
+          "kind": "provider_degraded_contains",
+          "provider_key": "opencode",
+          "ops": {
+            "spawn": ["inline", "worker", "reviewer"],
+            "structured_question": ["Hyperflow Question"],
+            "skill_continuation": ["SKILL.md", "inline"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "opencode-task-dispatch",
+      "provider": "opencode",
+      "capability_profile": "task-exposed",
+      "summary": "When Task/subagent is exposed, worker and reviewer remain separate roles through the portable adapter.",
+      "invariants": [
+        {
+          "kind": "file_contains",
+          "path": "skills/workflow/SKILL.md",
+          "all_of": [
+            "### OpenCode Portable Workflow Adapter",
+            "Task/subagent",
+            "worker and reviewer labels",
+            "parallelizable units",
+            "conventional commits",
+            "Never use `--no-verify`"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/hyperflow/SKILL.md",
+          "all_of": [
+            "OpenCode Task",
+            "Portable Function Router",
+            "inline auto-chain",
+            "worker/reviewer"
+          ]
+        },
+        {
+          "kind": "portable_router_aliases",
+          "path": "skills/hyperflow/SKILL.md",
+          "aliases": {
+            "/hyperflow:plan": "plan",
+            "/hyperflow:dispatch": "dispatch",
+            "/hyperflow:workflow": "workflow",
+            "/hyperflow:trace": "trace",
+            "/hyperflow:audit": "audit",
+            "/hyperflow:deploy": "deploy",
+            "/hyperflow:cache": "cache",
+            "/hyperflow:status": "status",
+            "/hyperflow:sticky": "sticky",
+            "/hyperflow:bridge": "bridge",
+            "/hyperflow:flush": "flush",
+            "/hyperflow:background": "background",
+            "/hyperflow:scaffold": "scaffold"
+          }
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/hyperflow/SKILL.md",
+          "none_of": [
+            "require multi_agent_v1",
+            "must use collaboration.spawn_agent"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "opencode-inline-fallback",
+      "provider": "opencode",
+      "capability_profile": "inline-only",
+      "summary": "Without Task facility, labelled inline roles and Hyperflow Question gates remain intact.",
+      "invariants": [
+        {
+          "kind": "provider_degraded_contains",
+          "provider_key": "opencode",
+          "ops": {
+            "spawn": ["Task/subagent is absent", "labelled inline worker and reviewer"],
+            "structured_question": ["Hyperflow Question", "end the turn"],
+            "skill_continuation": ["Load the target SKILL.md completely", "continue inline"]
+          }
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/hyperflow/SKILL.md",
+          "all_of": [
+            "Hyperflow Question",
+            "(Recommended)",
+            "do the work yourself",
+            "Self-review each batch",
+            "final integration self-review",
+            "Do not stop with \"Skill tool unavailable\""
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/plan/SKILL.md",
+          "all_of": [
+            "Portable-surface fallback",
+            "OpenCode",
+            "Hyperflow Question",
+            "never silently default to building"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/dispatch/SKILL.md",
+          "all_of": [
+            "OpenCode",
+            "Hyperflow Question",
+            "audit",
+            "deploy"
+          ]
+        },
+        {
+          "kind": "file_contains",
+          "path": "skills/audit/SKILL.md",
+          "all_of": [
+            "OpenCode",
+            "Hyperflow Question",
+            "fix gate"
+          ]
+        },
+        {
+          "kind": "question_block_markers",
+          "path": "skills/hyperflow/SKILL.md",
+          "required_lines": [
+            "Hyperflow Question",
+            "(Recommended)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared-skill-inventory",
+      "provider": "shared",
+      "capability_profile": "inventory",
+      "summary": "Public skill directory inventory frozen for both providers.",
+      "invariants": [
+        {
+          "kind": "skill_dirs",
+          "skills_dir": "skills",
+          "expected": [
+            "audit",
+            "background",
+            "bridge",
+            "cache",
+            "deploy",
+            "design",
+            "dispatch",
+            "flush",
+            "handoff",
+            "hyperflow",
+            "issue",
+            "plan",
+            "pr",
+            "scaffold",
+            "status",
+            "sticky",
+            "trace",
+            "workflow"
+          ]
+        },
+        {
+          "kind": "features_skill_commands",
+          "features_path": "config/features.json",
+          "commands": {
+            "plan": "/hyperflow:plan",
+            "dispatch": "/hyperflow:dispatch",
+            "workflow": "/hyperflow:workflow",
+            "audit": "/hyperflow:audit",
+            "deploy": "/hyperflow:deploy"
+          }
+        },
+        {
+          "kind": "features_providers",
+          "features_path": "config/features.json",
+          "required_keys": ["claude-code", "opencode"]
+        }
+      ]
+    },
+    {
+      "id": "fixture-security",
+      "provider": "shared",
+      "capability_profile": "security",
+      "summary": "Regression fixtures themselves contain no credentials or absolute user paths.",
+      "invariants": [
+        {
+          "kind": "security_scan_self",
+          "forbidden_substrings": [
+            "BEGIN PRIVATE KEY",
+            "BEGIN RSA PRIVATE KEY",
+            "AKIA",
+            "sk-ant-",
+            "sk-proj-",
+            "ghp_",
+            "xoxb-",
+            "/Users/",
+            "/home/",
+            "password=",
+            "api_key="
+          ]
+        }
+      ]
+    }
+  ]
+}

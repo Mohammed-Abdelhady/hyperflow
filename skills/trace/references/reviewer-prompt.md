@@ -1,57 +1,75 @@
-# Reviewer Prompt Template
+# Reviewer Prompt Template (trace)
 
-Use this template when dispatching Reviewers via the Agent tool. Review depth scales by task complexity.
+Use this template when dispatching independent root-cause reviewers via the `spawn` op (or a **labelled inline reviewer** phase when `spawn` is unavailable). Reviewers never coordinate the chain, never dispatch siblings, and never self-approve worker work they produced.
 
-## Complexity Classification
+Host adapters map `spawn` to live tools. Missing subagents: run worker phases first, then a **separate** reviewer phase with a distinct label — role separation is non-negotiable.
 
-The orchestrator determines complexity BEFORE dispatching the reviewer:
+Review depth scales by diagnosis step and complexity. Every trace step that produces worker output gets its own review before the chain advances.
 
-- **Simple** (levels 1-2): Single file, rename, config, one-line fix
-- **Medium** (levels 1-3): 2-3 files, modifies existing functionality, touches shared code
-- **Complex** (levels 1-5): 4+ files, new feature, UI work, DB/API changes
+## Complexity classification
+
+The orchestrator classifies BEFORE dispatching the reviewer:
+
+- **Simple** (levels 1–2): single-file fixture tweak, one-line constant, docs-only pitfall
+- **Medium** (levels 1–3): multi-file evidence triangulation, hypothesis verify set, shared module fix
+- **Complex** (levels 1–5): security-sensitive root, multi-service regression, UI/a11y surfaces in the fix
 
 ## Template
 
+First line is a literal routing marker — emit **verbatim**.
+
 ```
+hyperflow-role: reviewer
+
 ## Review scope
-[Files changed, task assigned, complexity classification]
+[Step id · files changed · task · complexity · which worker outputs]
 
 ## Worker output
-[Paste worker's summary]
+[Paste worker summaries — evidence lists, 5-Whys, hypothesis results, fix diff, regression test, pitfall entry]
+
+## Diagnosis checks (always for trace)
+
+- Reproduction consistent / intermittent flagged?
+- 5-Whys chain reaches a structural root (not a symptom)?
+- Competing hypotheses each have What / Evidence / Counter-evidence / Test?
+- All ranked hypotheses tested before synthesis (or justified single-hypothesis path)?
+- Fix addresses confirmed root — not catch-only, null-guard-only, timeout bump, or feature-flag hide?
+- Regression test fails-without and passes-with the fix (when Step 6 applies)?
+- Gaps from aborted Searchers / INCONCLUSIVE verifies are explicit in synthesis?
 
 ## Level 1: Requirements
-- Does the output match the task spec exactly?
-- All sub-tasks completed? Nothing missing?
-- Nothing extra added beyond the spec?
+- Output matches the step brief exactly?
+- Nothing missing / nothing extra beyond the angle?
 
 ## Level 2: Code Quality
-- Follows project naming conventions?
+- Project naming conventions (`CLAUDE.md` / `AGENTS.md` / `.hyperflow/conventions.md`)?
 - No TypeScript `any`, no dead code?
-- Uses existing utils/hooks (not reinventing)?
+- Reuses existing utils/hooks?
 - Proper error handling, SRP, early returns?
 
 ## Level 3: Integration (medium + complex only)
 - Imports resolve? No circular dependencies?
-- Shared state/context not broken?
+- Shared state/context intact?
 - API contracts preserved?
-- Existing tests would still pass?
+- Existing tests still pass (except intentional failing repros during verify)?
 
 ## Level 4: Performance & Security (complex only)
-- No N+1 queries? Expensive ops memoized?
-- No unnecessary re-renders?
+- No N+1 / unmemoized hot paths introduced?
 - No hardcoded secrets (sk-*, AKIA*, ghp_*, private keys)?
 - Input validation at boundaries? No injection vectors?
 
 ## Level 5: UX & Accessibility (complex UI tasks only)
-- Aria labels on interactive elements?
-- Keyboard navigation works?
-- Loading/error/empty states handled?
+- Aria labels, keyboard paths, loading/error/empty states?
 - Responsive + RTL considered?
 
 ## Security Review (always)
-- Were any blocked files accessed? (.env, *.pem, *.key, ~/.ssh/*)
-- Any dangerous commands? (rm -rf, force push, sudo)
-- Any data exfiltration? (contents piped to external URLs)
+- Blocked files accessed? (.env, *.pem, *.key, ~/.ssh/*)
+- Dangerous commands? (rm -rf, force push, sudo)
+- Data exfiltration? (contents piped to external URLs)
+- On any hit: verdict `SECURITY_VIOLATION` and hard-halt — no auto-continue
+
+## Token economy
+Return ONLY the Output format block — no preamble, no restating the worker dump, no postamble.
 
 ## Output format
 ```
@@ -61,50 +79,67 @@ L2 Code Quality    pass     — [summary]
 L3 Integration     pass     — [summary]
 L4 Performance     fail     — [issue found]
 L5 UX/A11y         skipped  — not applicable
+Diagnosis          pass     — [root vs symptom · hypotheses · regression]
 ────────────────────────────────────────
 VERDICT: APPROVED | NEEDS_FIX | SECURITY_VIOLATION
-[Issues per failed level]
-[Notes for future tasks]
+[Issues per failed level — one line each]
+[Notes for future tasks — omit if none]
 ```
 ```
 
-## Dispatch Example
+If a finding needs a peer domain's judgment, hold the verdict and emit  
+`CONSULT: <peer> — <question>` (Team Lead brokers; see consultation protocol).  
+Do not invent metrics, evidence, or citations the workers did not produce.
+
+## Dispatch example (root-fix review)
+
+Label before spawn / inline phase:
 
 ```
-Agent({
-  description: "Review auth middleware (complex)",
-  prompt: `## Review scope
-Files: src/middleware/auth.ts, src/middleware/auth.test.ts, src/types/auth.ts, src/types/session.ts
-Task: Create JWT auth middleware with refresh logic
-Complexity: Complex (4 files, new feature, security-sensitive)
+**Reviewer** — checking fix is at root
+```
+
+Brief:
+
+```
+hyperflow-role: reviewer
+
+## Review scope
+Step 5 · files: src/auth/test-fixtures.ts, test/auth/refresh.test.ts
+Task: align fixture TTL with TOKEN_REFRESH_TTL (confirmed root from Step 4b)
+Complexity: Medium
 
 ## Worker output
-1. Created auth middleware with RS256 verification
-2. Added refresh token rotation
-3. Tests cover valid/expired/malformed tokens
+1. Imported TOKEN_REFRESH_TTL into fixture; removed magic number
+2. Existing refresh tests pass; no try/catch wrapper added
 
-## Level 1: Requirements
-- JWT validation with RS256? Refresh logic? Rate limiting?
+## Diagnosis checks
+- Addresses confirmed hypothesis 1 (TTL drift)?
+- No symptom-only null guard or catch-all?
+- Scope limited to root files?
 
-## Level 2: Code Quality
-- Follows conventions? Types correct? No any?
-
-## Level 3: Integration
-- Works with existing route handlers? Session types compatible?
-
-## Level 4: Performance & Security
-- No secrets hardcoded? Token validation safe? Timing attacks prevented?
-
-## Level 5: UX & Accessibility
-- Skipped (not a UI task)
+## Level 1–3
+[as applicable]
 
 ## Security Review
-- Blocked files? Secrets? Dangerous commands?
+Blocked files? Secrets? Dangerous commands?
 
 ## Output format
 ── Review ──
-pass / fail / skipped per level + VERDICT`
-})
+pass / fail / skipped per level + Diagnosis row + VERDICT
 ```
 
-See [review-levels.md](review-levels.md) for full checklist details and failure handling.
+## Step-specific reviewer focus
+
+| Step | Reviewer confirms |
+|---|---|
+| 1 Reproduce | Failure deterministic or intermittent flagged; matches symptom |
+| 2 Evidence | Searchers triangulate; gaps named for re-run |
+| 3 Hypothesize | 5-Whys structural; hypotheses independently testable |
+| 4a Verify | Each test deterministic; maps to confirm/falsify/inconclusive |
+| 4b Re-eval | Verdict sound given all hypothesis results |
+| 5 Fix | Root not symptom; no constraint violations; multi-file consistency |
+| 6 Regression | Fails without fix, passes with fix |
+| 7 Final | Cumulative: fix + test + memory generalize; sole integration review |
+
+See parent skill steps for loop/failure recovery. Canonical checklist depth: `skills/hyperflow/review-levels.md` when present; trace keeps diagnosis checks mandatory regardless of host.

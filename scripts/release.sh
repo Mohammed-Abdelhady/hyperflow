@@ -11,6 +11,7 @@ cd "$ROOT"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+RED='\033[0;31m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
@@ -19,12 +20,212 @@ PACKAGE_JSON="$ROOT/package.json"
 CHANGELOG="$ROOT/CHANGELOG.md"
 README="$ROOT/README.md"
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow"
+CERTIFY="$SCRIPT_DIR/certify-codex.sh"
 
 # ── Detect BSD vs GNU sed ─────────────────────────────────────────────────────
 if sed --version >/dev/null 2>&1; then
   SED_INPLACE=(-i)
 else
   SED_INPLACE=(-i '')
+fi
+
+# ── Parse args: phases, dry-run, force, bump type ─────────────────────────────
+# Two-phase Codex certification protocol (T14):
+#   precheck  → zero mutation; required certificates must pass
+#   prepare   → local release commit + annotated tag only (default after precheck)
+#   candidate → push temporary release-candidate/* branch for remote CI
+#   finalize  → after remote candidate PASS; push release commit + stable tag
+FORCE_RELEASE=false
+DRY_RUN=false
+PRECHECK_ONLY=false
+REQUESTED_TYPE=""
+PHASE="prepare"   # prepare | candidate | finalize | precheck
+PHASE_VERSION=""  # required for candidate/finalize when not preparing
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force|-f) FORCE_RELEASE=true; shift ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    --precheck)
+      PRECHECK_ONLY=true
+      PHASE="precheck"
+      shift
+      ;;
+    --phase)
+      PHASE="${2:-}"
+      if [[ -z "$PHASE" ]]; then
+        echo "Error: --phase requires prepare|candidate|finalize|precheck" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --version)
+      PHASE_VERSION="${2:-}"
+      shift 2
+      ;;
+    major|minor|patch) REQUESTED_TYPE="$1"; shift ;;
+    -h|--help)
+      cat <<'USAGE'
+Usage: ./scripts/release.sh [options] [major|minor|patch]
+
+Codex certification protocol (required before any version mutation):
+  1. precheck   — certify-codex.sh; tree must stay unchanged on fail
+  2. prepare    — write release commit + local annotated tag (no push)
+  3. candidate  — push release-candidate/vX.Y.Z for remote CI certification
+  4. finalize   — after remote candidate PASS: push commit + stable tag,
+                  then read-only exact-tag smoke before announcement
+
+Options:
+  major|minor|patch   force a specific bump type (otherwise auto-detected)
+  --force, -f         bump even when commits since last tag are only
+                      docs/chore/style/test/build/ci (no release-worthy changes)
+  --dry-run           run precheck + version plan only; never mutates the tree
+  --precheck          run certificate precheck only (alias: --phase precheck)
+  --phase <name>      prepare (default) | candidate | finalize | precheck
+  --version X.Y.Z     required for --phase candidate|finalize
+
+Environment:
+  HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1  soft-fail uncertified Codex lanes (preview
+                                     only — never for a public stable release)
+
+Auto-detection rules (strict Conventional Commits):
+  BREAKING CHANGE / type!:  → major
+  feat:                     → minor
+  fix: / perf: / refactor:  → patch
+  docs: / chore: / style:   → NO RELEASE (exit cleanly; use --force to override)
+  test: / build: / ci:      → NO RELEASE (exit cleanly; use --force to override)
+
+Dry-run proof: on certification failure the working tree, HEAD, and tags are
+unchanged. See RELEASING.md for the support matrix and fix-forward recovery.
+USAGE
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      echo "Try '$0 --help'" >&2
+      exit 1
+      ;;
+  esac
+done
+
+case "$PHASE" in
+  prepare|candidate|finalize|precheck) ;;
+  *)
+    echo "Error: unknown --phase '$PHASE' (want prepare|candidate|finalize|precheck)" >&2
+    exit 1
+    ;;
+esac
+
+# ── Certificate precheck (zero mutation) ──────────────────────────────────────
+run_cert_precheck() {
+  local mode="${1:-precheck}"
+  if [[ ! -x "$CERTIFY" && ! -f "$CERTIFY" ]]; then
+    echo -e "${RED}Error: missing $CERTIFY — cannot release without Codex certification gate.${RESET}" >&2
+    exit 1
+  fi
+  echo -e "${CYAN}▸${RESET} Codex certification ${mode}"
+  if ! bash "$CERTIFY" "--${mode}"; then
+    echo ""
+    echo -e "${RED}${BOLD}Certification blocked release mutation.${RESET}"
+    echo -e "  Working tree was not modified by the certifier."
+    echo -e "  Fix certificates or (preview only) set HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1."
+    echo -e "  Details: ./scripts/certify-codex.sh --status"
+    echo -e "  Protocol: RELEASING.md § Codex certification"
+    return 1
+  fi
+  return 0
+}
+
+# ── Candidate / finalize helpers (no version mutation) ────────────────────────
+phase_candidate() {
+  local ver="$1"
+  if [[ -z "$ver" ]]; then
+    echo "Error: --phase candidate requires --version X.Y.Z" >&2
+    exit 1
+  fi
+  if ! git rev-parse "v${ver}" >/dev/null 2>&1; then
+    echo "Error: local tag v${ver} not found — run prepare first" >&2
+    exit 1
+  fi
+  local branch="release-candidate/v${ver}"
+  local sha
+  sha="$(git rev-parse "v${ver}^{}")"
+  echo -e "${CYAN}▸${RESET} candidate branch for v${ver} @ ${sha}"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo -e "${YELLOW}dry-run:${RESET} would create/update branch ${branch} at ${sha} and push"
+    run_cert_precheck candidate || exit 1
+    exit 0
+  fi
+  # Point branch at the prepared release commit (the tag target)
+  git branch -f "$branch" "$sha"
+  echo -e "${GREEN}Local branch ${branch} → ${sha}${RESET}"
+  echo ""
+  echo -e "${CYAN}Push candidate for remote certification (does NOT publish the stable tag):${RESET}"
+  echo -e "  git push -u origin ${branch}"
+  echo ""
+  echo -e "${CYAN}After .github/workflows/release-certification.yml is green:${RESET}"
+  echo -e "  $0 --phase finalize --version ${ver}"
+  echo ""
+  echo -e "${YELLOW}Do not push tag v${ver} until candidate certification passes.${RESET}"
+}
+
+phase_finalize() {
+  local ver="$1"
+  if [[ -z "$ver" ]]; then
+    echo "Error: --phase finalize requires --version X.Y.Z" >&2
+    exit 1
+  fi
+  if ! git rev-parse "v${ver}" >/dev/null 2>&1; then
+    echo "Error: local tag v${ver} not found" >&2
+    exit 1
+  fi
+  echo -e "${CYAN}▸${RESET} finalize gate for v${ver} (re-check certificates)"
+  HYPERFLOW_EXPECT_VERSION="$ver" \
+    HYPERFLOW_EXPECT_COMMIT="$(git rev-parse "v${ver}^{}")" \
+    run_cert_precheck precheck || exit 1
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo -e "${YELLOW}dry-run:${RESET} would push release commit + tag v${ver} after candidate PASS"
+    exit 0
+  fi
+
+  echo ""
+  echo -e "${GREEN}${BOLD}Certificates OK — publish stable ref (maintainer action):${RESET}"
+  echo -e "  git push origin HEAD"
+  echo -e "  git push origin v${ver}"
+  echo ""
+  echo -e "${CYAN}After the tag is on the remote, exact-tag smoke runs via${RESET}"
+  echo -e "  .github/workflows/release-certification.yml (stable-tag job)."
+  echo -e "${CYAN}On smoke failure: halt announcement; fix-forward only (never retag).${RESET}"
+  echo -e "See RELEASING.md § Fix-forward recovery."
+}
+
+if [[ "$PHASE" == "candidate" ]]; then
+  phase_candidate "$PHASE_VERSION"
+  exit 0
+fi
+if [[ "$PHASE" == "finalize" ]]; then
+  phase_finalize "$PHASE_VERSION"
+  exit 0
+fi
+
+# Standalone precheck: zero mutation, no version planning required
+if [[ "$PRECHECK_ONLY" == "true" || "$PHASE" == "precheck" ]]; then
+  TREE_BEFORE="$(git status --porcelain; git rev-parse HEAD 2>/dev/null || true; git tag -l)"
+  if ! run_cert_precheck precheck; then
+    TREE_AFTER="$(git status --porcelain; git rev-parse HEAD 2>/dev/null || true; git tag -l)"
+    if [[ "$TREE_BEFORE" != "$TREE_AFTER" ]]; then
+      echo -e "${RED}SECURITY_VIOLATION: tree mutated during failed certification precheck${RESET}" >&2
+      exit 2
+    fi
+    echo -e "${GREEN}Proof: working tree, HEAD, and tags unchanged after failed precheck.${RESET}"
+    exit 1
+  fi
+  echo -e "${GREEN}Precheck PASS — no files mutated.${RESET}"
+  exit 0
 fi
 
 # ── Parse current version from package.json (no jq) ──────────────────────────
@@ -47,41 +248,25 @@ else
 fi
 
 if [[ -z "$COMMITS" ]]; then
+  # Still run precheck so dry-run/failure proof works even with an empty range
+  if [[ "$DRY_RUN" == "true" ]]; then
+    TREE_BEFORE="$(git status --porcelain; git rev-parse HEAD 2>/dev/null || true; git tag -l)"
+    run_cert_precheck precheck || {
+      TREE_AFTER="$(git status --porcelain; git rev-parse HEAD 2>/dev/null || true; git tag -l)"
+      if [[ "$TREE_BEFORE" != "$TREE_AFTER" ]]; then
+        echo -e "${RED}SECURITY_VIOLATION: tree mutated during failed certification precheck${RESET}" >&2
+        exit 2
+      fi
+      echo -e "${GREEN}Proof: working tree, HEAD, and tags unchanged after failed precheck.${RESET}"
+      exit 1
+    }
+    echo -e "${YELLOW}Nothing to release — no commits since ${LAST_TAG:-beginning}.${RESET}"
+    echo -e "${GREEN}Dry-run: tree unchanged.${RESET}"
+    exit 0
+  fi
   echo -e "${YELLOW}Nothing to release — no commits since ${LAST_TAG:-beginning}.${RESET}"
   exit 0
 fi
-
-# ── Parse args: [--force] [major|minor|patch] ────────────────────────────────
-FORCE_RELEASE=false
-REQUESTED_TYPE=""
-for arg in "$@"; do
-  case "$arg" in
-    --force|-f) FORCE_RELEASE=true ;;
-    major|minor|patch) REQUESTED_TYPE="$arg" ;;
-    -h|--help)
-      cat <<'USAGE'
-Usage: ./scripts/release.sh [--force] [major|minor|patch]
-
-  major|minor|patch   force a specific bump type (otherwise auto-detected)
-  --force, -f         bump even when commits since last tag are only
-                      docs/chore/style/test/build/ci (no release-worthy changes)
-
-Auto-detection rules (strict Conventional Commits):
-  BREAKING CHANGE / type!:  → major
-  feat:                     → minor
-  fix: / perf: / refactor:  → patch
-  docs: / chore: / style:   → NO RELEASE (exit cleanly; use --force to override)
-  test: / build: / ci:      → NO RELEASE (exit cleanly; use --force to override)
-USAGE
-      exit 0
-      ;;
-    *)
-      echo "Unknown argument: $arg" >&2
-      echo "Try '$0 --help'" >&2
-      exit 1
-      ;;
-  esac
-done
 
 # ── Classify commits into release-worthy tiers ──────────────────────────────
 HAS_BREAKING=false
@@ -105,6 +290,20 @@ fi
 
 # ── Refuse to bump on docs/chore-only commits unless --force ────────────────
 if [[ "$HAS_RELEASE_WORTHY" == "false" && "$FORCE_RELEASE" == "false" ]]; then
+  if [[ "$DRY_RUN" == "true" ]]; then
+    TREE_BEFORE="$(git status --porcelain; git rev-parse HEAD 2>/dev/null || true; git tag -l)"
+    if ! run_cert_precheck precheck; then
+      TREE_AFTER="$(git status --porcelain; git rev-parse HEAD 2>/dev/null || true; git tag -l)"
+      if [[ "$TREE_BEFORE" != "$TREE_AFTER" ]]; then
+        echo -e "${RED}SECURITY_VIOLATION: tree mutated during failed certification precheck${RESET}" >&2
+        exit 2
+      fi
+      echo -e "${GREEN}Proof: working tree, HEAD, and tags unchanged after failed precheck.${RESET}"
+      exit 1
+    fi
+    echo -e "${YELLOW}Nothing release-worthy — dry-run would not bump (use --force). Tree unchanged.${RESET}"
+    exit 0
+  fi
   echo -e "${YELLOW}Nothing release-worthy — all commits since ${LAST_TAG:-beginning} are docs/chore/style/test/build/ci.${RESET}"
   echo -e "${CYAN}Push without releasing:${RESET}   git push"
   echo -e "${CYAN}Release anyway:${RESET}           $0 --force ${REQUESTED_TYPE:-patch}"
@@ -135,8 +334,50 @@ esac
 NEW_VERSION="${NEW_MAJOR}.${NEW_MINOR}.${NEW_PATCH}"
 
 # ── Check idempotency — tag already exists? ───────────────────────────────────
-if git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
-  echo -e "${YELLOW}Nothing to release — tag v${NEW_VERSION} already exists.${RESET}"
+if [[ -n "${NEW_VERSION:-}" ]] && git rev-parse "v${NEW_VERSION}" >/dev/null 2>&1; then
+  if [[ "$PRECHECK_ONLY" != "true" && "$DRY_RUN" != "true" && "$PHASE" != "precheck" ]]; then
+    echo -e "${YELLOW}Nothing to release — tag v${NEW_VERSION} already exists.${RESET}"
+    exit 0
+  fi
+fi
+
+# ── Snapshot for dry-run / failure non-mutation proof ─────────────────────────
+snapshot_tree() {
+  git status --porcelain
+  git rev-parse HEAD 2>/dev/null || true
+  git tag -l
+}
+
+TREE_BEFORE="$(snapshot_tree)"
+
+# ── PRECHECK before any mutation (T14 hard-stop) ──────────────────────────────
+if ! run_cert_precheck precheck; then
+  TREE_AFTER="$(snapshot_tree)"
+  if [[ "$TREE_BEFORE" != "$TREE_AFTER" ]]; then
+    echo -e "${RED}SECURITY_VIOLATION: tree mutated during failed certification precheck${RESET}" >&2
+    exit 2
+  fi
+  echo -e "${GREEN}Proof: working tree, HEAD, and tags unchanged after failed precheck.${RESET}"
+  exit 1
+fi
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo ""
+  echo -e "${GREEN}${BOLD}Dry-run plan${RESET}"
+  echo -e "  current:  v${CURRENT_VERSION}"
+  echo -e "  next:     v${NEW_VERSION}  (${BUMP_TYPE})"
+  echo -e "  commits:  $(echo "$COMMITS" | wc -l | tr -d ' ')"
+  echo -e "  mutation: none (dry-run)"
+  echo -e "  next steps after a real prepare:"
+  echo -e "    1. $0 --phase candidate --version ${NEW_VERSION}"
+  echo -e "    2. wait for release-certification.yml on release-candidate/v${NEW_VERSION}"
+  echo -e "    3. $0 --phase finalize --version ${NEW_VERSION}"
+  TREE_AFTER="$(snapshot_tree)"
+  if [[ "$TREE_BEFORE" != "$TREE_AFTER" ]]; then
+    echo -e "${RED}SECURITY_VIOLATION: dry-run mutated the tree${RESET}" >&2
+    exit 2
+  fi
+  echo -e "${GREEN}Proof: tree unchanged after dry-run.${RESET}"
   exit 0
 fi
 
@@ -260,8 +501,9 @@ done < "$CHANGELOG"
 
 mv "$TMPFILE2" "$CHANGELOG"
 
-# ── Bump versions in all manifest files ──────────────────────────────────────
-"$SCRIPT_DIR/bump-version.sh" "$NEW_VERSION"
+# ── Bump versions in all manifest files (prepare phase only — no publish) ────
+HYPERFLOW_RELEASE_PHASE=prepare \
+  "$SCRIPT_DIR/bump-version.sh" "$NEW_VERSION"
 
 # ── Regenerate the portable doctrine template from DOCTRINE.md ────────────────
 # templates/claude-md-doctrine.md is a generated artefact derived from
@@ -400,7 +642,7 @@ for optional in \
   [[ -f "$optional" ]] && git add "$optional"
 done
 
-# ── Commit and tag ────────────────────────────────────────────────────────────
+# ── Commit and local annotated tag only (no remote publish) ───────────────────
 git commit -m "chore(release): v${NEW_VERSION}"
 git tag -a "v${NEW_VERSION}" -m "v${NEW_VERSION}"
 
@@ -414,17 +656,18 @@ if [[ -x "$SCRIPT_DIR/verify-downstreams.sh" ]]; then
   if ! "$SCRIPT_DIR/verify-downstreams.sh"; then
     echo ""
     echo -e "${YELLOW}⚠  DOWNSTREAMS STALE${RESET} — see the table above; remediation steps live in RELEASING.md §3."
-    echo -e "   The release is not blocked — sync the dependents after pushing."
+    echo -e "   The release is not blocked — sync the dependents after candidate certification."
   fi
 fi
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# ── Summary (prepare complete — candidate still required) ─────────────────────
 COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
 
 echo ""
-echo -e "${GREEN}${BOLD}Released v${NEW_VERSION}${RESET}"
+echo -e "${GREEN}${BOLD}Prepared local release v${NEW_VERSION}${RESET}"
 echo -e "  ${CURRENT_VERSION} → ${NEW_VERSION}  (${BUMP_TYPE} bump)"
 echo -e "  ${COMMIT_COUNT} commit(s) included"
+echo -e "  local tag v${NEW_VERSION} created (not pushed)"
 if [[ ${#ADDED[@]} -gt 0 ]]; then
   echo -e "  Added:   ${#ADDED[@]} entr$([ ${#ADDED[@]} -eq 1 ] && echo y || echo ies)"
 fi
@@ -435,6 +678,13 @@ if [[ ${#CHANGED[@]} -gt 0 ]]; then
   echo -e "  Changed: ${#CHANGED[@]} entr$([ ${#CHANGED[@]} -eq 1 ] && echo y || echo ies)"
 fi
 echo ""
-echo -e "${CYAN}Push when ready:${RESET}"
-echo -e "  git push && git push origin v${NEW_VERSION}"
+echo -e "${CYAN}Next — remote candidate certification (required before stable tag):${RESET}"
+echo -e "  $0 --phase candidate --version ${NEW_VERSION}"
+echo -e "  git push -u origin release-candidate/v${NEW_VERSION}"
+echo -e "  # wait for .github/workflows/release-certification.yml"
+echo -e "  $0 --phase finalize --version ${NEW_VERSION}"
+echo -e "  git push origin HEAD && git push origin v${NEW_VERSION}"
+echo ""
+echo -e "${YELLOW}Do not push the stable tag until the candidate workflow is green.${RESET}"
+echo -e "On post-push smoke failure: halt announcement; fix-forward only (RELEASING.md)."
 echo ""

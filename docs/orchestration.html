@@ -215,7 +215,7 @@
         </div>
 
         <p>
-          Triage can route big tasks to <code>/hyperflow:workflow</code> instead of <code>plan &rarr; dispatch</code>. The route applies to <code>flow=deep</code>, <code>flow=scientific</code>, <code>scope=system-wide</code>, large migrations, repo-wide audits, high-confidence verification, and explicit workflow requests. Claude Code uses native dynamic workflows where available; Codex, OpenCode, and Grok use the portable adapter. Surfaces that cannot preserve adapter phases keep the normal <code>plan &rarr; dispatch</code> route.
+          Triage can route big tasks to <code>/hyperflow:workflow</code> instead of <code>plan &rarr; dispatch</code>. The route applies to <code>flow=deep</code>, <code>flow=scientific</code>, <code>scope=system-wide</code>, large migrations, repo-wide audits, high-confidence verification, and explicit workflow requests. Claude Code uses native dynamic workflows where available; Codex, OpenCode, and Grok use the portable adapter (Codex support is <strong>preview / uncertified</strong> until <a href="codex.md">docs/codex.md</a> lanes go green). Surfaces that cannot preserve adapter phases keep the normal <code>plan &rarr; dispatch</code> route.
         </p>
 
         <p>Flow budgets are hard ceilings, not targets:</p>
@@ -259,7 +259,16 @@
         </p>
 
         <p>
-          On Codex App/CLI, <code>/hyperflow:*</code> messages are skill aliases rather than native slash commands. If the host does not expose a popup question UI, every required <code>AskUserQuestion</code> gate renders as a concise <code>Hyperflow Question</code> chat block with numbered options and waits for the answer. The fallback applies to Plan questions, Plan ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion, and push confirmation.
+          <strong>Codex interaction contract</strong> (capability-driven; full matrix in <a href="codex.md">docs/codex.md</a>):
+          skill entry uses textual <code>hyperflow &lt;verb&gt;</code> / <code>/hyperflow:&lt;skill&gt;</code>
+          <strong>aliases</strong> — not native Codex slash commands. Structural gates prefer the host
+          structured-input tool when callable; otherwise every required gate renders as a concise
+          <code>Hyperflow Question</code> chat block with numbered options, optional safe checkpoint under
+          <code>.hyperflow/</code>, and ends the turn — never skip or silent-default. The fallback applies to
+          Plan questions, Plan ambiguity, Dispatch audit/deploy gates, Audit fix gates, Deploy commit-inclusion,
+          and push confirmation. Worker/reviewer agents use live inventory (collaboration tools, then bare names,
+          then legacy multi-agent tools only if callable); otherwise labelled <strong>inline worker</strong> then
+          separate labelled <strong>inline reviewer</strong>. Metrics never fabricate observed parallelism or tokens.
         </p>
 
         <p>Then:</p>
@@ -277,7 +286,7 @@
         </ul>
 
         <p class="install-note">
-          Every step that produces output dispatches at least one Agent (DOCTRINE rule 12). In Codex, Hyperflow maps those dispatches to Codex subagents when available; when subagents are not exposed in the session, the single foreground agent runs the worker/reviewer phases inline with labels and continues. Pure user-interaction steps (<code>AskUserQuestion</code>, <code>Skill</code> hand-off) are exempt.
+          Every step that produces output dispatches at least one Agent (DOCTRINE rule 12) <strong>when the host can spawn children</strong>. On Codex, Hyperflow maps those dispatches to collaboration (or legacy) subagents <strong>only when exposed in the live inventory</strong>; otherwise the single foreground agent runs labelled worker then labelled reviewer phases inline and continues. Pure user-interaction steps (<code>AskUserQuestion</code> / structured gate, skill hand-off) are exempt from agent spawn but never drop structural gates.
         </p>
 
         <!-- Scope -->
@@ -382,7 +391,7 @@
 
         <p>
           On any <code>Fix &hellip;</code> choice, audit builds a spec file at <code>.hyperflow/specs/audit-&lt;timestamp&gt;.md</code> from the chosen findings
-          and invokes <code>Skill</code> with <code>skill: scope, args: "chain-mode=auto spec=&lt;path&gt;"</code> &mdash; the chain runs again to fix what the audit caught.
+          and continues via <code>skill_continuation</code> into <strong>plan</strong> with <code>session=one spec=&lt;path&gt;</code> (or loads <code>skills/plan/SKILL.md</code> completely when native Skill is absent). Plan still owns the build-location gate &mdash; <code>scope</code> is retired and never re-entered.
         </p>
 
         <!-- Deploy -->
@@ -447,7 +456,7 @@
 
         <p>
           Parallel dispatch is a prompt-discipline property &mdash; multiple <code>Agent</code> calls in Claude Code, or multiple Codex subagent calls when exposed, should be issued together so independent work runs concurrently;
-          the same calls across separate messages run serial. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
+          the same calls across separate messages run serial. When Codex (or any host) has no spawn tools, work is <strong>sequenced inline</strong> &mdash; never claim concurrent subagents or invent agent counts. The doctrine mandates parallel-when-possible (rule 2), but enforcement is at the prompt layer.
         </p>
 
         <p>To make parallelism auditable from the output alone, every batch prints a footer:</p>

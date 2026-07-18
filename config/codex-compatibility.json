@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "kind": "codex-compatibility-policy",
+  "updated": "2026-07-18",
+  "policy": {
+    "neverInferAppFromCli": true,
+    "neverInferAppFromAppServer": true,
+    "pluginListIsNotWorkflowCertification": true,
+    "surfacesCertifiedIndependently": [
+      "cli",
+      "app-server",
+      "desktop-app"
+    ],
+    "windowsAndWslUnsupportedUntilCertified": true,
+    "handWrittenAttestationDoesNotUnlockAppClaim": true,
+    "notes": [
+      "CLI, app-server, and desktop App rows are independent certificates.",
+      "A green CLI or app-server lane never sets desktop App support.",
+      "A hand-written schema-valid attestation without CI provenance does not unlock App claims.",
+      "Initial floor is evidence-derived research context, not a certified claim without certificates."
+    ]
+  },
+  "researchContext": {
+    "observedCliVersion": "0.141.0",
+    "observedAt": "2026-07-18",
+    "source": "local codex-cli --version during full-codex-support research",
+    "certificationStatus": "not-certified",
+    "comment": "0.141.0 is research context only. Plugin list success and local observation do not certify any CLI, app-server, or App lane. Establish the minimum floor by running the suite backward from a certified currentStable; do not guess."
+  },
+  "platformPolicy": {
+    "supportedWhenCertified": [
+      { "os": "linux", "arch": "x86_64" },
+      { "os": "linux", "arch": "aarch64" },
+      { "os": "macos", "arch": "x86_64" },
+      { "os": "macos", "arch": "aarch64" }
+    ],
+    "unsupportedUntilCertified": [
+      { "os": "windows", "arch": "x86_64", "status": "unsupported" },
+      { "os": "windows", "arch": "aarch64", "status": "unsupported" },
+      { "os": "wsl", "arch": "x86_64", "status": "unsupported" },
+      { "os": "wsl", "arch": "aarch64", "status": "unsupported" }
+    ]
+  },
+  "cli": {
+    "lanes": {
+      "minimum": {
+        "lane": "minimum",
+        "version": null,
+        "status": "uncertified",
+        "osArch": [],
+        "certificateIds": [],
+        "evidenceDerivedFloor": {
+          "researchObservedVersion": "0.141.0",
+          "certified": false,
+          "reason": "Floor not yet proven by backward suite run; research observation is not a certificate."
+        },
+        "requiredCapabilities": [
+          "marketplace-lifecycle",
+          "skills-discoverable",
+          "session-start-hooks",
+          "workflow-canaries"
+        ]
+      },
+      "currentStable": {
+        "lane": "currentStable",
+        "version": null,
+        "status": "uncertified",
+        "osArch": [],
+        "certificateIds": [],
+        "requiredCapabilities": [
+          "marketplace-lifecycle",
+          "skills-discoverable",
+          "session-start-hooks",
+          "workflow-canaries"
+        ]
+      },
+      "latestStable": {
+        "lane": "latestStable",
+        "version": null,
+        "status": "uncertified",
+        "osArch": [],
+        "certificateIds": [],
+        "schedule": "nightly-canary",
+        "failurePolicy": "freeze-latest-claim-open-issue",
+        "requiredCapabilities": [
+          "marketplace-lifecycle",
+          "skills-discoverable",
+          "session-start-hooks",
+          "workflow-canaries"
+        ]
+      }
+    }
+  },
+  "appServer": {
+    "lanes": {
+      "minimum": {
+        "lane": "minimum",
+        "version": null,
+        "status": "uncertified",
+        "osArch": [],
+        "certificateIds": [],
+        "transport": ["stdio://"],
+        "analyticsDefaultInTests": false,
+        "requiredCapabilities": [
+          "initialize",
+          "marketplace-add-list-upgrade-remove",
+          "plugin-visibility",
+          "thread-start-resume",
+          "hooks-list-when-exposed",
+          "question-gate-when-exposed",
+          "clear-compact-when-exposed"
+        ]
+      },
+      "currentStable": {
+        "lane": "currentStable",
+        "version": null,
+        "status": "uncertified",
+        "osArch": [],
+        "certificateIds": [],
+        "transport": ["stdio://"],
+        "analyticsDefaultInTests": false
+      },
+      "latestStable": {
+        "lane": "latestStable",
+        "version": null,
+        "status": "uncertified",
+        "osArch": [],
+        "certificateIds": [],
+        "schedule": "nightly-canary",
+        "failurePolicy": "freeze-latest-claim-open-issue"
+      }
+    },
+    "independentOfCli": true
+  },
+  "desktopApp": {
+    "builds": [],
+    "status": "uncertified",
+    "independentOfCli": true,
+    "independentOfAppServer": true,
+    "attestationSchema": "tests/fixtures/codex/app-attestation.schema.json",
+    "attestationRequirements": [
+      "issuer",
+      "reviewer",
+      "commit",
+      "tag",
+      "createdAt",
+      "expiresAt",
+      "evidenceDigestSha256",
+      "immutableCiRef",
+      "platform",
+      "appBuild",
+      "pluginVersion",
+      "redaction",
+      "ciProvenance"
+    ],
+    "notes": [
+      "Desktop App support requires a CI-issued attestation bound to exact App build, platform/arch, Hyperflow commit/tag, plugin version, digest, and immutable CI reference.",
+      "App-server PASS alone never certifies desktop App."
+    ]
+  },
+  "certificates": {
+    "directory": ".hyperflow/artefacts/codex-certificates",
+    "ids": []
+  }
+}

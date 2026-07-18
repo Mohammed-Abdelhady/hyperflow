@@ -1,0 +1,352 @@
+{
+  "version": 1,
+  "lastReviewed": "2026-07-18",
+  "owner": "security-reviewer",
+  "policyHuman": "PRIVACY.md",
+  "statements": {
+    "pluginOwnedAnalytics": false,
+    "phoneHome": false,
+    "zeroAutomaticNetwork": false,
+    "providerTrafficIsHostOwned": true,
+    "noSecretsInContract": true
+  },
+  "automaticNetwork": [
+    {
+      "id": "session-start-update-check",
+      "category": "automatic",
+      "description": "Daily-cached public tag lookup so SessionStart can surface an in-session update notice when a newer Hyperflow release exists.",
+      "owner": "scripts/hook-runtime.py:check_update_notice",
+      "trigger": "SessionStart / session.after_clear / session.after_compact via hooks/session-start → scripts/hook-runtime.py",
+      "method": "git ls-remote --tags --refs --sort=-v:refname",
+      "destination": "https://github.com/Mohammed-Abdelhady/hyperflow.git",
+      "destinationKind": "public-git-remote",
+      "protocol": "git-over-https",
+      "refFilter": "v*",
+      "frequencyMinutes": 1440,
+      "timeoutSeconds": 4,
+      "cachePath": "~/.hyperflow/.update-check",
+      "cacheContents": "latest public semver tag string only (no repo contents, no credentials)",
+      "payloadSent": "none beyond the standard git ls-remote handshake to the public remote",
+      "failureBehavior": "OSError, SubprocessError, timeout, or non-zero exit → latest left empty; no update notice; session continues (non-blocking)",
+      "offlineBehavior": "HYPERFLOW_HOOK_OFFLINE or --offline skips network; stale cache outside TTL is not used as a fresh claim",
+      "optOut": [
+        "HYPERFLOW_HOOK_OFFLINE=1",
+        "HYPERFLOW_HOOK_OFFLINE=true",
+        "HYPERFLOW_HOOK_OFFLINE=yes",
+        "hook-runtime.py session-start --offline"
+      ],
+      "configKeys": [],
+      "evidencePatterns": [
+        "ls-remote",
+        "https://github.com/Mohammed-Abdelhady/hyperflow.git",
+        "UPDATE_CACHE_MINUTES",
+        ".update-check",
+        "HYPERFLOW_HOOK_OFFLINE"
+      ],
+      "scannedSources": [
+        "scripts/hook-runtime.py",
+        "hooks/session-start"
+      ]
+    }
+  ],
+  "optionalNetwork": [
+    {
+      "id": "specialist-web-research",
+      "category": "optional",
+      "description": "Gated specialist web research via the host's web_search / web_fetch tools (or inventory equivalents). Not a plugin-owned HTTP client.",
+      "owner": "skills/hyperflow/web-research.md",
+      "trigger": "Specialist agents only when flow ∈ {deep, research, scientific}, triage security:true, or audit/deploy; skipped when specialists.webResearch.enabled=false, offline, or cache-fresh",
+      "method": "host-bound web_research (WebSearch/WebFetch or provider inventory equivalents)",
+      "destination": "sites chosen by the host search/fetch tools for the specialist question (CVE advisories, docs, release notes)",
+      "failureBehavior": "graceful skip with logged reason; chain continues; never invent citations",
+      "optOut": [
+        "specialists.webResearch.enabled=false in ~/.hyperflow/config.json",
+        "non-gated flow profiles (fast/standard/creative without security)",
+        "offline / web_research unavailable on host"
+      ],
+      "configKeys": [
+        "specialists.webResearch.enabled",
+        "specialists.webResearch.maxSources",
+        "specialists.webResearch.recencyMonths",
+        "specialists.webResearch.offlineSkip",
+        "specialists.webResearch.flowGate"
+      ],
+      "evidencePatterns": [
+        "web_research",
+        "web-research.md",
+        "WebSearch",
+        "WebFetch"
+      ],
+      "scannedSources": [
+        "skills/hyperflow/web-research.md",
+        "config/defaults.json"
+      ]
+    }
+  ],
+  "userInvokedNetwork": [
+    {
+      "id": "installer-clone",
+      "category": "user-invoked",
+      "description": "Optional one-shot installer clones the public Hyperflow repo and writes local config/shims. Does not stay resident.",
+      "owner": "install.sh",
+      "method": "git clone / curl|bash bootstrap of install.sh",
+      "destination": "https://github.com/Mohammed-Abdelhady/hyperflow.git (and raw.githubusercontent.com for the bootstrap URL when used)",
+      "evidencePatterns": [
+        "REPO_URL=",
+        "github.com/Mohammed-Abdelhady/hyperflow"
+      ],
+      "scannedSources": [
+        "install.sh"
+      ]
+    },
+    {
+      "id": "marketplace-lifecycle",
+      "category": "user-invoked",
+      "description": "Host marketplace install/update/remove commands suggested after an update notice or run by the user via their editor plugin manager.",
+      "owner": "scripts/hook-runtime.py:select_update_command + host CLIs",
+      "method": "codex/claude plugin marketplace commands or source git pull --ff-only",
+      "destination": "host marketplace registries / public git remote when the user opts to update",
+      "evidencePatterns": [
+        "marketplace upgrade",
+        "plugin update",
+        "git pull --ff-only"
+      ],
+      "scannedSources": [
+        "scripts/hook-runtime.py",
+        "install.sh"
+      ]
+    },
+    {
+      "id": "skill-git-and-gh",
+      "category": "user-invoked",
+      "description": "User-invoked skills (issue, pr, deploy, handoff, audit) may run local git and optional gh CLI against the user's remotes.",
+      "owner": "skills/issue, skills/pr, skills/deploy, skills/handoff, skills/audit",
+      "method": "git / gh CLI as invoked by the skill under user direction",
+      "destination": "user's configured git remotes and GitHub API via gh (user credentials already on the machine)",
+      "evidencePatterns": [
+        "gh ",
+        "git push",
+        "git remote"
+      ],
+      "scannedSources": [
+        "skills/issue/SKILL.md",
+        "skills/pr/SKILL.md",
+        "skills/deploy/SKILL.md",
+        "skills/handoff/SKILL.md"
+      ]
+    },
+    {
+      "id": "maintainer-release-scripts",
+      "category": "user-invoked",
+      "description": "Maintainer release/verification scripts contact GitHub when a human runs them; not part of plugin runtime.",
+      "owner": "scripts/release.sh, scripts/verify-downstreams.sh",
+      "method": "git / gh / curl as scripted for releases",
+      "destination": "https://github.com/Mohammed-Abdelhady/hyperflow and downstream repos listed in RELEASING.md",
+      "evidencePatterns": [
+        "REPO_URL=",
+        "github.com/"
+      ],
+      "scannedSources": [
+        "scripts/release.sh",
+        "scripts/verify-downstreams.sh"
+      ]
+    }
+  ],
+  "notPluginOwned": [
+    {
+      "id": "host-llm-provider-traffic",
+      "description": "Codex, Claude Code, OpenCode, and related hosts send prompts to their configured LLM providers. Hyperflow shapes prompt content but does not proxy, intercept, or retransmit that traffic.",
+      "owner": "host editor / CLI"
+    },
+    {
+      "id": "host-analytics",
+      "description": "Any analytics, crash reporting, or telemetry emitted by the host editor or LLM provider is outside Hyperflow. This plugin ships no analytics SDK and claims no control over host telemetry.",
+      "owner": "host editor / LLM provider"
+    }
+  ],
+  "localhostOnly": [
+    {
+      "id": "artefact-viewer",
+      "description": "hyperflow view serves the local artefact viewer bound to 127.0.0.1 only. viewer/app.js fetch() loads local paths; no outbound upload.",
+      "owner": "scripts/view.py + viewer/",
+      "bindHost": "127.0.0.1",
+      "scannedSources": [
+        "scripts/view.py",
+        "viewer/app.js"
+      ]
+    }
+  ],
+  "automaticWrites": [
+    {
+      "id": "update-check-cache",
+      "path": "~/.hyperflow/.update-check",
+      "when": "SessionStart update check succeeds and returns a tag",
+      "contents": "latest public version string",
+      "owner": "scripts/hook-runtime.py:check_update_notice",
+      "category": "automatic"
+    },
+    {
+      "id": "session-start-log",
+      "path": ".hyperflow/.session-start.log",
+      "when": "SessionStart helper stderr / non-fatal errors",
+      "contents": "local diagnostic lines from migrate/archive/memory/bridge helpers",
+      "owner": "scripts/hook-runtime.py:_run_helper",
+      "category": "automatic"
+    },
+    {
+      "id": "session-context",
+      "path": ".hyperflow/memory/session-context.md",
+      "when": "SessionStart when .hyperflow/memory/ exists",
+      "contents": "bundled profile/architecture/conventions heads for the session",
+      "owner": "scripts/hook-runtime.py:write_session_context",
+      "category": "automatic"
+    },
+    {
+      "id": "precompact-snapshot",
+      "path": ".hyperflow/.precompact.md",
+      "when": "PreCompact hook",
+      "contents": "recovery snapshot of active tasks/specs/decisions + local git diff stats",
+      "owner": "scripts/hook-runtime.py:write_precompact_snapshot",
+      "category": "automatic"
+    },
+    {
+      "id": "cache-version-marker",
+      "path": ".hyperflow/.version",
+      "when": "SessionStart migrate-cache.py",
+      "contents": "plugin version that last migrated the project cache",
+      "owner": "scripts/migrate-cache.py",
+      "category": "automatic"
+    },
+    {
+      "id": "memory-stubs-and-doctrine-copy",
+      "path": ".hyperflow/memory/{anti-patterns,project-decisions,doctrine}.md",
+      "when": "SessionStart migrate-cache.py when stubs/copy missing or doctrine stale",
+      "contents": "empty stubs or refreshed read-only doctrine copy from the plugin",
+      "owner": "scripts/migrate-cache.py",
+      "category": "automatic"
+    },
+    {
+      "id": "memory-index",
+      "path": ".hyperflow/memory/index.md",
+      "when": "SessionStart memory-index.py",
+      "contents": "derived index of memory entries",
+      "owner": "scripts/memory-index.py",
+      "category": "automatic"
+    },
+    {
+      "id": "memory-checksums",
+      "path": ".hyperflow/memory/.checksums",
+      "when": "SessionStart memory-index.py",
+      "contents": "SHA256 + line counts of memory files",
+      "owner": "scripts/memory-index.py",
+      "category": "automatic"
+    },
+    {
+      "id": "archive-cleanup",
+      "path": ".hyperflow/archive/** and .hyperflow/.last-cleanup",
+      "when": "SessionStart archive-artefacts.py (daily-gated)",
+      "contents": "moved stale tasks/audits/specs/features; cleanup timestamp marker; promoted learnings into memory",
+      "owner": "scripts/archive-artefacts.py",
+      "category": "automatic"
+    },
+    {
+      "id": "auto-bridge-instruction-files",
+      "path": "CLAUDE.md | AGENTS.md (project root)",
+      "when": "SessionStart auto-bridge.py when .bridge-mode is auto (default)",
+      "contents": "managed hyperflow doctrine block only (markers preserve user content outside the block)",
+      "owner": "scripts/auto-bridge.py",
+      "category": "automatic"
+    }
+  ],
+  "userInvokedWrites": [
+    {
+      "id": "scaffold-analysis-cache",
+      "path": ".hyperflow/{profile,architecture,conventions,dependencies,testing,git-workflow}.md, .hyperflow/.checksums, .gitignore one-line append",
+      "when": "/hyperflow:scaffold",
+      "category": "user-invoked"
+    },
+    {
+      "id": "plan-and-dispatch-artefacts",
+      "path": ".hyperflow/{tasks,specs,features,audits,artefacts,memory}/**",
+      "when": "/hyperflow:plan, dispatch, trace, audit, cache, workflow",
+      "category": "user-invoked"
+    },
+    {
+      "id": "usage-ledger",
+      "path": ".hyperflow/usage/<chain-id>.jsonl",
+      "when": "orchestrated dispatch records metadata-only usage",
+      "contents": "phase/role/token counts/context hash — no prompts, file contents, or secrets",
+      "category": "user-invoked"
+    },
+    {
+      "id": "handoff-packages",
+      "path": ".hyperflow-handoff/<slug>/",
+      "when": "/hyperflow:handoff package",
+      "category": "user-invoked"
+    },
+    {
+      "id": "user-config",
+      "path": "~/.hyperflow/config.json",
+      "when": "installer wizard or user edit",
+      "category": "user-invoked"
+    },
+    {
+      "id": "install-repo-checkout",
+      "path": "~/.hyperflow/repo",
+      "when": "install.sh clone",
+      "category": "user-invoked"
+    },
+    {
+      "id": "setup-detection-shims",
+      "path": "CLAUDE.md, AGENTS.md, ~/.grok/rules/hyperflow.md, host skill/plugin dirs",
+      "when": "install.sh / setup-detection.sh when user opts in",
+      "category": "user-invoked"
+    },
+    {
+      "id": "viewer-export",
+      "path": "user-chosen export path (self-contained HTML)",
+      "when": "export-artefact.py / hyperflow view export flows",
+      "category": "user-invoked"
+    }
+  ],
+  "runtimeScanRoots": [
+    "hooks",
+    "scripts/hook-runtime.py",
+    "scripts/auto-bridge.py",
+    "scripts/archive-artefacts.py",
+    "scripts/migrate-cache.py",
+    "scripts/memory-index.py",
+    "scripts/lean-summary.py",
+    "scripts/view.py",
+    "scripts/usage-ledger.py",
+    "scripts/usage-aggregate.py",
+    "scripts/artefact.py",
+    "scripts/detect-provider.py",
+    "scripts/resolve-mode.py",
+    "install.sh"
+  ],
+  "networkEvidencePatterns": [
+    "ls-remote",
+    "urllib.request",
+    "urllib.urlopen",
+    "urlopen(",
+    "requests.get",
+    "requests.post",
+    "requests.request",
+    "http.client",
+    "httplib",
+    "aiohttp",
+    "curl ",
+    "wget ",
+    "socket.connect"
+  ],
+  "writePathPrefixes": [
+    ".hyperflow/",
+    ".hyperflow-handoff/",
+    "~/.hyperflow/",
+    "CLAUDE.md",
+    "AGENTS.md",
+    ".gitignore",
+    "~/.grok/rules/"
+  ]
+}

@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """
-auto-bridge.py — session-start auto-bridge for the hyperflow CLAUDE.md doctrine block.
+auto-bridge.py — session-start auto-bridge for the hyperflow doctrine block.
 
 Called by hooks/session-start. Reads .hyperflow/.bridge-mode (default: auto), checks
-whether the project's ./CLAUDE.md has the current doctrine block, and either:
+whether the project's instruction file(s) have the current doctrine block, and either:
 
   * mode=auto    → writes/refreshes the block silently, prints one-line notice
   * mode=manual  → leaves the file alone, prints an advisory when stale
   * mode=off     → does nothing
 
-Idempotent. Preserves all other content in ./CLAUDE.md outside the
+Provider-aware targets (one block algorithm for both):
+  * codex / opencode / cursor / grok / antigravity → AGENTS.md
+  * claude-code → CLAUDE.md
+  * mixed/unknown → refresh files that already carry a managed block; else
+    CLAUDE.md for backward compatibility. Codex-only signals never mutate CLAUDE.md.
+
+Idempotent. Preserves all other content outside the
 <!-- hyperflow:doctrine:start --> … <!-- hyperflow:doctrine:end --> markers.
 
 Exits 0 on success or no-op. Exits 0 (not non-zero) on most error paths too,
@@ -18,7 +24,8 @@ session start. Errors go to stderr; the hook captures them into
 .hyperflow/.session-start.log.
 
 Usage:
-    auto-bridge.py <plugin-root> <project-root>
+    auto-bridge.py <plugin-root> <project-root> [--force]
+    auto-bridge.py --body-sha <plugin-root>
 """
 
 from __future__ import annotations
@@ -39,6 +46,15 @@ START_MARKER_RE = re.compile(
 )
 END_MARKER = "<!-- hyperflow:doctrine:end -->"
 
+# Instruction file(s) owned per provider. Codex-family never auto-touches CLAUDE.md.
+_PROVIDER_TARGETS: dict[str, tuple[str, ...]] = {
+    "codex": ("AGENTS.md",),
+    "opencode": ("AGENTS.md",),
+    "cursor": ("AGENTS.md",),
+    "grok": ("AGENTS.md",),
+    "antigravity": ("AGENTS.md",),
+    "claude-code": ("CLAUDE.md",),
+}
 
 def _body_hash(template: str) -> str:
     """Hash the template body (without per-render substitutions).
@@ -80,6 +96,111 @@ def _read_mode(project_root: Path) -> str:
     return "auto"
 
 
+def _detect_provider_key() -> str | None:
+    """Lightweight provider detection from environment (no filesystem secrets).
+
+    Mirrors config/providers.json signal precedence at a coarse grain suitable
+    for choosing the instruction-file target. Returns None when unknown.
+    """
+    # Explicit plugin-root env vars — Codex wins when both roots are set.
+    if os.environ.get("CODEX_PLUGIN_ROOT"):
+        return "codex"
+    if os.environ.get("CLAUDE_PLUGIN_ROOT"):
+        return "claude-code"
+    if os.environ.get("OPENCODE_PLUGIN_ROOT"):
+        return "opencode"
+    if os.environ.get("GROK_PLUGIN_ROOT"):
+        return "grok"
+    if os.environ.get("ANTIGRAVITY_PLUGIN_ROOT"):
+        return "antigravity"
+    if os.environ.get("CURSOR_PLUGIN_ROOT"):
+        return "cursor"
+
+    # Host-specific keys / entrypoints
+    if os.environ.get("CODEX_HOME") or os.environ.get("CODEX_SESSION_ID"):
+        return "codex"
+    if os.environ.get("CLAUDE_CODE_ENTRYPOINT") or os.environ.get("CLAUDE_PROJECT_DIR"):
+        return "claude-code"
+    if os.environ.get("OPENCODE_CONFIG") or os.environ.get("OPENCODE_DATA"):
+        return "opencode"
+    if os.environ.get("GROK_AGENT") or os.environ.get("GROK_SUBAGENTS"):
+        return "grok"
+    if os.environ.get("ANTIGRAVITY_HOME"):
+        return "antigravity"
+    if os.environ.get("CURSOR_TRACE_ID"):
+        return "cursor"
+
+    # Prefix scan (less specific — only if nothing above matched)
+    for key, value in os.environ.items():
+        if not value:
+            continue
+        upper = key.upper()
+        if upper.startswith("CODEX"):
+            return "codex"
+        if upper.startswith("CLAUDE_CODE") or upper == "CLAUDE":
+            return "claude-code"
+        if upper.startswith("OPENCODE"):
+            return "opencode"
+        if upper.startswith("GROK"):
+            return "grok"
+        if upper.startswith("ANTIGRAVITY"):
+            return "antigravity"
+        if upper.startswith("CURSOR"):
+            return "cursor"
+
+    return None
+
+
+def _path_has_doctrine_block(path: Path) -> bool:
+    """True when *path* exists and already contains a managed doctrine block."""
+    if not path.is_file():
+        return False
+    try:
+        return _find_existing_block(path.read_text(encoding="utf-8")) is not None
+    except OSError:
+        return False
+
+
+def _resolve_targets(project_root: Path) -> list[Path]:
+    """Return instruction files this session should maintain.
+
+    * claude-code → CLAUDE.md only
+    * codex → AGENTS.md only (never automatic CLAUDE.md mutation)
+    * other AGENTS-family providers → AGENTS.md; also refresh an *existing*
+      CLAUDE.md doctrine block so mixed-surface projects stay current without
+      creating CLAUDE.md for AGENTS-only setups
+    * unknown → files that already carry a managed block, else CLAUDE.md
+      (legacy auto-bridge default)
+    """
+    provider = _detect_provider_key()
+    claude_md = project_root / "CLAUDE.md"
+    agents_md = project_root / "AGENTS.md"
+
+    if provider == "claude-code":
+        return [claude_md]
+
+    if provider == "codex":
+        # Codex-only: never touch CLAUDE.md automatically.
+        return [agents_md]
+
+    if provider in _PROVIDER_TARGETS:
+        # opencode / cursor / grok / antigravity
+        targets = [project_root / name for name in _PROVIDER_TARGETS[provider]]
+        if _path_has_doctrine_block(claude_md) and claude_md not in targets:
+            targets.append(claude_md)
+        return targets
+
+    # Unknown provider: refresh whichever managed blocks already exist.
+    existing: list[Path] = []
+    for path in (claude_md, agents_md):
+        if _path_has_doctrine_block(path):
+            existing.append(path)
+    if existing:
+        return existing
+    # Legacy default: CLAUDE.md (prior auto-bridge behavior).
+    return [claude_md]
+
+
 def _find_existing_block(
     content: str,
 ) -> tuple[int, int, str | None, str | None] | None:
@@ -119,44 +240,74 @@ def _render_block(template: str, version: str, generated_at: str, body_sha: str)
     return START_MARKER_RE.sub(_patch_marker, rendered, count=1)
 
 
-def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
-    """Write or replace the doctrine block in ./CLAUDE.md. Returns action taken."""
-    claude_md = project_root / "CLAUDE.md"
-    if claude_md.exists():
-        original = claude_md.read_text(encoding="utf-8")
-    else:
-        original = ""
+def _apply_block(original: str, new_block: str) -> tuple[str, str]:
+    """Return (new_content, action) applying new_block to original file text.
 
+    action is ``generated`` (append/create) or ``refreshed`` (in-place replace).
+    Content outside the managed markers is preserved byte-for-byte.
+    """
     existing = _find_existing_block(original)
     if existing is None:
-        # Append the block with a leading blank line if needed.
-        sep = "" if original.endswith("\n\n") or not original else (
-            "\n" if original.endswith("\n") else "\n\n"
+        sep = (
+            ""
+            if original.endswith("\n\n") or not original
+            else ("\n" if original.endswith("\n") else "\n\n")
         )
         new_content = original + sep + new_block
         if not new_content.endswith("\n"):
             new_content += "\n"
-        action = "generated"
-    else:
-        start, end, _, _ = existing
-        prefix = original[:start]
-        suffix = original[end:]
-        new_content = prefix + new_block
-        if not new_content.endswith("\n"):
-            new_content += "\n"
-        new_content += suffix
-        action = "refreshed"
+        return new_content, "generated"
 
+    start, end, _, _ = existing
+    prefix = original[:start]
+    suffix = original[end:]
+    new_content = prefix + new_block
     if not new_content.endswith("\n"):
         new_content += "\n"
+    new_content += suffix
+    if not new_content.endswith("\n"):
+        new_content += "\n"
+    return new_content, "refreshed"
+
+
+def _write_instruction_file(
+    target: Path, new_block: str, mode: str
+) -> str:
+    """Write or replace the doctrine block in *target*. Returns action taken."""
+    if target.exists():
+        original = target.read_text(encoding="utf-8")
+    else:
+        original = ""
+
+    new_content, action = _apply_block(original, new_block)
 
     if mode == "manual":
         # In manual mode we never write; we just compute the would-be action
         # so the caller can print an advisory instead.
         return f"would-{action}"
 
-    claude_md.write_text(new_content, encoding="utf-8")
+    target.write_text(new_content, encoding="utf-8")
     return action
+
+
+def _write_claude_md(project_root: Path, new_block: str, mode: str) -> str:
+    """Backward-compatible wrapper — doctrine block in ./CLAUDE.md."""
+    return _write_instruction_file(project_root / "CLAUDE.md", new_block, mode)
+
+
+def _is_fresh(content: str, version: str, body_sha: str, force: bool) -> bool:
+    """True when the existing block matches current content and force is off."""
+    if force:
+        return False
+    existing = _find_existing_block(content)
+    if not existing:
+        return False
+    _, _, existing_version, existing_body_sha = existing
+    if existing_body_sha and existing_body_sha == body_sha:
+        return True
+    if existing_body_sha is None and existing_version == version:
+        return True
+    return False
 
 
 def _print_body_sha(argv: list[str]) -> int:
@@ -186,7 +337,7 @@ def main(argv: list[str]) -> int:
     # --force re-stamps the marker even when the body is unchanged. Reserved for this
     # repo's own release commit, where the version label should track the release. User
     # projects must keep the content-keyed no-op so a version bump never churns their
-    # CLAUDE.md.
+    # instruction files.
     force = "--force" in argv[1:]
     argv = [a for a in argv if a != "--force"]
 
@@ -223,47 +374,45 @@ def main(argv: list[str]) -> int:
     body_sha = _body_hash(template)
     new_block = _render_block(template, version, generated_at, body_sha)
 
-    # Freshness check (S7 — content-hash invalidation):
-    #   1. If the existing block's body-sha matches the new template body, skip
-    #      the write entirely — content is unchanged across this plugin version,
-    #      no need to touch the file even if the version label differs.
-    #   2. Fall back to version-string matching when no body-sha is present in
-    #      the marker (older blocks generated before S7 landed).
-    #   3. --force bypasses both, so a release can re-stamp its own version label.
-    claude_md = project_root / "CLAUDE.md"
-    if claude_md.exists() and not force:
+    targets = _resolve_targets(project_root)
+
+    for target in targets:
+        # Freshness check (S7 — content-hash invalidation):
+        #   1. Matching body-sha → no-op
+        #   2. Legacy version-string match when no body-sha
+        #   3. --force bypasses both
+        if target.exists() and not force:
+            try:
+                if _is_fresh(
+                    target.read_text(encoding="utf-8"), version, body_sha, force
+                ):
+                    continue
+            except OSError:
+                pass
+
         try:
-            existing = _find_existing_block(
-                claude_md.read_text(encoding="utf-8")
+            action = _write_instruction_file(target, new_block, mode)
+        except OSError as e:
+            print(
+                f"auto-bridge: failed to write {target.name} — {e}",
+                file=sys.stderr,
             )
-            if existing:
-                _, _, existing_version, existing_body_sha = existing
-                if existing_body_sha and existing_body_sha == body_sha:
-                    return 0  # content unchanged → no-op
-                if existing_body_sha is None and existing_version == version:
-                    return 0  # legacy block, version matches → no-op
-        except OSError:
-            pass
+            continue
 
-    try:
-        action = _write_claude_md(project_root, new_block, mode)
-    except OSError as e:
-        print(f"auto-bridge: failed to write CLAUDE.md — {e}", file=sys.stderr)
-        return 0
+        rel = f"./{target.name}"
+        if action.startswith("would-"):
+            real_action = action.replace("would-", "")
+            print(
+                f"hyperflow bridge: {rel} doctrine block would be {real_action} "
+                f"(version {version}) — mode=manual, run /hyperflow:bridge refresh to apply"
+            )
+        else:
+            print(
+                f"hyperflow bridge: {rel} doctrine block {action} (version {version}) "
+                f"— mode=auto · /hyperflow:bridge mode manual to require manual refreshes"
+            )
 
-    if action.startswith("would-"):
-        # manual mode advisory
-        real_action = action.replace("would-", "")
-        print(
-            f"hyperflow bridge: ./CLAUDE.md doctrine block would be {real_action} "
-            f"(version {version}) — mode=manual, run /hyperflow:bridge refresh to apply"
-        )
-    else:
-        print(
-            f"hyperflow bridge: ./CLAUDE.md doctrine block {action} (version {version}) "
-            f"— mode=auto · /hyperflow:bridge mode manual to require manual refreshes"
-        )
-    return 0
+    return 0  # always non-blocking
 
 
 if __name__ == "__main__":

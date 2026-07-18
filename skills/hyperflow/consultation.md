@@ -30,11 +30,19 @@ CONSULT-CONTEXT:
 ## Hybrid routing — who brokers
 
 - **Build-time workers (dispatch) → orchestrator-brokered.** The worker emits the `CONSULT:` signal and stops; it
-  never calls `Agent` laterally itself. The Team Lead brokers (below). This keeps the Layer-2 iron rule *"Workers
-  never coordinate"* literally true — the worker emits a signal exactly as it does for `OVERSIZE`/`ESCALATE`.
-- **Design-time decision agents (plan) → direct.** `architect`, `designer`, `analyst`, and any future decision agent
-  may dispatch a peer directly via their own `Agent` tool within the budget below, then fold the answer into their
+  never calls `Agent` / `spawn` laterally itself. The Team Lead brokers (below). This keeps the Layer-2 iron rule
+  *"Workers never coordinate"* literally true — the worker emits a signal exactly as it does for `OVERSIZE`/`ESCALATE`.
+- **Design-time decision agents (plan) → direct when spawn exists.** `architect`, `designer`, `analyst`, and any
+  future decision agent may dispatch a peer directly via the host `spawn` op (Claude `Agent`, Codex
+  `collaboration.spawn_agent` / legacy candidates, etc.) within the budget below, then fold the answer into their
   own output. Decision agents already own decisions, so a direct consult does not cross a role boundary.
+- **No spawn / generic children.** When the host has no subagent API, the orchestrator runs the peer as a **labelled
+  foreground consultation phase** (still depth-1, still budget-capped), injects the answer, and resumes the original
+  agent. Never invent mailbox, background notifications, or merged worker+reviewer turns.
+
+Semantic lifecycle names (`spawn`, `wait`, `message`, `follow_up`) are defined in
+[runtime-contract.md](runtime-contract.md); host candidates live in `config/providers.json` and thin
+[provider-codex.md](provider-codex.md) / [provider-claude.md](provider-claude.md) maps.
 
 ## Broker loop (orchestrator)
 
@@ -43,8 +51,12 @@ CONSULT-CONTEXT:
    `Consultation unavailable: <peer> not found; proceed with best judgment.` and re-dispatch.
 3. Dispatch the peer with a **consultation brief**: the question, the `CONSULT-CONTEXT`, and the framing *"You are
    being consulted, not taking over. Answer the question in ≤ 8 lines. Do not redesign the task."*
-4. Re-dispatch the original worker with `Consultation answer from <peer>:` prepended to its brief. The worker resumes
-   from where it stopped.
+   On hosts without native named-agent discovery, compose that brief with
+   [`../../scripts/render-specialist-brief.py`](../../scripts/render-specialist-brief.py)
+   (`--role` matching the peer · `--can-spawn` from the session descriptor · stable `hyperflow-task-name`).
+4. Collect via host `wait` / mailbox when present; otherwise same-turn foreground completion.
+5. Re-dispatch the original worker with `Consultation answer from <peer>:` prepended to its brief. Prefer host
+   `follow_up` on the same child when available; otherwise a new spawn or labelled inline resume.
 
 Reviewer `CONSULT:` signals broker identically — the verdict is held until the brokered answer returns, then the
 reviewer is re-dispatched to finish the review.

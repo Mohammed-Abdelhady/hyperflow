@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hyperflow — Rules, memory, templates, reviewed multi-agent chains</title>
-  <meta name="description" content="Hyperflow is an engineering system for AI coding agents: multi-session project memory, doctrine/rules, task templates, and Worker-to-Reviewer orchestration. Issue to reviewed PR when you need it. Claude Code, Codex, OpenCode, Grok, Antigravity, Cursor." />
+  <meta name="description" content="Hyperflow is an engineering system for AI coding agents: multi-session project memory, doctrine/rules, task templates, and Worker-to-Reviewer orchestration. Issue to reviewed PR when you need it. Claude Code, Codex CLI (preview; App pending), OpenCode, Grok, Antigravity, Cursor." />
   <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta name="theme-color" content="#0B0F1A" />
 
@@ -46,7 +46,7 @@
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux",
         "softwareVersion": "5.14.0",
-        "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex, OpenCode, Grok, Antigravity, Cursor.",
+        "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex CLI (preview; App pending), OpenCode, Grok, Antigravity, Cursor.",
         "url": "https://mohammed-abdelhady.github.io/hyperflow/",
         "downloadUrl": "https://github.com/Mohammed-Abdelhady/hyperflow",
         "license": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
@@ -99,7 +99,7 @@
     <!-- ── Hero ──────────────────────────────────────────────────────── -->
     <section class="hero" id="hero" aria-labelledby="hero-heading">
       <div class="container">
-        <p class="hero-eyebrow">Codex · Claude Code · OpenCode · Grok · Antigravity · Cursor</p>
+        <p class="hero-eyebrow">Codex CLI (preview) · Claude Code · OpenCode · Grok · Antigravity · Cursor</p>
         <h1 id="hero-heading">Not just a chat.<br />An engineering system for agents.</h1>
         <p class="hero-sub">
           Hyperflow is doctrine, multi-session project memory, task templates, and a reviewed multi-agent chain.
@@ -295,7 +295,7 @@
           <a class="bento-tile" href="#providers">
             <span class="bento-num">6</span>
             <span class="bento-label">AI coding tools</span>
-            <span class="bento-sub">Codex, Claude Code, OpenCode, Grok, Antigravity, Cursor — auto-detected.</span>
+            <span class="bento-sub">Claude Code, OpenCode, Grok, Antigravity, Cursor, and Codex CLI (preview) — auto-detected.</span>
           </a>
           <a class="bento-tile" href="#install">
             <span class="bento-num">1</span>
@@ -408,13 +408,16 @@
             <span class="badge badge-exec">Auto-detected</span>
             <h3>Six AI coding tools</h3>
             <p>
-              <code>Codex App/CLI</code> · <code>Claude Code</code> · <code>OpenCode</code> ·
-              <code>Grok</code> · <code>Antigravity</code> · <code>Cursor</code>
+              <code>Claude Code</code> · <code>OpenCode</code> ·
+              <code>Grok</code> · <code>Antigravity</code> · <code>Cursor</code> ·
+              <code>Codex CLI</code> (preview; App pending)
             </p>
             <p>
               Every agent runs on your current session model — there is no model routing
               to configure and no extra API bill. A portable doctrine skill carries the
-              full ruleset into single-agent surfaces.
+              full ruleset into single-agent surfaces. Codex CLI, app-server, and desktop App
+              are certified separately; App remains pending — see
+              <a href="codex.md">Codex support matrix</a>.
             </p>
           </div>
           <div class="card reveal">
@@ -458,14 +461,14 @@
           </div>
         </div>
 
-        <!-- Codex -->
+        <!-- Codex CLI (preview; App pending certification) -->
         <div class="install-block reveal">
           <div class="install-block-header">
-            <span class="install-block-title">Codex App · CLI</span>
-            <button class="copy-btn" aria-label="Copy Codex install commands to clipboard" onclick="copyBlock('block-codex', this)">copy</button>
+            <span class="install-block-title">Codex CLI · preview</span>
+            <button class="copy-btn" aria-label="Copy Codex CLI install commands to clipboard" onclick="copyBlock('block-codex', this)">copy</button>
           </div>
-          <div class="install-code" id="block-codex" aria-label="Codex install commands">
-            <span class="comment"># Step 1 — add the marketplace source</span><br />
+          <div class="install-code" id="block-codex" aria-label="Codex CLI install commands (preview)">
+            <span class="comment"># Step 1 — add the marketplace source (preview / not certificate-certified)</span><br />
             codex plugin marketplace add Mohammed-Abdelhady/hyperflow<br />
             <br />
             <span class="comment"># Step 2 — install the plugin</span><br />
@@ -506,10 +509,14 @@
         </div>
 
         <p class="install-note">
-          Hyperflow runs locally in <strong>Codex App/CLI</strong>, Claude Code, OpenCode,
-          Grok, Antigravity, and Cursor. Claude Code Desktop and claude.ai web still need
-          the portable CLAUDE.md fallback because they do not load terminal plugins —
-          see <a href="installation.html">the full installation guide</a>.
+          Hyperflow runs locally in Claude Code, OpenCode, Grok, Antigravity, Cursor, and
+          <strong>Codex CLI</strong> (marketplace install is <strong>preview / not certificate-certified</strong>
+          yet; desktop App is pending). On Codex, <code>/hyperflow:*</code> forms are
+          <strong>textual Hyperflow aliases</strong>, not native Codex slash commands
+          (<code>hyperflow &lt;verb&gt;</code> is the portable form). Claude Code Desktop and
+          claude.ai web still need the portable CLAUDE.md fallback because they do not load
+          terminal plugins — see <a href="installation.html">the full installation guide</a>
+          and the <a href="codex.md">Codex support matrix</a>.
         </p>
       </div>
     </section>

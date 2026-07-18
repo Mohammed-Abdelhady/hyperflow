@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Install Hyperflow — Codex, Claude Code, OpenCode &amp; More</title>
-  <meta name="description" content="Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script. Security config and verification included." />
+  <title>Install Hyperflow — Codex CLI (preview), Claude Code, OpenCode &amp; More</title>
+  <meta name="description" content="Two commands to install Hyperflow in Claude Code or Codex CLI (preview) — plus OpenCode, Grok, Antigravity, and Cursor via one script. Security config and verification included." />
   <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/installation.html" />
   <meta name="theme-color" content="#0B0F1A" />
 
@@ -15,8 +15,8 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hyperflow" />
-  <meta property="og:title" content="Install Hyperflow — Codex, Claude Code, OpenCode &amp; More" />
-  <meta property="og:description" content="Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script." />
+  <meta property="og:title" content="Install Hyperflow — Codex CLI (preview), Claude Code, OpenCode &amp; More" />
+  <meta property="og:description" content="Two commands to install Hyperflow in Claude Code or Codex CLI (preview) — plus OpenCode, Grok, Antigravity, and Cursor via one script." />
   <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/installation.html" />
   <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -26,8 +26,8 @@
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Install Hyperflow — Codex, Claude Code, OpenCode &amp; More" />
-  <meta name="twitter:description" content="Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script." />
+  <meta name="twitter:title" content="Install Hyperflow — Codex CLI (preview), Claude Code, OpenCode &amp; More" />
+  <meta name="twitter:description" content="Two commands to install Hyperflow in Claude Code or Codex CLI (preview) — plus OpenCode, Grok, Antigravity, and Cursor via one script." />
   <meta name="twitter:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -43,7 +43,7 @@
         "@type": "WebPage",
         "name": "Install Hyperflow",
         "url": "https://mohammed-abdelhady.github.io/hyperflow/installation.html",
-        "description": "Two commands to install Hyperflow in Claude Code or Codex — plus OpenCode, Grok, Antigravity, and Cursor via one script."
+        "description": "Two commands to install Hyperflow in Claude Code or Codex CLI (preview) — plus OpenCode, Grok, Antigravity, and Cursor via one script."
       },
       {
         "@type": "BreadcrumbList",
@@ -102,9 +102,9 @@
     <section id="where-it-runs" aria-labelledby="where-heading">
       <div class="container">
         <p class="section-label">Where it runs</p>
-        <h2 id="where-heading">Codex and terminal CLI environments.</h2>
+        <h2 id="where-heading">Terminal CLI environments and host plugin loaders.</h2>
         <p>
-          Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It does not run inside web-only surfaces.
+          Hyperflow loads as a plugin into terminal CLI environments (and related host plugin loaders). It does not run inside Claude Desktop or claude.ai web without the portable bridge fallback. Codex CLI, app-server, and desktop App are tracked as <strong>separate</strong> claim rows — see the <a href="codex.md">Codex support matrix</a>.
         </p>
 
         <div class="skills-table-wrap" style="margin-top:2.5rem;">
@@ -119,23 +119,43 @@
             <tbody>
               <tr>
                 <td><strong>Claude Code CLI</strong> (<code>claude</code> binary)</td>
-                <td>yes — primary target</td>
-                <td>Loads plugins from <code>~/.claude/plugins/cache/</code>; slash commands, auto-routing, and skills are all active</td>
+                <td>yes — primary certified target</td>
+                <td>Loads plugins from <code>~/.claude/plugins/cache/</code>; slash commands, auto-routing, skills, and Claude Code dynamic workflow routing are active</td>
               </tr>
               <tr>
-                <td><strong>Codex App / CLI</strong> (<code>codex</code> binary)</td>
-                <td>yes</td>
-                <td>Loads plugins from Codex marketplaces into <code>~/.codex/plugins/cache/</code>; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, and inline auto-chain fallback are active</td>
+                <td><strong>Codex CLI</strong> (<code>codex</code> binary)</td>
+                <td><strong>preview / not certified</strong></td>
+                <td>Marketplace install, skills, hooks, AGENTS.md, textual aliases, collaboration-mapped subagents, portable workflow adapter, and inline worker/reviewer fallbacks ship in-repo. Certificate lanes (<code>minimum</code> / <code>currentStable</code> / <code>latestStable</code>) are still uncertified — see <a href="codex.md">Codex support matrix</a></td>
+              </tr>
+              <tr>
+                <td><strong>Codex app-server</strong></td>
+                <td><strong>preview / not certified</strong></td>
+                <td>Certified independently of CLI when certificates exist. Not claimed from CLI plugin-list alone</td>
+              </tr>
+              <tr>
+                <td><strong>Codex desktop App</strong></td>
+                <td><strong>pending / uncertified</strong></td>
+                <td>Requires CI App attestation for an exact build. Never inferred from CLI or app-server PASS</td>
               </tr>
               <tr>
                 <td><strong>OpenCode CLI</strong> (<code>opencode</code> binary)</td>
                 <td>yes</td>
-                <td>Same plugin loader convention</td>
+                <td>Same plugin loader convention; portable workflow adapter uses task/subagent support when available and inline phases otherwise</td>
+              </tr>
+              <tr>
+                <td><strong>Grok CLI / Grok Build</strong> (<code>grok</code> binary)</td>
+                <td>yes</td>
+                <td>Loads skills from <code>~/.grok/skills/</code>; portable function router + workflow adapter</td>
               </tr>
               <tr>
                 <td><strong>Antigravity IDE</strong></td>
                 <td>yes</td>
-                <td>Loads skills from <code>~/.gemini/antigravity/skills/</code>; symlink hyperflow's <code>skills/*</code> into that directory</td>
+                <td>Loads skills from host skill paths; single-agent doctrine applies (no sub-agent dispatch)</td>
+              </tr>
+              <tr>
+                <td><strong>Cursor</strong></td>
+                <td>yes</td>
+                <td>Reads <code>AGENTS.md</code> natively; sub-agent dispatch depends on whether the host shells out to a multi-agent CLI</td>
               </tr>
               <tr>
                 <td><strong>Claude Code Desktop</strong> (Mac/Windows GUI)</td>
@@ -148,9 +168,14 @@
                 <td>No plugin loader; skills are terminal-CLI artefacts</td>
               </tr>
               <tr>
-                <td><strong>IDE extensions</strong> (VS Code, JetBrains, Cursor)</td>
+                <td><strong>Other IDE extensions</strong> (VS Code, JetBrains)</td>
                 <td>depends</td>
                 <td>Works if the extension shells out to the <code>claude</code> binary; not if it talks directly to the API</td>
+              </tr>
+              <tr>
+                <td><strong>Windows / WSL</strong> (Codex lanes)</td>
+                <td><strong>unsupported</strong> until certified</td>
+                <td>Linux/macOS are the only OS classes eligible for Codex lane claims; empty until certificates fill <code>osArch</code></td>
               </tr>
             </tbody>
           </table>
@@ -161,7 +186,7 @@
         </p>
 
         <p class="install-note" style="margin-top:1rem;">
-          In Codex App/CLI, <code>/hyperflow:*</code> is a Hyperflow alias rather than a native host slash command. <code>hyperflow plan</code> and similar text invocations are the most portable form; the plugin still recognizes <code>/hyperflow:*</code> aliases when the session-start hook is loaded.
+          <strong>Codex invocation:</strong> <code>/hyperflow:*</code> is a <strong>textual Hyperflow alias</strong>, not a native Codex slash command. Prefer <code>hyperflow plan</code> (and similar) as the portable form; aliases are recognized when session-start context/skills are loaded. Full matrix, OS policy, and certificate state: <a href="codex.md">docs/codex.md</a>. Policy source: <code>config/codex-compatibility.json</code> (<code>updated</code>: 2026-07-18).
         </p>
 
         <h3 style="margin-top:2rem;">Workarounds for Desktop / web users</h3>
@@ -215,15 +240,15 @@
           </div>
         </div>
 
-        <!-- Codex -->
-        <h3 style="margin-top:2rem;margin-bottom:1rem;">Codex App / CLI</h3>
+        <!-- Codex CLI (preview) -->
+        <h3 style="margin-top:2rem;margin-bottom:1rem;">Codex CLI (preview)</h3>
 
         <div class="install-block">
           <div class="install-block-header">
-            <span class="install-block-title">CODEX</span>
+            <span class="install-block-title">CODEX CLI · PREVIEW</span>
             <button
               class="copy-btn"
-              aria-label="Copy Codex install commands to clipboard"
+              aria-label="Copy Codex CLI install commands to clipboard"
               onclick="copyBlock('block-codex', this)"
             >copy</button>
           </div>
@@ -232,6 +257,10 @@
             codex plugin add hyperflow@hyperflow-marketplace
           </div>
         </div>
+
+        <p class="install-note" style="margin-top:1rem;">
+          Marketplace install ships packaging, skills, hooks, and the portable workflow adapter, but certificate lanes remain <strong>uncertified</strong>. Verify in a <strong>fresh session</strong> (skills visible when the host lists them; session-start when hooks are trusted). Listed in plugin list ≠ certificate-certified workflow support. CLI, app-server, and desktop App are separate claim rows — current state uncertified; see <a href="codex.md">Codex support matrix</a>.
+        </p>
 
         <!-- OpenCode -->
         <h3 style="margin-top:2.5rem;margin-bottom:1rem;">OpenCode</h3>
@@ -254,7 +283,7 @@
         <h3 style="margin-top:2.5rem;margin-bottom:0.75rem;">What the installer does</h3>
         <ol style="padding-left:1.5rem;color:var(--muted);line-height:1.9;margin-bottom:1.5rem;">
           <li>Clones the repo to <code>~/.hyperflow/repo/</code></li>
-          <li>Detects which providers are installed (Codex, OpenCode, Antigravity)</li>
+          <li>Detects which providers are installed (Claude Code, Codex, OpenCode, Antigravity, Cursor, Grok)</li>
           <li>Installs or links the provider integration where needed</li>
           <li>Asks whether to enable the security layer</li>
           <li>Writes your choices to <code>~/.hyperflow/config.json</code></li>
@@ -491,7 +520,7 @@
         <p class="section-label">Verify</p>
         <h2 id="verify-heading">Confirm Hyperflow is active.</h2>
         <p>
-          Start a new Codex or Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on matching task intents.
+          Start a <strong>fresh</strong> Claude Code or Codex session after install. Hyperflow should appear in the available skills list when the host exposes one, and session-start context should load when hooks are trusted. On Codex, textual <code>hyperflow &lt;verb&gt;</code> and <code>/hyperflow:&lt;skill&gt;</code> aliases resolve only after session-start/skill load — they are not native Codex slash commands. Do not treat a successful install as a certified Codex support lane; check <a href="codex.md">docs/codex.md</a> and <code>./scripts/certify-codex.sh --status</code>.
         </p>
       </div>
     </section>

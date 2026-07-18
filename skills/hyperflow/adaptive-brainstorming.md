@@ -7,6 +7,10 @@ fast-lane tasks use a silent recap after the affected surface is known. Standard
 questions whose answers would change the implementation. Open-ended, creative, security, and
 correctness-sensitive work keeps the deeper exploration and approval gates.
 
+Capability-aware research: when a dimension needs public-web context (APIs, CVEs, framework defaults),
+use `web_research` when present; when absent, skip network research, record `unavailable`, and never
+invent citations ([runtime-contract.md](runtime-contract.md)).
+
 ## Depth derivation
 
 Brainstorm depth is derived from `ambiguity`. A high-confidence deterministic fast lane uses `none`; other clear work may complete light analysis without asking. If a task type forces a higher minimum depth, the higher value wins.
@@ -15,7 +19,7 @@ Brainstorm depth is derived from `ambiguity`. A high-confidence deterministic fa
 |-----------------|----------|-------------------------------------------------------------------------------|
 | 0.0 – 0.2       | none     | Grounded silent recap; no clarification question                              |
 | 0.2 – 0.5       | light    | 0–2 material questions; no alternatives proposal                              |
-| 0.5 – 0.8       | standard | **3 AskUserQuestion calls**; 2–3 alternatives proposal with trade-offs        |
+| 0.5 – 0.8       | standard | **3 `structured_question` calls**; 2–3 alternatives proposal with trade-offs  |
 | 0.8 – 1.0       | deep     | Full 6-dimension exploration; 4–5 questions; section-by-section approval      |
 
 ## The 3 depth modes
@@ -38,7 +42,7 @@ Brainstorm depth is derived from `ambiguity`. A high-confidence deterministic fa
 
 1. Orchestrator silently runs the 6-dimension analysis (see Question framework section).
 2. If exactly ONE dimension is unclear and its answer would change the implementation, fire one
-   `AskUserQuestion` call with that question (2-4 options plus an "Other" escape).
+   `structured_question` call with that question (2-4 options plus an "Other" escape).
 3. If all dimensions resolve cleanly without asking, proceed with a single-sentence recap.
 4. No alternative proposal step.
 
@@ -52,7 +56,7 @@ Brainstorm depth is derived from `ambiguity`. A high-confidence deterministic fa
  callers or delete immediately]
 ```
 
-Then fires one `AskUserQuestion`:
+Then fires one `structured_question`:
 
 ```text
 Question: How should existing callers of `getUser` outside this repo be handled?
@@ -79,7 +83,7 @@ Intent: rename `getUser` to `fetchUser` and propagate to all callers in this rep
 **Behavior:**
 
 1. Silent 6-dimension analysis.
-2. 2-3 `AskUserQuestion` calls — one logical question per call, most-impactful question first.
+2. 2-3 `structured_question` calls — one logical question per call, most-impactful question first.
 3. Propose exactly 2 alternatives with a trade-off table (one row per dimension that differs).
 4. User picks one alternative → proceed.
 
@@ -103,7 +107,7 @@ Intent: rename `getUser` to `fetchUser` and propagate to all callers in this rep
 **Behavior:**
 
 1. Silent 6-dimension analysis (verbose — all six dimensions written out internally).
-2. 4-5 `AskUserQuestion` calls — one logical question per call, most-impactful first.
+2. 4-5 `structured_question` calls — one logical question per call, most-impactful first.
 3. Propose 2-3 alternatives with a trade-off table.
 4. After the user picks an alternative, present the design in approval-gated sections:
    - Architecture — how components fit together
@@ -111,7 +115,7 @@ Intent: rename `getUser` to `fetchUser` and propagate to all callers in this rep
    - Key decisions — trade-offs made and why
    - Edge cases — what could break and the mitigation plan
    - File structure — what files get created, modified, or deleted
-5. Present ONE section per message. Wait for approval before the next.
+5. Present ONE section per message. Wait for approval before the next (`structured_question` for yes / feedback when the host needs a formal gate; otherwise the same Hyperflow Question chat fallback).
 6. For features touching 3+ files, write a brief spec to `.hyperflow/specs/` before dispatching workers.
 
 **Token cost:** ~10k–40k tokens (front-loaded, preventing 10× that cost in rework).
@@ -224,11 +228,15 @@ existing code or configs.
 6. **Edge cases** — what could break? (Empty states, error paths, concurrency, scale, security
    surface area, i18n/RTL, accessibility.)
 
-## AskUserQuestion rules
+## `structured_question` rules
 
-1. ALL clarifying questions use the `AskUserQuestion` tool — never plain-text questions in the
-   response body.
-2. Max 2 questions per single `AskUserQuestion` call.
+Material clarifications and structural gates use the host `structured_question` op
+([runtime-contract.md](runtime-contract.md)). Host mapping examples: Claude `AskUserQuestion`;
+hosts without structured UI use the Hyperflow Question chat fallback below.
+
+1. ALL clarifying questions use `structured_question` — never free-form invent-and-continue questions
+   that skip the gate.
+2. Max 2 questions per single `structured_question` call.
 3. Each call contains one logical question. A sub-question that depends on the first answer
    should be a separate call fired after the first answer is received.
 4. Each question must include 2-4 concrete options plus an "Other / I'll describe" escape hatch.
@@ -238,6 +246,22 @@ existing code or configs.
    unconditionally.
 7. Never ask anything the orchestrator could answer by reading existing files, configs, or
    dependency manifests.
+8. **Blocking fallback:** when `structured_question` is unavailable, render the exact Hyperflow
+   Question chat block, persist a safe checkpoint if the host will lose context, and **end the
+   turn**. Never silent-default; never continue execution past a material unknown.
+
+**Hyperflow Question block (when structured UI is missing):**
+
+```text
+Hyperflow Question
+<question>
+
+1. <recommended option> (Recommended) — <short consequence>
+2. <option> — <short consequence>
+```
+
+Binary action gates (`Yes/No`, `Approve/Revise`, …) carry **no** `(Recommended)` marker.
+Named-workflow and multi-option lists (3+) mark a recommended option first.
 
 ## Hand-off to flow
 
@@ -251,6 +275,8 @@ When brainstorming closes — meaning all questions are answered and
 3. Hand control to the flow profile that triage originally selected (or revised during step 1).
 4. The approved design — including chosen alternative and any section approvals — becomes the
    authoritative spec passed into worker prompts. Workers must not re-derive intent independently.
+   Worker/reviewer execution uses `spawn` (or labelled inline phases) on the **current session
+   model** — no per-role model routing.
 
 **Spec file format** (deep mode, 3+ files, written to `.hyperflow/specs/<slug>.md` before dispatch):
 
@@ -288,8 +314,8 @@ The following behaviors are explicitly prohibited. The orchestrator must not exh
   scope, and risk before mutation; it skips questions, not analysis.
 - **Asking "should I X?"** — this is confirmation-seeking, not clarification. It is banned in all
   depth modes.
-- **Stacking multiple questions in one message** outside of a formal `AskUserQuestion` call →
-  break them up, one logical question per call, and wait for the answer.
+- **Stacking multiple questions in one message** outside of a formal `structured_question` call →
+  break them up, one logical question per call, and wait for the answer (or end-turn on chat fallback).
 - **Proposing only one solution** in standard or deep mode → always present 2+ alternatives with
   explicit trade-offs.
 - **Writing code before design approval** in deep mode → the spec must be approved section by
@@ -299,3 +325,4 @@ The following behaviors are explicitly prohibited. The orchestrator must not exh
   the answer truly cannot be found by inspection.
 - **Treating brainstorming as a checklist** → it is an active reasoning phase, not a form to
   fill out. If a dimension is clearly resolved, move on silently.
+- **Silent-defaulting a gate** when structured input is missing → always Hyperflow Question + end turn.

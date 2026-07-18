@@ -2,6 +2,8 @@
 
 Use this template when dispatching a single Reviewer to evaluate N sibling worker outputs in one call (Pattern P2 — batched single-pass review). Collapses N sequential reviewer round-trips into one without changing the review floor.
 
+**Execution (semantic):** dispatch the reviewer via a separate host `spawn` op with `hyperflow-role: reviewer` ([runtime-contract.md](runtime-contract.md)). Collect with `wait` when present. When `spawn` is unavailable, run a **labelled inline reviewer** phase **after** the worker phase(s) complete — never merge worker implementation and review into one unlabelled pass. Reviewers run on the **current session model**; they never coordinate the chain and never fire structural user questions.
+
 ## When to Use vs. When to Fall Back
 
 | Use batched review | Fall back to per-sub-task reviewers |
@@ -114,16 +116,19 @@ GLOBAL VERDICT: NEEDS_FIX
 
 A single `SECURITY_VIOLATION` in any sibling stops the entire batch. The orchestrator does not re-dispatch failed siblings — it escalates to the user.
 
-On `NEEDS_FIX`: the orchestrator re-dispatches only the failed siblings (not all N). The passing siblings' outputs are accepted as-is. A single Reviewer re-review of just the fixed siblings follows (not another full batched pass unless the fix affects shared interfaces).
+On `NEEDS_FIX`: the orchestrator re-dispatches only the failed siblings (not all N) via `spawn` (or labelled inline worker). The passing siblings' outputs are accepted as-is. A single Reviewer re-review of just the fixed siblings follows (not another full batched pass unless the fix affects shared interfaces) — again a separate reviewer `spawn` / labelled inline reviewer phase.
 
 ## Dispatch Example
 
 Three implementation siblings reviewed from one immutable batch snapshot:
 
 ```
-Agent({
+spawn({
+  role: "reviewer",
   description: "Batched review — auth batch (medium, L1–L3)",
-  prompt: `## Batched review scope
+  brief: `hyperflow-role: reviewer
+
+## Batched review scope
 Siblings: T1 middleware, T2 session types, T3 tests
 Contract references: .hyperflow/tasks/auth/T1.md, T2.md, T3.md
 Review-level cap: L3 (Medium — modifies shared auth behavior)
@@ -156,4 +161,4 @@ T1–T3 per-task verdict + GLOBAL VERDICT`
 })
 ```
 
-See [reviewer-prompt.md](reviewer-prompt.md) for the per-sub-task variant and [review-levels.md](review-levels.md) for full checklist details.
+See [reviewer-prompt.md](reviewer-prompt.md) for the per-sub-task variant, [review-levels.md](review-levels.md) for full checklist details, and [runtime-contract.md](runtime-contract.md) for spawn / wait / inline role-separation policy.

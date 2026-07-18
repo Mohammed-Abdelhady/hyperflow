@@ -1,13 +1,28 @@
 # Specialist Agent Registry
 
-Named, domain-specialized agents that the Hyperflow chain dispatches. Each is a real Claude Code sub-agent
-(`agents/<name>.md`, auto-discovered by the plugin) with frontmatter (`name`, `description`, `tools`) and a
-charter body. Every specialist runs on the current session model — there is no `model:` field.
+Named, domain-specialized agents that the Hyperflow chain dispatches. Each file is a **canonical specialist
+charter** (`agents/<name>.md`) with frontmatter (`name`, `description`, `tools`) and a charter body.
+
+| Host | How the charter is used |
+|---|---|
+| **Claude Code** | Native named-agent discovery — plugin auto-discovered `agents/<name>.md` as real sub-agents. Discovery and frontmatter wiring stay intact. |
+| **Codex / generic collaboration children** | Hosts without native discovery spawn generic children. The orchestrator embeds the same charter via [`../scripts/render-specialist-brief.py`](../scripts/render-specialist-brief.py) (role marker, mission, bound standards pointers, brief, context, security, output contract, capability caveats). |
+| **Other portable hosts** | Same rendered brief when spawn exists; otherwise labelled foreground worker then separate foreground reviewer phases ([`../skills/hyperflow/runtime-contract.md`](../skills/hyperflow/runtime-contract.md)). |
+
+Every specialist runs on the **current session model** — there is no `model:` field and no per-role model tier.
+Charters define **responsibility**, not compute tier.
 
 This registry is a **new system that reuses and extends** the 15 personas in
 [`../skills/hyperflow/personas-A.md`](../skills/hyperflow/personas-A.md) /
 [`personas-B.md`](../skills/hyperflow/personas-B.md). Personas are *standards text*. Specialists are *named agents*
 that **bind** persona standards and add what personas lack.
+
+### Frontmatter `tools:` — host-advisory only on non-Claude hosts
+
+On Claude Code, frontmatter `tools:` participates in native agent tool wiring. On Codex and other generic-child
+hosts, that list is **advisory intent only**: it must not be presented as permission enforcement. Real tool access
+is enforced by the **host sandbox and approval policy** plus Hyperflow [`security.md`](../skills/hyperflow/security.md).
+The specialist renderer states this explicitly in every composed child message.
 
 ## The DRY guard (non-negotiable)
 
@@ -40,13 +55,15 @@ Selection is **not** free-chosen by each skill. The flow is:
    downstream** — no skill re-derives the roster.
 
 `amplify` / `spec` / `scope` **announce** the responsible specialists. `dispatch` / `audit` / `trace` / `deploy`
-**dispatch** the named specialist as the reviewer/investigator at its tier.
+**dispatch** the named specialist as the reviewer/investigator for that responsibility.
 
 ## Roles — one model, different responsibilities
 
 Every specialist runs on the **current session model** — there is no model-tier routing and no per-provider catalog.
 The same charter runs on Claude Code, Codex, OpenCode, Antigravity, or any host, because it inherits whatever model
-the session uses. Specialists differ by **role**, not model:
+the session uses. Specialists differ by **role**, not model. On hosts without native agent discovery, compose the
+child message with `scripts/render-specialist-brief.py` (stable lowercase `hyperflow-task-name` for collaboration
+APIs). Workers never self-review; reviewers never coordinate or implement.
 
 - **Reviewer specialists** act as the per-batch Reviewer in-flight and as a standalone / final-integration Reviewer
   outside a batch (`--thorough` adds a standalone / final-integration review pass). Security/correctness specialists
