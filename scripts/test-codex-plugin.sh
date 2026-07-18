@@ -96,7 +96,7 @@ hf_codex_assert_isolation() {
 }
 
 # Back-compat alias used by the lifecycle body below.
-assert_isolation() { hf_codex_assert_isolation "$@"; }
+assert_isolation() { hf_codex_assert_isolation; }
 
 hf_codex_init_isolation() {
   # Usage: hf_codex_init_isolation [tmp-prefix]
@@ -112,9 +112,9 @@ hf_codex_init_isolation() {
 }
 
 hf_codex_write_redact_py() {
-  # Usage: hf_codex_write_redact_py [dest-path]
-  # Writes a small stdin→stdout redactor; default $TMP_ROOT/work/redact.py
-  local dest="${1:-${TMP_ROOT:?TMP_ROOT required}/work/redact.py}"
+  # Usage: hf_codex_write_redact_py
+  # Writes a small stdin→stdout redactor at $TMP_ROOT/work/redact.py
+  local dest="${TMP_ROOT:?TMP_ROOT required}/work/redact.py"
   mkdir -p "$(dirname "$dest")"
   cat >"$dest" <<'PY'
 import re, sys

@@ -205,9 +205,9 @@ install_codex_plugin() {
   local add_err="" install_err=""
 
   set +e
-  add_err="$(eval "$CODEX_MARKETPLACE_ADD" 2>&1)"
+  add_err="$(codex plugin marketplace add Mohammed-Abdelhady/hyperflow 2>&1)"
   add_rc=$?
-  install_err="$(eval "$CODEX_PLUGIN_ADD" 2>&1)"
+  install_err="$(codex plugin add hyperflow@hyperflow-marketplace 2>&1)"
   install_rc=$?
   set -e
 
@@ -278,7 +278,7 @@ remove_codex_plugin() {
 
   set +e
   local rm_err rm_rc
-  rm_err="$(eval "$CODEX_PLUGIN_REMOVE" 2>&1)"
+  rm_err="$(codex plugin remove hyperflow@hyperflow-marketplace 2>&1)"
   rm_rc=$?
   set -e
 
