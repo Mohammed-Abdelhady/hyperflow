@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.17.1] — 2026-07-19
+
+### Fixed
+- Auto-open renders plan markdown when no JSON artefact exists
+
+
 ### Fixed
 - Plan-completion auto-open now works for plans that only produced classic markdown (the common case — the plan skill writes markdown, not always a JSON artefact): when no `.hyperflow/artefacts/<type>/<slug>.json` exists, it renders the plan's `specs/<slug>.md` / `tasks/<slug>.md` (with any Mermaid graphs) to a self-contained HTML via the new `scripts/render-md.py` and opens that. Model-independent and works for already-created plans.
 
@@ -1429,7 +1435,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.17.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.17.1...HEAD
+[5.17.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.17.0...v5.17.1
 [5.17.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.16.1...v5.17.0
 [5.16.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.16.0...v5.16.1
 [5.16.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...v5.16.0
