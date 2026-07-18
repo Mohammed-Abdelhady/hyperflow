@@ -31,6 +31,7 @@
   <a href="https://mohammed-abdelhady.github.io/hyperflow/">Landing site</a> &middot;
   <a href="docs/installation.md">Installation</a> &middot;
   <a href="docs/orchestration.md">Orchestration</a> &middot;
+  <a href="docs/codex.md">Codex support</a> &middot;
   <a href="CHANGELOG.md">Changelog</a> &middot;
   <a href="PRIVACY.md">Privacy</a>
 </p>
@@ -148,7 +149,7 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-Codex:
+Codex (marketplace install — **preview / not certificate-certified** yet; see [Codex support matrix](docs/codex.md)):
 
 ```bash
 codex plugin marketplace add Mohammed-Abdelhady/hyperflow
@@ -168,9 +169,11 @@ Then type a goal. Chain-starters **auto-scaffold** `.hyperflow/` on first use (i
 hyperflow view
 ```
 
+On Codex, `/hyperflow:*` forms are **textual Hyperflow aliases**, not native Codex slash commands (`hyperflow <verb>` is the portable form). CLI, app-server, and desktop App are certified **separately** — none are green in the compatibility policy yet.
+
 **Lean mode is the default** (phase-relevant context only). Use `mode=default` or `--thorough` for full ceremony. Structural gates stay on.
 
-Setup notes: [Installation](docs/installation.md).
+Setup notes: [Installation](docs/installation.md). Codex claims and degradations: [docs/codex.md](docs/codex.md).
 
 ---
 
@@ -240,13 +243,13 @@ Shipped defaults in `config/defaults.json`:
 
 ## Runs everywhere
 
-Every agent uses the **current session model** (no model tier config, no second API bill from Hyperflow). Auto-detected across Codex App/CLI, Claude Code, OpenCode, Grok, Antigravity, and Cursor. Ports and shims in [`templates/`](templates/). Desktop/web: use `/hyperflow:bridge` for the portable ruleset.
+Every agent uses the **current session model** (no model tier config, no second API bill from Hyperflow). Auto-detected across Claude Code, OpenCode, Grok, Antigravity, Cursor, and Codex (CLI / app-server / desktop App tracked **separately**; see [Codex support](docs/codex.md) for certificate state — currently **preview / uncertified**). Ports and shims in [`templates/`](templates/). Claude Desktop/web: use `/hyperflow:bridge` for the portable ruleset.
 
 ---
 
 ## Documentation
 
-- [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
+- [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Codex support matrix](docs/codex.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
 - [Memory system](skills/hyperflow/memory-system.md) · [Task templates](skills/hyperflow/task-templates.md) · [Session handoff](skills/hyperflow/session-handoff.md)
 - [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
 

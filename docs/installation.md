@@ -6,12 +6,14 @@ Get from zero to a reviewed pull request in two commands. This guide covers the 
 
 ## Where it runs
 
-Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It does not run inside web-only surfaces.
+Hyperflow loads as a plugin into terminal CLI environments (and related host plugin loaders). It does not run inside Claude Desktop or claude.ai web without the portable bridge fallback.
 
 | Environment | Works? | Notes |
 |---|---|---|
-| Claude Code CLI (`claude` binary) | yes — primary target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, skills, and Claude Code dynamic workflow routing are active |
-| Codex App / Codex CLI (`codex` binary) | yes | Loads plugins from Codex marketplaces into `~/.codex/plugins/cache/`; skills, hooks, AGENTS.md instructions, Codex skill aliases, subagent mapping, portable workflow adapter, and inline auto-chain fallback are active |
+| Claude Code CLI (`claude` binary) | yes — primary certified target | Loads plugins from `~/.claude/plugins/cache/`; slash commands, auto-routing, skills, and Claude Code dynamic workflow routing are active |
+| Codex CLI (`codex` binary) | **preview / not certified** | Marketplace install, skills, hooks, AGENTS.md, textual aliases, collaboration-mapped subagents, portable workflow adapter, and inline worker/reviewer fallbacks **ship** in-repo. Certificate lanes (`minimum` / `currentStable` / `latestStable`) are still **uncertified** — see [Codex support matrix](codex.md) |
+| Codex app-server | **preview / not certified** | Certified **independently** of CLI when certificates exist. Not claimed from CLI plugin-list alone |
+| Codex desktop App | **pending / uncertified** | Requires CI App attestation for an exact build. Never inferred from CLI or app-server PASS |
 | OpenCode CLI (`opencode` binary) | yes | Same plugin loader convention; portable workflow adapter uses task/subagent support when available and inline phases otherwise |
 | Grok CLI / Grok Build (`grok` binary) | yes | Loads skills from `~/.grok/skills/` (and project `.grok/skills/`). `install.sh` links the full `skills/*` tree there. Project rules via `AGENTS.md` and `.grok/rules/` (`setup-detection.sh --tools grok`). Uses `spawn_subagent` when enabled; portable function router + workflow adapter; native structured questions when available |
 | Antigravity IDE | yes | Loads global skills from `~/.gemini/config/skills/` (legacy: `~/.antigravity/skills/`). `install.sh` links the single-agent-adapted `hyperflow*` skill set there; project slash commands (`/hyperflow*`) come from `.agent/workflows/` via `setup-detection.sh --tools antigravity`. No sub-agent dispatch — the single agent runs every phase and self-reviews |
@@ -19,14 +21,15 @@ Hyperflow loads as a plugin into Codex App/CLI and terminal CLI environments. It
 | claude.ai web | no | No plugin loader; skills are terminal-CLI artefacts |
 | Cursor | yes | Reads `AGENTS.md` natively for project conventions; `setup-detection.sh --tools cursor` writes it. Sub-agent dispatch depends on whether Cursor shells out to the `claude` binary; the portable single-agent doctrine applies otherwise |
 | Other IDE extensions (VS Code, JetBrains) | depends | Works if the extension shells out to the `claude` binary; not if it talks directly to the API |
+| Windows / WSL (Codex lanes) | **unsupported** until certified | Linux/macOS are the only OS classes eligible for Codex lane claims; empty until certificates fill `osArch` |
 
-If `/hyperflow:plan` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Desktop or web — open a terminal in the same project directory and run `claude`.
+If `/hyperflow:plan` returns `isn't a recognized command here. Some commands only work in the Claude Code terminal.`, you are in Claude Desktop or web — open a terminal in the same project directory and run `claude`.
 
-In Codex App/CLI, `/hyperflow:*` is a Hyperflow alias rather than a native host slash command. `hyperflow plan` and similar text invocations are the most portable form; the plugin still recognizes `/hyperflow:*` aliases when the session-start hook is loaded.
+**Codex invocation:** `/hyperflow:*` is a **textual Hyperflow alias**, not a native Codex slash command. Prefer `hyperflow plan` (and similar) as the portable form; aliases are recognized when session-start context/skills are loaded. Full matrix, OS policy, and certificate dates: [docs/codex.md](codex.md). Policy source: [`config/codex-compatibility.json`](../config/codex-compatibility.json) (`updated`: 2026-07-18).
 
 Claude Code dynamic workflow support requires Claude Code v2.1.154 or later with workflows enabled. `/hyperflow:workflow` routes big tasks to the host dynamic workflow runtime; workflows may be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. Hyperflow never enables `/effort ultracode` or `xhigh` automatically; set `/effort ultracode` manually if you want session-wide automatic workflow selection.
 
-Codex, OpenCode, and Grok do not get native Claude Code dynamic workflows. The same `/hyperflow:workflow` entry runs Hyperflow's portable adapter: research and planning, provider subagents/tasks where available, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task commits, and final synthesis.
+Codex, OpenCode, and Grok do not get native Claude Code dynamic workflows. The same `/hyperflow:workflow` textual entry runs Hyperflow's portable adapter: research and planning, provider subagents/tasks where available, inline worker/reviewer phases otherwise, adversarial verification, quality gates, per-task commits, and final synthesis.
 
 **Workarounds for Desktop / web users:**
 
@@ -50,14 +53,21 @@ Works immediately out of the box (security on). Hyperflow runs on whatever model
 curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
 ```
 
-### Codex App / CLI
+### Codex CLI (preview)
 
 ```bash
 codex plugin marketplace add Mohammed-Abdelhady/hyperflow
 codex plugin add hyperflow@hyperflow-marketplace
 ```
 
-For big tasks, `/hyperflow:workflow` uses the Codex portable workflow adapter. It dispatches through Codex subagents when exposed and otherwise runs the same worker/reviewer phases inline.
+| Step | Detail |
+|---|---|
+| Update | `codex plugin marketplace upgrade hyperflow-marketplace` (marketplace installs). Source checkouts only: `git pull --ff-only` when install mode is confirmed source — never upgrade by mutating a marketplace cache because it contains `.git` |
+| Remove | `codex plugin remove hyperflow@hyperflow-marketplace` |
+| Verify | **Fresh session** after install: skills visible when the host lists them; session-start context when hooks are trusted. Listed in plugin list ≠ certificate-certified workflow support |
+| Big tasks | Textual `/hyperflow:workflow` / `hyperflow workflow` runs the portable adapter: Codex collaboration subagents when inventory exposes them; otherwise labelled inline worker then separate inline reviewer |
+| Surfaces | CLI, app-server, and desktop App are **separate** claim rows — current state **uncertified**; see [Codex support matrix](codex.md) |
+| Privacy | Same contract as other hosts: [PRIVACY.md](../PRIVACY.md), [`config/privacy-contract.json`](../config/privacy-contract.json) |
 
 ### OpenCode
 
@@ -240,7 +250,14 @@ Add this to `~/.claude/CLAUDE.md` as a portable fallback for surfaces that don't
 
 ## Verify installation
 
-Start a new Codex or Claude Code session. Hyperflow should appear in the available skills list and trigger automatically on matching task intents.
+Start a **fresh** Claude Code or Codex session after install.
+
+| Check | Expected |
+|---|---|
+| Skills list / discovery | Hyperflow skills appear when the host exposes a skill list |
+| Intent routing | Matching task language routes into Hyperflow skills when sticky/auto-routing is on |
+| Codex aliases | Textual `hyperflow <verb>` and `/hyperflow:<skill>` aliases resolve only after session-start/skill load — not as native Codex slash commands |
+| Codex certification | Do not treat a successful install as a certified support lane; check [docs/codex.md](codex.md) and `./scripts/certify-codex.sh --status` |
 
 ---
 
