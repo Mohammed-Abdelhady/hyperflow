@@ -9,7 +9,7 @@
     "hf": { "type": "integer", "const": 1, "description": "Envelope schema version. Bump on a breaking change." },
     "type": {
       "type": "string",
-      "enum": ["spec", "task", "feature", "dispatch", "audit", "memory", "review"],
+      "enum": ["spec", "task", "feature", "dispatch", "audit", "memory", "review", "usage"],
       "description": "Artefact type; selects the payload schema from $defs."
     },
     "slug": { "type": "string", "description": "Kebab-case identifier, unique per type." },
@@ -69,7 +69,9 @@
                     "create": { "type": "array", "items": { "type": "string" } },
                     "complexity": { "type": "string" },
                     "specialist": { "type": "string" },
-                    "brief": { "type": "string" }
+                    "brief": { "type": "string" },
+                    "briefBody": { "type": "string", "description": "Full brief markdown, so render-artefact.py can reproduce it losslessly." },
+                    "acceptance": { "type": "array", "items": { "type": "string" } }
                   }
                 }
               }
@@ -77,7 +79,10 @@
           }
         },
         "verification": { "type": "array", "items": { "type": "string" } },
-        "commits": { "type": "array", "items": { "type": "string" } }
+        "commits": { "type": "array", "items": { "type": "string" } },
+        "cost": { "type": "object", "properties": { "agents": { "type": "integer" }, "tokens": { "type": "integer" }, "perCommit": { "type": "integer" } } },
+        "progress": { "type": "object", "properties": { "done": { "type": "integer" }, "total": { "type": "integer" } } },
+        "branch": { "type": "string" }
       }
     },
     "feature": {
@@ -95,7 +100,7 @@
       "additionalProperties": false,
       "properties": {
         "batches": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "tasks": { "type": "array", "items": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" }, "status": { "type": "string" }, "tokens": { "type": "integer" }, "wallclock": { "type": "string" } } } } } } },
-        "totals": { "type": "object", "properties": { "agents": { "type": "integer" }, "tokens": { "type": "integer" }, "elapsed": { "type": "string" } } }
+        "totals": { "type": "object", "properties": { "agents": { "type": "integer" }, "tokens": { "type": "integer" }, "elapsed": { "type": "string" }, "terminal": { "type": "boolean", "description": "True when the chain is finished; the viewer stops polling." } } }
       }
     },
     "audit": {
@@ -138,6 +143,17 @@
       "properties": {
         "verdict": { "type": "string" },
         "findings": { "type": "array", "items": { "type": "object", "required": ["severity"], "properties": { "severity": { "type": "string" }, "anchor": { "type": "string" }, "issue": { "type": "string" }, "fix": { "type": "string" } } } }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["totals"],
+      "properties": {
+        "totals": { "type": "object", "properties": { "agents": { "type": "integer" }, "tokens": { "type": "integer" }, "elapsed": { "type": "string" }, "acceptedCommits": { "type": "integer" }, "tokensPerCommit": { "type": "integer" } } },
+        "phases": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "agents": { "type": "integer" }, "tokens": { "type": "integer" } } } },
+        "ratios": { "type": "object", "properties": { "cacheHit": { "type": "number" }, "duplicateContext": { "type": "number" }, "parallelism": { "type": "number" }, "retryCost": { "type": "integer" } } },
+        "chains": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "tokens": { "type": "integer" }, "commits": { "type": "integer" } } } }
       }
     }
   }

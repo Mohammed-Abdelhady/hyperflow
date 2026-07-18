@@ -20,7 +20,7 @@
         "parallel": true,
         "dependsOn": [],
         "tasks": [
-          { "id": "T1", "role": "Implementer", "task": "Add useVariantSelection hook", "read": ["types/product.ts"], "modify": [], "create": ["hooks/useVariantSelection.ts"], "complexity": "medium", "specialist": "frontend-reviewer", "brief": "add-variant-selector/T1.md" },
+          { "id": "T1", "role": "Implementer", "task": "Add useVariantSelection hook", "read": ["types/product.ts"], "modify": [], "create": ["hooks/useVariantSelection.ts"], "complexity": "medium", "specialist": "frontend-reviewer", "brief": "add-variant-selector/T1.md", "briefBody": "## Task\nAdd a useVariantSelection hook exposing {size,color,select,selected}.\n## Acceptance\n- selecting size+color updates state\n- exposes a stable selected variant id", "acceptance": ["selecting size+color updates state", "exposes a stable selected variant id"] },
           { "id": "T2", "role": "Implementer", "task": "Extend cart payload with variant id", "read": ["services/cart.ts"], "modify": ["services/cart.ts"], "create": [], "complexity": "low", "specialist": "frontend-reviewer" }
         ]
       },
@@ -34,6 +34,9 @@
       }
     ],
     "verification": ["npm run test -- VariantSelector", "npm run lint", "Playwright: pick size+color, add to cart, assert payload"],
-    "commits": ["feat(pdp): add variant selection hook", "feat(pdp): add variant selector component"]
+    "commits": ["feat(pdp): add variant selection hook", "feat(pdp): add variant selector component"],
+    "cost": { "agents": 6, "tokens": 42500, "perCommit": 21250 },
+    "progress": { "done": 1, "total": 3 },
+    "branch": "feat/add-variant-selector"
   }
 }

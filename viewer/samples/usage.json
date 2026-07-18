@@ -1,0 +1,24 @@
+{
+  "hf": 1,
+  "type": "usage",
+  "slug": "hyperflow-next-rollup",
+  "title": "Usage — Hyperflow Next",
+  "status": "active",
+  "created": "2026-07-18",
+  "updated": "2026-07-18",
+  "specialists": [],
+  "payload": {
+    "totals": { "agents": 41, "tokens": 512400, "elapsed": "38m", "acceptedCommits": 22, "tokensPerCommit": 23291 },
+    "phases": [
+      { "name": "planning", "agents": 3, "tokens": 48200 },
+      { "name": "execution", "agents": 24, "tokens": 331800 },
+      { "name": "review", "agents": 11, "tokens": 104300 },
+      { "name": "verification", "agents": 3, "tokens": 28100 }
+    ],
+    "ratios": { "cacheHit": 0.34, "duplicateContext": 0.09, "parallelism": 0.42, "retryCost": 6100 },
+    "chains": [
+      { "id": "visual-artefacts-p1", "tokens": 141800, "commits": 6 },
+      { "id": "hyperflow-next-p1", "tokens": 98600, "commits": 5 }
+    ]
+  }
+}
