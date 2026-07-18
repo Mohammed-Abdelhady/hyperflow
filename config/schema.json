@@ -115,6 +115,52 @@
       },
       "additionalProperties": false
     },
+    "cleanup": {
+      "description": "Artefact archive/reap hygiene. Daily session-start sweep plus lifecycle-terminal reap (dispatch/deploy/handoff complete).",
+      "type": "object",
+      "properties": {
+        "auto": {
+          "type": "boolean",
+          "description": "Master switch for the daily session-start archive/prune sweep. Default: true.",
+          "default": true
+        },
+        "staleDays": {
+          "type": "integer",
+          "description": "Age in days after which tasks/audits/specs (and completed features) are archived. Default: 7.",
+          "default": 7,
+          "minimum": 1
+        },
+        "pruneDays": {
+          "type": "integer",
+          "description": "Age in days after which entries under .hyperflow/archive/ are deleted. Default: 30.",
+          "default": 30,
+          "minimum": 1
+        },
+        "reapOnComplete": {
+          "type": "boolean",
+          "description": "Fire slug-scoped reap at lifecycle termini (dispatch wrap-up, deploy end, handoff complete). Default: true.",
+          "default": true
+        },
+        "usageRetentionDays": {
+          "type": "integer",
+          "description": "Retention window for .hyperflow/usage/*.jsonl ledgers. Default: 30.",
+          "default": 30,
+          "minimum": 1
+        },
+        "logMaxLines": {
+          "type": "integer",
+          "description": "Max lines retained in .session-start.log after truncation. Default: 2000.",
+          "default": 2000,
+          "minimum": 100
+        },
+        "dryRun": {
+          "type": "boolean",
+          "description": "Global dry-run override for reap/archive (report plan, mutate nothing). Default: false.",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
     "context": {
       "description": "Conversation context-budget settings used by smart compaction hooks.",
       "type": "object",
