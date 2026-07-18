@@ -142,7 +142,9 @@ done
 
 ---
 
-## Recommended settings
+## Recommended settings — do this right after install
+
+**This is part of setup, not an optional extra.** The "whole engineering team" auto-pilot experience assumes the permissions block below; without it, an autonomous multi-agent chain hits a permission prompt on nearly every step — the opposite of the promise. Add it once, right after installing. (The installer will offer to write it for you in a future version; for now, add it manually — you approve exactly what it grants.)
 
 Add these to `~/.claude/settings.json` for the full auto-pilot experience:
 

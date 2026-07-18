@@ -1,7 +1,8 @@
 /* Hyperflow viewer — graph canvas, nodes, edges, and motion.
    Node size must match graph.js: NODE_W 208 / NODE_H 78. */
 
-.hf-canvas-wrap { overflow-x: auto; overflow-y: hidden; margin: 4px -6px 0; padding: 6px; }
+.hf-canvas-wrap { overflow-x: auto; overflow-y: hidden; margin: 4px -6px 0; padding: 6px; cursor: grab; }
+.hf-canvas-wrap.panning { cursor: grabbing; user-select: none; }
 .hf-canvas {
   position: relative;
   background-image: radial-gradient(color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px);
@@ -75,6 +76,11 @@
 }
 .spotlight:hover::after { opacity: 1; }
 .spotlight > * { position: relative; z-index: 1; }
+
+.brief-panel { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--border); border-left: 3px solid var(--accent, var(--worker)); border-radius: 10px; background: var(--panel-2); }
+.brief-panel h4 { margin: 0 0 8px; font-size: .95rem; }
+.brief-panel ul { margin: 8px 0 0; padding-left: 18px; color: var(--fg-dim); font-size: .88rem; }
+.brief-panel:focus-visible { outline: 2px solid var(--accent, var(--thinking)); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   .hf-node { opacity: 1; transform: none; }

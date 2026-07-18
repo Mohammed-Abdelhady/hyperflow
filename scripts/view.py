@@ -31,11 +31,16 @@ import sys
 import webbrowser
 from pathlib import Path
 
+# Share TYPES with artefact_lib so CLI --type choices / find_type stay in lockstep
+# with schema + writer (e.g. "usage" telemetry artefacts).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import artefact_lib as lib  # noqa: E402
+
 BIND_HOST = "127.0.0.1"  # hard requirement — never read from config, never 0.0.0.0
 _PORT_PROBES = 10
 _PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 VIEWER_DIR = _PLUGIN_ROOT / "viewer"
-TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review"]
+TYPES = list(lib.TYPES)
 
 
 def _default_port() -> int:
@@ -69,6 +74,30 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         except ValueError:
             return str(root)  # traversal attempt — clamp back to the root
         return str(target)
+
+    def do_GET(self):  # noqa: N802 (http.server API)
+        if self.path.split("?", 1)[0] == "/artefacts/index.json":
+            return self._serve_index()
+        return super().do_GET()
+
+    def _serve_index(self):
+        """Generated manifest of the project's real artefacts (the viewer home
+        reads this — there is no on-disk index file, and directory listing is off)."""
+        items = []
+        root = self.artefacts_root
+        if root.is_dir():
+            for p in sorted(root.rglob("*.json")):
+                try:
+                    env = json.loads(p.read_text(encoding="utf-8"))
+                    items.append({k: env.get(k) for k in ("type", "slug", "title", "status", "updated")})
+                except (OSError, ValueError):
+                    continue
+        body = json.dumps({"artefacts": items}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def list_directory(self, path):  # no directory listings, even on loopback
         self.send_error(404, "Not found")

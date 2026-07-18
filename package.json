@@ -4,6 +4,9 @@
   "description": "Point it at a GitHub issue, get back a reviewed pull request. Multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity & Cursor — every step reviewed, memory that stays in your repo.",
   "type": "module",
   "license": "MIT",
+  "scripts": {
+    "test:js": "node --test tests/*.test.js"
+  },
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"

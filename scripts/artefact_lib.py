@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review"]
+TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review", "usage"]
 
 # Slugs become path segments — a hostile slug ("../../etc") would let the writer
 # escape .hyperflow/. Restrict to kebab-case; no separators, no dots.
