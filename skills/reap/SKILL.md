@@ -35,7 +35,7 @@ Portable hosts accept `/hyperflow:reap` and `hyperflow reap` equally. Semantic o
 |---|---|---|
 | **Archive** | Move completed scope into `.hyperflow/archive/` via `archive-artefacts.py` | `tasks/<slug>.md`, `tasks/<slug>/`, `specs/<slug>.md`, `specs/<slug>.draft.md`, `features/<slug>/`, artefact twins `artefacts/*/<slug>.json` |
 | **Ephemeral** | Hard-delete or truncate | Stale `usage/*.jsonl` (past `usageRetentionDays`, never the active chain ledger), `.session-start.log` over `logMaxLines`, terminal+stale `background/bg-*.md`, settled `commits-queue/` |
-| **Memory** | Optimise only — never wipe durable categories | Drop orphaned Evidence entries, rebuild `memory/index.md`, flag oversized files for `/hyperflow:cache compact` |
+| **Memory** | Optimise only — auto-reap removes no durable entry | Rebuild `memory/index.md`, flag oversized files for `/hyperflow:cache compact`. Entry pruning is opt-in (`cleanup.dropOrphanRefs`, default `false`) and quarantines orphaned entries to `memory/archive/YYYY-MM.md`, never hard-deleting |
 
 **Protected (never mutated):** `.version`, `.last-cleanup`, `.hyperflow-handoff`, `.active-chain-id`, `.chain-base`, and all application source outside `.hyperflow/`.
 
@@ -196,7 +196,7 @@ JSON report shape (script stdout, single object):
 - **Never** auto-`--force` from lifecycle phase; only the manual skill path with confirmation.
 - **Never** invent archived/deleted paths when the script did not run.
 - **Autonomy does not skip** the force confirmation gate or headless refuse rules.
-- Durable memory category files are not wiped; only orphan Evidence entries drop and index rebuilds.
+- Durable memory category files are not wiped; an auto-reap only rebuilds `index.md` and flags oversized files. Orphan-Evidence entries drop only when `cleanup.dropOrphanRefs` is enabled (default off), and are quarantined to `memory/archive/YYYY-MM.md`, never hard-deleted.
 
 ## Overview
 
@@ -324,7 +324,7 @@ python3 "$PLUGIN_ROOT/scripts/reap.py" "$PROJECT/.hyperflow" --slug implement-au
 
 - [`scripts/reap.py`](../../scripts/reap.py) — reaper implementation (single source of truth).
 - [`scripts/archive-artefacts.py`](../../scripts/archive-artefacts.py) — archive class (invoked by reap).
-- [`scripts/memory-index.py`](../../scripts/memory-index.py) — index rebuild after orphan drops.
+- [`scripts/memory-index.py`](../../scripts/memory-index.py) — index rebuild (after any opt-in orphan drops).
 - [config/schema.json](../../config/schema.json) — `cleanup.reapOnComplete`, `cleanup.dryRun`, retention knobs.
 - [runtime-contract.md](../hyperflow/runtime-contract.md) — `shell`, `structured_question`, honest failure reporting.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — file-first artefacts; no AI attribution; autonomy vs confirmation gates.

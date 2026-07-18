@@ -262,7 +262,7 @@ When `cleanup.dryRun=true`, the engine plans without mutating; still print the r
 
 ## Memory
 
-After successful ship, append to `.hyperflow/memory/patterns.md` if any new pattern was confirmed during gates. Skip if nothing new. Durable memory is **never** deleted by the Step 8 reap (reap only optimizes index / orphaned refs / compaction).
+After successful ship, append to `.hyperflow/memory/patterns.md` if any new pattern was confirmed during gates. Skip if nothing new. An auto-reap at Step 8 removes no durable memory entry (it rebuilds the index and flags oversized files only); entry pruning is opt-in via `cleanup.dropOrphanRefs` and quarantines to `memory/archive/YYYY-MM.md`.
 
 ## Doctrine
 
