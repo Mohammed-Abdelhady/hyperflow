@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "kind": "codex-marketplace-fixture",
+  "label": "v2",
+  "marketplace": {
+    "name": "hyperflow-marketplace",
+    "owner": {
+      "name": "Hyperflow Fixture",
+      "url": "https://example.com/hyperflow-fixture"
+    },
+    "metadata": {
+      "description": "Isolated Codex lifecycle fixture marketplace (current / v2)",
+      "version": "2.0.0"
+    }
+  },
+  "plugin": {
+    "name": "hyperflow",
+    "version": "2.0.0",
+    "description": "Hyperflow Codex lifecycle fixture plugin v2 (offline conformance only)",
+    "author": {
+      "name": "Hyperflow Fixture",
+      "url": "https://example.com/hyperflow-fixture"
+    },
+    "homepage": "https://example.com/hyperflow-fixture",
+    "repository": "https://example.com/hyperflow-fixture.git",
+    "license": "MIT",
+    "keywords": [
+      "codex",
+      "hyperflow-fixture",
+      "lifecycle"
+    ],
+    "skills": [
+      "scaffold",
+      "plan",
+      "issue",
+      "dispatch",
+      "workflow",
+      "trace",
+      "audit",
+      "pr",
+      "deploy",
+      "cache",
+      "handoff",
+      "design",
+      "status",
+      "background",
+      "sticky",
+      "bridge",
+      "flush",
+      "hyperflow"
+    ],
+    "interface": {
+      "displayName": "Hyperflow Fixture",
+      "shortDescription": "Offline Codex lifecycle fixture",
+      "longDescription": "Minimal plugin used only by scripts/test-codex-plugin.sh for isolated marketplace install, upgrade, and hook conformance.",
+      "developerName": "Hyperflow Fixture",
+      "category": "Engineering",
+      "capabilities": [
+        "Interactive",
+        "Read",
+        "Write"
+      ],
+      "websiteURL": "https://example.com/hyperflow-fixture",
+      "defaultPrompt": [
+        "Run Hyperflow fixture checks"
+      ],
+      "brandColor": "#2EA39F",
+      "screenshots": []
+    },
+    "hooks": {
+      "sessionStartMarker": "fixture-session-start-v2",
+      "preCompactReason": "fixture-block-auto-compact-v2"
+    }
+  },
+  "git": {
+    "branch": "main",
+    "commitMessage": "marketplace fixture v2.0.0"
+  }
+}
