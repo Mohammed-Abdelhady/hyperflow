@@ -1,18 +1,20 @@
 # Privacy
 
-Hyperflow is a local-only Codex, Claude Code, and OpenCode plugin. It makes no outbound network calls at runtime, has no analytics, has no telemetry, and never proxies or intercepts the data that flows between your editor and your configured LLM provider.
+Hyperflow is a local-only plugin for Codex, Claude Code, OpenCode, and related AI coding CLIs. It does not phone home, does not sell analytics, and does not proxy or intercept traffic between your editor and your configured LLM provider.
 
-This page documents exactly what the plugin reads, writes, and exposes on your machine. If anything below is inaccurate, please open an issue: <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
+This page documents what the plugin reads, writes, and exposes on your machine. If anything below is inaccurate, open an issue: <https://github.com/Mohammed-Abdelhady/hyperflow/issues>.
 
 ## TL;DR
 
 | Question | Answer |
 |---|---|
-| Does the plugin phone home? | No. Zero outbound network calls at runtime. |
-| Does the plugin collect analytics or telemetry? | No. |
-| Does the plugin send my code, prompts, or memory anywhere? | No. The plugin runs inside your editor's process and writes only to your local filesystem. |
-| Where does my project data live? | `.hyperflow/` inside your project (gitignored by default) and `~/.hyperflow/config.json` (optional, written only if you run the installer wizard). |
-| What about my LLM provider? | Your editor talks to its configured LLM provider (Anthropic, etc.) exactly as it would without the plugin. The plugin does not intercept, proxy, or modify that traffic. |
+| Does the plugin phone home? | No. Zero outbound network calls from plugin runtime code. |
+| Does the plugin send cloud analytics? | No. |
+| Multi-session project memory? | Yes, under `.hyperflow/memory/` on disk (learnings, decisions, pitfalls, patterns, conventions, anti-patterns, project-decisions). Injected into later sessions on that machine. Default gitignored. |
+| Cross-environment work? | Optional git-committed `.hyperflow-handoff/<slug>/` packages (plan here, build elsewhere). |
+| Local usage ledger? | Metadata only for normal orchestrated runs (phase totals, cache hits, token counts). No prompts, file contents, or secrets. Powers optional local ROI tiles. |
+| Where does project data live? | `.hyperflow/` in the project and optional `~/.hyperflow/config.json`. |
+| What about my LLM provider? | Your editor talks to its configured provider as usual. The plugin does not intercept that traffic. |
 
 ## What the plugin reads
 

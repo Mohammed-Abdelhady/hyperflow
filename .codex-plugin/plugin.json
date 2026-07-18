@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "5.14.0",
-  "description": "Point it at a GitHub issue, get back a reviewed pull request — in Codex App and CLI. Decision agents plan and review; workers execute in parallel on your session model; memory stays in your repo.",
+  "description": "Rules, multi-session project memory, templates, and reviewed multi-agent workflows for Codex App and CLI. Issue to PR when you need it. Memory and doctrine stay in your project.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -16,15 +16,17 @@
     "ai-coding",
     "multi-agent",
     "orchestration",
-    "code-review",
     "project-memory",
+    "multi-session",
+    "task-templates",
+    "code-review",
     "skills"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Hyperflow",
-    "shortDescription": "Orchestrate Codex tasks with memory, routing, and review",
-    "longDescription": "Hyperflow adds a structured engineering workflow to Codex App and CLI: intent routing, task decomposition, a specialist review of every step (Worker → Reviewer), parallel worker execution, persistent project memory, security guardrails, and gated release.",
+    "shortDescription": "Memory, rules, templates, and reviewed multi-agent chains for Codex",
+    "longDescription": "Hyperflow gives Codex a full engineering system: intent routing, multi-session project memory under .hyperflow/memory/, task templates, portable doctrine/rules, Worker-to-Reviewer specialist checks, parallel workers, optional local visual artefacts, security guardrails, and gated release. Plan and build across two sessions via git handoff packages when needed.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [
@@ -36,9 +38,9 @@
     "privacyPolicyURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md",
     "termsOfServiceURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
     "defaultPrompt": [
-      "Use Hyperflow to scope this feature",
-      "Audit this diff with Hyperflow",
-      "Debug this failing test with Hyperflow"
+      "Use Hyperflow to plan this feature",
+      "Show what Hyperflow remembers about this repo",
+      "Audit this diff with Hyperflow"
     ],
     "brandColor": "#2EA39F",
     "screenshots": []

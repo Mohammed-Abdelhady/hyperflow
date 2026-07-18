@@ -1,17 +1,18 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="docs/assets/hero-vertical.svg" />
-    <img src="docs/assets/hero.svg" alt="Hyperflow — init once with scaffold, then route work through inline-fast or the reviewed plan → dispatch → audit → deploy chain" width="100%" />
+    <img src="docs/assets/hero.svg" alt="Hyperflow: scaffold once, then route work through inline-fast or the reviewed plan to dispatch to audit to deploy chain" width="100%" />
   </picture>
 </p>
 
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>Point it at a GitHub issue. Get back a reviewed pull request.</strong><br/>
-  Hyperflow turns one AI coding session into an adaptive engineering pipeline — tiny proven-safe edits run inline,
-  while planners design, workers build in parallel, and domain specialists review orchestrated work.<br/>
-  Runs on Claude Code, Codex, OpenCode, Grok, Antigravity &amp; Cursor — on your session model, zero config.
+  <strong>An engineering system for AI coding agents: rules, memory, templates, and a reviewed multi-agent chain.</strong><br/>
+  Point it at a GitHub issue and get a reviewed PR when that is the job. More broadly, Hyperflow is how the agent
+  <em>learns your repo across sessions</em>, follows a fixed doctrine (not vibes), reuses task templates, and keeps
+  Worker outputs under specialist review.<br/>
+  Claude Code, Codex, OpenCode, Grok, Antigravity, and Cursor. Your session model. Zero extra API keys.
 </p>
 
 <p align="center">
@@ -30,15 +31,95 @@
   <a href="https://mohammed-abdelhady.github.io/hyperflow/">Landing site</a> &middot;
   <a href="docs/installation.md">Installation</a> &middot;
   <a href="docs/orchestration.md">Orchestration</a> &middot;
-  <a href="CHANGELOG.md">Changelog</a>
+  <a href="CHANGELOG.md">Changelog</a> &middot;
+  <a href="PRIVACY.md">Privacy</a>
 </p>
 
-![28-second real run: plan triages the request, an analyst writes the spec, three parallel workers build under a batch reviewer, a final integration reviewer signs off](docs/assets/demo.gif)
+![Demo: plan triages, workers build under batch review, integration review signs off](docs/assets/demo.gif)
 
 <p align="center">
-  <em>A real run: <code>plan</code> → 3 parallel workers → batch review → integration review — in 28 seconds.
-  Full walkthrough on the <a href="https://mohammed-abdelhady.github.io/hyperflow/">landing site</a>.</em>
+  <em>A real run: <code>plan</code> to parallel workers to batch review to integration review.
+  Walkthrough: <a href="https://mohammed-abdelhady.github.io/hyperflow/">landing site</a>.</em>
 </p>
+
+---
+
+## What Hyperflow is
+
+Hyperflow is a **plugin + doctrine + project workspace** for AI coding CLIs.
+
+| Layer | What it is |
+|-------|------------|
+| **Doctrine / rules** | Portable behavioral floor: auto-routing by intent, clarification not confirmation, commit cadence, security blocklists, Worker vs Reviewer roles. Full doctrine in `skills/hyperflow/`; portable subset for Desktop/web via `/hyperflow:bridge`. |
+| **Multi-session memory** | Project-scoped learnings under `.hyperflow/memory/` (learnings, decisions, pitfalls, patterns, conventions, anti-patterns, project-decisions). Hot/warm/cold tiers, tags, derived index. Survives sessions on that machine; not mixed across repos. |
+| **Templates** | Pre-built task decompositions (CRUD, API, UI, migration, refactor, bugfix) plus host shims (`AGENTS.md`, `CLAUDE.md`, Antigravity skills/workflows, Grok rules). |
+| **Orchestrated chain** | `issue` / `plan` → `dispatch` (parallel workers under review) → optional `audit` / `deploy` / gated PR. Inline-fast for proven 1–2 file reversible edits. |
+| **Artefacts** | File-first plans/specs/tasks under `.hyperflow/` (never PLAN.md at repo root). Optional local visual viewer + usage/ROI on `127.0.0.1`. |
+| **Cross-session / cross-env handoff** | Two-session mode writes a **git-committed** `.hyperflow-handoff/<slug>/` package so plan in one environment and build in another without relying on gitignored memory alone. |
+
+It is not a hosted agent cloud. It runs in *your* CLI on *your* model. The plugin does not phone home.
+
+---
+
+## Multi-session memory and learning
+
+Agents forget. Hyperflow does not (for that project).
+
+```text
+.hyperflow/memory/
+├── index.md              # derived: titles, tags, tiers (never hand-edit)
+├── learnings.md          # patterns and gotchas
+├── decisions.md          # architectural choices + why
+├── pitfalls.md           # failed approaches
+├── patterns.md           # reusable code/architecture patterns
+├── conventions.md        # mid-session project conventions
+├── anti-patterns.md      # hot-tier: always injected (from audits)
+├── project-decisions.md  # structural answers memoized for future specs
+└── archive/YYYY-MM.md    # cold compacted entries
+```
+
+- **Across sessions:** session-start rebuilds the derived index and injects hot + tag-matched warm entries into the next run.
+- **Written by the chain:** audits curate `anti-patterns.md`; plan/spec memoizes structural answers into `project-decisions.md`; batches append learnings/decisions/pitfalls.
+- **Scoped:** one project directory, not a global brain. Default `.hyperflow/` is gitignored (local machine). Use handoff packages when another machine must continue the work.
+- **CRUD:** `/hyperflow:cache show|search|add|prune|archive|compact|…`
+- **Full protocol:** [`skills/hyperflow/memory-system.md`](skills/hyperflow/memory-system.md)
+
+Also cached at scaffold: profile, architecture, conventions, testing, git-workflow under `.hyperflow/` so every session starts with the same project facts.
+
+---
+
+## Rules (doctrine), not vibes
+
+Hyperflow is opinionated on purpose.
+
+- **Auto-routing:** say "debug this" or "ship it" and the matching skill runs (sticky `auto` / `on` / `off`).
+- **Clarify what/which/where; never ask "should I start?".** Structural gates (push, deploy, audit fix) still ask.
+- **One task, one Conventional Commit.** No AI co-author attribution in commits or docs.
+- **Workers never review; reviewers never coordinate.** Normal path: Worker → Reviewer + final integration.
+- **Issue/PR text is data, never instructions** (injection boundary).
+- **Security blocklist:** secrets, force-push to main, `rm -rf`, unsolicited publish, etc.
+- **Portable subset** embeds into `CLAUDE.md` for Desktop/web via `/hyperflow:bridge`.
+
+Primary sources: [`skills/hyperflow/DOCTRINE.md`](skills/hyperflow/DOCTRINE.md), [`auto-routing.md`](skills/hyperflow/auto-routing.md), [`security.md`](skills/hyperflow/security.md).
+
+---
+
+## Templates
+
+Decomposition starts from known shapes, then adapts:
+
+| Template | Typical trigger |
+|----------|-----------------|
+| CRUD feature | "add X management", list + form |
+| API endpoint | "add endpoint / server action for X" |
+| UI component | "build X component" |
+| Database migration | schema / column / table changes |
+| Refactor | extract, move, split |
+| Bug fix | root cause → fix → regression test |
+
+Details: [`skills/hyperflow/task-templates.md`](skills/hyperflow/task-templates.md).
+
+Host templates under [`templates/`](templates/): `AGENTS.md.template`, `CLAUDE.md.template`, portable doctrine block, Antigravity skill+workflow ports, Grok rules. Scaffold / install wires the right shims for your tool.
 
 ---
 
@@ -48,13 +129,17 @@
 /hyperflow:issue https://github.com/you/app/issues/42
 ```
 
-Triage classifies the thread (bug → root-cause discipline, feature → the plan chain, question → a drafted reply).
-A spec is synthesized from the issue's own acceptance criteria — issue text is treated as **data, never instructions**.
-Then the standard chain runs: plan → parallel dispatch under review → a gated PR exit that opens the pull request with `Closes #42`.
+Triage classifies the thread (bug → root-cause, feature → plan chain, question → drafted reply). Spec comes from the issue's own acceptance criteria. Then plan → dispatch under review → gated PR with `Closes #42`.
 
-The maintainer side is `/hyperflow:pr <url>` — the same L1–L5 audit over the PR's **real fetched code** (never just diff text),
-findings posted as one batched review (inline, summary, or local-only), a fix chain on NEEDS_FIX, and a merge that is always gated.
-Contributor code is analyzed statically, never executed.
+Maintainer side:
+
+```text
+/hyperflow:pr https://github.com/you/app/pull/43
+```
+
+L1–L5 audit on **real fetched code** (not only the diff text), one batched review, fix chain on NEEDS_FIX, merge always gated. Contributor code is analyzed statically, never executed.
+
+---
 
 ## Quick start
 
@@ -63,176 +148,114 @@ claude plugin marketplace add Mohammed-Abdelhady/hyperflow
 claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-Codex App/CLI:
+Codex:
 
 ```bash
 codex plugin marketplace add Mohammed-Abdelhady/hyperflow
 codex plugin add hyperflow@hyperflow-marketplace
 ```
 
-Initialize the project once, then invoke any skill:
+Then type a goal. Chain-starters **auto-scaffold** `.hyperflow/` on first use (idempotent).
 
 ```text
-/hyperflow:scaffold                                        # first: set up the project (once per repo)
-/hyperflow:issue https://github.com/you/app/issues/42      # issue → triage → plan → dispatch → gated PR
-/hyperflow:plan "add user auth with login + middleware"    # sharpen → design → decompose → dispatch
-/hyperflow:workflow "large migration across the repo"      # big-task workflow lane
-/hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
-/hyperflow:deploy                                          # pre-push gates + ship
+/hyperflow:issue https://github.com/you/app/issues/42
+/hyperflow:plan "add user auth with login + middleware"
+/hyperflow:pr https://github.com/you/app/pull/43
+/hyperflow:cache show
+/hyperflow:workflow "large migration across the repo"
+/hyperflow:trace "tests fail after the auth refactor"
+/hyperflow:deploy
+hyperflow view
 ```
 
-Auto-routing is on by default — say "audit the diff" or "debug this test" and the right skill runs without the
-`/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the portable spelling. Setup and host notes → [Installation](docs/installation.md).
+**Lean mode is the default** (phase-relevant context only). Use `mode=default` or `--thorough` for full ceremony. Structural gates stay on.
 
-Hyperflow uses **lean mode by default**: it loads only the context needed for the current phase. Pass `mode=default`
-or `--thorough` when you explicitly want the full-context, full-ceremony path.
+Setup notes: [Installation](docs/installation.md).
 
-## What makes it different
+---
 
-- **Review matches the path.** The normal orchestrated path keeps Worker → Reviewer at every granularity, plus a final
-  integration pass. Deterministic inline-fast work uses a foreground diff review because no worker is dispatched.
-- **Memory that's yours.** Learnings, decisions, and pitfalls persist in `.hyperflow/memory/` — plain markdown, committed
-  with your repo, never uploaded, never mixed across projects.
-- **Depth that adapts.** A deterministic preflight admits inline-fast only after observing a clear, reversible change
-  in exactly 1–2 ordinary files. Gated, generated, or migration surfaces — and every uncertain task — keep the normal
-  heavyweight path. Hard ceilings stop profiles at 10k–200k tokens.
+## How the chain works
 
-## How it works
+No always-on daemon. Skills run in your terminal on the current session model.
 
-Invoke a skill. Chain-starters auto-advance through the rest — no always-on orchestrator, no background process,
-everything in your terminal, every agent on your current session model.
+| Skill | Role |
+|-------|------|
+| `issue` / `plan` | Chain starters: triage, design, decompose (file-first artefacts) |
+| `dispatch` | Parallel persona-stitched workers under per-batch + integration review |
+| `workflow` | Big-task / migration lane (native or portable adapter) |
+| `audit` / `pr` | Review gates (L1–L5); PR reviews real code |
+| `deploy` | Pre-push gates; push only with explicit yes |
+| `cache` / `handoff` / `status` / `scaffold` / `sticky` / `bridge` | Memory, two-session packages, snapshot, setup, routing mode, portable doctrine |
 
-| # | Skill | What it does |
-|---|-------|--------------|
-| 1 | `issue` | **GitHub front door** — issue URL → triage → spec from the issue's own acceptance criteria → the chain, with a gated PR exit |
-| 1 | `plan` | **Front door** — sharpen the prompt, design the approach (refuses to code before you approve), decompose into a parallel task graph with a test-complete brief per sub-task; stops at a build-location gate |
-| 2 | `dispatch` | Fan out persona-stitched workers under per-batch + final-integration review |
-| 3 | `workflow` | Big-task lane — native Claude Code dynamic workflows; a portable adapter on Codex, OpenCode, and Grok |
-| 4 | `audit` | L1–L5 review on the result |
-| 5 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
+**Paths:** clear reversible 1–2 ordinary-file work can take **inline-fast** (0 dispatched agents, foreground diff review). Everything else uses Worker → Reviewer. Flow profiles (`fast` … `scientific`) hard-cap tokens (10k–200k).
 
-`audit` and `deploy` are gates — they fire only on your explicit yes. `scaffold` is a one-time project setup.
+**Roles:** Orchestrator coordinates; decision agents triage/plan/review; workers implement/search/write. A **Brain** picks the specialist roster once after triage. 22 specialists live in [`agents/`](agents/).
 
-| Role | Does |
-|------|------|
-| **Orchestrator** | Coordinate workers, sequence dispatches, manage chain state |
-| **Decision agent** | Triage, brainstorm, decide, review every output, run the final integration pass |
-| **Worker** | Execute in parallel — implement, search, write |
+**Two sessions:** Step 0 can choose `session=two` → git-committed `.hyperflow-handoff/<slug>/` for plan here / build elsewhere. See [`session-handoff.md`](skills/hyperflow/session-handoff.md).
 
-Triage assigns every task a flow profile, so effort matches the work instead of always running deep:
+---
 
-| Profile | Use when | Workers | Budget |
-|---------|----------|---------|--------|
-| `fast` | observed clear, reversible 1–2-file change outside gated/generated/migration surfaces | foreground (0 dispatched) | 10k hard |
-| `standard` | simple/moderate, 2–5 files | 1–2 | 50k hard |
-| `deep` | complex / cross-cutting / system-wide | 3+ | 200k hard |
-| `research` | unknown territory, evaluation | 3+ searchers | 60k hard |
-| `creative` | UI/UX exploration | 1–2 | 100k hard |
-| `scientific` | correctness-critical, proof work | 2–3 + TDD | 200k hard |
+## Visual artefacts (local)
 
-Normal orchestrated runs record a metadata-only usage ledger: phase totals, duplicate-context ratio, retry cost,
-cache-hit rate, accepted commits, tokens per accepted commit, and estimated-record count. It stores no prompts,
-responses, file contents, patches, or secrets. Inline-fast dispatches zero agents, so it creates no ledger records.
+Plans, graphs, audits, and local usage/ROI tiles can render via `hyperflow view` on `127.0.0.1` (loopback only, optional offline export). Agents emit compact JSON; full markdown regenerates on demand. Disable with `viewer.enabled=false`.
 
-Workers are stitched with the right subset of **15 composable expert personas** (architect, api, db, frontend, ui,
-security, performance, scientific, refactor, bugfix, test, research, creative, devops, docs) — `security` frames every
-decision first, `creative` adapts last.
-
-Non-inline small work becomes a flat task file (`.hyperflow/tasks/<slug>.md`); work with sequential stages becomes a **feature**
-with phase sub-folders, each carrying its own tasks, spec, research, and decisions — see
-[`skills/hyperflow/feature-phases.md`](skills/hyperflow/feature-phases.md). A chain can also run across **two sessions**:
-plan here, build in another environment via a git-committed handoff package, review back here — see
-[`skills/hyperflow/session-handoff.md`](skills/hyperflow/session-handoff.md).
-
-## 22 specialists, routed by a Brain
-
-Reviews and investigations are run by **named domain specialists** ([`agents/`](agents/)), not a generic reviewer.
-A decision-agent router — the **Brain** — is consulted once after triage, decides which specialists own the task,
-and writes that roster into the artefact so the whole chain inherits it.
-
-| Reviewers | Design-time agents | Investigators |
-|-----------|--------------------|---------------|
-| `frontend-reviewer` · `backend-reviewer` · `api-reviewer` | `architect` — boundaries, data flow, frontend at scale | `searcher` — maps the codebase |
-| `database-reviewer` · `database-optimization-reviewer` | `designer` — design system, prior art, anti-slop | `debugger` — 5-Whys root cause |
-| `security-reviewer` · `vulnerability-reviewer` · `compliance-reviewer` | `motion` — 60fps budget, springs, reduced-motion | `analyst` — multi-dimensional analysis |
-| `performance-reviewer` · `algorithm-reviewer` · `devops-reviewer` | `mobile` — RN/Flutter/native, platform a11y | `researcher` — external evidence |
-| `accessibility-reviewer` · `data-ml-reviewer` | *(design at plan time, review on change)* | |
-
-Specialists are **web-research-first**: on deep/research/scientific/security flows they look up current best practices,
-CVEs, and framework docs before judging. Any agent can consult a peer mid-task via a brokered `CONSULT` signal —
-see [`skills/hyperflow/consultation.md`](skills/hyperflow/consultation.md).
-
-## Memory that persists
-
-Learnings live at `.hyperflow/memory/` — plain markdown, committed with your repo, **never uploaded, never mixed across projects**.
-
-- **Three tiers** — `hot` (≤7 days, always injected), `warm` (8–30 days, tag-matched), `cold` (30+ days, on-demand, compressed).
-- **Lazy injection** — only tag-matched entries load for a given task, so injection cost stays bounded.
-- **Auto-written by the chain** — `audit` records recurring findings to `anti-patterns.md`; `plan` records structural
-  answers to `project-decisions.md`, so the same questions aren't asked twice.
-- **Derived index** — `index.md` is rebuilt from the memory files at every session start, so a stored learning is
-  never left unindexed and invisible. Writers append to the category file; nothing to register.
-
-## Visual artefacts (local viewer)
-
-Plans, specs, task graphs, audits, and memory don't have to be walls of markdown. With the viewer on (the default), each artefact-producing agent emits a **compact validated JSON payload** instead of hand-writing status tables, ASCII diagrams, and progress bars — and a self-contained local viewer renders it as **interactive graphs**.
-
-- **`hyperflow view [slug]`** — serves the viewer on `127.0.0.1` and opens the artefact (or a gallery of every template). Architecture and data-flow diagrams, batch execution graphs, and feature-phase graphs render as real node/edge canvases; decisions flip, sections reveal on scroll.
-- **Zero upload, works offline.** The renderer ships in the plugin and binds loopback only — **nothing leaves your machine**, no daemon, no API key, no external asset. Same privacy posture as memory.
-- **Saves tokens.** Agents stop writing presentation; the substance (decisions, briefs, acceptance criteria) still gets written. A ≤6-line greppable, git-diffable stub stays at each canonical path; `render-artefact.py <slug>` regenerates the full markdown on demand.
-- **Fully optional.** Prefer classic markdown? Set `viewer.enabled=false` in `config/defaults.json` (or `~/.hyperflow/config.json`) and every skill writes full markdown exactly as before. Config: `viewer.enabled` (default `true`), `viewer.port` (`7777`), `viewer.markdown` (`on-demand`/`always`/`never`), `viewer.autoOpen` (`false`).
+---
 
 ## Guardrails
 
-Autonomy without the foot-guns — a hardened default config ships in the box (`config/defaults.json`):
+Shipped defaults in `config/defaults.json`:
 
-- **25 blocked file patterns** — keys, secrets, cloud credentials are never read or written.
-- **15 blocked commands** — `rm -rf`, force-push to main, `sudo`, unsolicited package publish.
-- **11 secret patterns** — AWS keys, GitHub tokens, private-key headers, connection strings — scanned in diffs.
-- **Untrusted text stays data** — issue and PR text is never treated as instructions; outbound actions (push, PR, comment, merge) are always gated.
+- Blocked files (keys, cloud creds, `.env`, etc.)
+- Blocked commands (`rm -rf`, force-push main, `sudo`, unsolicited publish)
+- Secret patterns in diffs
+- Untrusted issue/PR text never treated as instructions
+- Push and merge always gated
 
-Details → [Installation § security](docs/installation.md).
+---
 
-## Skills
+## Skills (18)
 
-Eighteen skills. Two chain-starters auto-advance through the chain; the rest are standalone.
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| `issue` | `/hyperflow:issue` | GitHub issue → reviewed PR |
+| `plan` | `/hyperflow:plan` | Design + decompose; stops at build-location gate |
+| `dispatch` | `/hyperflow:dispatch` | Execute batches under review |
+| `pr` | `/hyperflow:pr` | Review an incoming PR |
+| `design` | `/hyperflow:design` | Design system + anti-slop research |
+| `workflow` | `/hyperflow:workflow` | Big-task / migration workflow |
+| `scaffold` | `/hyperflow:scaffold` | Project setup (also auto on first chain-starter) |
+| `trace` | `/hyperflow:trace` | Root-cause debugging |
+| `audit` | `/hyperflow:audit` | L1–L5 review |
+| `deploy` | `/hyperflow:deploy` | Gates + commit + release + gated push |
+| `cache` | `/hyperflow:cache` | Memory CRUD |
+| `handoff` | `/hyperflow:handoff` | Two-session handoff packages |
+| `status` | `/hyperflow:status` | Read-only project + in-flight snapshot |
+| `background` | `/hyperflow:background` | Background agent controls |
+| `sticky` | `/hyperflow:sticky` | Auto-routing mode |
+| `bridge` | `/hyperflow:bridge` | Embed portable doctrine into `CLAUDE.md` |
+| `flush` | `/hyperflow:flush` | Flush deferred-commit queue |
+| `hyperflow` | `/hyperflow:hyperflow` | Portable doctrine on single-agent hosts |
 
-| Skill | Command | Type | Purpose |
-|-------|---------|------|---------|
-| `issue` | `/hyperflow:issue` | Chain starter | GitHub issue → triaged, planned, dispatched, reviewed pull request — with injection guard and gated posting |
-| `plan` | `/hyperflow:plan` | Chain starter | Sharpen the prompt, design the approach, decompose into a parallel task graph; stops at a build-location gate — never auto-implements |
-| `dispatch` | `/hyperflow:dispatch` | Endpoint | Fan out workers under review; tiered gates; Evidence then Usage; end gate asks audit / deploy / **PR** (screenshots required for frontend/mobile) |
-| `pr` | `/hyperflow:pr` | Standalone | Review an incoming pull request — L1–L5 audit on the real diff, one batched GitHub review, fix chain, gated merge |
-| `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
-| `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; portable Codex/OpenCode/Grok adapter for migrations, audits, and verification-heavy work |
-| `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
-| `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
-| `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
-| `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |
-| `cache` | `/hyperflow:cache` | Standalone | Memory CRUD — show, search, add, prune, archive, compact |
-| `handoff` | `/hyperflow:handoff` | Standalone | Two-session handoff — list / status / pickup / review / complete; status & review surface COMPLETION Evidence |
-| `status` | `/hyperflow:status` | Standalone | Read-only snapshot — version, memory count, live per-task progress |
-| `background` | `/hyperflow:background` | Standalone | List, show, cancel, prune task-level background agents |
-| `sticky` | `/hyperflow:sticky` | Standalone | `on` / `auto` / `off` — per-project auto-routing mode |
-| `bridge` | `/hyperflow:bridge` | Standalone | Embed the portable doctrine into `CLAUDE.md` for Desktop / web / IDE |
-| `flush` | `/hyperflow:flush` | Standalone | Flush a deferred-commit queue from a prior or crashed chain |
-| `hyperflow` | `/hyperflow:hyperflow` | Portable doctrine | Applies the full orchestration ruleset in single-agent surfaces (Codex, Antigravity, Grok) — auto-invoked on task-shaped work |
+---
 
 ## Runs everywhere
 
-Hyperflow runs on whatever model your session already uses — every dispatched agent inherits it, there is no model
-configuration and no extra API bill. Auto-detected across **Codex App/CLI, Claude Code, OpenCode, Grok, Antigravity,
-and Cursor**, with concrete ports in [`templates/`](templates/) (a full Antigravity skill+workflow port, Grok rules,
-AGENTS.md/CLAUDE.md shims) and hooks that load memory at session start and guard chain state through context compaction.
-For surfaces that can't load terminal plugins (Claude Code Desktop, claude.ai web), `/hyperflow:bridge` embeds the
-portable doctrine into your project's `CLAUDE.md`.
+Every agent uses the **current session model** (no model tier config, no second API bill from Hyperflow). Auto-detected across Codex App/CLI, Claude Code, OpenCode, Grok, Antigravity, and Cursor. Ports and shims in [`templates/`](templates/). Desktop/web: use `/hyperflow:bridge` for the portable ruleset.
+
+---
 
 ## Documentation
 
-- **Install** — [Installation](docs/installation.md) · where it runs, security configuration, verification
-- **Understand** — [Orchestration](docs/orchestration.md) · [Landing site](https://mohammed-abdelhady.github.io/hyperflow/) · [Agents](agents/README.md)
-- **Reference** — [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · contributor guide in [`CLAUDE.md`](CLAUDE.md)
+- [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
+- [Memory system](skills/hyperflow/memory-system.md) · [Task templates](skills/hyperflow/task-templates.md) · [Session handoff](skills/hyperflow/session-handoff.md)
+- [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
 
-## License
+---
 
-MIT
+## License and copyright
+
+Copyright (c) 2026 Mohammed Abdelhady.
+
+Released under the [MIT License](LICENSE).
+
+Hyperflow is free software: use it, fork it, vendor it. Keep the copyright and license notice in substantial copies.
