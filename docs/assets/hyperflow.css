@@ -1086,3 +1086,11 @@ footer {
     font-size: 0.72rem;
   }
 }
+
+/* Visual-artefacts viewer showcase (landing) */
+.viewer-shot { margin: 2rem 0 0; }
+.viewer-shot img {
+  width: 100%; height: auto; display: block; border-radius: 14px;
+  border: 1px solid var(--border, #334155);
+  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, .6);
+}
