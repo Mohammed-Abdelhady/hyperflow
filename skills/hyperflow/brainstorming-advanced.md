@@ -1,6 +1,14 @@
 # Advanced Brainstorming Framework
 
-Extends Layer 4 with structured question clarification, multi-dimensional analysis, and AskUserQuestion UI integration. Use this as the reference for how the orchestrator runs the brainstorming flow.
+Extends Layer 4 with structured question clarification, multi-dimensional analysis, and host
+`structured_question` integration ([runtime-contract.md](runtime-contract.md)). Use this as the
+reference for how the orchestrator runs the brainstorming flow on every provider.
+
+Provider-neutral ops: clarifications use `structured_question`; when that op is unavailable, emit the
+exact Hyperflow Question chat block and **end the turn**. Continuation after design approval uses
+`skill_continuation` (or inline load of the target skill) and worker/reviewer `spawn` with separate
+roles under inline fallback. No model-tier routing — every consultation and worker runs on the
+current session model.
 
 ---
 
@@ -21,6 +29,9 @@ Before asking the user anything, score these 6 dimensions internally. Do not sho
 
 Only ask questions for `uncertain` and `blind` dimensions. `blind` gets priority.
 
+Capability-aware research: unresolved Technical/Security dimensions that need public sources use
+`web_research` when present; otherwise skip network research and record the limitation.
+
 **Dimension → technique mapping:**
 
 | Score + Dimension | Technique to apply |
@@ -40,7 +51,7 @@ Four techniques, applied based on blind spot analysis. Max 4–5 questions total
 
 Goes beyond the literal request to surface the underlying goal. User says "add a sidebar" → real intent might be "improve navigation for power users."
 
-Use `AskUserQuestion` with 2–3 options showing different interpretations of the real goal.
+Use `structured_question` with 2–3 options showing different interpretations of the real goal.
 
 **2. Constraint Discovery** — What limits exist that weren't mentioned?
 
@@ -56,8 +67,9 @@ Prevents scope creep. Present likely adjacent features and confirm they're out o
 
 **Rules:**
 - Skip any technique where the answer is already obvious from context
-- Each question MUST use `AskUserQuestion` — never plain text questions
+- Each question MUST use `structured_question` — never free-form invent-and-continue past a material unknown
 - Skip questions with a single obvious answer
+- When structured UI is missing: Hyperflow Question + end turn (never silent-default)
 
 ---
 
@@ -74,18 +86,20 @@ After the question sequence, present this summary and get confirmation before pr
 - **Key unknowns resolved:** [list]
 ```
 
-User confirms → move to approach proposals.
+User confirms → move to approach proposals. Confirmation is a structural gate when the flow requires
+it: use `structured_question` or the chat fallback + end turn; do not assume confirmation.
 
 ---
 
-## AskUserQuestion Patterns
+## `structured_question` Patterns
 
-All brainstorming questions MUST use the `AskUserQuestion` tool. Never ask in plain text.
+All brainstorming questions MUST use the host `structured_question` op. Semantic form below; adapters
+bind to live tools (Claude: `AskUserQuestion`; others: Hyperflow Question chat block when no UI).
 
 **Standard clarification** — multiple choice with descriptions:
 
 ```
-AskUserQuestion({
+structured_question({
   questions: [{
     question: "What's the primary goal of this feature?",
     header: "Intent",
@@ -101,7 +115,7 @@ AskUserQuestion({
 **Architecture/layout comparisons** — use `preview` for side-by-side ASCII mockups:
 
 ```
-AskUserQuestion({
+structured_question({
   questions: [{
     question: "Which layout approach?",
     header: "Layout",
@@ -124,7 +138,7 @@ AskUserQuestion({
 **Scope boundaries** — use `multiSelect: true` when excluding features:
 
 ```
-AskUserQuestion({
+structured_question({
   questions: [{
     question: "Which of these are OUT of scope for now?",
     header: "Scope",
@@ -134,11 +148,25 @@ AskUserQuestion({
 })
 ```
 
+**Chat fallback (structured UI unavailable):**
+
+```text
+Hyperflow Question
+Which of these are OUT of scope for now?
+
+1. Feature A (Recommended) — defer adjacent work
+2. Feature B — include now
+3. Other — I'll describe
+```
+
+Then **end the turn**. Resume only after the user answers.
+
 **Rules:**
-- Never ask more than 2 questions per `AskUserQuestion` call
+- Never ask more than 2 questions per `structured_question` call
 - Use `preview` only for visual/structural comparisons — not text-only choices
-- Always include `description` on every option
+- Always include `description` on every option when the structured UI supports it
 - `header` should be 1–2 words matching the technique: Intent / Constraint / Assumption / Scope
+- Binary action gates carry no `(Recommended)` marker; multi-option lists (3+) mark recommended first
 
 ---
 
@@ -148,17 +176,19 @@ AskUserQuestion({
 User shares idea
     |
 Explore context — check files, docs, recent commits
+    |   (web_research when public sources are required and available)
     |
 Multi-Dimensional Analysis (silent)
     |   Score 6 dimensions: clear / uncertain / blind
     |   Map blind spots to question techniques
     |
-Smart Question Sequence (via AskUserQuestion)
+Smart Question Sequence (via structured_question)
     |   1. Intent Clarification    (if UX/goal is blind)
     |   2. Constraint Discovery    (if Technical is blind)
     |   3. Assumption Challenging  (if uncertain dimensions exist)
     |   4. Scope Boundaries        (if multiple blind dimensions)
     |   Max 4-5 questions total. Skip obvious ones.
+    |   Missing structured UI → Hyperflow Question + end turn
     |
 Requirement Synthesis
     |   Present structured summary — user confirms before proceeding
@@ -171,5 +201,6 @@ Present design in sections, get approval per section
     |
 [User] Approves full design
     |
-Transition to Layer 3 (orchestrator) for implementation
+skill_continuation (or inline load) into Layer 3 orchestrator for implementation
+    |   Workers/reviewers: separate spawn (or labelled inline phases)
 ```
