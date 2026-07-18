@@ -1,5 +1,7 @@
 # Escalation and token accounting
 
+Provider-neutral mid-flight complexity/risk handling and honest usage accounting. Executable operations use the vocabulary in [runtime-contract.md](runtime-contract.md) (`spawn`, `wait`, `structured_question`, `usage_metrics`, …). Host tool names appear only as scoped mappings, never as universal requirements. Every agent runs on the **current session model** — no model-tier routing.
+
 ## Why mid-flight changes happen
 
 Triage is a forecast, not a contract. The orchestrator picks a flow profile based on the task description before any real work begins — but workers encounter ground truth: the actual files, the real dependencies, the production blast radius. A "fast" one-liner can turn out to call a shared utility touched in eight places; a "deep" refactor can resolve to a two-line patch after research. Escalation lets the flow adapt to reality without discarding completed work or restarting from scratch. The worker's partial output is always preserved as context for the next batch.
@@ -139,8 +141,8 @@ When a worker returns `ESCALATE: <reason>`, the orchestrator follows this sequen
    ```
 6. Preserve the worker's partial output as input context for the next batch. Prepend it to the next batch's context as: `Prior work (before escalation): <output>`. Do not discard completed work.
 7. Re-plan: generate a fresh task breakdown under the new profile. Completed sub-tasks do not need to be re-run unless the escalation reason invalidates them.
-8. If the escalation crosses the irreversibility boundary (see Risk escalation below), call `AskUserQuestion` for explicit consent before step 7.
-9. Log the escalation event for the usage summary: `from_profile`, `to_profile`, `reason`, `batch_number`, `tokens_at_point`.
+8. If the escalation crosses the irreversibility boundary (see Risk escalation below), fire a **blocking** `structured_question` for explicit consent **before** step 7. When the structured UI is absent, render the exact **Hyperflow Question** chat block and **end the turn**. Never auto-continue; never silently pick an option.
+9. Log the escalation event for the usage summary from observed `usage_metrics` only: `from_profile`, `to_profile`, `reason`, `batch_number`, and `tokens_at_point` when host metadata or an honest estimator provided it. Omit or mark `unavailable` when no measured source exists — never invent token counts.
 
 Multiple escalations in one session are valid. Each escalation re-evaluates from the current state — a second escalation from `standard → deep` after a first `fast → standard` is normal. Log each independently.
 
@@ -169,23 +171,23 @@ A task escalates risk when ANY of the following surface mid-flight:
 
    <description of work completed up to this point>
    ```
-2. Orchestrator MUST call `AskUserQuestion` for explicit consent before any further action. The question must include: what the risky action is, what it would affect, and what happens if it goes wrong.
+2. Orchestrator MUST fire a **blocking structural gate** via `structured_question` for explicit consent before any further action. Prefer the host mapping when present (Claude: `AskUserQuestion`; Codex: `request_user_input`; other hosts: inventory intersection). When structured UI is missing, render the exact **Hyperflow Question** chat block and **end the turn**. The question must include: what the risky action is, what it would affect, and what happens if it goes wrong. Binary Yes/No consent carries **no** `(Recommended)` marker.
 3. Orchestrator prints:
    ```text
    🔴 RISK ESCALATION: irreversible action detected — <details>
    Paused. Awaiting user approval before proceeding.
    ```
-4. No automatic fall-through to a deeper profile without the user's explicit yes. The user must say yes to the specific risky action — generic approval of the task is not sufficient.
+4. No automatic fall-through to a deeper profile without the user's explicit yes. The user must say yes to the specific risky action — generic approval of the task is not sufficient. **Do not auto-continue** across this gate under any host or autonomy directive.
 5. If the user declines, orchestrator marks the task blocked and surfaces a safe partial result with a clear note about what was skipped and why.
 6. If the user approves, orchestrator logs the approval (user said yes at `<timestamp>` to `<action>`) and resumes at the appropriate profile.
 
-Risk escalation always supersedes complexity escalation. A "fast" task that discovers a prod config change halts fully — there is no "fast risk escalation." The profile level is irrelevant once irreversibility is detected.
+Risk escalation always supersedes complexity escalation. A "fast" task that discovers a prod config change halts fully — there is no "fast risk escalation." The profile level is irrelevant once irreversibility is detected. Headless sessions with no interactive channel at this gate **error and stop** — never silent-default approval.
 
 ---
 
 ## Token accounting protocol
 
-Token accounting is mandatory for every dispatched agent. Each chain writes metadata-only JSONL through `scripts/usage-ledger.py`; prompt text, response text, patches, file contents, and secrets never enter the ledger. Capture result metadata when the agent returns, then append exactly once before leaving the boundary where `accepted_commit` is known.
+Token accounting is mandatory for every dispatched agent (spawned child or labelled inline phase). Each chain writes metadata-only JSONL through `scripts/usage-ledger.py`; prompt text, response text, patches, file contents, and secrets never enter the ledger. Capture result metadata when the agent returns, then append exactly once before leaving the boundary where `accepted_commit` is known.
 
 Canonical record fields, in order:
 
@@ -198,13 +200,14 @@ context_hash · context_tokens · estimated · accepted_commit · timestamp
 Rules:
 
 1. `phase` is one of the budget phases: `triage`, `planning`, `execution`, `review`, `verification`.
-2. `attempt` is 1-based; retries are separate records. `total_tokens` must equal input + output.
-3. Use provider input/output/cache metadata when available. If unavailable, estimate conservatively as `input_tokens = ceil(prompt characters / 4)`, `output_tokens = ceil(response characters / 4)`, set `estimated=true`, and keep the raw text out of the ledger.
-4. `context_hash` fingerprints only the repeated shared-context block; `context_tokens` measures that block. Repeated hashes after their first occurrence produce the duplicate-context metric.
+2. `attempt` is 1-based; retries are separate records. `total_tokens` must equal input + output when both are known.
+3. Prefer host `usage_metrics` (registry candidates + live inventory intersection) for input/output/cache counts. Never parse a single host's UI chrome (e.g. Claude `⎿ Done` lines) as a universal source. When metadata is absent: either record fields as `unavailable` or estimate conservatively as `input_tokens = ceil(prompt characters / 4)`, `output_tokens = ceil(response characters / 4)`, set `estimated=true`, and keep the raw text out of the ledger. **Never fabricate** tokens, cache hits, durations, or agent counts.
+4. `context_hash` fingerprints only the repeated shared-context block; `context_tokens` measures that block when measurable. Repeated hashes after their first occurrence produce the duplicate-context metric. If context size cannot be measured, omit the metric rather than invent one.
 5. `accepted_commit=true` belongs only to the producing agent result that led to one accepted commit. Failed attempts, Composer/review calls, and non-committed outputs use `false`.
 6. Unknown fields are forbidden. A ledger validation/write failure stops the chain before further agent spend.
+7. Inline-fast / foreground-only work reports `0` spawned agents plus the labelled inline phases — never invent parallel subagent counts for serial work ([runtime-contract.md](runtime-contract.md) metrics honesty).
 
-At every natural boundary run `usage-ledger.py summary --chain-id <chain-id>`. It is the source of truth for total/per-phase tokens, duplicate-context tokens/ratio, retry cost, cache-hit rate, estimated-record count, accepted commits, and tokens per accepted commit. The task-file `Tokens` row and terminal Usage block are projections of this summary, not independently maintained counters.
+At every natural boundary run `usage-ledger.py summary --chain-id <chain-id>`. It is the source of truth for total/per-phase tokens, duplicate-context tokens/ratio, retry cost, cache-hit rate, estimated-record count, accepted commits, and tokens per accepted commit **when those fields were recorded**. The task-file `Tokens` row and terminal Usage block are projections of this summary, not independently maintained counters. Rows without measured or estimated sources print `unavailable` rather than placeholder numbers.
 
 ---
 
@@ -228,19 +231,21 @@ If a cap is reached during an in-flight wave, record the results and enforce at 
 
 Print this block at the end of every task, regardless of profile. On dispatch / handoff builds it prints **after** the structured Evidence block (work product — see [output-style.md](output-style.md) §7); on other skills it remains the final block after task output. Usage is cost and process accounting only — never a replacement for Evidence or the task result itself.
 
+**Shape only — numbers below are illustrative of layout, not universal host measurements.** Emit a numeric cell only when the ledger holds measured host metadata or an explicit `estimated=true` estimate. Otherwise print `unavailable`.
+
 ```text
 ── Hyperflow Usage ─────────────────────────────────────────
 Profile: standard              budget 50.0k
-Planning                       2 agents    8.2k tokens
-Execution                      3 agents   24.0k tokens
-Review                         2 agents    7.5k tokens
-Verification                   1 agent     3.0k tokens
-Duplicate context                         5.4k · 12.7%
-Cache hit                                  31.0%
-Retry cost                                 2.1k tokens
-Accepted commits                          2 · 21.4k tokens/commit
-Estimated records                         0
-Total                           8 agents   42.7k tokens
+Planning                       2 agents    <tokens or unavailable>
+Execution                      3 agents    <tokens or unavailable>
+Review                         2 agents    <tokens or unavailable>
+Verification                   1 agent     <tokens or unavailable>
+Duplicate context                          <tokens · % | unavailable>
+Cache hit                                  <% | unavailable>
+Retry cost                                 <tokens | unavailable>
+Accepted commits                           <n> · <tokens/commit | unavailable>
+Estimated records                          <n>
+Total                           <agents>   <tokens or unavailable>
 Ledger                          .hyperflow/usage/<chain-id>.jsonl
 ────────────────────────────────────────────────────────────
 ```
@@ -251,7 +256,7 @@ For tasks with escalation, add a line before Total:
 Escalations                    1 · fast → standard · scope-expansion
 ```
 
-For a guard halt, add `Budget: halted · <phase> <used>/<cap> · total <used>/<cap>` before the Total row. For a safe degradation, add `Budget: degraded <from> → <to> at <phase> boundary`.
+For a guard halt, add `Budget: halted · <phase> <used>/<cap> · total <used>/<cap>` before the Total row when both used and cap are known from the ledger/guard. For a safe degradation, add `Budget: degraded <from> → <to> at <phase> boundary`.
 
 If the task was downgraded, the profile line reads `Profile: deep → standard · budget 200.0k → 50.0k`; the separate Budget line identifies the boundary. Never preserve the old profile's unused allowance after degradation.
 
@@ -274,3 +279,17 @@ If the task was downgraded, the profile line reads `Profile: deep → standard �
 **Do not re-run completed sub-tasks after escalation unless the escalation reason invalidates them.** If a worker found and documented 3 files correctly before escalating, those 3 files are already known — do not search them again. Escalation adds capacity, it does not reset progress.
 
 **Do not present escalation as failure.** Escalation is the system working correctly. The user should understand it as "the task revealed itself to be larger than initially assessed" — not as an error or a mistake by the orchestrator.
+
+**Do not skip the risk gate when structured UI is missing.** Chat-block Hyperflow Question + end turn is the required fallback. Silent default, mid-flight cost questions, and invented model upgrades are banned.
+
+**Do not invent metrics.** No fabricated token totals, cache-hit rates, wall-clock claims, or parallelism ratios without measured evidence (or explicit `estimated=true` character-count estimates for tokens only).
+
+---
+
+## Related
+
+- [runtime-contract.md](runtime-contract.md) — semantic ops, metrics honesty, gate fallback
+- [chain-router.md](chain-router.md) — structural gate checkpoints
+- [flow-profiles.md](flow-profiles.md) — budget denominators
+- [output-style.md](output-style.md) — Evidence + Usage presentation
+- [failure-recovery.md](failure-recovery.md) — retry / abort alongside escalation
