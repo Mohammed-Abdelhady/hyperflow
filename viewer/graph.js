@@ -163,8 +163,21 @@
 
     wireHover(nodeEls, edgeEls, model.edges);
     // draw + reveal on mount (rAF fires after layout/paint)
-    requestAnimationFrame(() => animate(canvas, edgeEls));
+    requestAnimationFrame(() => animate(canvas, edgeEls, nodeEls, horizontal));
     return el("div", { class: "hf-canvas-wrap" }, canvas);
+  }
+
+  // Recompute an edge path from the MEASURED node rects (offset geometry),
+  // so a node that grew past NODE_H still gets its edge attached at the real edge.
+  function measuredPath(fromEl, toEl, horizontal) {
+    const a = { l: fromEl.offsetLeft, t: fromEl.offsetTop, w: fromEl.offsetWidth, h: fromEl.offsetHeight };
+    const b = { l: toEl.offsetLeft, t: toEl.offsetTop, w: toEl.offsetWidth, h: toEl.offsetHeight };
+    if (horizontal) {
+      const x1 = a.l + a.w, y1 = a.t + a.h / 2, x2 = b.l, y2 = b.t + b.h / 2, dx = Math.max(40, (x2 - x1) / 2);
+      return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+    }
+    const x1 = a.l + a.w / 2, y1 = a.t + a.h, x2 = b.l + b.w / 2, y2 = b.t, dy = Math.max(30, (y2 - y1) / 2);
+    return `M${x1},${y1} C${x1},${y1 + dy} ${x2},${y2 - dy} ${x2},${y2}`;
   }
 
   function wireHover(nodeEls, edgeEls, edges) {
@@ -193,8 +206,10 @@
     });
   }
 
-  function animate(canvas, edgeEls) {
+  function animate(canvas, edgeEls, nodeEls, horizontal) {
     edgeEls.forEach((path) => {
+      const fromEl = nodeEls.get(path.dataset.from), toEl = nodeEls.get(path.dataset.to);
+      if (fromEl && toEl) path.setAttribute("d", measuredPath(fromEl, toEl, horizontal));
       const len = path.getTotalLength();
       path.style.strokeDasharray = len;
       path.style.strokeDashoffset = len;
@@ -213,6 +228,7 @@
       id: t.id, tag: t.id, label: t.task,
       sub: [t.role, t.complexity].filter(Boolean).join(" · "),
       chip: t.specialist, shape: "step", status: t.status,
+      brief: t.briefBody, acceptance: t.acceptance,
     })));
     const has = new Set(nodes.map((n) => n.id));
     batches.forEach((b, bi) => {

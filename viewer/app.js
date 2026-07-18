@@ -43,11 +43,28 @@
     task(env) {
       const p = env.payload || {};
       const all = (p.batches || []).flatMap((b) => b.tasks || []);
+      // Brief panel: clicking a task node reveals its brief (Phase-2 T3 seam).
+      const briefPanel = el("div", { class: "brief-panel", tabindex: "-1", hidden: true });
+      const onNode = (n) => {
+        if (!n.brief && !(n.acceptance && n.acceptance.length)) {
+          briefPanel.replaceChildren(el("p", { class: "dag-meta" }, `${n.tag || n.id}: no brief (trivial sub-task)`));
+        } else {
+          briefPanel.replaceChildren(
+            el("h4", null, `${n.tag || n.id} — ${n.label}`),
+            n.brief && el("pre", { class: "mermaid-src" }, n.brief),
+            n.acceptance && n.acceptance.length && el("ul", null, ...n.acceptance.map((a) => el("li", null, a))));
+        }
+        briefPanel.hidden = false;
+        briefPanel.focus();
+      };
       return [
         HF.statusHead(env),
         HF.section("Goal", el("p", { class: "tldr" }, p.goal || ""), HF.progressRing(0, all.length)),
         p.scope && p.scope.length && HF.section("Scope at a glance", HF.scopeTable(p.scope)),
-        p.batches && p.batches.length && HF.section("Execution graph", HF.graph.render(HF.graph.fromBatches(p.batches))),
+        p.batches && p.batches.length && HF.section("Execution graph",
+          el("p", { class: "dag-meta", style: "margin:0 0 8px" }, "Click a task to see its brief."),
+          HF.graph.render(HF.graph.fromBatches(p.batches), { onNode, ariaLabel: "execution dependency graph" }),
+          briefPanel),
         p.verification && p.verification.length && HF.section("Verification",
           el("ul", null, ...p.verification.map((v) => el("li", { style: "margin:6px 0;color:var(--fg-dim)" }, v)))),
         p.commits && p.commits.length && HF.section("Commit plan",
