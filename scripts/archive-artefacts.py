@@ -355,11 +355,17 @@ def archive_one(
     return False
 
 
-def archive_slug(hf: Path, slug: str) -> dict:
+def archive_slug(hf: Path, slug: str, cfg: dict | None = None) -> dict:
     """Archive a slug's full scope. Raises ArchiveError on validation failure.
 
     Scope: tasks/<slug>.md, tasks/<slug>/, specs/<slug>.md, specs/<slug>.draft.md,
     features/<slug>/, artefacts/*/<slug>.json.
+
+    ``cfg`` lets an in-process caller (reap.py) supply its already-resolved
+    cleanup config so no second ``load_cfg``/``$HOME`` read happens. Targeted
+    slug archival is unconditional — it does not consult ``cleanup.auto`` (that
+    gate guards only the daily sweep). Accepted for a single, divergence-free
+    config source across the reaper and the archiver.
     """
     validate_slug(slug)
     if not hf.is_dir() or hf.name != ".hyperflow":
@@ -548,7 +554,7 @@ def main() -> None:
     # ─── Targeted slug mode: full scope, JSON summary on stdout ───────────────
     if slug_arg is not None:
         try:
-            summary = archive_slug(hf, slug_arg)
+            summary = archive_slug(hf, slug_arg, cfg=cfg)
         except ArchiveError as exc:
             print(f"hyperflow cleanup: refused — {exc}", file=sys.stderr)
             sys.exit(1)

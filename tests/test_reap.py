@@ -239,6 +239,69 @@ class CompletedReapTests(FixtureBase):
         self.assertIsInstance(report["memory"]["compacted"], list)
 
 
+class _BoomArchiver:
+    """Stand-in archiver whose slug archival always raises (F4 failure sim)."""
+
+    def archive_slug(self, hf: Path, slug: str, cfg: dict | None = None) -> dict:
+        raise RuntimeError("simulated archive failure")
+
+
+class ArchiveFailureTests(FixtureBase):
+    """F3 in-process archival + F4 loud failure: a failing archive must set
+    ``archiveError`` and skip every destructive phase (ephemeral GC + orphan
+    drop), leaving stale ephemeral files and durable memory untouched."""
+
+    def test_archive_failure_aborts_gc_and_preserves_state(self) -> None:
+        slug = self._write_completed("arch-fail")
+        # Stale usage ledger a SUCCESSFUL reap would delete (aged past retention).
+        usage = self.hf / "usage" / "stale-chain.jsonl"
+        usage.write_text('{"chain_id":"stale-chain"}\n', encoding="utf-8")
+        self._age(usage, 90)
+        learnings = self.hf / "memory" / "learnings.md"
+        learnings_before = learnings.read_text(encoding="utf-8")
+
+        cfg = dict(reap_mod.DEFAULTS)
+        cfg["usageRetentionDays"] = 30
+        with patch.object(reap_mod, "_load_archiver", return_value=_BoomArchiver()):
+            report = reap_mod.reap(self.hf, slug, cfg=cfg)
+
+        # Loud failure surfaced.
+        self.assertIn("archiveError", report)
+        self.assertIn("simulated archive failure", report["archiveError"])
+        # Ephemeral GC skipped — stale ledger survives, nothing deleted.
+        self.assertTrue(usage.exists())
+        self.assertEqual(report["deleted"], [])
+        self.assertEqual(report["bytesFreed"], 0)
+        # Orphan-drop skipped — durable memory byte-for-byte unchanged.
+        self.assertEqual(learnings.read_text(encoding="utf-8"), learnings_before)
+        self.assertEqual(report["memory"]["orphansDropped"], 0)
+        # Archival never moved the source (it failed).
+        self.assertTrue((self.hf / "tasks" / f"{slug}.md").exists())
+        self.assertEqual(report["archived"], [])
+
+    def test_happy_path_archives_without_error(self) -> None:
+        slug = self._write_completed("arch-ok")
+        report = reap_mod.reap(self.hf, slug, cfg=dict(reap_mod.DEFAULTS))
+
+        self.assertNotIn("archiveError", report)
+        self.assertGreater(len(report["archived"]), 0)
+        paths = {e["path"] for e in report["archived"]}
+        self.assertIn(f"tasks/{slug}.md", paths)
+        # In-process archival ran — source moved out, learning promoted.
+        self.assertFalse((self.hf / "tasks" / f"{slug}.md").exists())
+        self.assertIn(
+            "durable insight from completed task",
+            (self.hf / "memory" / "learnings.md").read_text(encoding="utf-8"),
+        )
+
+    def test_run_archive_returns_error_tuple_on_failure(self) -> None:
+        with patch.object(reap_mod, "_load_archiver", return_value=_BoomArchiver()):
+            archived, error = reap_mod.run_archive(self.hf, "whatever")
+        self.assertEqual(archived, [])
+        self.assertIsNotNone(error)
+        self.assertIn("simulated archive failure", error)
+
+
 class NonTerminalTests(FixtureBase):
     def test_in_progress_skipped_without_force(self) -> None:
         (self.hf / "tasks" / "wip.md").write_text(IN_PROGRESS_TASK, encoding="utf-8")

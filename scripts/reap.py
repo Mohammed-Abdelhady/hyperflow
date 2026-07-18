@@ -11,6 +11,7 @@ Usage
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -232,11 +233,60 @@ def plan_archive(hf: Path, slug: str) -> list[dict[str, str]]:
     return planned
 
 
-def run_archive(hf: Path, slug: str) -> list[dict[str, str]]:
-    """Invoke archive-artefacts.py --slug; return its archived list."""
+_ARCHIVER_MODULE: Any = None
+
+
+def _load_archiver() -> Any:
+    """Import archive-artefacts.py once (hyphenated → not a normal module name).
+
+    Returns the loaded module (exposing ``archive_slug``) or None when the file
+    is missing or fails to import, in which case run_archive falls back to a
+    subprocess. Loaded under a private name so it never collides with a test's
+    own spec-loaded copy in sys.modules.
+    """
+    global _ARCHIVER_MODULE
+    if _ARCHIVER_MODULE is not None:
+        return _ARCHIVER_MODULE
     script = SCRIPTS_DIR / "archive-artefacts.py"
     if not script.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "hyperflow_archive_artefacts", script
+        )
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception:
+        return None
+    _ARCHIVER_MODULE = module
+    return module
+
+
+def _coerce_archived(summary: Any) -> list[dict[str, str]]:
+    """Extract the archived-record list from an archive_slug/JSON summary."""
+    if not isinstance(summary, dict):
         return []
+    archived = summary.get("archived", [])
+    if not isinstance(archived, list):
+        return []
+    return [e for e in archived if isinstance(e, dict)]
+
+
+def _run_archive_subprocess(
+    hf: Path, slug: str
+) -> tuple[list[dict[str, str]], str | None]:
+    """Fallback: spawn archive-artefacts.py --slug when in-process import fails.
+
+    Returns (archived, error). error is None on success (including an empty
+    archive); a non-empty string signals a genuine FAILURE (non-zero exit,
+    spawn error, or an unparseable/absent JSON report) so the caller can halt
+    destructive phases.
+    """
+    script = SCRIPTS_DIR / "archive-artefacts.py"
+    if not script.is_file():
+        return [], "archive-artefacts.py not found"
     try:
         proc = subprocess.run(
             [sys.executable, str(script), str(hf), "--slug", slug],
@@ -244,10 +294,11 @@ def run_archive(hf: Path, slug: str) -> list[dict[str, str]]:
             text=True,
             check=False,
         )
-    except Exception:
-        return []
+    except Exception as exc:
+        return [], f"archive subprocess spawn failed: {exc}"
     if proc.returncode != 0:
-        return []
+        reason = (proc.stderr or "").strip() or f"archive exited {proc.returncode}"
+        return [], reason
     # JSON is on stdout; tolerate trailing human lines by scanning.
     for line in (proc.stdout or "").splitlines():
         line = line.strip()
@@ -257,10 +308,33 @@ def run_archive(hf: Path, slug: str) -> list[dict[str, str]]:
             payload = json.loads(line)
         except json.JSONDecodeError:
             continue
-        archived = payload.get("archived", [])
-        if isinstance(archived, list):
-            return [e for e in archived if isinstance(e, dict)]
-    return []
+        if isinstance(payload.get("archived"), list):
+            return _coerce_archived(payload), None
+    # A zero exit with no parseable report → cannot confirm archival = failure.
+    return [], "archive produced no JSON report"
+
+
+def run_archive(
+    hf: Path, slug: str, *, cfg: dict[str, Any] | None = None
+) -> tuple[list[dict[str, str]], str | None]:
+    """Archive a slug in-process; return (archived, error).
+
+    Loads archive-artefacts.py and calls ``archive_slug(hf, slug, cfg=cfg)`` in
+    the same interpreter — no second ``load_cfg``/``$HOME`` read — so the
+    caller's resolved config governs the run. error is None on success (an empty
+    archive is success — "nothing to archive"); a non-empty string signals a
+    FAILURE (raised exception / archival error) so the caller skips the
+    destructive ephemeral + orphan-drop phases. Falls back to a subprocess only
+    when the in-process import is infeasible.
+    """
+    module = _load_archiver()
+    if module is not None and hasattr(module, "archive_slug"):
+        try:
+            summary = module.archive_slug(hf, slug, cfg=cfg)
+        except Exception as exc:
+            return [], f"in-process archival failed: {exc}"
+        return _coerce_archived(summary), None
+    return _run_archive_subprocess(hf, slug)
 
 
 def _file_size(path: Path) -> int:
@@ -874,10 +948,27 @@ def reap(
         return report
 
     # ── Archive class ────────────────────────────────────────────────────────
+    archive_error: str | None = None
     if effective_dry:
         report["archived"] = plan_archive(hf, slug)
     else:
-        report["archived"] = run_archive(hf, slug)
+        report["archived"], archive_error = run_archive(hf, slug, cfg=cfg)
+
+    if archive_error:
+        # F4: archival FAILED (distinct from "nothing to archive"). The
+        # reversible class's disposition is unknown, so do NOT GC ephemeral
+        # files or mutate durable memory — deleting now could orphan knowledge
+        # whose archive never landed. Surface the reason; only the derived,
+        # non-destructive index rebuild + compaction advisory still run.
+        report["archiveError"] = archive_error
+        report["skipped"].append({"path": slug, "reason": "archive-failed"})
+        report["memory"]["indexRebuilt"] = rebuild_memory_index(
+            hf, dry_run=effective_dry
+        )
+        report["memory"]["compacted"] = flag_oversized_memory(
+            hf, int(cfg.get("compactionThreshold", MEMORY_COMPACTION_DEFAULT))
+        )
+        return report
 
     # ── Ephemeral class ──────────────────────────────────────────────────────
     reap_usage(
