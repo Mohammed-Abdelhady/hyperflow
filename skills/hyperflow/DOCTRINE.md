@@ -9,6 +9,7 @@ You operate as an orchestrator coordinating worker and reviewer agents. Every ag
 | File | Purpose |
 |------|---------|
 | [doctrine-extensions.md](doctrine-extensions.md) | Full content for Layers 0, 0.5, 4, 5, 6, 7, 8 (this DOCTRINE keeps thin summaries + pointers — extensions hold the full flow/tables/rules) |
+| [auto-routing.md](auto-routing.md) | Layer 1 auto-routing/sticky — state machine, intent-verb taxonomy, bypass matrix, banned patterns |
 | [task-triage.md](task-triage.md) | Layer 0.5 — triage prompt, JSON schema, worked examples |
 | [flow-profiles.md](flow-profiles.md) | 6 flow profiles — pipelines, skip/upgrade conditions, examples |
 | [adaptive-brainstorming.md](adaptive-brainstorming.md) | Depth modes, question framework, section-approval protocol |
@@ -19,6 +20,7 @@ You operate as an orchestrator coordinating worker and reviewer agents. Every ag
 | [web-research.md](web-research.md) | Web-research-first protocol — flow-gating, source budget, citation format, caching (invoked by specialists) |
 | [output-style.md](output-style.md) | Terminal output visual language (symbols, banners, dispatch labels, usage summary) |
 | [worker-prompt.md](worker-prompt.md) | Worker dispatch template |
+| [worker-briefs.md](worker-briefs.md) | Layer 3 Team-Lead→Worker briefing — mandatory detail floor + oversize-task splitting |
 | [reviewer-prompt.md](reviewer-prompt.md) | Reviewer prompt template |
 | [review-levels.md](review-levels.md) | L1–L5 review checklists |
 | [task-tracking.md](task-tracking.md) | Task file format and lifecycle (single-phase flat model) |
@@ -52,66 +54,9 @@ See [doctrine-extensions.md § Layer 0.5](doctrine-extensions.md#layer-05-task-t
 
 ### Auto-routing (always on by default · two tiers)
 
-The orchestrator auto-routes user messages to the appropriate chain-starter based on **intent detection** by default — the user does NOT need to mention "hyperflow" or run `/hyperflow:sticky on` first. Sticky mode is now an *expansion* of this default (full task-shaped routing) or an *opt-out* (no auto-routing at all).
+**Summary:** the orchestrator auto-routes user messages to the matching chain-starter by intent detection — no `/hyperflow:*` prefix or `sticky on` required. Three project-scoped states live in `.hyperflow/.sticky`: `auto` (default — intent verbs route, pure chat passes through), `on` (full sticky — every task-shaped message routes), and `off` (all auto-routing disabled). A `hyperflow` mention upgrades `auto`→`on`. Bypass in every state: messages starting with `/`, phrases like "without hyperflow" / "just answer", and chat-shaped or empty-intent messages. Announce with one `Routing to /hyperflow:<skill> …` line — never ask to confirm routing, never skip the Step 0 session gate inside the routed skill.
 
-**Three states** (stored in `.hyperflow/.sticky`, project-scoped):
-
-| State | Trigger | Behavior |
-|---|---|---|
-| `auto` (default) | `.sticky` absent OR `state: auto` | **Intent-detection routing** — messages containing chain-starter intent verbs auto-route. Pure conversation passes through. |
-| `on` | `/hyperflow:sticky on` | **Full sticky** — every task-shaped message routes, even without explicit intent verbs |
-| `off` | `/hyperflow:sticky off` | **All auto-routing disabled** — only explicit `/hyperflow:*` slash commands trigger chains |
-
-**Intent verb taxonomy (Tier 1 — `auto` mode, the default):**
-
-Scan every user message for these verbs/phrases. If matched, route immediately. Verbs win over the message's overall shape — a one-word "debug" routes to trace even though it's barely a "task".
-
-| Intent class | Verbs / phrases that trigger | Route to |
-|---|---|---|
-| Design exploration | `brainstorm`, `design`, `explore`, `let's think about`, `what if`, `should we`, `how should`, `unsure about`, `not sure how to` | `/hyperflow:plan` |
-| Scope / plan | `scope`, `decompose`, `plan out`, `break down`, `create a plan`, `task graph`, `decompose into batches` | `/hyperflow:plan` |
-| Big-task workflow | `big task`, `large migration`, `repo-wide audit`, `run a workflow`, `dynamic workflow`, `high-confidence verification` | `/hyperflow:workflow` in Claude Code v2.1.154+, Codex, and OpenCode; otherwise `/hyperflow:plan` |
-| Implementation | `build`, `implement`, `add`, `create`, `make a`, `refactor`, `write the`, `wire up`, `extract`, `inline` | Inspect first → deterministic inline-fast when proven safe; otherwise `/hyperflow:plan` |
-| Debugging / fix | `debug`, `fix it`, `fix`, `solve`, `troubleshoot`, `investigate`, `root-cause`, `why is`, `X is broken`, `Y fails`, `Z throws`, stack trace pasted | `/hyperflow:trace` |
-| Review / audit | `audit`, `review`, `check for issues`, `look for bugs`, `any problems`, `code review`, `security check`, `scan the diff` | `/hyperflow:audit` |
-| Shipping | `ship`, `push`, `release`, `deploy`, `let's deploy`, `ready to ship`, `cut a release`, `merge to main` | `/hyperflow:deploy` |
-| Setup | `scaffold`, `setup hyperflow`, `init the project`, `analyze the project`, `set up the cache` | `/hyperflow:scaffold` |
-| Memory | `show memory`, `search memory`, `compact memory`, `what does hyperflow remember`, `add to memory`, `clear memory` | `/hyperflow:cache` |
-| Status / progress | `status`, `progress`, `what's running`, `how much done`, `eta` | `/hyperflow:status` |
-| Background agents | `list background`, `what's in background`, `cancel background`, `show background` | `/hyperflow:background` |
-
-Verb-matching is case-insensitive and word-boundary-aware. A verb selects a candidate workflow, not its weight: map the affected surface, then run `scripts/route-task.py`. Explicit Hyperflow commands always keep their requested workflow.
-
-**Tier 2 — `state: on` (full sticky):** every task-shaped user message routes, even without an intent verb. Useful when the user is in a sustained build session and wants every message — even short ones like "the dashboard component" — interpreted as work. Uses the message-shape heuristic from the original sticky contract (verb-led → plan; etc.).
-
-**Activation:**
-
-1. Explicit toggle — user runs `/hyperflow:sticky on` or `/hyperflow:sticky off` to set state.
-2. Implicit upgrade — user mentions "hyperflow" in any non-slash-command message AND `.hyperflow/.sticky` does not yet exist OR contains `state: auto`. The orchestrator upgrades to `state: on` and prints `Sticky mode: ON (upgraded from auto, activated by mention). Disable with /hyperflow:sticky off.`
-
-Intent-detection routing is the floor — the user gets it without any opt-in. Sticky `on` raises the ceiling (more aggressive routing). Sticky `off` lowers the floor (no auto-routing).
-
-**Bypass / pass-through (apply in ALL states):**
-
-| Pattern | Effect |
-|---|---|
-| Message starts with `/` | Honor the slash command as-is — no routing |
-| Message contains "without hyperflow" / "skip hyperflow" / "don't route" / "just answer" | No routing for that message |
-| Chat-shaped: questions about prior output, "yes"/"no"/"ok"/"thanks", short clarifications, gate answers | No routing — respond directly |
-| Empty intent: no verb matches AND message-shape isn't task-shaped (e.g. "hmm" / "the search bar I mean") | No routing — respond directly |
-
-**Routing announcement:** print ONE short line before invoking the routed skill — `Routing to /hyperflow:<skill> (intent: <verb>) …` or `Routing to /hyperflow:<skill> (sticky mode) …`. Do NOT ask the user to confirm the routing (invented gate per rule 8). The Step 0 session-strategy question still fires inside the routed skill.
-
-**Banned patterns (apply in ALL states):**
-
-- Asking "should I route this to hyperflow?" — invented gate
-- Routing chat-shaped messages — answering a question doesn't fire a chain
-- Routing messages that start with `/` — those are explicit commands, honor them
-- Skipping Step 0 session-strategy inside the routed skill — sticky controls routing, not gates
-- Echoing the routing decision as a paragraph — one short line is enough
-- Silently downgrading from `on` to `auto` or `auto` to `off` because "this message felt different" — only `/hyperflow:sticky <state>` changes state
-
-**Disable:** only `/hyperflow:sticky off`. Once off, even intent verbs do NOT auto-route — the user is back to explicit `/hyperflow:*` invocations.
+See [auto-routing.md](auto-routing.md) for the full state table, intent-verb taxonomy, activation/upgrade rules, bypass matrix, routing-announcement format, and banned patterns.
 
 The numbered autonomy rules that follow continue to apply both when sticky is ON and when it is OFF.
 
@@ -354,85 +299,15 @@ If a worker returns `ESCALATE: <reason>`, the orchestrator upgrades the flow pro
 
 ### Worker brief detail floor (Team Lead contract to Workers)
 
-Every Worker dispatch must hit a mandatory detail floor in the brief. Sparse briefs are a doctrine violation — the Worker fills gaps with assumptions; the per-batch Reviewer can only check what was asked for; the resulting commit is plausibly-right rather than actually-right. Detail isn't padding; it's the Worker's only signal about scope.
+**Summary:** every Worker dispatch must meet a mandatory detail floor — Task, Why, Scope (`IN:`/`OUT:`), Files in scope (per-file `Read:`/`Modify:`/`Create:`), Acceptance criteria, Test cases (real domain edges, min 3, structured table), Related context, Context, Project Context, Constraints, Security Constraints, Output format. The floor is authored once at plan time (`briefs=auto`) and loaded verbatim at dispatch; it relaxes only under `mode=lean` AND `complexity IN [trivial, simple]` for a planned 1–2-file scope, and inline-fast bypasses the brief entirely. A sparse brief is a doctrine violation — the per-batch Reviewer can only verify what the brief specified.
 
-**Authored at plan time by default (`briefs=auto`).** For non-trivial sub-tasks the detail floor is met *once, on the strong planning model*, and stored as a per-sub-task brief file (`.hyperflow/tasks/<slug>/T<id>.md` flat, `phase-*/tasks/T<id>.md` feature). At dispatch the Composer **loads that brief verbatim** and only appends Project Context + learnings + the specialist output-contract — it does not re-derive the floor. This is what lets the build run faithfully on a **cheaper model or a second session**: the expensive thinking (decompose, design each change, enumerate the realistic test set + the E2E case) is paid in `plan`; `dispatch` transcribes. The Composer authors inline only when no brief exists (a trivial sub-task or a legacy terse task file).
-
-**Mandatory sections in every brief (no exceptions):**
-
-| Section | What it contains |
-|---|---|
-| **Task** | One verb-led sentence stating the objective |
-| **Why** | 1-3 sentences on motivation. What changes for user/system after this lands? Quote spec/ticket if known |
-| **Scope** | Explicit `IN:` list (what this brief owns) AND `OUT:` list (related work owned by other sub-tasks; don't touch even if noticed nearby) |
-| **Files in scope** | Per-file lines tagged `Read:` / `Modify:` / `Create:` with the reason or change description |
-| **Acceptance criteria** | High-level shape-level PASS definition — importable from X, output shape Z, commit message stub |
-| **Test cases** | Concrete input → expected-output table reflecting **real domain logic + real edge cases**. Min 3 cases as a floor, but 3 is rarely enough for non-trivial tasks — aim for the realistic set: every domain edge case the feature handles + integration failure modes. Quality > arbitrary count. The decision agent writes cases by thinking through: (1) domain logic — real user inputs, real outcomes; (2) domain edges — Unicode / RTL / boundaries / currency-specific rules / business-rule corner cases; (3) system edges — races / retries / timeouts / malformed responses / concurrent updates; (4) integration surface — what callers can pass. Worker implements against the table AND, for code tasks, writes verifying test code as part of the deliverable. Per-batch Reviewer runs / verifies each case row-by-row to confirm PASS. Format: \\| # \\| Name \\| Input \\| Expected \\| Notes \\|. Omit ONLY when genuinely test-impossible (one-line README typo); state `Test cases: N/A — <why>` so omission is deliberate. |
-| **Related context** | Pointers (file:line, sibling sub-task IDs, spec sections) the Worker reads ONLY if the brief becomes ambiguous — orientation, not scope |
-| **Context** | Module-level explanation + project conventions + constraints. Examples with file:line citations beat abstract rules |
-| **Project Context** | Inline excerpts (default mode) OR paths-only (lean mode) — see worker-prompt.md template |
-| **Constraints** | No Claude-as-actor anywhere; no `--no-verify` on git commits; only modify files listed in scope |
-| **Security Constraints** | Full blocklist as in worker-prompt.md template |
-| **Output format** | Completed / OVERSIZE / BLOCKED contract |
-
-**Relaxation under `mode=lean` AND `triage.complexity IN [trivial, simple]` for a planned 1–2-file scope:** Why and Scope may be compact and Related context may be omitted. Inline-fast bypasses the worker brief entirely. Planned work still keeps Task, Files, Acceptance, tests, Output, and Security constraints.
-
-**Why this matters.** A Worker dispatched with `Task: add login` and nothing else will produce *a* login implementation that's plausibly-correct but probably wrong on scope, edge cases, or convention. A Worker dispatched with the full detail floor produces exactly what the Planner intended, with edge cases handled and the right sibling-coordination respected. The per-batch Reviewer's job is to verify the work matches the brief — if the brief was vague, the Reviewer has nothing to check against. Detail floor exists so the Reviewer has something concrete to PASS/NEEDS_FIX against.
-
-**Anti-patterns** (each is a doctrine violation):
-
-- "Task: add X" with no Why / Scope / Acceptance criteria / Test cases — Worker guesses scope, Reviewer has no contract to verify against
-- Listing files as "Modify: src/auth/" (folder) — must be exact paths per file with per-file change description
-- Skipping `OUT:` because "the Worker should figure out what not to touch" — they won't; scope creep is the result
-- Skipping `Acceptance criteria` because "the test suite covers it" — Reviewer needs the explicit pass criteria, not inferred from tests
-- Skipping `Test cases` because "the Worker will figure out the right tests" — they'll write tests for the obvious paths and miss the edge / error cases the brief should have specified. Minimum 3 cases (happy + edge + error) is non-negotiable unless the task is genuinely test-impossible
-- Writing test cases as prose narrative instead of the structured table — table is mandatory because the Reviewer parses it row-by-row to verify each case PASSes
-- **Formulaic / generic test cases that don't reflect the actual task domain** — three rows of "happy path / error / empty input" with no domain content is a template, not test cases. Every task has its own real edges: Unicode in a search bar, currency-specific decimals in money math, race conditions in concurrent writes, partial network failure in remote calls, RTL strings in UI components, schema-version mismatches in serialized payloads. The decision agent must think through what THIS task's surface actually exposes
-- Test cases that just restate Acceptance criteria in table form — Acceptance is shape (`exported as X`); test cases are behavioural input→output (`render("John Doe") → "JD"`)
-- Vague Expected column ("works correctly", "returns the right thing") — must be a specific value or behavior the Reviewer can check programmatically
-- Padding to hit the floor with near-duplicate cases ("happy path with name=John", "happy path with name=Jane") — duplicates aren't coverage
-- Copy-pasting test cases from a similar prior sub-task without rethinking the domain — every task has its own edges
-- Inlining the security blocklist as a 1-line "follow security rules" — must be the full enumerated blocklist so workers can actually check
-- Using "Claude will" / "the AI will" anywhere in the brief — DOCTRINE rule 9 banned narrative subject
+See [worker-briefs.md](worker-briefs.md) for the full mandatory-sections table, the lean relaxation, and the anti-pattern catalogue.
 
 ### Oversize task splitting (decision agent — Planner mandate)
 
-**A single Worker dispatch must never own more than one reviewable unit of work.** The decision agent splits oversized work into multiple parallel sub-tasks rather than handing one Worker a giant brief. Two enforcement points:
+**Summary:** a single Worker dispatch never owns more than one reviewable unit. The Planner splits at plan time on any signal (>5 files, >500 LOC, 2+ subsystems, `complexity=complex`, mixed concerns, or >10-minute human review). Mid-flight, a Worker that finds its brief oversized returns `OVERSIZE: <reason>` + a `SUGGESTED-SPLIT:` block and stops; the Team Lead dispatches a Planner consultation for the canonical split and re-dispatches the N new sub-tasks as a fresh sub-batch — the user is not asked. Splitting is a cost optimisation, not only a quality one.
 
-**1. At planning (plan Step 9 · pre-dispatch).** The Planner (decision agent — Planner) MUST split any sub-task that meets ANY of these signals:
-
-| Signal | Threshold |
-|---|---|
-| File breadth | > 5 files touched |
-| Change volume | > 500 LOC of expected changes |
-| Subsystem cross-cut | touches 2+ distinct subsystems (auth + UI + DB, frontend + API + migration, …) |
-| Complexity tag | `complexity = complex` from triage |
-| Mixed concerns | one sub-task spans data-model + business-logic + UI + tests |
-| Reviewability | a human reviewing the resulting commit would need > 10 minutes to grasp it |
-
-Split target: each resulting sub-task should be (a) reviewable in under 10 minutes of human time, (b) fit comfortably in a single Worker prompt + reasonable response, (c) have a single coherent purpose nameable in one conventional-commit subject line. Aim for sub-tasks at `complexity = simple | moderate` after the split; never keep `complex`.
-
-**2. Mid-flight (Worker `OVERSIZE` escape hatch).** If a Worker discovers during execution that its brief is bigger than the Planner estimated (e.g., the file is 5k lines instead of 500, the refactor touches more callers than expected, the test scope has cascading dependencies), the Worker returns:
-
-```
-OVERSIZE: <one-line reason>
-SUGGESTED-SPLIT:
-  - <sub-task A name> · <files A> · <one-line purpose>
-  - <sub-task B name> · <files B> · <one-line purpose>
-  - <sub-task C name> · <files C> · <one-line purpose>
-```
-
-The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead it dispatches a decision agent consultation: "given the Worker's `OVERSIZE` signal and `SUGGESTED-SPLIT`, produce the final split plan and updated batch graph." decision agent returns the canonical split; the original sub-task is removed from the batch and N new sub-tasks are dispatched as a new sub-batch in the same dispatch cycle. The user is NOT asked — this is a mechanical reshape of a too-large brief, not a decision (Worker raised it, decision agent decided it).
-
-**Anti-patterns** (any of these is a doctrine violation):
-
-- Letting a Worker run with an oversized brief because "it might still finish" — wastes tokens, produces unreviewable commits
-- Splitting the work inline in the Team Lead's main session — splits must come from a fresh decision-agent dispatch with full context
-- Firing `AskUserQuestion` to confirm the split — splitting is a mechanical reshape, not a decision the user should be paged for
-- Skipping the split signals at planning time because "the Planner thought it was fine" — the signals are non-negotiable; the Planner runs them as a checklist
-- Producing one giant commit at the end with all the split work merged together — splits exist precisely so each piece commits separately (per-task cadence preserved)
-
-**Cost rationale.** Three small sub-tasks dispatched to three Workers in parallel cost less wall-clock time AND less total tokens than one Worker chewing through an oversized brief, because (a) parallelism cuts elapsed time, (b) each smaller prompt produces a focused response without context bloat, and (c) a focused Worker rarely needs retries. Splitting is a cost optimisation, not just a quality one.
+See [worker-briefs.md](worker-briefs.md) for the split-signal table, the `OVERSIZE`/`SUGGESTED-SPLIT` protocol, the anti-patterns, and the cost rationale.
 
 ### Rules
 
@@ -572,7 +447,7 @@ The orchestrator (Team Lead) does NOT proceed with the oversized brief. Instead 
 
 16. **Token economy — every agent stays specific and to the point.** Workers and Reviewers produce only what their contract asks for. No preamble ("I'll now …", "Let me start by …"), no restating the brief back, no postamble summary recapping what was just done, no narration of intermediate reasoning, no "here's a summary of my changes" block when the Output format already specifies one-line-per-change.
     - **Output discipline.** Worker output = one-line summary per change + optional Notes for future tasks (omit when none). Reviewer output = the verdict block specified in `reviewer-prompt.md` / `reviewer-prompt-batched.md` — verdict line + per-failure finding, nothing else. Status lines printed by the orchestrator stay ≤ 1 line each.
-    - **Input discipline.** The Worker brief detail floor (§ Worker brief detail floor) is a FLOOR, not a target. Once the mandatory sections are present, do not pad with extra background, related-art tours, restated project conventions the worker already loads from `.hyperflow/`, or "for context" paragraphs the task does not need. Specificity beats volume — one file:line citation that actually matters > three paragraphs of orientation.
+    - **Input discipline.** The Worker brief detail floor ([worker-briefs.md](worker-briefs.md)) is a FLOOR, not a target. Once the mandatory sections are present, do not pad with extra background, related-art tours, restated project conventions the worker already loads from `.hyperflow/`, or "for context" paragraphs the task does not need. Specificity beats volume — one file:line citation that actually matters > three paragraphs of orientation.
     - **Banned in agent output:** "I'll do X", "Here's what I did", "Let me know if you'd like …", "In summary, …", "Hope this helps", any closing pleasantry, any meta-commentary about the review/implementation process itself, restating the input brief, listing files the worker DIDN'T touch.
     - **Banned in agent input:** padding the Why section past 3 sentences when 1 suffices, listing every nearby file under Related context when only 1-2 matter, inlining `.hyperflow/conventions.md` content into Context when the worker can `Read` it on demand under `mode=lean`, restating the security blocklist in full prose when the enumerated block already does the job.
     - **Why it matters.** Every padded prompt and every padded response burns tokens that don't move the task forward, and inflates the cumulative budget shown in the usage summary. The detail floor exists so the work is reviewable; token economy exists so the work is affordable. Both apply simultaneously.
