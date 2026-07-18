@@ -166,6 +166,35 @@ class OpenArtefactTests(unittest.TestCase):
         mock_open.assert_not_called()
         self.assertIn("skipping", out)
 
+    def _write_task(self, slug: str) -> str:
+        env = {
+            "hf": 1, "type": "task", "slug": slug, "title": "Demo Task",
+            "status": "pending", "created": "2026-07-18", "updated": "2026-07-18",
+            "specialists": [], "payload": {"summary": "x"},
+        }
+        task_dir = self.hf / "artefacts" / "task"
+        task_dir.mkdir(parents=True, exist_ok=True)
+        (task_dir / f"{slug}.json").write_text(json.dumps(env), encoding="utf-8")
+        return slug
+
+    def test_type_spec_falls_back_to_task_for_decompose_only_plan(self) -> None:
+        # A decompose-only plan produces a task artefact but no spec. Requesting
+        # --type spec must fall back and open the task, not skip.
+        slug = self._write_task("task-only-plan")
+        self._write_config(enabled=True, auto_open=True)
+        with patch.object(open_mod.webbrowser, "open", return_value=True) as mock_open:
+            code, _out, _err = self._run(str(self.hf), slug, "--type", "spec")
+        self.assertEqual(code, 0)
+        mock_open.assert_called_once()
+        self.assertIn(f"task-{slug}.html", mock_open.call_args[0][0])
+
+    def test_resolve_type_prefers_requested_then_falls_back(self) -> None:
+        self._write_spec("both")
+        self._write_task("both")
+        self.assertEqual(open_mod.resolve_type(self.hf, "both", "spec"), "spec")
+        self._write_task("taskonly")
+        self.assertEqual(open_mod.resolve_type(self.hf, "taskonly", "spec"), "task")
+
 
 if __name__ == "__main__":
     unittest.main()

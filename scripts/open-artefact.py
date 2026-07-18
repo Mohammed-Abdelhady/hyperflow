@@ -99,12 +99,16 @@ def load_viewer_cfg() -> dict[str, bool]:
 
 
 def resolve_type(hf: Path, slug: str, art_type: str | None) -> str | None:
-    """The artefact type that owns <slug>: the requested --type when its JSON
-    exists, else the single type whose artefacts/<type>/<slug>.json is present.
-    None when no on-disk artefact backs the slug."""
+    """The artefact type that owns <slug>.
+
+    The requested --type is a *preference*: used when its JSON exists, otherwise
+    reap falls back to the best available artefact backing the slug, preferring
+    richer types (spec > task > feature > …). This lets a plan-completion open
+    work for decompose-only plans (task, no spec), not just design plans.
+    None when no on-disk artefact backs the slug at all."""
     base = hf / "artefacts"
-    if art_type:
-        return art_type if (base / art_type / f"{slug}.json").is_file() else None
+    if art_type and (base / art_type / f"{slug}.json").is_file():
+        return art_type
     for candidate in TYPES:
         if (base / candidate / f"{slug}.json").is_file():
             return candidate
