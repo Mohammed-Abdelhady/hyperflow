@@ -1,0 +1,404 @@
+{
+  "$schema": "./providers.schema.json",
+  "version": "1.0.0",
+  "schema_version": 1,
+  "canonical_operations": [
+    "spawn",
+    "wait",
+    "message",
+    "follow_up",
+    "interrupt",
+    "list",
+    "structured_question",
+    "skill_continuation",
+    "edit",
+    "shell",
+    "web_research",
+    "background",
+    "usage_metrics"
+  ],
+  "install_modes": [
+    "source-checkout",
+    "codex-marketplace",
+    "claude-marketplace",
+    "unknown"
+  ],
+  "lifecycle_event_names": [
+    "session.start",
+    "session.after_clear",
+    "session.before_compact",
+    "session.after_compact"
+  ],
+  "providers": [
+    {
+      "key": "codex",
+      "name": "Codex",
+      "signals": {
+        "env_prefixes": ["CODEX"],
+        "env_keys": ["CODEX_HOME", "CODEX_SESSION_ID"],
+        "plugin_root_env": ["CODEX_PLUGIN_ROOT"],
+        "path_markers": [
+          ".codex/plugins",
+          ".codex-plugin",
+          "codex-marketplace"
+        ]
+      },
+      "operations": {
+        "spawn": [
+          "collaboration.spawn_agent",
+          "multi_agent_v1.spawn_agent"
+        ],
+        "wait": [
+          "collaboration.wait_agent",
+          "wait_agent",
+          "multi_agent_v1.wait_agent"
+        ],
+        "message": [
+          "collaboration.send_message",
+          "send_message",
+          "multi_agent_v1.send_message"
+        ],
+        "follow_up": [
+          "collaboration.followup_task",
+          "followup_task",
+          "multi_agent_v1.followup_task"
+        ],
+        "interrupt": [
+          "collaboration.interrupt_agent",
+          "interrupt_agent",
+          "multi_agent_v1.interrupt_agent"
+        ],
+        "list": [
+          "collaboration.list_agents",
+          "list_agents",
+          "multi_agent_v1.list_agents"
+        ],
+        "structured_question": [
+          "request_user_input"
+        ],
+        "skill_continuation": [],
+        "edit": [
+          "apply_patch",
+          "edit_file",
+          "Edit"
+        ],
+        "shell": [
+          "shell",
+          "Bash",
+          "bash"
+        ],
+        "web_research": [
+          "web_search",
+          "web_fetch",
+          "WebSearch",
+          "WebFetch"
+        ],
+        "background": [],
+        "usage_metrics": []
+      },
+      "lifecycle_events": {
+        "session.start": ["SessionStart"],
+        "session.after_clear": ["SessionStart"],
+        "session.before_compact": ["PreCompact"],
+        "session.after_compact": ["SessionStart"]
+      },
+      "install_commands": [
+        "codex plugin marketplace add Mohammed-Abdelhady/hyperflow",
+        "codex plugin add hyperflow@hyperflow-marketplace"
+      ],
+      "update_commands": [
+        "codex plugin marketplace upgrade hyperflow-marketplace",
+        "git pull --ff-only (source-checkout only)"
+      ],
+      "degraded_policy": {
+        "spawn": "When collaboration spawn tools are absent, run distinct labelled inline worker and reviewer phases; never invent worker/explorer agent types as the only option.",
+        "wait": "Without wait tools, collect results only through the same-turn inline path.",
+        "message": "Without message tools, keep coordination in the main thread.",
+        "follow_up": "Without follow-up tools, issue the next brief as a new inline phase.",
+        "interrupt": "Without interrupt tools, do not claim cancellation of a child agent.",
+        "list": "Without list tools, track child ids only in Hyperflow artefacts.",
+        "structured_question": "Render the exact Hyperflow Question chat block, persist a safe checkpoint if needed, and end the turn.",
+        "skill_continuation": "Load the target skills/<name>/SKILL.md completely and continue inline; never stop with Skill tool unavailable.",
+        "edit": "Use the first available file edit tool; refuse to invent paths.",
+        "shell": "Use the first available shell tool within the security blocklist.",
+        "web_research": "Skip network research when no web tool is present; record unavailable.",
+        "background": "Foreground-only operation; no fake notifications.",
+        "usage_metrics": "Report unavailable; never fabricate tokens or ratios."
+      }
+    },
+    {
+      "key": "claude-code",
+      "name": "Claude Code",
+      "signals": {
+        "env_prefixes": ["CLAUDE_CODE", "CLAUDE"],
+        "env_keys": ["CLAUDE_CODE_ENTRYPOINT", "CLAUDE_PROJECT_DIR"],
+        "plugin_root_env": ["CLAUDE_PLUGIN_ROOT"],
+        "path_markers": [
+          ".claude/plugins",
+          ".claude-plugin",
+          "hyperflow-marketplace"
+        ]
+      },
+      "operations": {
+        "spawn": ["Agent"],
+        "wait": [],
+        "message": [],
+        "follow_up": [],
+        "interrupt": [],
+        "list": [],
+        "structured_question": ["AskUserQuestion"],
+        "skill_continuation": ["Skill"],
+        "edit": ["Edit", "Write"],
+        "shell": ["Bash"],
+        "web_research": ["WebSearch", "WebFetch"],
+        "background": ["Agent"],
+        "usage_metrics": []
+      },
+      "lifecycle_events": {
+        "session.start": ["SessionStart"],
+        "session.after_clear": ["SessionStart"],
+        "session.before_compact": ["PreCompact"],
+        "session.after_compact": ["SessionStart"]
+      },
+      "install_commands": [
+        "claude plugin marketplace add Mohammed-Abdelhady/hyperflow",
+        "claude plugin install hyperflow@hyperflow-marketplace"
+      ],
+      "update_commands": [
+        "claude plugin update hyperflow@hyperflow-marketplace",
+        "git pull --ff-only (source-checkout only)"
+      ],
+      "degraded_policy": {
+        "spawn": "When Agent is unavailable, run distinct labelled inline worker and reviewer phases.",
+        "wait": "Agent returns in-session; no separate wait tool required.",
+        "message": "Coordinate in the main thread when mailbox tools are absent.",
+        "follow_up": "Issue the next brief as a new Agent call or inline phase.",
+        "interrupt": "Do not claim child cancellation without an interrupt tool.",
+        "list": "Track children only in Hyperflow artefacts when list is absent.",
+        "structured_question": "Render Hyperflow Question chat block and end the turn.",
+        "skill_continuation": "Load the target SKILL.md completely and continue inline.",
+        "edit": "Use Edit or Write when present.",
+        "shell": "Use Bash within the security blocklist.",
+        "web_research": "Skip when WebSearch/WebFetch are absent; record unavailable.",
+        "background": "Foreground-only when background Agent mode is unavailable.",
+        "usage_metrics": "Report unavailable; never fabricate tokens or ratios."
+      }
+    },
+    {
+      "key": "opencode",
+      "name": "OpenCode",
+      "signals": {
+        "env_prefixes": ["OPENCODE"],
+        "env_keys": ["OPENCODE_CONFIG", "OPENCODE_DATA"],
+        "plugin_root_env": ["OPENCODE_PLUGIN_ROOT"],
+        "path_markers": [".opencode", "opencode"]
+      },
+      "operations": {
+        "spawn": ["Task", "task", "subagent"],
+        "wait": [],
+        "message": [],
+        "follow_up": [],
+        "interrupt": [],
+        "list": [],
+        "structured_question": [],
+        "skill_continuation": [],
+        "edit": ["edit", "Edit", "write", "Write"],
+        "shell": ["bash", "Bash", "shell"],
+        "web_research": ["websearch", "webfetch", "WebSearch", "WebFetch"],
+        "background": [],
+        "usage_metrics": []
+      },
+      "lifecycle_events": {
+        "session.start": [],
+        "session.after_clear": [],
+        "session.before_compact": [],
+        "session.after_compact": []
+      },
+      "install_commands": [
+        "Install Hyperflow skills into the OpenCode skills path (see docs/installation.md)"
+      ],
+      "update_commands": [
+        "git pull --ff-only (source-checkout)",
+        "re-run install for managed skill sync"
+      ],
+      "degraded_policy": {
+        "spawn": "When Task/subagent is absent, run distinct labelled inline worker and reviewer phases.",
+        "wait": "Collect results only through the inline path when wait is absent.",
+        "message": "Keep coordination in the main thread.",
+        "follow_up": "Issue the next brief as a new Task or inline phase.",
+        "interrupt": "Do not claim child cancellation without an interrupt tool.",
+        "list": "Track children only in Hyperflow artefacts.",
+        "structured_question": "Render Hyperflow Question chat block and end the turn.",
+        "skill_continuation": "Load the target SKILL.md completely and continue inline.",
+        "edit": "Use the first available edit/write tool.",
+        "shell": "Use the first available shell tool within the security blocklist.",
+        "web_research": "Skip when no web tool is present; record unavailable.",
+        "background": "Foreground-only; no fake notifications.",
+        "usage_metrics": "Report unavailable; never fabricate tokens or ratios."
+      }
+    },
+    {
+      "key": "grok",
+      "name": "Grok",
+      "signals": {
+        "env_prefixes": ["GROK"],
+        "env_keys": ["GROK_AGENT", "GROK_SUBAGENTS"],
+        "plugin_root_env": ["GROK_PLUGIN_ROOT"],
+        "path_markers": [".grok", ".grok/skills", ".grok/rules"]
+      },
+      "operations": {
+        "spawn": ["spawn_subagent"],
+        "wait": [],
+        "message": [],
+        "follow_up": [],
+        "interrupt": [],
+        "list": [],
+        "structured_question": ["AskUserQuestion"],
+        "skill_continuation": [],
+        "edit": ["Edit", "Write", "edit", "write"],
+        "shell": ["Bash", "bash", "shell"],
+        "web_research": ["WebSearch", "WebFetch", "web_search", "web_fetch"],
+        "background": [],
+        "usage_metrics": []
+      },
+      "lifecycle_events": {
+        "session.start": [],
+        "session.after_clear": [],
+        "session.before_compact": [],
+        "session.after_compact": []
+      },
+      "install_commands": [
+        "Install Hyperflow into ~/.grok/skills and .grok/rules (see docs/installation.md)"
+      ],
+      "update_commands": [
+        "git pull --ff-only (source-checkout)",
+        "re-run install for managed skill sync"
+      ],
+      "degraded_policy": {
+        "spawn": "When spawn_subagent is absent or GROK_SUBAGENTS disables subagents, run distinct labelled inline worker and reviewer phases.",
+        "wait": "Collect results only through the inline path when wait is absent.",
+        "message": "Keep coordination in the main thread.",
+        "follow_up": "Issue the next brief as a new spawn_subagent call or inline phase.",
+        "interrupt": "Do not claim child cancellation without an interrupt tool.",
+        "list": "Track children only in Hyperflow artefacts.",
+        "structured_question": "Prefer AskUserQuestion when present; otherwise Hyperflow Question chat block and end turn.",
+        "skill_continuation": "Load the target SKILL.md completely and continue inline.",
+        "edit": "Use the first available edit/write tool.",
+        "shell": "Use the first available shell tool within the security blocklist.",
+        "web_research": "Skip when no web tool is present; record unavailable.",
+        "background": "Foreground-only; no fake notifications.",
+        "usage_metrics": "Report unavailable; never fabricate tokens or ratios."
+      }
+    },
+    {
+      "key": "antigravity",
+      "name": "Antigravity",
+      "signals": {
+        "env_prefixes": ["ANTIGRAVITY"],
+        "env_keys": ["ANTIGRAVITY_HOME"],
+        "plugin_root_env": ["ANTIGRAVITY_PLUGIN_ROOT"],
+        "path_markers": [
+          ".antigravity",
+          ".gemini/config",
+          ".gemini/config/skills"
+        ]
+      },
+      "operations": {
+        "spawn": [],
+        "wait": [],
+        "message": [],
+        "follow_up": [],
+        "interrupt": [],
+        "list": [],
+        "structured_question": [],
+        "skill_continuation": [],
+        "edit": ["Edit", "Write", "edit", "write"],
+        "shell": ["Bash", "bash", "shell"],
+        "web_research": ["WebSearch", "WebFetch"],
+        "background": [],
+        "usage_metrics": []
+      },
+      "lifecycle_events": {
+        "session.start": [],
+        "session.after_clear": [],
+        "session.before_compact": [],
+        "session.after_compact": []
+      },
+      "install_commands": [
+        "Install Hyperflow skills into the Antigravity/Gemini skills path (see docs/installation.md)"
+      ],
+      "update_commands": [
+        "git pull --ff-only (source-checkout)",
+        "re-run install for managed skill sync"
+      ],
+      "degraded_policy": {
+        "spawn": "Run distinct labelled inline worker and reviewer phases when no subagent API is exposed.",
+        "wait": "Inline path only.",
+        "message": "Main-thread coordination only.",
+        "follow_up": "Next brief as a new inline phase.",
+        "interrupt": "Do not claim child cancellation.",
+        "list": "Track work only in Hyperflow artefacts.",
+        "structured_question": "Render Hyperflow Question chat block and end the turn.",
+        "skill_continuation": "Load the target SKILL.md completely and continue inline.",
+        "edit": "Use the first available edit/write tool.",
+        "shell": "Use the first available shell tool within the security blocklist.",
+        "web_research": "Skip when no web tool is present; record unavailable.",
+        "background": "Foreground-only; no fake notifications.",
+        "usage_metrics": "Report unavailable; never fabricate tokens or ratios."
+      }
+    },
+    {
+      "key": "cursor",
+      "name": "Cursor",
+      "signals": {
+        "env_prefixes": ["CURSOR"],
+        "env_keys": ["CURSOR_TRACE_ID"],
+        "plugin_root_env": ["CURSOR_PLUGIN_ROOT"],
+        "path_markers": [".cursor", ".cursor/skills"]
+      },
+      "operations": {
+        "spawn": [],
+        "wait": [],
+        "message": [],
+        "follow_up": [],
+        "interrupt": [],
+        "list": [],
+        "structured_question": [],
+        "skill_continuation": [],
+        "edit": ["Edit", "Write", "edit", "write"],
+        "shell": ["Bash", "bash", "shell"],
+        "web_research": ["WebSearch", "WebFetch"],
+        "background": [],
+        "usage_metrics": []
+      },
+      "lifecycle_events": {
+        "session.start": [],
+        "session.after_clear": [],
+        "session.before_compact": [],
+        "session.after_compact": []
+      },
+      "install_commands": [
+        "Install Hyperflow skills into the Cursor skills path (see docs/installation.md)"
+      ],
+      "update_commands": [
+        "git pull --ff-only (source-checkout)",
+        "re-run install for managed skill sync"
+      ],
+      "degraded_policy": {
+        "spawn": "Run distinct labelled inline worker and reviewer phases when no subagent API is exposed.",
+        "wait": "Inline path only.",
+        "message": "Main-thread coordination only.",
+        "follow_up": "Next brief as a new inline phase.",
+        "interrupt": "Do not claim child cancellation.",
+        "list": "Track work only in Hyperflow artefacts.",
+        "structured_question": "Render Hyperflow Question chat block and end the turn.",
+        "skill_continuation": "Load the target SKILL.md completely and continue inline.",
+        "edit": "Use the first available edit/write tool.",
+        "shell": "Use the first available shell tool within the security blocklist.",
+        "web_research": "Skip when no web tool is present; record unavailable.",
+        "background": "Foreground-only; no fake notifications.",
+        "usage_metrics": "Report unavailable; never fabricate tokens or ratios."
+      }
+    }
+  ]
+}
