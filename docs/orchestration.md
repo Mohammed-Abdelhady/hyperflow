@@ -180,7 +180,7 @@ If the user said `Yes` to the audit prompt — or invoked `/hyperflow:audit` dir
 | Critical only | — |
 | No, leave as-is | Chain ends |
 
-On any `Fix …` choice, audit builds a spec file at `.hyperflow/specs/audit-<timestamp>.md` from the chosen findings and invokes `Skill` with `skill: scope, args: "chain-mode=auto spec=<path>"` — the chain runs again to fix what the audit caught.
+On any `Fix …` choice, audit builds a spec file at `.hyperflow/specs/audit-<timestamp>.md` from the chosen findings and continues via `skill_continuation` into **`plan`** with `session=one spec=<path>` (or loads `skills/plan/SKILL.md` completely when native Skill is absent). Plan still owns the build-location gate — `scope` is retired and never re-entered.
 
 ### Deploy (gated)
 

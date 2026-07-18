@@ -320,15 +320,38 @@ for name in ("minimum", "currentStable"):
     surface = f"cli.{name}"
     if ok:
         ids = list(cli_lanes[name].get("certificateIds") or [])
-        missing = cert_files_for(ids, cert_path)
-        if missing and cert_path.is_dir():
-            # Dir exists but files missing → fail
-            errors.append(f"{surface}: missing certificate files for {missing}")
-            add_row(surface, "FAIL", f"ids present in policy but files missing: {missing}")
+        # Release modes require on-disk certificate evidence — never soft-pass
+        # on policy certificateIds alone when the cert directory is absent.
+        if mode in {"precheck", "candidate", "stable-tag"}:
+            if not cert_path.is_dir():
+                errors.append(
+                    f"{surface}: certificate dir absent; cannot verify {ids} (policy-only is not enough)"
+                )
+                add_row(
+                    surface,
+                    "FAIL",
+                    f"status=certified but cert dir missing for ids={ids}",
+                )
+            else:
+                missing = cert_files_for(ids, cert_path)
+                if missing:
+                    errors.append(f"{surface}: missing certificate files for {missing}")
+                    add_row(
+                        surface,
+                        "FAIL",
+                        f"ids present in policy but files missing: {missing}",
+                    )
+                else:
+                    add_row(surface, "PASS", detail)
         else:
-            # Policy ids are authoritative when dir absent (CI may materialize later)
+            # --status may report policy-only when evidence is not materialised yet.
+            missing = cert_files_for(ids, cert_path)
             if missing and not cert_path.is_dir():
-                warnings.append(f"{surface}: certificate dir absent; relying on policy certificateIds")
+                warnings.append(
+                    f"{surface}: certificate dir absent; status mode relies on policy certificateIds"
+                )
+            elif missing:
+                warnings.append(f"{surface}: missing certificate files for {missing}")
             add_row(surface, "PASS", detail)
     else:
         errors.append(f"{surface}: {detail}")
@@ -361,7 +384,30 @@ for name in ("minimum", "currentStable"):
     ok, detail = lane_certified(as_lanes.get(name))
     surface = f"app-server.{name}"
     if ok:
-        add_row(surface, "PASS", detail)
+        ids = list(as_lanes[name].get("certificateIds") or [])
+        if mode in {"precheck", "candidate", "stable-tag"}:
+            if not cert_path.is_dir():
+                errors.append(
+                    f"{surface}: certificate dir absent; cannot verify {ids}"
+                )
+                add_row(
+                    surface,
+                    "FAIL",
+                    f"status=certified but cert dir missing for ids={ids}",
+                )
+            else:
+                missing = cert_files_for(ids, cert_path)
+                if missing:
+                    errors.append(f"{surface}: missing certificate files for {missing}")
+                    add_row(
+                        surface,
+                        "FAIL",
+                        f"ids present in policy but files missing: {missing}",
+                    )
+                else:
+                    add_row(surface, "PASS", detail)
+        else:
+            add_row(surface, "PASS", detail)
     else:
         errors.append(f"{surface}: {detail}")
         add_row(surface, "FAIL", detail)
@@ -388,39 +434,41 @@ if claims_app:
     d_status = (desktop.get("status") or "uncertified").lower()
     builds = desktop.get("builds") or []
     # Require certified status + at least one build row with certificate linkage
-    if d_status == "certified" and builds:
-        add_row("desktop-app", "PASS", f"status=certified builds={len(builds)}")
-    else:
-        # Look for a CI-issued attestation under cert dir
-        att_ok = False
-        att_detail = f"status={d_status} builds={len(builds)}"
-        if cert_path.is_dir():
-            for p in sorted(cert_path.glob("*.json")):
-                try:
-                    att = json.loads(p.read_text(encoding="utf-8"))
-                except (OSError, json.JSONDecodeError):
-                    continue
-                if att.get("kind") != "codex-desktop-app-attestation":
-                    continue
-                if (att.get("redaction") or {}).get("status") == "unredacted":
-                    errors.append("desktop-app: unredacted attestation cannot unlock claim")
-                    att_detail = f"unredacted attestation {p.name}"
-                    break
-                prov = att.get("provenance") or {}
-                if prov.get("kind") != "github-actions":
-                    att_detail = f"non-CI provenance in {p.name}"
-                    continue
-                att_ok = True
-                att_detail = f"attestation {att.get('certificateId')} via {p.name}"
+    # Certified policy + builds alone never unlocks App — CI attestation required.
+    att_ok = False
+    att_detail = f"status={d_status} builds={len(builds)}"
+    if cert_path.is_dir():
+        for p in sorted(cert_path.glob("*.json")):
+            try:
+                att = json.loads(p.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if att.get("kind") != "codex-desktop-app-attestation":
+                continue
+            if (att.get("redaction") or {}).get("status") == "unredacted":
+                errors.append("desktop-app: unredacted attestation cannot unlock claim")
+                att_detail = f"unredacted attestation {p.name}"
                 break
-        if att_ok:
-            add_row("desktop-app", "PASS", att_detail)
-        else:
-            errors.append(
-                "desktop-app: package claims Codex App support but no valid CI attestation "
-                f"({att_detail})"
-            )
-            add_row("desktop-app", "FAIL", att_detail)
+            prov = att.get("provenance") or {}
+            if prov.get("kind") != "github-actions":
+                att_detail = f"non-CI provenance in {p.name}"
+                continue
+            # Field presence is a floor only — full crypto OIDC binding is
+            # enforced by scripts/test-codex-app.sh against the CI artifact path.
+            if not prov.get("runId") or not prov.get("workflowRef"):
+                att_detail = f"incomplete CI provenance in {p.name}"
+                continue
+            att_ok = True
+            att_detail = f"attestation {att.get('certificateId')} via {p.name}"
+            break
+    if att_ok and d_status == "certified":
+        add_row("desktop-app", "PASS", att_detail)
+    else:
+        errors.append(
+            "desktop-app: package claims Codex App support but no valid CI attestation "
+            f"({att_detail})"
+        )
+        add_row("desktop-app", "FAIL", att_detail)
 else:
     add_row("desktop-app", "PASS", "not claimed — App attestation not required")
 
