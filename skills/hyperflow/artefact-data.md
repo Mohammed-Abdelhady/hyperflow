@@ -113,6 +113,23 @@ is given. Nothing leaves the machine. `--artefacts-dir` points `/artefacts/` at
 an explicit root — e.g. a two-session handoff package — so a reviewer can
 visualize a handed-off plan without rehydrating.
 
+## Plan-completion auto-open
+
+When a plan chain finishes, if `viewer.autoOpen` is `true` (default **false**),
+Hyperflow generates and opens `.hyperflow/exports/spec-<slug>.html` — a **static,
+self-contained** export (both Mermaid graphs inlined by
+[`export-artefact.py`](../../scripts/export-artefact.py); no server, not `view.py`)
+— as a review "discussion template" surfaced just before the build-location gate.
+In a headless environment (no browser) it prints the export path instead of
+opening. The default is off; opt in via `~/.hyperflow/config.json`:
+
+```json
+{ "viewer": { "autoOpen": true } }
+```
+
+This is the only place `autoOpen` fires automatically; `hyperflow view` (above)
+stays the interactive local-server path and is unaffected.
+
 ## Leaner memory (viewer mode)
 
 The `memory` payload stores only `{ title, task, decision, tags }` per entry —
