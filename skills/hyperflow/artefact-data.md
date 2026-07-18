@@ -51,8 +51,16 @@ per-type payload `$defs`).
 ```
 
 Per-type payload fields are defined in the schema `$defs` — read them there, not
-here, so there is one source of truth. The v1 types: `spec`, `task`, `feature`,
-`dispatch`, `audit`, `memory`, `review`.
+here, so there is one source of truth. The types: `spec`, `task`, `feature`,
+`dispatch`, `audit`, `memory`, `review`, `usage`.
+
+**Widened fields (optional, back-compatible).** `task` payloads may carry `cost`
+`{agents,tokens,perCommit}`, `progress` `{done,total}`, `branch`, and per-sub-task
+`briefBody` (the full brief markdown) + `acceptance[]` — so `render-artefact.py`
+reproduces the classic layout losslessly. `dispatch.totals.terminal` tells the
+viewer when to stop live-polling. The `usage` type carries the aggregated ledger
+(`totals`, `phases`, `ratios`, `chains`) for the telemetry view. All additions are
+optional: existing artefacts without them still validate and render.
 
 ## How an agent writes an artefact (the ONLY supported call)
 

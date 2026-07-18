@@ -20,6 +20,6 @@
         ]
       }
     ],
-    "totals": { "agents": 3, "tokens": 14100, "elapsed": "3m45s" }
+    "totals": { "agents": 3, "tokens": 14100, "elapsed": "3m45s", "terminal": false }
   }
 }

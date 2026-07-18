@@ -173,9 +173,25 @@ def render_review(env: dict[str, Any]) -> str:
     return "\n\n".join(parts) + "\n"
 
 
+def render_usage(env: dict[str, Any]) -> str:
+    p = env["payload"]
+    t = p.get("totals", {})
+    parts = [f"# {env['title']}",
+             f"## Totals\n\n{t.get('agents', 0)} agents · {t.get('tokens', 0)} tokens · {t.get('elapsed', '')} · "
+             f"{t.get('acceptedCommits', 0)} accepted commits · {t.get('tokensPerCommit', 0)} tokens/commit"]
+    if p.get("phases"):
+        rows = "\n".join(f"| {ph.get('name', '')} | {ph.get('agents', 0)} | {ph.get('tokens', 0)} |" for ph in p["phases"])
+        parts.append("## Phases\n\n| Phase | Agents | Tokens |\n|---|--:|--:|\n" + rows)
+    r = p.get("ratios")
+    if r:
+        parts.append("## Ratios\n\n" + " · ".join(f"{k} {v}" for k, v in r.items()))
+    return "\n\n".join(parts) + "\n"
+
+
 _RENDERERS = {
     "spec": render_spec, "task": render_task, "feature": render_feature,
-    "audit": render_audit, "memory": render_memory, "dispatch": render_dispatch, "review": render_review,
+    "audit": render_audit, "memory": render_memory, "dispatch": render_dispatch,
+    "review": render_review, "usage": render_usage,
 }
 
 
