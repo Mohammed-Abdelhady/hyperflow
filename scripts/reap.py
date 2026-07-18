@@ -1,0 +1,870 @@
+#!/usr/bin/env python3
+"""Scope-aware post-completion reaper for .hyperflow artefacts.
+
+Given a slug, resolve its artefact scope, archive via archive-artefacts.py,
+hard-delete ephemeral leftovers, optimise durable memory (never delete it),
+and emit a JSON report. Idempotent. --dry-run / cleanup.dryRun mutate nothing.
+
+Usage
+-----
+  python3 scripts/reap.py <path-to-.hyperflow> --slug <slug> [--dry-run] [--force] [--json]
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+# Full cleanup block (schema + archive-artefacts subset).
+DEFAULTS: dict[str, Any] = {
+    "auto": True,
+    "staleDays": 7,
+    "pruneDays": 30,
+    "reapOnComplete": True,
+    "usageRetentionDays": 30,
+    "logMaxLines": 2000,
+    "dryRun": False,
+}
+
+MEMORY_COMPACTION_DEFAULT = 300
+SLUG_RE = re.compile(r"^[a-z0-9-]+$")
+DAY = 86400
+BG_TERMINAL = frozenset({"complete", "completed", "error", "stalled", "cancelled"})
+# Terminal flat-task values (Status or State column).
+TERMINAL_VALUES = frozenset({"complete", "completed"})
+# Paths never mutated by reap.
+PROTECTED_NAMES = frozenset(
+    {".version", ".last-cleanup", ".hyperflow-handoff", ".active-chain-id", ".chain-base"}
+)
+
+# Flat / feature status table rows: | Status | completed |  or  | State | complete |
+STATUS_ROW_RE = re.compile(
+    r"^\|\s*(Status|State)\s*\|\s*([A-Za-z0-9_-]+)\b",
+    re.MULTILINE | re.IGNORECASE,
+)
+# Free-form "Status: completed" / "State: complete"
+STATUS_LINE_RE = re.compile(
+    r"^\s*(Status|State)\s*:\s*([A-Za-z0-9_-]+)\b",
+    re.MULTILINE | re.IGNORECASE,
+)
+EVIDENCE_RE = re.compile(r"^\*\*Evidence:\*\*\s*(.+?)\s*$", re.MULTILINE | re.IGNORECASE)
+HEADING_RE = re.compile(r"^(#{2,3})\s+")
+# Path-like evidence (skip bare commit SHAs).
+PATHISH_RE = re.compile(
+    r"(?P<path>(?:~|/|\./|\.\./)?[\w./@+-]+\.[A-Za-z0-9]{1,12})(?::\d+(?:-\d+)?)?"
+)
+COMMIT_ONLY_RE = re.compile(r"^(?:commit\s+)?[0-9a-f]{7,40}$", re.IGNORECASE)
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+
+
+class ReapError(Exception):
+    """Validation or path-safety failure (exit ≠ 0)."""
+
+
+def load_cfg() -> dict[str, Any]:
+    """Load cleanup knobs from ~/.hyperflow/config.json, falling back to DEFAULTS."""
+    cfg = dict(DEFAULTS)
+    cfg["compactionThreshold"] = MEMORY_COMPACTION_DEFAULT
+    path = Path(os.environ.get("HOME", "")) / ".hyperflow" / "config.json"
+    try:
+        user = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(user, dict):
+            return cfg
+        cleanup = user.get("cleanup", {})
+        if isinstance(cleanup, dict):
+            for k, default in DEFAULTS.items():
+                if k not in cleanup:
+                    continue
+                v = cleanup[k]
+                if isinstance(default, bool):
+                    if isinstance(v, bool):
+                        cfg[k] = v
+                elif isinstance(default, int):
+                    if isinstance(v, int) and not isinstance(v, bool):
+                        cfg[k] = int(v)
+        memory = user.get("memory", {})
+        if isinstance(memory, dict):
+            thr = memory.get("compactionThreshold")
+            if isinstance(thr, int) and not isinstance(thr, bool) and thr >= 1:
+                cfg["compactionThreshold"] = thr
+    except Exception:
+        pass
+    return cfg
+
+
+def is_under(root: Path, path: Path) -> bool:
+    """True when resolved path is root or a descendant of root."""
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def validate_slug(slug: str) -> str:
+    if not isinstance(slug, str) or not SLUG_RE.fullmatch(slug):
+        raise ReapError(f"invalid slug {slug!r}: must match {SLUG_RE.pattern}")
+    return slug
+
+
+def validate_hf(hf: Path) -> Path:
+    if not hf.is_dir() or hf.name != ".hyperflow":
+        raise ReapError(f"invalid .hyperflow root: {hf}")
+    return hf.resolve()
+
+
+def rel_hf(hf: Path, path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(hf.resolve())).replace("\\", "/")
+    except Exception:
+        return str(path).replace("\\", "/")
+
+
+def empty_report(slug: str, dry_run: bool) -> dict[str, Any]:
+    return {
+        "slug": slug,
+        "dryRun": dry_run,
+        "archived": [],
+        "deleted": [],
+        "bytesFreed": 0,
+        "memory": {
+            "indexRebuilt": False,
+            "orphansDropped": 0,
+            "compacted": [],
+        },
+        "skipped": [],
+    }
+
+
+def _status_values(text: str) -> list[str]:
+    vals: list[str] = []
+    for m in STATUS_ROW_RE.finditer(text):
+        vals.append(m.group(2).strip().lower())
+    for m in STATUS_LINE_RE.finditer(text):
+        vals.append(m.group(2).strip().lower())
+    return vals
+
+
+def flat_task_is_terminal(hf: Path, slug: str) -> bool:
+    """True when tasks/<slug>.md has Status/State complete|completed."""
+    task = hf / "tasks" / f"{slug}.md"
+    if not task.is_file() or not is_under(hf, task):
+        return False
+    try:
+        text = task.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return False
+    return any(v in TERMINAL_VALUES for v in _status_values(text))
+
+
+def feature_is_terminal(hf: Path, slug: str) -> bool:
+    """True when features/<slug>/feature.md Status is completed."""
+    fm = hf / "features" / slug / "feature.md"
+    if not fm.is_file() or not is_under(hf, fm):
+        return False
+    try:
+        text = fm.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return False
+    # Mirror archive-artefacts.feature_is_completed: Status completed only.
+    return bool(
+        re.search(
+            r"^\|\s*Status\s*\|\s*completed\b",
+            text,
+            re.MULTILINE | re.IGNORECASE,
+        )
+    )
+
+
+def is_terminal(hf: Path, slug: str) -> bool:
+    return flat_task_is_terminal(hf, slug) or feature_is_terminal(hf, slug)
+
+
+def scope_candidates(hf: Path, slug: str) -> list[Path]:
+    """Archive-class candidates for dry-run planning (mirrors archive_slug)."""
+    return [
+        hf / "tasks" / f"{slug}.md",
+        hf / "tasks" / slug,
+        hf / "specs" / f"{slug}.md",
+        hf / "specs" / f"{slug}.draft.md",
+        hf / "features" / slug,
+    ]
+
+
+def find_twins(hf: Path, slug: str) -> list[Path]:
+    art = hf / "artefacts"
+    if not art.is_dir():
+        return []
+    out: list[Path] = []
+    try:
+        for sub in sorted(art.iterdir()):
+            if not sub.is_dir():
+                continue
+            twin = sub / f"{slug}.json"
+            if twin.is_file() and is_under(hf, twin):
+                out.append(twin)
+    except Exception:
+        pass
+    return out
+
+
+def plan_archive(hf: Path, slug: str) -> list[dict[str, str]]:
+    """Dry-run archive plan — paths that would move (no mutation)."""
+    planned: list[dict[str, str]] = []
+    for path in scope_candidates(hf, slug):
+        if path.exists() and is_under(hf, path):
+            planned.append({"path": rel_hf(hf, path), "dest": f"archive/(planned)/{path.name}"})
+    for twin in find_twins(hf, slug):
+        planned.append({"path": rel_hf(hf, twin), "dest": f"archive/artefacts/(planned)/{twin.name}"})
+    return planned
+
+
+def run_archive(hf: Path, slug: str) -> list[dict[str, str]]:
+    """Invoke archive-artefacts.py --slug; return its archived list."""
+    script = SCRIPTS_DIR / "archive-artefacts.py"
+    if not script.is_file():
+        return []
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script), str(hf), "--slug", slug],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        return []
+    if proc.returncode != 0:
+        return []
+    # JSON is on stdout; tolerate trailing human lines by scanning.
+    for line in (proc.stdout or "").splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        archived = payload.get("archived", [])
+        if isinstance(archived, list):
+            return [e for e in archived if isinstance(e, dict)]
+    return []
+
+
+def _file_size(path: Path) -> int:
+    try:
+        return path.stat().st_size
+    except Exception:
+        return 0
+
+
+def _dir_size(path: Path) -> int:
+    total = 0
+    try:
+        for root, _dirs, files in os.walk(path):
+            for name in files:
+                try:
+                    total += (Path(root) / name).stat().st_size
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return total
+
+
+def active_chain_id(hf: Path) -> str | None:
+    """Read .active-chain-id when present (protects in-flight usage ledgers)."""
+    pointer = hf / ".active-chain-id"
+    if not pointer.is_file() or not is_under(hf, pointer):
+        return None
+    try:
+        text = pointer.read_text(encoding="utf-8", errors="replace").strip()
+    except Exception:
+        return None
+    return text or None
+
+
+def reap_usage(
+    hf: Path,
+    *,
+    retention_days: int,
+    dry_run: bool,
+    report: dict[str, Any],
+) -> None:
+    usage = hf / "usage"
+    if not usage.is_dir() or not is_under(hf, usage):
+        return
+    cutoff = time.time() - max(1, retention_days) * DAY
+    active = active_chain_id(hf)
+    try:
+        entries = sorted(usage.iterdir())
+    except Exception:
+        return
+    for path in entries:
+        if not path.is_file() or not path.name.endswith(".jsonl"):
+            continue
+        if not is_under(hf, path):
+            report["skipped"].append({"path": rel_hf(hf, path), "reason": "escape"})
+            continue
+        if path.name in PROTECTED_NAMES:
+            continue
+        # Protect the active chain's ledger entirely while a chain is marked active.
+        if active is not None:
+            stem = path.name[: -len(".jsonl")]
+            if stem == active or path.name == f"{active}.jsonl":
+                report["skipped"].append(
+                    {"path": rel_hf(hf, path), "reason": "active-chain"}
+                )
+                continue
+        try:
+            mtime = path.stat().st_mtime
+        except Exception:
+            continue
+        if mtime >= cutoff:
+            report["skipped"].append(
+                {"path": rel_hf(hf, path), "reason": "within-retention"}
+            )
+            continue
+        size = _file_size(path)
+        rel = rel_hf(hf, path)
+        if dry_run:
+            report["deleted"].append(rel)
+            report["bytesFreed"] += size
+            continue
+        try:
+            path.unlink()
+            report["deleted"].append(rel)
+            report["bytesFreed"] += size
+        except Exception:
+            report["skipped"].append({"path": rel, "reason": "unlink-failed"})
+
+
+def reap_session_log(
+    hf: Path,
+    *,
+    log_max_lines: int,
+    dry_run: bool,
+    report: dict[str, Any],
+) -> None:
+    log = hf / ".session-start.log"
+    if not log.is_file() or not is_under(hf, log):
+        return
+    max_lines = max(100, int(log_max_lines))
+    try:
+        text = log.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return
+    lines = text.splitlines(keepends=True)
+    if len(lines) <= max_lines:
+        return
+    kept = lines[-max_lines:]
+    # Dropped head bytes ≈ rough free estimate.
+    dropped = "".join(lines[: len(lines) - max_lines])
+    freed = len(dropped.encode("utf-8", errors="replace"))
+    rel = rel_hf(hf, log)
+    if dry_run:
+        report["deleted"].append(f"{rel}#truncate:{len(lines)}->{max_lines}")
+        report["bytesFreed"] += freed
+        return
+    try:
+        log.write_text("".join(kept), encoding="utf-8")
+        report["deleted"].append(f"{rel}#truncate:{len(lines)}->{max_lines}")
+        report["bytesFreed"] += freed
+    except Exception:
+        report["skipped"].append({"path": rel, "reason": "truncate-failed"})
+
+
+def _bg_registry(hf: Path) -> dict[str, Any]:
+    reg_path = hf / "background" / "registry.json"
+    if not reg_path.is_file() or not is_under(hf, reg_path):
+        return {}
+    try:
+        data = json.loads(reg_path.read_text(encoding="utf-8", errors="replace"))
+    except Exception:
+        return {}
+    if isinstance(data, dict):
+        # Common shapes: { "agents": { id: {...} } } or { id: {...} }
+        agents = data.get("agents")
+        if isinstance(agents, dict):
+            return agents
+        # Flat map of id → entry
+        if all(isinstance(v, dict) for v in data.values()):
+            return data
+    if isinstance(data, list):
+        out: dict[str, Any] = {}
+        for item in data:
+            if isinstance(item, dict) and "id" in item:
+                out[str(item["id"])] = item
+        return out
+    return {}
+
+
+def _bg_status_terminal(entry: dict[str, Any] | None, buf: Path) -> bool:
+    if isinstance(entry, dict):
+        st = str(entry.get("status", "")).strip().lower()
+        if st in BG_TERMINAL:
+            return True
+        if st in ("running", "in_flight", "pending"):
+            return False
+    # File-content heuristic when registry is sparse.
+    try:
+        text = buf.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return False
+    for m in STATUS_ROW_RE.finditer(text):
+        if m.group(2).strip().lower() in BG_TERMINAL:
+            return True
+    for m in STATUS_LINE_RE.finditer(text):
+        if m.group(2).strip().lower() in BG_TERMINAL:
+            return True
+    if re.search(r"\bStatus\s*[|:]?\s*(complete|error|stalled|cancelled)\b", text, re.I):
+        return True
+    return False
+
+
+def reap_background(
+    hf: Path,
+    *,
+    dry_run: bool,
+    report: dict[str, Any],
+) -> None:
+    bg = hf / "background"
+    if not bg.is_dir() or not is_under(hf, bg):
+        return
+    registry = _bg_registry(hf)
+    cutoff = time.time() - 7 * DAY
+    try:
+        entries = sorted(bg.glob("bg-*.md"))
+    except Exception:
+        return
+    pruned_ids: list[str] = []
+    for path in entries:
+        if not path.is_file() or not is_under(hf, path):
+            continue
+        agent_id = path.stem
+        entry = registry.get(agent_id)
+        if isinstance(entry, dict):
+            pass
+        elif agent_id not in registry:
+            # Also try bare name match against registry keys.
+            entry = registry.get(path.name)
+        if not _bg_status_terminal(entry if isinstance(entry, dict) else None, path):
+            report["skipped"].append(
+                {"path": rel_hf(hf, path), "reason": "bg-non-terminal"}
+            )
+            continue
+        try:
+            mtime = path.stat().st_mtime
+        except Exception:
+            continue
+        if mtime >= cutoff:
+            report["skipped"].append(
+                {"path": rel_hf(hf, path), "reason": "bg-fresh"}
+            )
+            continue
+        size = _file_size(path)
+        rel = rel_hf(hf, path)
+        if dry_run:
+            report["deleted"].append(rel)
+            report["bytesFreed"] += size
+            pruned_ids.append(agent_id)
+            continue
+        try:
+            path.unlink()
+            report["deleted"].append(rel)
+            report["bytesFreed"] += size
+            pruned_ids.append(agent_id)
+        except Exception:
+            report["skipped"].append({"path": rel, "reason": "unlink-failed"})
+
+    if not pruned_ids or dry_run:
+        return
+    # Best-effort registry cleanup for deleted buffers.
+    reg_path = hf / "background" / "registry.json"
+    if not reg_path.is_file():
+        return
+    try:
+        raw = json.loads(reg_path.read_text(encoding="utf-8", errors="replace"))
+    except Exception:
+        return
+    changed = False
+    if isinstance(raw, dict) and isinstance(raw.get("agents"), dict):
+        for aid in pruned_ids:
+            if aid in raw["agents"]:
+                del raw["agents"][aid]
+                changed = True
+    elif isinstance(raw, dict):
+        for aid in pruned_ids:
+            if aid in raw and isinstance(raw[aid], dict):
+                del raw[aid]
+                changed = True
+    elif isinstance(raw, list):
+        new_list = [
+            item
+            for item in raw
+            if not (isinstance(item, dict) and str(item.get("id", "")) in pruned_ids)
+        ]
+        if len(new_list) != len(raw):
+            raw = new_list
+            changed = True
+    if changed:
+        try:
+            reg_path.write_text(
+                json.dumps(raw, indent=2) + "\n", encoding="utf-8"
+            )
+        except Exception:
+            pass
+
+
+def commits_queue_settled(queue: Path) -> bool:
+    """True when queue is empty or has no unflushed commits in manifest."""
+    if not queue.exists():
+        return True
+    if not queue.is_dir():
+        return False
+    manifest = queue / "manifest.json"
+    if manifest.is_file():
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            # Unreadable manifest → treat as unflushed (do not delete).
+            return False
+        if isinstance(data, dict):
+            commits = data.get("commits")
+            if isinstance(commits, list) and len(commits) > 0:
+                return False
+            # Empty commits list (or missing) → settled.
+            return True
+        return False
+    # No manifest: settled only if directory is empty of real content.
+    try:
+        for child in queue.iterdir():
+            if child.name in (".", ".."):
+                continue
+            return False
+    except Exception:
+        return False
+    return True
+
+
+def reap_commits_queue(
+    hf: Path,
+    *,
+    dry_run: bool,
+    report: dict[str, Any],
+) -> None:
+    queue = hf / "commits-queue"
+    if not queue.exists() or not is_under(hf, queue):
+        return
+    rel = rel_hf(hf, queue)
+    if not commits_queue_settled(queue):
+        report["skipped"].append({"path": rel, "reason": "unflushed-queue"})
+        return
+    size = _dir_size(queue) if queue.is_dir() else _file_size(queue)
+    if dry_run:
+        report["deleted"].append(rel)
+        report["bytesFreed"] += size
+        return
+    try:
+        if queue.is_dir():
+            shutil.rmtree(queue)
+        else:
+            queue.unlink()
+        report["deleted"].append(rel)
+        report["bytesFreed"] += size
+    except Exception:
+        report["skipped"].append({"path": rel, "reason": "rmtree-failed"})
+
+
+def _resolve_evidence_path(project_root: Path, raw: str) -> Path | None:
+    """Map an Evidence string to a filesystem path, or None if not path-like."""
+    token = raw.strip().split(",")[0].strip()
+    # Drop trailing "commit …" already handled by split.
+    if COMMIT_ONLY_RE.fullmatch(token):
+        return None
+    m = PATHISH_RE.search(token)
+    if not m:
+        # Bare relative path without extension? still try if it looks like a path.
+        if "/" in token or token.startswith("."):
+            candidate = token.split(":")[0].strip()
+        else:
+            return None
+    else:
+        candidate = m.group("path")
+    if candidate.startswith("~"):
+        candidate = os.path.expanduser(candidate)
+    p = Path(candidate)
+    if not p.is_absolute():
+        p = project_root / p
+    return p
+
+
+def _split_memory_entries(text: str) -> tuple[str, list[str]]:
+    """Split a memory category file into (preamble, entry_blocks).
+
+    Each entry starts at an h2/h3 heading. Leading title lines form the preamble.
+    """
+    lines = text.splitlines(keepends=True)
+    if not lines:
+        return "", []
+    preamble: list[str] = []
+    entries: list[list[str]] = []
+    current: list[str] | None = None
+    for line in lines:
+        if HEADING_RE.match(line):
+            if current is not None:
+                entries.append(current)
+            current = [line]
+        else:
+            if current is None:
+                preamble.append(line)
+            else:
+                current.append(line)
+    if current is not None:
+        entries.append(current)
+    return "".join(preamble), ["".join(e) for e in entries]
+
+
+def drop_orphaned_memory_refs(
+    hf: Path,
+    *,
+    dry_run: bool,
+) -> int:
+    """Drop memory entries whose Evidence path no longer exists. Returns count."""
+    memory = hf / "memory"
+    if not memory.is_dir() or not is_under(hf, memory):
+        return 0
+    project_root = hf.parent
+    durable = [
+        p
+        for p in memory.glob("*.md")
+        if p.is_file()
+        and p.name not in ("index.md", "session-context.md", "doctrine.md")
+        and is_under(hf, p)
+    ]
+    dropped = 0
+    for path in durable:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        preamble, entries = _split_memory_entries(text)
+        if not entries:
+            continue
+        kept: list[str] = []
+        file_dropped = 0
+        for chunk in entries:
+            m = EVIDENCE_RE.search(chunk)
+            if not m:
+                kept.append(chunk)
+                continue
+            evidence_raw = m.group(1)
+            targets: list[Path] = []
+            for part in re.split(r"[,;]", evidence_raw):
+                part = part.strip()
+                if not part or part.lower().startswith("commit "):
+                    continue
+                resolved = _resolve_evidence_path(project_root, part)
+                if resolved is not None:
+                    targets.append(resolved)
+            if not targets:
+                kept.append(chunk)
+                continue
+            # Orphan when every path-like evidence target is missing.
+            if any(t.exists() for t in targets):
+                kept.append(chunk)
+                continue
+            file_dropped += 1
+        if file_dropped == 0:
+            continue
+        dropped += file_dropped
+        if dry_run:
+            continue
+        new_text = preamble + "".join(kept)
+        if not new_text.strip():
+            new_text = f"# {path.stem.replace('-', ' ').title()}\n"
+        try:
+            path.write_text(new_text, encoding="utf-8")
+        except Exception:
+            dropped -= file_dropped
+    return dropped
+
+
+def flag_oversized_memory(hf: Path, threshold: int) -> list[str]:
+    """Return rel paths of durable memory files at/over compaction threshold."""
+    memory = hf / "memory"
+    if not memory.is_dir() or not is_under(hf, memory):
+        return []
+    out: list[str] = []
+    thr = max(50, int(threshold))
+    for path in sorted(memory.glob("*.md")):
+        if path.name in ("index.md", "session-context.md", "doctrine.md"):
+            continue
+        if not path.is_file() or not is_under(hf, path):
+            continue
+        try:
+            with path.open("r", encoding="utf-8", errors="replace") as fh:
+                n = sum(1 for _ in fh)
+        except Exception:
+            continue
+        if n >= thr:
+            out.append(rel_hf(hf, path))
+    return out
+
+
+def rebuild_memory_index(hf: Path, *, dry_run: bool) -> bool:
+    script = SCRIPTS_DIR / "memory-index.py"
+    if not script.is_file():
+        return False
+    if dry_run:
+        return True  # would rebuild
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script), str(hf)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return proc.returncode == 0
+    except Exception:
+        return False
+
+
+def assert_safe_targets(hf: Path) -> None:
+    """Refuse to operate if hf escapes or is not .hyperflow."""
+    validate_hf(hf)
+
+
+def reap(
+    hf: Path,
+    slug: str,
+    *,
+    force: bool = False,
+    dry_run: bool = False,
+    cfg: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run the reaper. Returns the report dict. Raises ReapError on validation failure."""
+    validate_slug(slug)
+    hf = validate_hf(hf)
+    cfg = cfg or load_cfg()
+    effective_dry = bool(dry_run or cfg.get("dryRun", False))
+    report = empty_report(slug, effective_dry)
+
+    if not force and not is_terminal(hf, slug):
+        report["skipped"].append({"path": slug, "reason": "non-terminal"})
+        return report
+
+    # ── Archive class ────────────────────────────────────────────────────────
+    if effective_dry:
+        report["archived"] = plan_archive(hf, slug)
+    else:
+        report["archived"] = run_archive(hf, slug)
+
+    # ── Ephemeral class ──────────────────────────────────────────────────────
+    reap_usage(
+        hf,
+        retention_days=int(cfg.get("usageRetentionDays", 30)),
+        dry_run=effective_dry,
+        report=report,
+    )
+    reap_session_log(
+        hf,
+        log_max_lines=int(cfg.get("logMaxLines", 2000)),
+        dry_run=effective_dry,
+        report=report,
+    )
+    reap_background(hf, dry_run=effective_dry, report=report)
+    reap_commits_queue(hf, dry_run=effective_dry, report=report)
+
+    # ── Memory class (never delete durable category files) ───────────────────
+    orphans = drop_orphaned_memory_refs(hf, dry_run=effective_dry)
+    report["memory"]["orphansDropped"] = orphans
+    # Rebuild index after orphan drops so the derived table matches.
+    rebuilt = rebuild_memory_index(hf, dry_run=effective_dry)
+    report["memory"]["indexRebuilt"] = rebuilt
+    report["memory"]["compacted"] = flag_oversized_memory(
+        hf, int(cfg.get("compactionThreshold", MEMORY_COMPACTION_DEFAULT))
+    )
+
+    return report
+
+
+def _parse_args(argv: list[str]) -> tuple[Path, str, bool, bool, bool]:
+    if len(argv) < 2:
+        raise ReapError("usage: reap.py <hf_root> --slug <slug> [--dry-run] [--force] [--json]")
+    hf = Path(argv[1])
+    rest = argv[2:]
+    slug: str | None = None
+    dry_run = False
+    force = False
+    as_json = False
+    i = 0
+    while i < len(rest):
+        a = rest[i]
+        if a == "--slug" and i + 1 < len(rest):
+            slug = rest[i + 1]
+            i += 2
+            continue
+        if a.startswith("--slug="):
+            slug = a.split("=", 1)[1]
+            i += 1
+            continue
+        if a == "--dry-run":
+            dry_run = True
+            i += 1
+            continue
+        if a == "--force":
+            force = True
+            i += 1
+            continue
+        if a == "--json":
+            as_json = True
+            i += 1
+            continue
+        i += 1
+    if not slug:
+        raise ReapError("missing required --slug <slug>")
+    return hf, slug, dry_run, force, as_json
+
+
+def _human_summary(report: dict[str, Any]) -> str:
+    n_arch = len(report.get("archived") or [])
+    n_del = len(report.get("deleted") or [])
+    n_skip = len(report.get("skipped") or [])
+    mem = report.get("memory") or {}
+    dry = "dry-run " if report.get("dryRun") else ""
+    return (
+        f"hyperflow reap: {dry}slug={report.get('slug')!r} · "
+        f"archived {n_arch} · deleted {n_del} · "
+        f"bytesFreed {report.get('bytesFreed', 0)} · "
+        f"orphansDropped {mem.get('orphansDropped', 0)} · "
+        f"skipped {n_skip}"
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv if argv is None else argv)
+    try:
+        hf, slug, dry_run, force, as_json = _parse_args(argv)
+        report = reap(hf, slug, force=force, dry_run=dry_run)
+    except ReapError as exc:
+        print(f"hyperflow reap: refused — {exc}", file=sys.stderr)
+        return 1
+    except SystemExit as exc:
+        code = exc.code
+        return int(code) if isinstance(code, int) else 1
+
+    print(json.dumps(report, separators=(",", ":")))
+    if not as_json:
+        print(_human_summary(report), file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
