@@ -18,6 +18,13 @@
 #   ./scripts/test-codex-plugin.sh
 #   KEEP_TMP=1 ./scripts/test-codex-plugin.sh   # leave temp root for debugging
 #
+# Reusable isolated-install helpers (T12+ canaries):
+#   HYPERFLOW_CODEX_PLUGIN_LIB=1 source scripts/test-codex-plugin.sh
+#   Exports: hf_codex_assert_isolation, hf_codex_init_isolation,
+#            hf_codex_generate_marketplace_tree, hf_codex_write_redact_py,
+#            hf_codex_redact_stream
+#   Does not require `codex` on PATH and does not start the lifecycle suite.
+#
 # Evidence: redacted log under $TMP_ROOT/evidence/ (or printed summary).
 # Security: HOME and CODEX_HOME are forced under the harness temp root; breach
 # prints SECURITY_VIOLATION: and exits 2.
@@ -26,7 +33,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_HF_SELF="${BASH_SOURCE[0]:-$0}"
+SCRIPT_DIR="$(cd "$(dirname "$_HF_SELF")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 FIXTURE_DIR="$REPO_ROOT/tests/fixtures/codex"
 V1_DESC="$FIXTURE_DIR/marketplace-v1.json"
@@ -43,6 +51,7 @@ REAL_CODEX_HOME="${REAL_USER_HOME}/.codex"
 PASS=0
 FAIL=0
 SKIPPED=0
+HTTP_PID=""
 
 log() { printf '%s\n' "$*"; }
 pass() { PASS=$((PASS + 1)); log "PASS: $*"; }
@@ -59,42 +68,11 @@ security_violation() {
   exit 2
 }
 
-# ─── Skip when codex unavailable ─────────────────────────────────────────────
-if ! command -v codex >/dev/null 2>&1; then
-  log "SKIP: codex CLI not available"
-  log "  Install Codex CLI to run lifecycle conformance."
-  log "  Fixtures remain valid for unit tests (tests/test_codex_lifecycle_fixtures.py)."
-  exit 0
-fi
+# ─── Reusable isolation / fixture helpers (T12 API) ───────────────────────────
+# These functions are safe to source without `codex` on PATH.
 
-CODEX_VERSION="$(codex --version 2>/dev/null || codex -V 2>/dev/null || echo unknown)"
-log "codex version: $CODEX_VERSION"
-
-# ─── Temp isolation ──────────────────────────────────────────────────────────
-TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/hyperflow-codex-lifecycle.XXXXXX")"
-export TMP_ROOT
-EVIDENCE_DIR="$TMP_ROOT/evidence"
-mkdir -p "$EVIDENCE_DIR" "$TMP_ROOT/home" "$TMP_ROOT/codex-home" "$TMP_ROOT/work"
-export HOME="$TMP_ROOT/home"
-export CODEX_HOME="$TMP_ROOT/codex-home"
-# Prevent accidental bleed of real auth into model calls (lifecycle needs none).
-unset OPENAI_API_KEY CODEX_API_KEY 2>/dev/null || true
-
-HTTP_PID=""
-cleanup() {
-  if [ -n "${HTTP_PID:-}" ]; then
-    kill "$HTTP_PID" 2>/dev/null || true
-    wait "$HTTP_PID" 2>/dev/null || true
-  fi
-  if [ "${KEEP_TMP:-0}" = "1" ]; then
-    log "KEEP_TMP=1 — temp root retained: $TMP_ROOT"
-  else
-    rm -rf "$TMP_ROOT"
-  fi
-}
-trap cleanup EXIT
-
-assert_isolation() {
+hf_codex_assert_isolation() {
+  # Requires TMP_ROOT, HOME, CODEX_HOME, REAL_USER_HOME, REAL_CODEX_HOME.
   case "$HOME" in
     "$TMP_ROOT"/*) ;;
     *) security_violation "HOME is not under harness temp ($HOME)" ;;
@@ -112,19 +90,33 @@ assert_isolation() {
   case "$CODEX_HOME" in
     "$REAL_USER_HOME"/*) security_violation "CODEX_HOME under real user home" ;;
   esac
-  # Refuse to write into real codex tree
   if [ -e "$REAL_CODEX_HOME/.hyperflow-t11-should-not-exist" ]; then
     security_violation "real Codex home contains harness marker"
   fi
 }
 
-assert_isolation
-log "Isolated HOME=$HOME"
-log "Isolated CODEX_HOME=$CODEX_HOME"
+# Back-compat alias used by the lifecycle body below.
+assert_isolation() { hf_codex_assert_isolation "$@"; }
 
-# ─── Redacted evidence logging ───────────────────────────────────────────────
-REDACT_PY="$TMP_ROOT/work/redact.py"
-cat >"$REDACT_PY" <<'PY'
+hf_codex_init_isolation() {
+  # Usage: hf_codex_init_isolation [tmp-prefix]
+  # Creates TMP_ROOT, HOME, CODEX_HOME, EVIDENCE_DIR under a harness temp root.
+  local prefix="${1:-hyperflow-codex-lifecycle}"
+  TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/${prefix}.XXXXXX")"
+  export TMP_ROOT
+  EVIDENCE_DIR="$TMP_ROOT/evidence"
+  mkdir -p "$EVIDENCE_DIR" "$TMP_ROOT/home" "$TMP_ROOT/codex-home" "$TMP_ROOT/work"
+  export HOME="$TMP_ROOT/home"
+  export CODEX_HOME="$TMP_ROOT/codex-home"
+  hf_codex_assert_isolation
+}
+
+hf_codex_write_redact_py() {
+  # Usage: hf_codex_write_redact_py [dest-path]
+  # Writes a small stdin→stdout redactor; default $TMP_ROOT/work/redact.py
+  local dest="${1:-${TMP_ROOT:?TMP_ROOT required}/work/redact.py}"
+  mkdir -p "$(dirname "$dest")"
+  cat >"$dest" <<'PY'
 import re, sys
 text = sys.stdin.read()
 subs = sys.argv[1:]
@@ -138,24 +130,25 @@ text = re.sub(r"(?i)(api[_-]?key|token|bearer|authorization)\s*[:=]\s*\S+",
 text = re.sub(r"sk-[A-Za-z0-9]{10,}", "sk-<REDACTED>", text)
 sys.stdout.write(text)
 PY
+  printf '%s\n' "$dest"
+}
 
-run_json() {
-  # Run command; capture stdout JSON to file; return rc via global
+hf_codex_redact_stream() {
+  # Usage: hf_codex_redact_stream OUTFILE [extra-literals...]
+  # Reads stdin, writes redacted text to OUTFILE.
   local out_file="$1"
   shift
-  set +e
-  "$@" >"$out_file" 2>"${out_file}.err"
-  local rc=$?
-  set -e
-  if [ -s "${out_file}.err" ]; then
-    python3 "$REDACT_PY" "$TMP_ROOT" "$HOME" "$CODEX_HOME" "$REAL_USER_HOME" \
-      <"${out_file}.err" >>"$EVIDENCE_DIR/stderr.log" || true
+  local redact_py="${REDACT_PY:-}"
+  if [ -z "$redact_py" ] || [ ! -f "$redact_py" ]; then
+    redact_py="$(hf_codex_write_redact_py)"
+    REDACT_PY="$redact_py"
   fi
-  return $rc
+  python3 "$redact_py" "${TMP_ROOT:-}" "${HOME:-}" "${CODEX_HOME:-}" \
+    "${REAL_USER_HOME:-}" "$@" >"$out_file"
 }
 
 # ─── Fixture → marketplace tree ──────────────────────────────────────────────
-generate_marketplace_tree() {
+hf_codex_generate_marketplace_tree() {
   local descriptor="$1"
   local dest="$2"
   python3 - "$descriptor" "$dest" <<'PY'
@@ -297,6 +290,71 @@ mp_json = {
 )
 print(version)
 PY
+}
+
+# Back-compat name used by lifecycle body.
+generate_marketplace_tree() { hf_codex_generate_marketplace_tree "$@"; }
+
+# ─── Library mode (T12): helpers only, no codex required ─────────────────────
+if [ "${HYPERFLOW_CODEX_PLUGIN_LIB:-0}" = "1" ]; then
+  # When sourced: return to caller with helpers defined.
+  # When executed: exit 0 after defining (definitions only useful via source).
+  return 0 2>/dev/null || {
+    log "HYPERFLOW_CODEX_PLUGIN_LIB=1 — helpers defined; source this script to use them"
+    exit 0
+  }
+fi
+
+# ─── Skip when codex unavailable ─────────────────────────────────────────────
+if ! command -v codex >/dev/null 2>&1; then
+  log "SKIP: codex CLI not available"
+  log "  Install Codex CLI to run lifecycle conformance."
+  log "  Fixtures remain valid for unit tests (tests/test_codex_lifecycle_fixtures.py)."
+  exit 0
+fi
+
+CODEX_VERSION="$(codex --version 2>/dev/null || codex -V 2>/dev/null || echo unknown)"
+log "codex version: $CODEX_VERSION"
+
+# ─── Temp isolation ──────────────────────────────────────────────────────────
+hf_codex_init_isolation "hyperflow-codex-lifecycle"
+# Prevent accidental bleed of real auth into model calls (lifecycle needs none).
+unset OPENAI_API_KEY CODEX_API_KEY 2>/dev/null || true
+
+cleanup() {
+  if [ -n "${HTTP_PID:-}" ]; then
+    kill "$HTTP_PID" 2>/dev/null || true
+    wait "$HTTP_PID" 2>/dev/null || true
+  fi
+  if [ "${KEEP_TMP:-0}" = "1" ]; then
+    log "KEEP_TMP=1 — temp root retained: $TMP_ROOT"
+  else
+    rm -rf "$TMP_ROOT"
+  fi
+}
+trap cleanup EXIT
+
+hf_codex_assert_isolation
+log "Isolated HOME=$HOME"
+log "Isolated CODEX_HOME=$CODEX_HOME"
+
+# ─── Redacted evidence logging ───────────────────────────────────────────────
+REDACT_PY="$(hf_codex_write_redact_py)"
+export REDACT_PY
+
+run_json() {
+  # Run command; capture stdout JSON to file; return rc via global
+  local out_file="$1"
+  shift
+  set +e
+  "$@" >"$out_file" 2>"${out_file}.err"
+  local rc=$?
+  set -e
+  if [ -s "${out_file}.err" ]; then
+    python3 "$REDACT_PY" "$TMP_ROOT" "$HOME" "$CODEX_HOME" "$REAL_USER_HOME" \
+      <"${out_file}.err" >>"$EVIDENCE_DIR/stderr.log" || true
+  fi
+  return $rc
 }
 
 init_git_repo() {

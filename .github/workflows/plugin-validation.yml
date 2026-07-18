@@ -48,6 +48,14 @@ jobs:
       - name: Run unit tests
         run: python3 -m unittest discover tests -v
 
+      - name: Codex offline-static workflow canaries
+        run: python3 tests/codex/workflow_canaries.py --offline-static
+
+      - name: Codex lifecycle scripts (skip if no codex)
+        run: |
+          ./scripts/test-codex-plugin.sh
+          ./scripts/test-codex-hooks.sh
+
       - name: Lint shell scripts
         run: shellcheck -S warning hooks/session-start hooks/pre-compact scripts/*.sh
 
@@ -61,6 +69,12 @@ jobs:
           jq empty config/schema.json
           jq empty config/features.json
           jq empty config/features.schema.json
+          jq empty .codex-plugin/plugin.json
+          jq empty config/codex-plugin.schema.json
+          jq empty tests/fixtures/codex/marketplace-v1.json
+          jq empty tests/fixtures/codex/marketplace-v2.json
+          jq empty tests/fixtures/codex/hook-payloads.json
+          jq empty tests/fixtures/codex/workflow-project.json
 
       - name: Every SKILL.md has an h1 in its body
         run: |

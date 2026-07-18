@@ -1,0 +1,187 @@
+name: codex-conformance
+
+# Authenticated Codex CLI workflow canaries (T12) + offline static/lifecycle lanes.
+# Live model lanes run only when secrets are present (main/scheduled/dispatch).
+# PRs always get deterministic offline coverage; missing secrets → SKIP (exit 0).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 7 * * 1,4"
+  workflow_dispatch:
+    inputs:
+      run_live:
+        description: "Force live canary attempt when secrets exist"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  offline-static:
+    name: Offline static canaries (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Offline-static workflow canaries
+        run: python3 tests/codex/workflow_canaries.py --offline-static
+
+  offline-lifecycle:
+    name: Offline lifecycle scripts (skip if no codex)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Plugin lifecycle harness (SKIP exit 0 without codex)
+        run: ./scripts/test-codex-plugin.sh
+
+      - name: Hook harness (SKIP exit 0 without codex)
+        run: ./scripts/test-codex-hooks.sh
+
+      - name: Reusable isolation helper API (source-lib)
+        run: |
+          # shellcheck disable=SC1091
+          HYPERFLOW_CODEX_PLUGIN_LIB=1 source ./scripts/test-codex-plugin.sh
+          type hf_codex_assert_isolation
+          type hf_codex_init_isolation
+          type hf_codex_generate_marketplace_tree
+          type hf_codex_write_redact_py
+          type hf_codex_redact_stream
+          hf_codex_init_isolation "hyperflow-codex-libcheck"
+          hf_codex_assert_isolation
+          redact_py="$(hf_codex_write_redact_py)"
+          printf 'api_key=sk-abcdefghijklmnopqrstuvwxyz\n' | hf_codex_redact_stream "$TMP_ROOT/evidence/redact-check.txt"
+          grep -q '<REDACTED>' "$TMP_ROOT/evidence/redact-check.txt"
+          rm -rf "$TMP_ROOT"
+
+  live-canaries:
+    name: Live canaries (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    # Live only on main, schedule, or manual dispatch — not required for PR green.
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: [offline-static]
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [native-collaboration, adapter-no-subagent]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Detect live prerequisites
+        id: live
+        env:
+          CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          has_auth=0
+          if [ -n "${CODEX_API_KEY:-}" ] || [ -n "${OPENAI_API_KEY:-}" ]; then
+            has_auth=1
+          fi
+          has_cli=0
+          if command -v codex >/dev/null 2>&1; then
+            has_cli=1
+          fi
+          echo "has_auth=$has_auth" >>"$GITHUB_OUTPUT"
+          echo "has_cli=$has_cli" >>"$GITHUB_OUTPUT"
+          if [ "$has_auth" -eq 0 ]; then
+            echo "No CODEX_API_KEY/OPENAI_API_KEY secret — live lane will SKIP."
+          fi
+          if [ "$has_cli" -eq 0 ]; then
+            echo "codex CLI not on runner — live lane will SKIP via canary script."
+          fi
+
+      - name: Install Codex CLI (optional)
+        if: steps.live.outputs.has_auth == '1' && steps.live.outputs.has_cli == '0'
+        continue-on-error: true
+        run: |
+          # Best-effort install; canary script still SKIPs cleanly if binary missing.
+          npm install -g @openai/codex || true
+          command -v codex || true
+
+      - name: Run live workflow canaries
+        env:
+          CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          HYPERFLOW_CANARY_PROFILE: ${{ matrix.profile }}
+          KEEP_TMP: "1"
+        run: |
+          set +e
+          python3 tests/codex/workflow_canaries.py --live
+          rc=$?
+          set -e
+          # Capture redacted evidence from KEEP_TMP dirs when present
+          mkdir -p evidence-upload
+          # shellcheck disable=SC2044
+          for d in $(find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'hyperflow-codex-canary.*' 2>/dev/null || true); do
+            if [ -d "$d/evidence" ]; then
+              cp -a "$d/evidence/." evidence-upload/ || true
+            fi
+          done
+          # Scrub any residual secret shapes before artifact upload
+          if [ -d evidence-upload ] && [ "$(ls -A evidence-upload 2>/dev/null || true)" ]; then
+            python3 - <<'PY'
+          import pathlib, re
+          root = pathlib.Path("evidence-upload")
+          for path in root.rglob("*"):
+              if not path.is_file():
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8", errors="replace")
+              except OSError:
+                  continue
+              text = re.sub(r"(?i)(api[_-]?key|token|bearer|authorization)\s*[:=]\s*\S+", r"\1=<REDACTED>", text)
+              text = re.sub(r"sk-[A-Za-z0-9]{10,}", "sk-<REDACTED>", text)
+              path.write_text(text, encoding="utf-8")
+          PY
+          fi
+          exit "$rc"
+
+      - name: Upload redacted evidence
+        if: always() && hashFiles('evidence-upload/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-canary-evidence-${{ matrix.profile }}-${{ github.run_id }}
+          path: evidence-upload/
+          if-no-files-found: ignore
+          retention-days: 14
