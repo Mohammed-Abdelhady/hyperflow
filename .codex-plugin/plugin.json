@@ -23,6 +23,7 @@
     "skills"
   ],
   "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Hyperflow",
     "shortDescription": "Memory, rules, templates, and reviewed multi-agent chains for Codex",
