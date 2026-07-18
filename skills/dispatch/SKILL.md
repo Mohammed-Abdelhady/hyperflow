@@ -5,9 +5,9 @@ description: |
   Trigger with /hyperflow:dispatch, "run the plan", "execute the task", "build it", "run the batches".
 allowed-tools: Read, Write, Edit, Bash(git:*), Bash(gh:*), Bash(grep:*), Bash(rm:*), Bash(bash:*), Bash(python3:*), Agent, Skill, AskUserQuestion
 argument-hint: "[task-file | handoff-slug] [session=one|two] [--phases=all|next] [--from-batch N] [--final-only] [--thorough]"
-version: 3.2.0
+version: 3.3.0
 license: MIT
-compatibility: Designed for Claude Code
+compatibility: Claude Code native; Codex / OpenCode / Grok via runtime-contract fallbacks
 tags: [execution, parallel, review, multi-agent, orchestration]
 ---
 
@@ -17,24 +17,37 @@ Workhorse phase. Picks up a task file from `/hyperflow:plan` and runs it through
 
 This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **Layer 6 (Project Memory)**, **Layer 8 (Git Workflow)**, and **Layer 9 (Security)** from the doctrine. Multi-level review (L1–L5) is applied per the triage's flow profile.
 
+## Runtime contract
+
+Executable operations use [runtime-contract.md](../hyperflow/runtime-contract.md). Transitions and end-of-chain edges: [chain-router.md](../hyperflow/chain-router.md).
+
+| Need | Semantic op | When present | When absent |
+|---|---|---|---|
+| Worker fan-out (implementer / searcher / writer) | `spawn` | Parallel sibling spawns when the host allows | Labelled **inline worker** phases, sequential units, same briefs |
+| Per-batch / final reviewer | `spawn` (separate from workers) | Independent reviewer child with specialist charter | Labelled **inline reviewer** after workers — never self-review |
+| Operational + phase + end-of-chain gates | `structured_question` | Prefer `AskUserQuestion` / host structured UI | **Hyperflow Question** chat block → **end the turn** |
+| Audit / deploy / scaffold handoff | `skill_continuation` | Prefer native `Skill` | Load target `skills/<name>/SKILL.md` completely, continue inline |
+
+Do not hardcode only `multi_agent_v1.spawn_agent` or sole `worker`/`explorer` types. Map spawn candidates from live inventory ([provider-codex.md](../hyperflow/provider-codex.md), [provider-opencode.md](../hyperflow/provider-opencode.md), [provider-claude.md](../hyperflow/provider-claude.md)). Role separation holds under both subagent and inline profiles.
+
 ## Per-Step Agent Map (DOCTRINE rule 12 — §12.1 inline-allowed for trivial steps · §12.2 sub-phase decomposition)
 
-Every substantive step dispatches at least one Agent. Trivial steps (≤ 2 tool calls, no content generation, no decision-making, mechanically verifiable) MAY be performed inline by the orchestrator per §12.1. Non-trivial steps decompose into ≥ 2 named sub-phases per §12.2.
+Every substantive step dispatches at least one worker via `spawn` (or a labelled inline worker phase). Trivial steps (≤ 2 tool calls, no content generation, no decision-making, mechanically verifiable) MAY be performed inline by the orchestrator per §12.1. Non-trivial steps decompose into ≥ 2 named sub-phases per §12.2.
 
 | Step | Sub-phase | Workers | Reviewer | Notes |
 |---|---|---|---|---|
-| 0 — Mode confirm | — (exempt) | — | — | `AskUserQuestion` only |
-| 0.5 — Operational choices | — (exempt) | — | — | `AskUserQuestion` only |
+| 0 — Mode confirm | — (exempt) | — | — | Session resolve only (no question) |
+| 0.5 — Operational choices | — (exempt) | — | — | `structured_question` only |
 | 0.75 — Inline-fast | Foreground orchestrator | inline diff review | Deterministic fast triage only; no task file, Composer, worker, or agent Reviewer |
 | 1 — Load task | — (atomic · §12.2.8) | — | — | Normal flows only; read + schema check = one mechanical decision |
 | 2a — Pre-dispatch | Inline composition; at most one batch Composer for complex missing briefs | — | Existing briefs are loaded verbatim and mechanically decorated; no prompt-set review call |
-| 2b — Worker fan-out | Implementer / Searcher / Writer × N parallel | **Domain specialist Reviewer** — the `Specialist:`-matched agent, batched over full batch (P2) or per-sub-task fallback | One Reviewer call per batch; security/correctness specialists run with `--thorough` |
+| 2b — Worker fan-out | Implementer / Searcher / Writer × N via `spawn` (or labelled inline) | **Domain specialist Reviewer** — separate `spawn` / inline phase; `Specialist:`-matched, batched (P2) or per-sub-task fallback | One Reviewer call per batch; security/correctness specialists run with `--thorough` |
 | 2c — Gate run | Worker — **light** lint/typecheck/tests on affected files only | **Reviewer** — judges gate output | Never full-project suite mid-batch |
 | 2d — Learnings + commit | Writer — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; rolling learnings snapshot is replaced |
 | 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
 | 3.5 — Chain-end quality gates | Worker — full lint/typecheck/tests/(build) when tier ≥ standard | **Reviewer** — judges suite | Skipped on light tier; independent of D7 |
 | 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
-| 5 — End of chain | — (exempt) | — | ONE `AskUserQuestion` with audit + deploy + PR (when `pr=ask`); visual PRs require screenshots per [pr-exit.md](references/pr-exit.md) |
+| 5 — End of chain | — (exempt) | — | ONE `structured_question` with audit + deploy + PR (when `pr=ask`); visual PRs require screenshots per [pr-exit.md](references/pr-exit.md) |
 
 Normal-flow iron rule — `review agents = batches + integration_review(0|1)` (one batched Reviewer per batch, plus final integration when D7 does not skip it). The batched Reviewer counts as 1 per batch regardless of sub-task count. Deterministic inline-fast is the explicit exception: zero agent Reviewers and one foreground diff review.
 
@@ -60,12 +73,14 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 | Gate | When | Format |
 |---|---|---|
 | Session context | Step 0, resolved (not asked) | inherited `session=` / handoff `HANDOFF.md` / default `one` |
-| Phase-dispatch scope | Step 1.5, feature mode with ≥ 2 incomplete phases | `AskUserQuestion` — all phases / phase by phase |
-| Inter-batch (manual mode only) | After each batch's gates pass | `AskUserQuestion` — continue / stop. **Auto mode fires NO inter-batch question** — see DOCTRINE rule 8 (invented gates banned). |
+| Phase-dispatch scope | Step 1.5, feature mode with ≥ 2 incomplete phases | `structured_question` (prefer `AskUserQuestion`) — all phases / phase by phase |
+| Inter-batch (manual mode only) | After each batch's gates pass | `structured_question` — continue / stop. **Auto mode fires NO inter-batch question** — see DOCTRINE rule 8 (invented gates banned). |
 | Hard halt | Any `SECURITY_VIOLATION` from a reviewer | Stop the chain, surface the finding |
-| **Audit prompt** | Step 5, after wrap-up | `AskUserQuestion` — run `/hyperflow:audit`? (yes/no) |
-| **Deploy prompt** | Step 5, after audit gate | `AskUserQuestion` — run `/hyperflow:deploy`? (yes/no) |
-| **PR prompt** | Step 5, when `pr=ask` (default) | `AskUserQuestion` — open a pull request? (yes/no). Applies to **every** dispatch, not only issue chains. See [pr-exit.md](references/pr-exit.md) |
+| **Audit prompt** | Step 5, after wrap-up | `structured_question` — run `/hyperflow:audit`? (yes/no) |
+| **Deploy prompt** | Step 5, after audit gate | `structured_question` — run `/hyperflow:deploy`? (yes/no) |
+| **PR prompt** | Step 5, when `pr=ask` (default) | `structured_question` — open a pull request? (yes/no). Applies to **every** dispatch, not only issue chains. See [pr-exit.md](references/pr-exit.md) |
+
+**Structured-input absence:** Hyperflow Question chat block + **end the turn** ([runtime-contract.md](../hyperflow/runtime-contract.md)). Never silent-default audit/deploy/PR.
 
 ## Inputs
 
@@ -80,15 +95,15 @@ L1 syntax/format · L2 spec/naming/edges · L3 integration/security · L4 perf/s
 
 ### Step 0 — Resolve session context (only if invoked directly)
 
-Dispatch is the **build endpoint** — it is on the far side of the planning→build split, so it does **not** ask the one/two-session question (that decision is made upstream at spec/scope, or carried inside a handoff package). It resolves the session context instead:
+Dispatch is the **build endpoint** — it is on the far side of the planning→build split, so it does **not** ask the one/two-session question (that decision is made upstream at plan's build-location gate, or carried inside a handoff package). It resolves the session context instead:
 
-- A `session=<one|two>` arg was propagated (from scope) → use it.
+- A `session=<one|two>` arg was propagated (from plan / issue / design) → use it.
 - Invoked directly on a **handoff package** (slug resolving to `.hyperflow-handoff/<slug>/`) → read `session`/`handoff`/chain args from its `HANDOFF.md`; this is a second-session build (see [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)).
 - Invoked directly on a plain task file with no `session=` arg → default `session=one` (build here, then offer the audit/deploy gates at Step 5). No session question fires — there is nothing left to split.
 
 ### Step 0.5 — Operational Choices (STRUCTURAL GATE · fires immediately after Step 0)
 
-When operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter or a handoff package, fire ONE `AskUserQuestion` call with 3 questions covering every operational decision dispatch needs. After this batch, dispatch runs silently until the end-of-chain audit + deploy gates.
+When operational args (`commit=`, `branch=`, `push=`) were NOT already propagated from a prior chain-starter or a handoff package, fire ONE `structured_question` call (prefer `AskUserQuestion`) with 3 questions covering every operational decision dispatch needs. After this batch, dispatch runs silently until the end-of-chain audit + deploy gates. When structured UI is missing: Hyperflow Question block, **end the turn**, resume after the answer.
 
 Skip when operational args are already propagated (re-asking is an invented-gate violation).
 
@@ -103,7 +118,7 @@ Before any mutation, perform a foreground read-only discovery pass over the name
 When eligibility survives discovery:
 
 1. Capture the task-owned pre-edit state and exact 1–2 path allowlist; reject overlapping pre-existing edits rather than absorbing them.
-2. Apply the requested edit directly in the foreground. No `Agent` dispatch is used.
+2. Apply the requested edit directly in the foreground. No `spawn` / agent dispatch is used.
 3. Run affected-file lint/typecheck/tests appropriate to those paths.
 4. Perform an inline review of the task-owned working-tree diff: exact request match, allowlist only, no accidental generated/secret content, tests cover the changed behavior, and no out-of-scope hunk. Fix and re-run affected gates inline when needed.
 5. Stage only the allowlisted paths and create exactly one conventional commit. If the requested commit policy forbids a commit, the request is not inline-fast eligible; route to the normal flow.
@@ -115,7 +130,7 @@ Then continue directly to Step 5. Steps 1–4 are skipped for this branch.
 
 When invoked on a handoff package (`.hyperflow-handoff/<slug>/`), before loading the task:
 1. Read `HANDOFF.md` → artefact type, chain args (`commit=/branch=/push=/triage=/mode=`, plus `gh_issue=/pr=/comment=` when the plan was GitHub-native), `on_complete`.
-2. If the `.hyperflow/` cache is absent → run `/hyperflow:scaffold` first (so workers get Layer-0 context). If scaffold cannot run here, fall back to the package's `context/` copies.
+2. If the `.hyperflow/` cache is absent → `skill_continuation` to `scaffold` first (so workers get Layer-0 context; native `Skill` when available, else load `skills/scaffold/SKILL.md` completely). If scaffold cannot run here, fall back to the package's `context/` copies.
 3. Copy `artefact/tasks/<slug>.md` → `.hyperflow/tasks/<slug>.md` (flat), or `artefact/features/<slug>/` → `.hyperflow/features/<slug>/` (feature), if not already present locally.
 4. Leave `STATUS=planned` until the build completes (Step 5 flips it).
 
@@ -149,7 +164,7 @@ Confirm structural completeness: batches/tasks non-empty, each task has `id`, `t
 
 ### Step 1.5 — Phase loop (feature mode only)
 
-**Phase-dispatch scope gate (STRUCTURAL GATE · feature mode, ≥ 2 incomplete phases).** Before the loop, fire ONE `AskUserQuestion` — a named-workflow choice, so the recommended option goes first with `(Recommended)`:
+**Phase-dispatch scope gate (STRUCTURAL GATE · feature mode, ≥ 2 incomplete phases).** Before the loop, fire ONE `structured_question` (prefer `AskUserQuestion`) — a named-workflow choice, so the recommended option goes first with `(Recommended)`:
 
 ```
 This feature has <N> phases. How should I build them?
@@ -161,7 +176,7 @@ This feature has <N> phases. How should I build them?
                               <slug> to continue with the following phase.
 ```
 
-Skip the gate (default `all`) when: only one phase is incomplete; `--phases=all|next` was passed; or this is an `on_complete=deploy` two-session build (fully autonomous — `all`). Portable surface without popup (Codex / OpenCode / Grok) → `Hyperflow Question` chat-block fallback; no channel at all → default `All phases`. Propagate the choice as `--phases=<all|next>`.
+Skip the gate (default `all`) when: only one phase is incomplete; `--phases=all|next` was passed; or this is an `on_complete=deploy` two-session build (fully autonomous — `all`). Portable surface without popup (Codex / OpenCode / Grok) → `Hyperflow Question` chat-block fallback and **end the turn**; no channel at all → default `All phases` (non-build structural default for multi-phase scope only — never use this pattern for build-location or push gates). Propagate the choice as `--phases=<all|next>`.
 
 In **feature mode**, Step 2 runs **once per phase, in roster order**. A phase does not start until its `Depends on`
 phase is `completed`. For each phase:
@@ -222,9 +237,10 @@ No worker transcript, prior prompt, or prompt-set review is forwarded into Step 
 
 #### Step 2b — Worker fan-out (P1 · sequential after 2a · internal parallelism P1)
 
-Dispatch all N sub-task Workers in a **single message** with parallel `Agent` calls using the composed prompts from Step 2a. Workers are Implementer / Searcher / Writer and run fully in parallel.
+Dispatch all N sub-task Workers via **`spawn`** in a **single message** with parallel sibling calls when the host supports it, using the composed prompts from Step 2a. Workers are Implementer / Searcher / Writer. When `spawn` is unavailable, run each unit as a labelled **inline worker** phase (`Implementer — …`, `Searcher — …`, `Writer — …`) with the same brief — sequential if needed, never claimed as parallel subagents.
 
-When all workers have returned, dispatch **one** batched per-batch **Reviewer** covering the entire batch (P2 — batched single-pass review):
+When all workers have returned (host `wait` when present; same-turn collection otherwise), dispatch **one** batched per-batch **Reviewer** covering the entire batch (P2 — batched single-pass review). The Reviewer is always a **separate** `spawn` (or a separate labelled **inline reviewer** phase) — workers never self-review:
+
 - **Dispatch as the matching domain specialist.** Read the batch's sub-task `Specialist:` fields (Brain-decided, from the task file). Dispatch the per-batch Reviewer **as that specialist agent** ([`../../agents/README.md`](../../agents/README.md)) — its charter + strict checklist + output contract injected on top of `reviewer-prompt-batched.md`. When the batch spans several surfaces, inject the **union** of the matching charters. On a gated flow the specialist runs its web-research-first pass ([web-research.md](../hyperflow/web-research.md)) before the verdict.
 - **Check level-cap homogeneity first.** If every sub-task shares the same review-level cap → batched review. If any sub-task carries a different cap (rare mixed profile) → fall back to per-sub-task reviewers.
 - **Also fall back to per-sub-task reviewers** when `--thorough` was passed.
@@ -341,10 +357,10 @@ Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task f
 2. Set `STATUS=built`.
 3. `git add .hyperflow-handoff/<slug>/` + commit `chore(handoff): build complete <slug>`; if `handoff.autoPush` and `push != never` → push (surface the push command on failure).
 4. Branch:
-   - **`on_complete=deploy`** → invoke `Skill` with `skill: deploy` (its own push gate applies). Do NOT also fire the audit/deploy `AskUserQuestion` below — `on_complete` already encoded the disposition. Evidence + COMPLETION are already written.
+   - **`on_complete=deploy`** → `skill_continuation` to deploy (prefer invoke `Skill` with `skill: deploy`; else load `skills/deploy/SKILL.md` completely and continue inline). Its own push gate applies. Do NOT also fire the audit/deploy `structured_question` below — `on_complete` already encoded the disposition. Evidence + COMPLETION are already written.
    - **`on_complete=review`** → STOP. Print: `Build complete — committed + pushed (range <base>..<head>). Return to session 1 and run /hyperflow:audit <base>..<head> (or /hyperflow:handoff review <slug>).`
 
-**Normal (single-session) end-of-chain — Audit + Deploy + PR gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `AskUserQuestion` with audit + deploy in the `questions[]` array, and **always** include the PR question when `pr=ask` (default) — **every** dispatch, not only issue chains (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. Cap is 4 questions per call; this gate uses 2 or 3. Do not cram image-path supply into this call (second call if needed — [pr-exit.md](references/pr-exit.md)). On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render the questions in one `Hyperflow Question` chat block and wait.
+**Normal (single-session) end-of-chain — Audit + Deploy + PR gates.** Dispatch is the endpoint of the auto-chain. Fire ONE `structured_question` (prefer `AskUserQuestion`) with audit + deploy in the questions array, and **always** include the PR question when `pr=ask` (default) — **every** dispatch, not only issue chains (D2 — combined gate). DOCTRINE rule 8 — structural gates always fire, never silently default. Cap is 4 questions per call; this gate uses 2 or 3. Do not cram image-path supply into this call (second call if needed — [pr-exit.md](references/pr-exit.md)). On portable surfaces (Codex / OpenCode / Grok), if the popup UI is unavailable, render the questions in one `Hyperflow Question` chat block, **end the turn**, and wait for the user's answers.
 
 > **DOCTRINE rule 8 preserved:** every gate question still fires; they batch into one round-trip. Combined gate cuts human-in-the-loop latency at end-of-chain.
 
@@ -368,7 +384,7 @@ Skip question [3] when `pr=never` (print ready command only) or `pr=auto` (open 
 
 **Process answers in order:**
 
-On audit `Yes` → invoke `Skill` with `skill: audit` and `args: "level=3"` (or `level=5` for scientific). Wait for it to finish. Then process the deploy answer.
+On audit `Yes` → `skill_continuation` to audit: prefer invoke `Skill` with `skill: audit` and `args: "level=3"` (or `level=5` for scientific); when Skill is unavailable, load `skills/audit/SKILL.md` completely and continue inline with the same args. Wait for it to finish. Then process the deploy answer.
 
 Then, process the deploy answer. Option labels MUST be one short clause each (≤ 12 words) — never paragraphs of reasoning.
 
@@ -394,7 +410,7 @@ The following are **NOT** "marginal" signals and MUST NOT flip the recommendatio
 
 The orchestrator is not the user's risk advisor. The user already saw every reviewer verdict, every gate result, and the audit findings in scrollback. Inventing risk narratives in the recommendation label ("eyeballing the diff before push is prudent") is paternalism, not guidance.
 
-On deploy `Yes` → invoke `Skill` with `skill: deploy`. Deploy has its own push-confirmation gate at its Step 6.
+On deploy `Yes` → `skill_continuation` to deploy: prefer invoke `Skill` with `skill: deploy`; else load `skills/deploy/SKILL.md` completely and continue inline. Deploy has its own push-confirmation gate at its Step 6.
 
 **PR exit (every dispatch — full contract: [pr-exit.md](references/pr-exit.md)).** Fires after the deploy answer is processed:
 
@@ -426,9 +442,9 @@ Writer — generating API documentation
 **Debugger** — investigating test failure in auth.test.ts
 ```
 
-## Operational Args (from Scope Step 0.5 pre-elections)
+## Operational Args (dispatch Step 0.5 pre-elections)
 
-Scope batches three operational pre-elections at its Step 0.5 (`commit`/`branch`/`push`) and propagates them as chain args (or, in two-session mode, embeds them in the handoff package's `HANDOFF.md`); the GitHub-native args (`pr`/`comment`) arrive from `/hyperflow:issue` the same way. Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults.
+Dispatch owns three operational pre-elections at Step 0.5 (`commit`/`branch`/`push`) when they were not already propagated as chain args (or, in two-session mode, embedded in the handoff package's `HANDOFF.md`); the GitHub-native args (`pr`/`comment`) arrive from `/hyperflow:issue` the same way. Dispatch reads them at Step 1 and honors them without re-asking. Missing args fall back to the indicated defaults (or fire Step 0.5).
 
 | Arg | Values | Default | Honored at |
 |---|---|---|---|
@@ -475,7 +491,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute
 
 `/hyperflow:dispatch` is the workhorse phase. Normal flows read a task file from `/hyperflow:plan`; deterministic inline-fast executes a proven 1–2-file reversible edit directly without creating a task file or dispatching agents.
 
-Parallel workers dispatched in a single message, per-batch Reviewers that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `AskUserQuestion` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
+Parallel workers via `spawn` (or labelled inline workers), per-batch Reviewers as a separate spawn/inline phase that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `structured_question` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
 
 Normal-flow floor: one Reviewer per batch + one final integration Reviewer when D7 does not skip it. Inline-fast: zero agent Reviewers + one foreground diff review.
 
@@ -484,7 +500,7 @@ Normal-flow floor: one Reviewer per batch + one final integration Reviewer when 
 - A task file exists at `.hyperflow/tasks/<slug>.md` (produced by `/hyperflow:plan`), unless deterministic triage propagated `route=inline_fast` with an exact 1–2-file allowlist.
 - `.hyperflow/profile.md`, `architecture.md`, `conventions.md` populated (Layer 0 context injected into worker prompts).
 - Git repository for per-sub-task commits.
-- For Step 5: `AskUserQuestion` popup available, or Codex chat fallback available — required for audit + deploy gates. Headless mode with no interactive channel skips gates with explicit warning.
+- For Step 5: `structured_question` UI (`AskUserQuestion` when present) or Hyperflow Question chat fallback — required for audit + deploy gates. Headless mode with no interactive channel skips gates with explicit warning (never silent auto-invoke).
 
 ## Instructions
 
@@ -500,7 +516,7 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
 4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 3.5 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
 5. Chain-end quality gates (Step 3.5) — full suite when `gate_tier` ≥ standard; skip on light. Independent of D7.
 6. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then ledger-derived Usage** (phase totals + efficiency metrics), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
-7. ONE combined `AskUserQuestion` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual PRs run the screenshot pipeline before `gh pr create`.
+7. ONE combined `structured_question` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual PRs run the screenshot pipeline before `gh pr create`. On Skill absence for follow-ups, load the target `SKILL.md` completely and continue inline.
 
 ## Output
 
@@ -550,7 +566,8 @@ Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commit
 | Layer 5 gate failure (lint/typecheck/test) | Worker fix + re-run. Max 3 gate cycles before escalating. |
 | Per-sub-task commit fails (hook rejects, conflict) | Stop; surface the hook error. Do NOT use `--no-verify`. Do NOT amend per-sub-task commits. |
 | Wrap-up memory append has duplicate entries (detected post-commit) | `git revert HEAD` reverts the chore(memory) commit; orchestrator rewrites and recommits. No Reviewer to catch this inline — `git log` and `git revert` are the recovery path. |
-| `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print audit/deploy as a `Hyperflow Question` chat block and wait for the user's answers. |
+| `structured_question` UI unavailable (Codex / OpenCode / Grok) | Print audit/deploy as a `Hyperflow Question` chat block, **end the turn**, and wait for the user's answers. |
+| Native Skill unavailable on audit/deploy Yes | Load full target `skills/audit/SKILL.md` or `skills/deploy/SKILL.md` and continue inline. Never stop with "Skill tool unavailable". |
 | No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
 | Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
 | Usage ledger or budget guard fails | Stop before another agent dispatch; surface the accounting command/error. Never continue unmetered. |
@@ -563,6 +580,7 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 
 ## Resources
 
+- [runtime-contract.md](../hyperflow/runtime-contract.md) · [chain-router.md](../hyperflow/chain-router.md) — semantic ops, transitions, structural gates.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
 - [artefact-data.md](../hyperflow/artefact-data.md) — viewer-mode emit contract: when `viewer.enabled`, update the task/dispatch JSON status/progress via `scripts/artefact.py` (the stub is rewritten from it, never hand-edited); a handoff pickup rehydrates `artefact/artefacts/**` back into `.hyperflow/artefacts/`.
 - [worker-prompt.md](references/worker-prompt.md) — implementer/searcher/writer template.

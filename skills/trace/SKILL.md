@@ -7,7 +7,7 @@ allowed-tools: Read, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Glob, Grep, Agent, 
 argument-hint: "<bug description or failing test name>"
 version: 3.1.3
 license: MIT
-compatibility: Designed for Claude Code
+compatibility: Portable — Claude Code, Codex, OpenCode, Antigravity, Cursor, Grok (semantic ops via runtime-contract)
 tags: [debugging, root-cause, systematic, multi-agent]
 ---
 
@@ -15,21 +15,31 @@ tags: [debugging, root-cause, systematic, multi-agent]
 
 Root cause, not symptom. Never patch over a bug without understanding why it happened.
 
-All agents inherit the session model. Reviewers and Debuggers bold-labeled; Workers plain.
+All agents inherit the **current session model** — there is no model-tier routing and no model configuration.
+Reviewers and Debuggers bold-labeled; Workers plain.
+
+Semantic host ops: `spawn`, `wait`, `follow_up`, `structured_question`, `shell`, `edit`, `web_research`,
+`usage_metrics` ([runtime-contract.md](../hyperflow/runtime-contract.md)). Specialist briefs:
+[`../../scripts/render-specialist-brief.py`](../../scripts/render-specialist-brief.py) when the host lacks native
+agent discovery.
+
+**Role separation (hard):** workers never review their own output. Reviewers never coordinate. Missing `spawn` →
+labelled inline worker phase, then a **separate** labelled inline reviewer phase — never merge.
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
-Every substantive step dispatches at least one Agent. Atomic steps (per DOCTRINE 12.2.8) are a single Worker → Reviewer pair with no independent angles to fan out.
+Every substantive step dispatches at least one agent role via `spawn` (or a labelled inline phase). Atomic steps
+(per DOCTRINE 12.2.8) are a single Worker → Reviewer pair with no independent angles to fan out.
 
 | Step | Status | Workers | Reviewers | Notes |
 |---|---|---|---|---|
 | 1 — Reproduce | Atomic (12.2.8) | Searcher | **Reviewer** | Runs if repro missing; single Worker→Reviewer pair |
-| 2 — Gather evidence | Atomic (12.2.8) | `searcher` specialist × 3 | **Reviewer** | 3 parallel Searchers → single Reviewer; one Worker-group→Reviewer pair |
+| 2 — Gather evidence | Atomic (12.2.8) | `searcher` specialist × 3 | **Reviewer** | Parallel Searchers when spawn concurrency allows; else sequential labelled phases → single Reviewer |
 | 3 — Hypothesize | Atomic (12.2.8) | **`debugger` specialist** | **Reviewer** | Single Debugger (5 Whys + ranked hypotheses); may fan out Step 4 across hypotheses (rule 18) |
-| 4 — Verify | 2 sub-phases | Implementer × N | **Debugger** · **Reviewer** | 4a: parallel Implementers → Reviewer; 4b: Debugger re-evaluation → Reviewer |
-| 5 — Fix at root | Atomic (12.2.8) | Implementer × N | **Reviewer** | N Implementers (one per file) → Reviewer; single Worker-group→Reviewer pair |
-| 6 — Regression test | Atomic (12.2.8) | Writer | **Reviewer** | Single Writer → single Reviewer; no parallel angle |
-| 7 — Memory + final | Atomic (12.2.8) | Writer | **Reviewer** | Single Writer → integration Reviewer; no parallel angle |
+| 4 — Verify | 2 sub-phases | Implementer × N | **Debugger** · **Reviewer** | 4a: Implementers per hypothesis → Reviewer; 4b: Debugger re-evaluation → Reviewer |
+| 5 — Fix at root | Atomic (12.2.8) | Implementer × N | **Reviewer** | N Implementers (one per file) → Reviewer |
+| 6 — Regression test | Atomic (12.2.8) | Writer | **Reviewer** | Single Writer → single Reviewer |
+| 7 — Memory + final | Atomic (12.2.8) | Writer | **Reviewer** | Single Writer → integration Reviewer |
 
 ## Step 1 — Reproduce
 
@@ -37,11 +47,11 @@ Atomic — single Searcher → Reviewer pair (DOCTRINE 12.2.8). No parallel angl
 
 If the user supplied a stack trace, test name, or log snippet — skip the Worker dispatch entirely (Step 1 is then trivially fulfilled by existing input; proceed to Step 2).
 
-Otherwise dispatch `Searcher — locating bug reproduction in recent changes/tests`.
+Otherwise `spawn` (or labelled inline) `Searcher — locating bug reproduction in recent changes/tests`.
 
 Collect: failing test name or command, error message, stack trace, log lines, recent commits touching the affected surface.
 
-Then dispatch `**Reviewer** — confirming reproduction is valid` with the collected artifacts.
+Then `spawn` / labelled inline `**Reviewer** — confirming reproduction is valid` with the collected artifacts — **separate** from the Searcher.
 
 Reviewer confirms:
 - The failure is consistent and deterministic (or flags intermittent).
@@ -52,16 +62,18 @@ If environmental (CI-only, intermittent, time-dependent) — flag explicitly bef
 
 ## Step 2 — Gather Evidence
 
-Atomic — one Worker-group (3 parallel Searchers) → single Reviewer pair (DOCTRINE 12.2.8). The three Searchers are parallel angles inside one sub-phase, not independent sub-phases. They are dispatched as the [`searcher`](../../agents/searcher.md) specialist — path-anchored evidence, read-only, no fan-out.
+Atomic — one Worker-group (3 Searchers) → single Reviewer pair (DOCTRINE 12.2.8). The three Searchers are parallel angles inside one sub-phase, not independent sub-phases. They are dispatched as the [`searcher`](../../agents/searcher.md) specialist — path-anchored evidence, read-only, no fan-out.
 
-Dispatch simultaneously in a single message:
+When `spawn` concurrency is available, dispatch simultaneously:
 - `Searcher — reading error stack traces and logs`
 - `Searcher — mapping the code paths involved`
 - `Searcher — finding related tests (passing and failing)`
 
+When concurrent children are unavailable, run the three as **sequenced labelled inline searcher** phases with honest serial wording — still cover all three angles before review.
+
 Each Searcher writes its findings as a structured list: file paths, line numbers, key values, timestamps.
 
-Then dispatch `**Reviewer** — verifying evidence coverage` over all three Searcher outputs.
+Then `**Reviewer** — verifying evidence coverage` over all three Searcher outputs (always a separate phase).
 
 Reviewer confirms the three Searchers actually triangulate the failure surface. If gaps remain (e.g., no log found, code path incomplete), the Reviewer names specific missing angles — re-run the Searcher(s) for those gaps only, then re-run the Reviewer. Repeat until coverage is confirmed.
 
@@ -71,7 +83,7 @@ Reviewer confirms the three Searchers actually triangulate the failure surface. 
 
 Atomic — single Debugger → Reviewer pair (DOCTRINE 12.2.8). 5 Whys and hypothesis ranking are a single sequential reasoning task; one Debugger call produces both in one pass.
 
-Dispatch `**Debugger** — 5 Whys + hypothesis ranking: <bug-summary>` — the [`debugger`](../../agents/debugger.md) specialist agent, carrying its charter (root-before-symptom, written 5-Whys chain, web-research-first on a gated flow for known-issue/changelog lookups). When ≥ 2 hypotheses are genuinely independent, the debugger may **fan out** Step 4 verification across them (depth 1, ≤ 3 sub-workers — DOCTRINE rule 18); a single-hypothesis bug never fans out.
+`spawn` (or labelled inline) `**Debugger** — 5 Whys + hypothesis ranking: <bug-summary>` — the [`debugger`](../../agents/debugger.md) specialist agent, carrying its charter (root-before-symptom, written 5-Whys chain, web-research-first on a gated flow for known-issue/changelog lookups via `web_research` when present). When ≥ 2 hypotheses are genuinely independent, the debugger may **fan out** Step 4 verification across them (depth 1, ≤ 3 sub-workers — DOCTRINE rule 18); a single-hypothesis bug never fans out.
 
 Single call produces:
 
@@ -87,7 +99,7 @@ Single call produces:
   - **Counter-evidence** — what would falsify it
   - **Test** — minimal change to verify (used by Step 4)
 
-Then dispatch `**Reviewer** — validating causal chain and hypothesis set` over the Debugger's output.
+Then `**Reviewer** — validating causal chain and hypothesis set` over the Debugger's output — **always separate**.
 
 Reviewer confirms the causal chain reaches a structural root (not a symptom) and that each hypothesis is independently testable.
 
@@ -97,7 +109,9 @@ Two sub-phases (genuine sequential dependency: 4b depends on 4a results; 4b Debu
 
 ### Step 4a — Minimal change verification
 
-Workers: `Implementer` × N parallel, where N = number of hypotheses to test. One Implementer per hypothesis dispatched simultaneously.
+Workers: `Implementer` × N, where N = number of hypotheses to test. One Implementer per hypothesis.
+
+When `spawn` concurrency allows, dispatch hypothesis tests in parallel; otherwise run as sequenced labelled implementer phases. **All ranked hypotheses must still be tested before synthesis** (or the single-hypothesis path justified).
 
 - `Implementer — verifying hypothesis 1: <hypothesis-1-test>` — make the minimal change to confirm/falsify
 - `Implementer — verifying hypothesis 2: <hypothesis-2-test>` (if applicable)
@@ -114,7 +128,7 @@ Reviewer: `**Reviewer** — checking verification results are deterministic` ove
 
 Worker: `**Debugger** — re-evaluating hypotheses against verification results`. Substantive reasoning — the Debugger compares hypothesis predictions against actual test outcomes and decides the next branch. Not a pass/fail check: the Debugger may emit `CONFIRMED`, `FALSIFIED ALL`, or `PARTIALLY CONFIRMED` with new directions.
 
-Reviewer: `**Reviewer** — confirming re-evaluation verdict is sound` over the Debugger's verdict.
+Reviewer: `**Reviewer** — confirming re-evaluation verdict is sound` over the Debugger's verdict — **separate phase**.
 
 **Failure recovery (4b):** Debugger tool errors and NEEDS_REVISION verdicts follow DOCTRINE rule 14 (`skills/hyperflow/failure-recovery.md`). A failed 4b Debugger dispatch does not abort the chain; retry once, then escalate. If all attempts fail, mark the entire verify step as `INCONCLUSIVE` and surface to the user — do not advance to Step 5 without a root-cause verdict.
 
@@ -127,9 +141,9 @@ Revert all minimal changes from 4a before entering Step 5 (the real fix goes in 
 
 ## Step 5 — Fix at Root
 
-Atomic — one Worker-group (N parallel Implementers) → single Reviewer pair (DOCTRINE 12.2.8). N Implementers are parallel angles inside one Worker-group; the Reviewer gates the group output.
+Atomic — one Worker-group (N Implementers) → single Reviewer pair (DOCTRINE 12.2.8). N Implementers are parallel angles inside one Worker-group when concurrency allows; the Reviewer gates the group output.
 
-Dispatch one Implementer per affected file simultaneously (or one Implementer total if single-file):
+Dispatch one Implementer per affected file (or one Implementer total if single-file):
 - `Implementer — fixing root cause in <file-1>: <change-description>`
 - `Implementer — fixing root cause in <file-2>: <change-description>` (if applicable)
 
@@ -140,7 +154,7 @@ Constraints (non-negotiable):
 - No defensive try/catch around the symptom
 - No flags or feature gates to hide the bug
 
-Then dispatch `**Reviewer** — checking fix is at root` over all Implementer outputs.
+Then `**Reviewer** — checking fix is at root` over all Implementer outputs.
 
 Reviewer verifies:
 - The fix addresses the confirmed root cause from Step 4b, not the symptom.
@@ -153,17 +167,17 @@ On rejection — loop Step 5 with the Reviewer's specific objection attached. Do
 
 Atomic — single Writer → single Reviewer pair (DOCTRINE 12.2.8). Test authorship has no parallel angle: two Writers would produce duplicate or conflicting tests.
 
-Dispatch `Writer — adding regression test for <bug>`.
+`spawn` / inline `Writer — adding regression test for <bug>`.
 
 The test must:
 - Exercise the exact code path that was broken.
 - Assert the behavior that was missing (not just assert the fix is present).
 - Be named to describe the bug scenario, not the implementation.
 
-Then dispatch `**Reviewer** — confirming regression test fails-without and passes-with the fix`.
+Then `**Reviewer** — confirming regression test fails-without and passes-with the fix`.
 
 Reviewer process:
-1. Mentally (or via Bash) revert the Step 5 fix.
+1. Mentally (or via `shell`) revert the Step 5 fix.
 2. Confirm the new test fails in the broken state.
 3. Re-apply the fix.
 4. Confirm the test passes in the fixed state.
@@ -176,7 +190,7 @@ If existing suite had coverage gaps that allowed this bug → note for Step 7.
 
 Atomic — single Writer → single integration Reviewer pair (DOCTRINE 12.2.8). Single-artifact write with no parallel angle; Reviewer covers the full cumulative diff.
 
-Dispatch `Writer — appending pitfall to .hyperflow/memory/pitfalls.md` per [memory-system.md](references/memory-system.md).
+`spawn` / inline `Writer — appending pitfall to .hyperflow/memory/pitfalls.md` per [memory-system.md](references/memory-system.md).
 
 Entry must include:
 - The bug pattern (generalized, not project-specific)
@@ -184,7 +198,7 @@ Entry must include:
 - Prevention strategy
 - Tags: `pitfall` plus domain tags (e.g., `auth`, `async`, `state`)
 
-Then dispatch `**Reviewer** — final validation of fix + test + memory entry`.
+Then `**Reviewer** — final validation of fix + test + memory entry`.
 
 This is the integration review for the entire trace flow. Reviewer assesses the cumulative diff:
 - Fix lands at root (not symptom).
@@ -216,21 +230,32 @@ Regression test: <path>
 ─────────────────────────────────────
 ```
 
-End with usage summary (model names, agent count, token totals) per [output-style.md](references/output-style.md).
+End with usage summary when host `usage_metrics` or the usage ledger provides data
+([output-style.md](references/output-style.md)). When metrics are unavailable: print `unavailable` or mark
+`estimated=true` only for documented estimators — **never fabricate** tokens, durations, or agent counts.
+Inline/sequenced work must not claim parallel subagents.
 
 ## Hand-off
 
-Debug is **off the auto-chain** — it's standalone. After Step 7 reviewer passes, stop and suggest `/hyperflow:deploy` to run pre-push gates and commit the fix + regression test together. Do **not** auto-invoke ship — push requires explicit user opt-in.
+Debug is **off the auto-chain** — it's standalone. After Step 7 reviewer passes, stop and suggest `/hyperflow:deploy`
+to run pre-push gates and commit the fix + regression test together. Do **not** auto-invoke ship — push requires
+explicit user opt-in. Any later plan/dispatch continuation uses `skill_continuation` per
+[chain-router.md](../hyperflow/chain-router.md).
 
 ## Doctrine
 
 Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). See also [worker-prompt.md](references/worker-prompt.md) and [reviewer-prompt.md](references/reviewer-prompt.md).
+Runtime ops: [runtime-contract.md](../hyperflow/runtime-contract.md).
 
 **Failure recovery (rule 14).** Worker errors and NEEDS_REVISION verdicts follow the canonical policy in `skills/hyperflow/failure-recovery.md`. For trace, a failed hypothesis test (Step 4) marks the hypothesis `INCONCLUSIVE` rather than aborting the chain — other hypotheses can still resolve the bug. A Searcher abort in Step 2 leaves incomplete evidence; flag the gap in the root-cause synthesis rather than proceeding as if coverage is full.
 
 ## Overview
 
-`/hyperflow:trace` is the systematic-debugging skill. It refuses to symptom-patch — every fix starts with reproduction, evidence gathering, hypothesis ranking via a Debugger, and verification before any code changes. Three parallel Searchers triangulate the failure surface; a Debugger applies 5-Whys + hypothesis ranking in one pass; a Reviewer confirms the fix lands at the root and a regression test fails-without / passes-with. Off the auto-chain — standalone.
+`/hyperflow:trace` is the systematic-debugging skill. It refuses to symptom-patch — every fix starts with
+reproduction, evidence gathering, hypothesis ranking via a Debugger, and verification before any code changes.
+Three Searchers triangulate the failure surface (parallel when the host allows; sequenced labelled phases otherwise);
+a Debugger applies 5-Whys + hypothesis ranking in one pass; independent Reviewers confirm the fix lands at the root
+and a regression test fails-without / passes-with. Off the auto-chain — standalone.
 
 ## Prerequisites
 
@@ -239,27 +264,38 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). See also [worker-prompt.m
 - Test runner detected in `.hyperflow/testing.md` (vitest/jest/playwright/pytest/etc.) — required for Step 6 regression test.
 - `.hyperflow/memory/pitfalls.md` writable — Step 7 appends the learned pattern.
 
+## Portability
+
+| Capability | Behavior |
+|---|---|
+| `spawn` present | Independent searchers / implementers / debugger / reviewers as children |
+| `spawn` absent | Labelled inline worker phases; **separate** labelled inline reviewer after each worker group |
+| Concurrent children | Parallel hypothesis tests when inventory allows |
+| No concurrency | Sequential labelled hypothesis tests — still test all ranked hypotheses before synthesis |
+| `web_research` absent | Debugger records offline skip for known-issue lookup; never invent CVEs/changelogs |
+| `usage_metrics` absent | Print `unavailable`; never fabricate |
+
 ## Instructions
 
 The 7 numbered steps live in [Step 1 — Reproduce](#step-1--reproduce) through [Step 7 — Memory + Final Review](#step-7--memory--final-review) above. Steps 1, 2, 3, 5, 6, 7 are atomic (DOCTRINE 12.2.8). Step 4 has 2 sub-phases (genuine sequential dependency). Summary:
 
 1. **Reproduce** — Atomic. Searcher locates repro artifacts (if needed); Reviewer validates reproducibility. Flag intermittent before proceeding.
-2. **Gather evidence** — Atomic. 3 parallel Searchers (logs, code paths, related tests); Reviewer verifies coverage; re-runs specific Searchers if gaps remain.
+2. **Gather evidence** — Atomic. 3 Searchers (logs, code paths, related tests); Reviewer verifies coverage; re-runs specific Searchers if gaps remain.
 3. **Hypothesize** — Atomic. Debugger runs 5-Whys causal chain AND fans out 1–3 ranked hypotheses in one call; Reviewer validates the causal chain and hypothesis set.
-4. **Verify** — 2 sub-phases. 4a: parallel Implementers make minimal change per hypothesis → Reviewer confirms determinism. 4b: Debugger re-evaluates against results and emits verdict → Reviewer confirms verdict is sound. Loops 4a or proceeds.
-5. **Fix at root** — Atomic. Parallel Implementers fix per affected file; Reviewer confirms fix is not a symptom-patch; loops if rejected.
+4. **Verify** — 2 sub-phases. 4a: Implementers make minimal change per hypothesis → Reviewer confirms determinism. 4b: Debugger re-evaluates against results and emits verdict → Reviewer confirms verdict is sound. Loops 4a or proceeds.
+5. **Fix at root** — Atomic. Implementers fix per affected file; Reviewer confirms fix is not a symptom-patch; loops if rejected.
 6. **Regression test** — Atomic. Writer adds a test that must fail on broken code; Reviewer confirms fail-without / pass-with; rejects if test is trivially passing.
 7. **Memory + final review** — Atomic. Writer appends pitfall pattern to `.hyperflow/memory/pitfalls.md`; integration Reviewer covers the full cumulative diff.
 
 ## Output
 
-See [Output Format](#output-format) above for the structured block (Bug, Reproducible, Root cause, Fix, Files changed, Regression test). Ends with a usage summary (agent count + token total).
+See [Output Format](#output-format) above for the structured block (Bug, Reproducible, Root cause, Fix, Files changed, Regression test). Ends with an honest usage summary (agent count + tokens when observed; `unavailable` otherwise).
 
 ## Error Handling
 
 | Failure | Behavior |
 |---|---|
-| Cannot reproduce | Step 1 prints `Cannot reproduce — needs more info`; ask user via `AskUserQuestion` for additional repro context. Do NOT proceed to Step 2 with unreliable repro. |
+| Cannot reproduce | Step 1 prints `Cannot reproduce — needs more info`; ask user via `structured_question` (or Hyperflow Question chat block) for additional repro context. Do NOT proceed to Step 2 with unreliable repro. |
 | Intermittent / flaky | Flag explicitly in Step 1 output; ask whether user wants to proceed treating as flake vs investigate root cause. |
 | All hypotheses falsified | Loop back to Step 2 with broader evidence collection scope. After 2 full cycles, surface to user: `Cannot localize root cause — need additional traces`. |
 | Reviewer says fix is a symptom-patch | Reject and loop back to Step 5 with the Reviewer's feedback. Do NOT commit a symptom-patch. |
@@ -286,9 +322,9 @@ Hypothesis 2 (possible): clock skew between test env and JWT issuer
 
 Implementer — verifying hypothesis 1: refresh token TTL
 Implementer — verifying hypothesis 2: clock skew check
-Reviewer — checking verification results are deterministic
+**Reviewer** — checking verification results are deterministic
 **Debugger** — re-evaluating hypotheses against verification results
-Reviewer — confirming re-evaluation verdict is sound
+**Reviewer** — confirming re-evaluation verdict is sound
 [hypothesis 1 confirmed]
 
 Implementer — fixing root cause: align test fixture TTL with new TOKEN_REFRESH_TTL constant
@@ -306,7 +342,7 @@ Fix: import TOKEN_REFRESH_TTL into test fixture; remove magic number
 Files changed: src/auth/test-fixtures.ts, test/auth/refresh.test.ts
 Regression test: test/auth/refresh.test.ts::"TTL constant drift catches stale fixtures"
 ─────────────────────────────────────
-Agents: 12 total · ~Xk tokens
+Agents: 12 total · tokens unavailable
 ```
 
 ### Refuses symptom-patch request
@@ -333,9 +369,31 @@ Searcher — looking for shared state between test files
 ...
 ```
 
+### Inline mode (no spawn)
+
+```
+/hyperflow:trace flaky null in cache layer
+
+inline searcher — locating bug reproduction
+inline reviewer — confirming reproduction is valid
+inline searcher — reading error stack traces and logs
+inline searcher — mapping the code paths involved
+inline searcher — finding related tests
+inline reviewer — verifying evidence coverage
+inline debugger — 5 Whys + hypothesis ranking
+inline reviewer — validating causal chain and hypothesis set
+inline implementer — verifying hypothesis 1
+inline implementer — verifying hypothesis 2
+inline reviewer — checking verification results
+inline debugger — re-evaluating against results
+inline reviewer — confirming re-evaluation verdict
+... (same 5-Whys + independent review semantics; sequential wording only)
+```
+
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #12 per-step agents).
+- [runtime-contract.md](../hyperflow/runtime-contract.md) — spawn / inline fallback, metrics honesty.
 - [worker-prompt.md](references/worker-prompt.md) — worker prompt template.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer prompt template.
 - [memory-system.md](references/memory-system.md) — pitfall entry format.
