@@ -13,144 +13,6 @@
     return res.json();
   }
 
-  function diagram(m) {
-    if (!m || !m.mermaid) return null;
-    try {
-      const model = HF.graph.parseFlow(m.mermaid);
-      if (model.nodes.length) return HF.graph.render(model);
-    } catch (_e) { /* fall through to source */ }
-    return el("pre", { class: "mermaid-src", "aria-label": "diagram source" }, m.mermaid);
-  }
-
-  const render = {
-    spec(env) {
-      const p = env.payload || {};
-      return [
-        HF.statusHead(env),
-        p.tldr && HF.section("TL;DR", el("p", { class: "tldr" }, p.tldr)),
-        p.components && p.components.length && HF.section("Components",
-          el("div", { class: "grid" }, ...p.components.map((c) => el("div", { class: "card" }, el("h4", null, c.name), el("p", null, c.role))))),
-        p.architecture && HF.section("1 · Architecture", el("p", null, p.architecture.summary || ""), diagram(p.architecture)),
-        p.dataFlow && HF.section("2 · Data flow", el("p", null, p.dataFlow.summary || ""), diagram(p.dataFlow)),
-        p.decisions && p.decisions.length && HF.section("3 · Key decisions (click to flip)", HF.decisionCards(p.decisions)),
-        p.edgeCases && p.edgeCases.length && HF.section("4 · Edge cases",
-          el("ul", null, ...p.edgeCases.map((e) => el("li", { style: "margin:6px 0;color:var(--fg-dim)" }, e)))),
-        p.fileStructure && p.fileStructure.length && HF.section("5 · File structure",
-          HF.table([{ label: "Path" }, { label: "Change" }, { label: "Note" }],
-            p.fileStructure.map((f) => [{ node: el("code", null, f.path) }, f.change, f.note]))),
-      ];
-    },
-    task(env) {
-      const p = env.payload || {};
-      const all = (p.batches || []).flatMap((b) => b.tasks || []);
-      // Brief panel: clicking a task node reveals its brief (Phase-2 T3 seam).
-      const briefPanel = el("div", { class: "brief-panel", tabindex: "-1", hidden: true });
-      const onNode = (n) => {
-        if (!n.brief && !(n.acceptance && n.acceptance.length)) {
-          briefPanel.replaceChildren(el("p", { class: "dag-meta" }, `${n.tag || n.id}: no brief (trivial sub-task)`));
-        } else {
-          briefPanel.replaceChildren(
-            el("h4", null, `${n.tag || n.id} — ${n.label}`),
-            n.brief && el("pre", { class: "mermaid-src" }, n.brief),
-            n.acceptance && n.acceptance.length && el("ul", null, ...n.acceptance.map((a) => el("li", null, a))));
-        }
-        briefPanel.hidden = false;
-        briefPanel.focus();
-      };
-      return [
-        HF.statusHead(env),
-        HF.section("Goal", el("p", { class: "tldr" }, p.goal || ""), HF.progressRing(0, all.length)),
-        p.scope && p.scope.length && HF.section("Scope at a glance", HF.scopeTable(p.scope)),
-        p.batches && p.batches.length && HF.section("Execution graph",
-          el("p", { class: "dag-meta", style: "margin:0 0 8px" }, "Click a task to see its brief."),
-          HF.graph.render(HF.graph.fromBatches(p.batches), { onNode, ariaLabel: "execution dependency graph" }),
-          briefPanel),
-        p.verification && p.verification.length && HF.section("Verification",
-          el("ul", null, ...p.verification.map((v) => el("li", { style: "margin:6px 0;color:var(--fg-dim)" }, v)))),
-        p.commits && p.commits.length && HF.section("Commit plan",
-          el("ol", null, ...p.commits.map((c) => el("li", { style: "margin:6px 0" }, el("code", null, c))))),
-      ];
-    },
-    feature(env) {
-      const p = env.payload || {};
-      const phases = p.phases || [];
-      const done = phases.filter((ph) => ph.status === "completed").length;
-      const nodes = phases.map((ph) => ({
-        id: `p${ph.n}`, tag: `P${ph.n}`, label: ph.name, sub: ph.goal, status: ph.status || "pending",
-      }));
-      const edges = [];
-      phases.forEach((ph) => {
-        const deps = String(ph.dependsOn || "").match(/phase-(\d+)/g) || [];
-        deps.forEach((d) => edges.push({ from: `p${d.match(/\d+/)[0]}`, to: `p${ph.n}` }));
-      });
-      return [
-        HF.statusHead(env),
-        HF.section("Goal", el("p", { class: "tldr" }, p.goal || ""), HF.progressRing(done, phases.length)),
-        HF.section("Phase graph", HF.graph.render({ dir: "LR", nodes, edges })),
-      ];
-    },
-    dispatch(env) {
-      const p = env.payload || {};
-      const all = (p.batches || []).flatMap((b) => b.tasks || []);
-      const done = all.filter((t) => t.status === "completed").length;
-      const t = p.totals || {};
-      return [
-        HF.statusHead(env),
-        HF.section("Live progress", HF.progressRing(done, all.length),
-          el("p", { class: "dag-meta", style: "margin-top:12px" }, `${t.agents || 0} agents · ${t.tokens || 0} tokens · ${t.elapsed || ""}`)),
-        ...(p.batches || []).map((b) => HF.section(b.name || "Batch",
-          HF.table([{ label: "Task" }, { label: "Status" }, { label: "Tokens", num: true }, { label: "Wall-clock" }],
-            (b.tasks || []).map((tk) => [
-              { node: el("span", { class: "tid", style: "font-family:var(--mono)" }, tk.id) },
-              { node: el("span", null, el("span", { class: `dot st-${tk.status || "pending"}` }), tk.status || "") },
-              { text: tk.tokens || 0, num: true }, tk.wallclock || ""])))),
-      ];
-    },
-    audit(env) {
-      const p = env.payload || {};
-      const c = p.counts || {};
-      const head = HF.statusHead({ ...env, status: p.verdict });
-      return [head,
-        HF.section("Verdict", el("p", null, el("strong", null, p.verdict || ""), "  ", el("span", { class: "dag-meta" }, p.scope || "")),
-          el("p", { class: "dag-meta" }, `${p.level || ""} · ${c.critical || 0} critical · ${c.important || 0} important · ${c.suggestion || 0} suggestion · ${c.praise || 0} praise`)),
-        HF.section("Findings", ...(p.findings && p.findings.length ? HF.findings(p.findings) : [HF.emptyState("No findings")])),
-      ];
-    },
-    memory(env) {
-      const p = env.payload || {};
-      return [HF.statusHead(env), HF.section("Decisions", HF.memoryGallery(p.entries || []))];
-    },
-    review(env) {
-      const p = env.payload || {};
-      return [HF.statusHead({ ...env, status: p.verdict }),
-        HF.section("Findings", ...(p.findings && p.findings.length ? HF.findings(p.findings) : [HF.emptyState("Clean")]))];
-    },
-    // Telemetry / ROI dashboard — stat tiles + sparkline over the usage rollup.
-    usage(env) {
-      const p = env.payload || {}, t = p.totals || {}, r = p.ratios || {};
-      const fmt = (n) => (n || 0).toLocaleString();
-      const pct = (n) => Math.round((n || 0) * 100) + "%";
-      const tiles = el("div", { class: "stat-grid" },
-        HF.statTile("Tokens", fmt(t.tokens), `${t.agents || 0} agents`),
-        HF.statTile("Tokens / commit", fmt(t.tokensPerCommit), "lower is leaner"),
-        HF.statTile("Accepted commits", t.acceptedCommits || 0, "shipped"),
-        ("cacheHit" in r) && HF.statTile("Cache hit", pct(r.cacheHit), "context reused", { tone: r.cacheHit >= 0.25 ? "good" : "warn" }),
-        ("duplicateContext" in r) && HF.statTile("Duplicate context", pct(r.duplicateContext), "wasted", { tone: r.duplicateContext > 0.2 ? "warn" : "good" }),
-        ("retryCost" in r) && HF.statTile("Retry cost", fmt(r.retryCost), "tokens on retries"));
-      const out = [HF.statusHead(env), HF.section("ROI at a glance", tiles)];
-      if (p.chains && p.chains.length) {
-        out.push(HF.section("Tokens per chain",
-          HF.sparkline(p.chains.map((c) => c.tokens || 0)),
-          el("p", { class: "dag-meta", style: "margin-top:8px" }, p.chains.map((c) => `${c.id}: ${fmt(c.tokens)}`).join("  ·  "))));
-      }
-      if (p.phases && p.phases.length) {
-        out.push(HF.section("By phase", HF.table(
-          [{ label: "Phase" }, { label: "Agents", num: true }, { label: "Tokens", num: true }],
-          p.phases.map((ph) => [ph.name, { text: ph.agents || 0, num: true }, { text: fmt(ph.tokens), num: true }]))));
-      }
-      return out;
-    },
-  };
 
   const POLL_MS = 2500;
   let poller = null;
@@ -192,7 +54,7 @@
   }
 
   function renderEnv(env, focus = true) {
-    const fn = render[env.type];
+    const fn = HF.renderers[env.type];
     if (!fn) return mount([HF.emptyState("Unsupported artefact type", `No renderer for "${env.type}".`)], focus);
     mount(fn(env), focus);
     setSource(`${env.type}/${env.slug}`);
@@ -216,6 +78,34 @@
     catch (_e) { mount([HF.emptyState("Sample missing", `viewer/samples/${type}.json not found.`)]); }
   }
 
+  // Home: the project's REAL artefacts (from /artefacts/index.json), searchable.
+  // Falls back to the sample gallery when there are none (e.g. a static export).
+  async function showHome() {
+    markNav("home");
+    let idx;
+    try { idx = await getJSON("/artefacts/index.json"); } catch (_e) { return showGallery(); }
+    const items = (idx && idx.artefacts) || [];
+    if (!items.length) return showGallery();
+    const list = el("div", { class: "home-list" });
+    const draw = (q) => list.replaceChildren(...items
+      .filter((a) => !q || `${a.title} ${a.slug} ${a.type} ${a.status}`.toLowerCase().includes(q))
+      .map((a) => el("a", { class: "home-card", href: `#${a.type}/${a.slug}` },
+        el("span", { class: "badge", style: `--accent:var(--type-${a.type})` }, a.type),
+        el("span", { class: "home-title" }, a.title || a.slug),
+        el("span", { class: "home-meta" }, `${a.status || ""} · ${a.updated || ""}`))));
+    const input = el("input", { class: "home-search", type: "search", placeholder: "Filter artefacts…", "aria-label": "Filter artefacts" });
+    input.addEventListener("input", () => draw(input.value.trim().toLowerCase()));
+    draw("");
+    mount([
+      el("section", { class: "gallery-hero" }, el("h1", null, "Artefacts"),
+        el("p", null, "Every artefact in this project, newest conventions first. Filter, then open one — or browse the template gallery.")),
+      el("section", { class: "panel" }, input, list),
+      el("p", { class: "dag-meta", style: "text-align:center;margin-top:16px" },
+        el("a", { href: "#gallery", style: "color:var(--fg-dim)" }, "browse the template gallery ›")),
+    ]);
+    setSource(`${items.length} artefacts`);
+  }
+
   async function showGallery() {
     mount([el("div", { class: "loading" }, "Loading gallery…")]);
     const hero = el("section", { class: "gallery-hero" },
@@ -226,7 +116,7 @@
       let env = null;
       try { env = await getJSON(`./samples/${type}.json`); } catch (_e) { /* skip missing */ }
       if (!env) continue;
-      const body = (render[type](env)).filter(Boolean);
+      const body = (HF.renderers[type](env)).filter(Boolean);
       sections.push(el("section", { class: "gallery-section", id: `g-${type}` },
         el("h2", { class: "section-title" }, el("span", { class: "badge", style: `--accent:var(--type-${type})` }, type),
           el("a", { href: `#sample/${type}`, style: "font-size:.72rem;color:var(--fg-dim);text-decoration:none" }, "open ›")),
@@ -246,11 +136,12 @@
   function route() {
     stopPoll();  // leaving any view halts a live dispatch poll
     const hash = location.hash.replace(/^#/, "");
-    if (!hash || hash === "gallery") return showGallery();
+    if (!hash || hash === "home") return showHome();      // real artefacts (falls back to gallery)
+    if (hash === "gallery") return showGallery();          // template gallery (samples)
     const [a, b] = hash.split("/");
     if (a === "sample" && b) { markNav(b); return showSample(b); }
     if (TYPES.includes(a) && b) { markNav(a); return showArtefact(a, b); }
-    return showGallery();
+    return showHome();
   }
 
   function buildNav() {

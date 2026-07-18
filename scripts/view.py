@@ -70,6 +70,30 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return str(root)  # traversal attempt — clamp back to the root
         return str(target)
 
+    def do_GET(self):  # noqa: N802 (http.server API)
+        if self.path.split("?", 1)[0] == "/artefacts/index.json":
+            return self._serve_index()
+        return super().do_GET()
+
+    def _serve_index(self):
+        """Generated manifest of the project's real artefacts (the viewer home
+        reads this — there is no on-disk index file, and directory listing is off)."""
+        items = []
+        root = self.artefacts_root
+        if root.is_dir():
+            for p in sorted(root.rglob("*.json")):
+                try:
+                    env = json.loads(p.read_text(encoding="utf-8"))
+                    items.append({k: env.get(k) for k in ("type", "slug", "title", "status", "updated")})
+                except (OSError, ValueError):
+                    continue
+        body = json.dumps({"artefacts": items}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def list_directory(self, path):  # no directory listings, even on loopback
         self.send_error(404, "Not found")
         return None

@@ -90,6 +90,18 @@ table.data th { color: var(--fg-dim); font-weight: 600; font-size: .76rem; text-
 table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .risk-low { color: var(--worker); } .risk-medium { color: var(--memory); } .risk-high { color: var(--security); }
 
+/* Home: real-artefact index */
+.home-search { width: 100%; padding: 10px 14px; margin-bottom: 14px; font: inherit; color: var(--fg);
+  background: var(--bg0); border: 1px solid var(--border); border-radius: 10px; }
+.home-search:focus-visible { outline: 2px solid var(--thinking); outline-offset: 1px; }
+.home-list { display: grid; gap: 8px; }
+.home-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--panel-2); text-decoration: none; color: var(--fg);
+  transition: transform .15s, border-color .15s; }
+.home-card:hover, .home-card:focus-visible { transform: translateX(3px); border-color: color-mix(in srgb, var(--thinking) 45%, var(--border)); outline: none; }
+.home-title { font-weight: 600; flex: 1; }
+.home-meta { font-size: .76rem; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+
 /* Telemetry: stat tiles + sparkline */
 .stat-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 .stat-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 14px; border-top: 2px solid var(--border); }
