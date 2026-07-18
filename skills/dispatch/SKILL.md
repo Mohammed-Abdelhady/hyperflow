@@ -46,7 +46,7 @@ Every substantive step dispatches at least one worker via `spawn` (or a labelled
 | 2d — Learnings + commit | Writer — synthesizes per-batch learnings | — (mechanical commit · §12.1) | Per-sub-task PASS commits land here; rolling learnings snapshot is replaced |
 | 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
 | 3.5 — Chain-end quality gates | Worker — full lint/typecheck/tests/(build) when tier ≥ standard | **Reviewer** — judges suite | Skipped on light tier; independent of D7 |
-| 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5) |
+| 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5); terminal reap phase (gated) |
 | 5 — End of chain | — (exempt) | — | ONE `structured_question` with audit + deploy + PR (when `pr=ask`); visual PRs require screenshots per [pr-exit.md](references/pr-exit.md) |
 
 Normal-flow iron rule — `review agents = batches + integration_review(0|1)` (one batched Reviewer per batch, plus final integration when D7 does not skip it). The batched Reviewer counts as 1 per batch regardless of sub-task count. Deterministic inline-fast is the explicit exception: zero agent Reviewers and one foreground diff review.
@@ -278,7 +278,7 @@ Record the batch result in the Evidence log (`B<n> affected pass|fail`).
 
 For each sub-task whose verdict is `PASS`:
 - **Commit immediately** per [git-workflow.md](references/git-workflow.md) rule 2 (per-sub-task commit cadence). Stage only the files that sub-task touched. Write a conventional commit (`feat(<scope>): <title>` derived from the task file). One sub-task = one commit. A batch of 3 parallel sub-tasks produces 3 commits, even though they were reviewed in a single batched Reviewer call.
-- **Append to the chain-local Evidence log** (in-memory; rendered at Step 4): `{ id, title, verdict: PASS, one_liner, commit_sha, files[] }`. Prefer the worker's one-line "what you did" summary; fall back to the commit subject. Also record batch-level `Gates` and `Reviews` rows when Step 2c / the per-batch Reviewer finish. Collect **before** any later task-file delete.
+- **Append to the chain-local Evidence log** (in-memory; rendered at Step 4): `{ id, title, verdict: PASS, one_liner, commit_sha, files[] }`. Prefer the worker's one-line "what you did" summary; fall back to the commit subject. Also record batch-level `Gates` and `Reviews` rows when Step 2c / the per-batch Reviewer finish. Collect **before** Step 4 reap so Sub-tasks rows stay complete after the task file is archived.
 - **Update the task file's `## Status` table** after each commit lands: tick `[ ]` → `[x]`, update the `Progress` row, update the `Tokens` row with agent count + total and execution/review/verification phase totals from the ledger summary, refresh the `Wall-clock` row and ETA text. Preserve the exact two-column `| Field | Value |` table shape; `/hyperflow:status` reads it and falls back to legacy `Sub-tasks:` / `Tokens used:` lines only for older artefacts.
 
 Dispatch one Writer in parallel to synthesize per-batch learnings from all Worker outputs and the Reviewer's notes. It rewrites the in-memory rolling `Learnings from prior batches` snapshot: ≤6 semantically unique bullets and ≤300 tokens total; new active decisions/contracts/gotchas replace obsolete or duplicate bullets rather than accumulating beside them. Never include transcripts, completed-task narration, or raw patches. Writer also checks off the batch — in **flat mode** in the task file; in **feature mode** in the current phase's `phase.md` task roster (and writes durable learnings to that phase's `decisions.md`).
@@ -333,22 +333,44 @@ Feature mode `--phases=next`: run Step 3.5 for the completed phase only. `--phas
 
 ### Step 4 — Wrap Up
 
-Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: delete task file + memory append + chore commit. The per-batch reviewers and final integration review (when not skipped per D7) already validated the substantive changes.
+Trivial-eligible per §12.1 (D5 + D9). Wrap-up is mechanical work: mark terminal status → memory append → `chore(memory):` commit → **reap phase** (archive-first disposition of the finished slug's full `.hyperflow/` scope; **replaces** the former ad-hoc task-file delete). The per-batch reviewers and final integration review (when not skipped per D7) already validated the substantive changes.
 
 **Nominal path (inline orchestrator):** perform the following directly without an Agent dispatch wrapper:
-1. **Freeze Evidence inputs first** — from the chain-local Evidence log + `git log` / `git diff --stat` over the chain range (and final-review / D7-skip notes). Do this **before** deleting the task file so Sub-tasks rows stay complete.
-2. **Flat mode** — delete the completed task file from `.hyperflow/tasks/`. **Feature mode** — set `feature.md`
-   status `completed` (do not delete mid-feature); when every phase is `completed`, the feature folder becomes
-   eligible for archival to `.hyperflow/archive/features/YYYY-MM/<slug>/` (the session-start archiver moves it).
+1. **Freeze Evidence inputs first** — from the chain-local Evidence log + `git log` / `git diff --stat` over the chain range (and final-review / D7-skip notes). Do this **before** reaping so Sub-tasks rows stay complete.
+2. **Mark terminal status** (required so auto-reap does not skip as non-terminal):
+   - **Flat mode** — set the task file Status/State to `completed` when every sub-task is `[x]`.
+   - **Feature mode** — set `feature.md` Status `completed` only when every phase is `completed`. Mid-feature (`--phases=next` or incomplete phases): leave the tree in place; **do not** slug-reap a partial feature.
 3. Before appending: `grep -F` the proposed entry's first-line title against `.hyperflow/memory/*.md` files (inline dedup-check — replaces the dropped Reviewer dedup pass). If a match exists, edit the existing entry rather than append a duplicate.
 4. Append durable patterns/decisions to `.hyperflow/memory/` per [memory-system.md](references/memory-system.md).
-5. Commit the memory + task-file-deletion as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean).
-6. **Print Evidence then Usage** — render the structured Evidence block, then render Usage from `usage-ledger.py summary --chain-id <chain-id>` per [output-style.md](references/output-style.md) (§7 Evidence, §8 Usage). Include canonical phase totals plus duplicate-context, retry, cache, estimated-record, accepted-commit, and tokens-per-accepted-commit metrics. Order is mandatory: Evidence first. Partial / halt-after-work still print Evidence and Usage for what landed/spent.
-7. Mark dispatch-end compact readiness by writing `.hyperflow/.dispatch-auto-compact-ready` with the current UTC timestamp. This short-lived marker is consumed by the `PreCompact` hook and is the only signal that allows automatic compaction; do not write it before every sub-task, batch, gate, or partial stop has completed.
+5. Commit the memory write as a `chore(memory):` commit (separate from the per-sub-task commits from Step 2 — keeping memory writes out of feature commits keeps the diff clean). Do **not** hard-delete the task file here — disposition is the reap phase below.
+6. **Reap phase** (lifecycle terminus · gated). One disposition path for the finished `<slug>` (task file · brief dir · specs/drafts · feature tree · viewer JSON twins · ephemeral GC · memory optimize). Cache-scoped only — **never** touches source code; **never** touches `.hyperflow-handoff/` (handoff owns package archive).
+   - **Gate `cleanup.reapOnComplete`:** read from `~/.hyperflow/config.json` (default `true` when absent). When `false` → skip; print `Reap skipped — cleanup.reapOnComplete=false`.
+   - **Skip when `on_complete=deploy`** (handoff build continuing to deploy) — let **deploy** own the terminal reap so the slug is not disposed mid-chain. Print `Reap deferred — on_complete=deploy (deploy will reap)`.
+   - **Skip** on partial / halted / interrupted builds — never auto-reap a non-terminal slug. (Engine also refuses non-terminal without `--force`.)
+   - **Skip** mid-feature (feature not fully `completed`).
+   - **Otherwise — standard contract call** (resolve `<plugin-root>` like other scripts: `$CLAUDE_PLUGIN_ROOT` / `$CODEX_PLUGIN_ROOT` / … / path relative to this skill; hf root = `$PROJECT_ROOT/.hyperflow`):
+
+     ```bash
+     python3 <plugin-root>/scripts/reap.py "$PROJECT_ROOT/.hyperflow" --slug <slug>
+     ```
+
+     Capture stdout JSON. Render the **Reap Report** from the report fields (`archived`, `deleted`, `bytesFreed`, `memory`, `dryRun`):
+
+     ```
+     ── Reap: <slug> ──
+     Archived   : <n> → .hyperflow/archive/…
+     Deleted    : <n> ephemeral
+     Memory     : index rebuilt · <o> orphaned refs dropped · <c> compacted
+     Freed      : <bytes>   Mode: live|dry-run
+     ```
+
+     Append one JSON line of the full report to `.hyperflow/archive/.reap-log.jsonl` (create parents if needed). When `cleanup.dryRun=true`, the engine plans without mutating; still print the report (`Mode: dry-run`). Reap is idempotent — a second pass is a harmless no-op.
+7. **Print Evidence then Usage** — render the structured Evidence block, then render Usage from `usage-ledger.py summary --chain-id <chain-id>` per [output-style.md](references/output-style.md) (§7 Evidence, §8 Usage). Include canonical phase totals plus duplicate-context, retry, cache, estimated-record, accepted-commit, and tokens-per-accepted-commit metrics. Order is mandatory: Evidence first. Partial / halt-after-work still print Evidence and Usage for what landed/spent.
+8. Mark dispatch-end compact readiness by writing `.hyperflow/.dispatch-auto-compact-ready` with the current UTC timestamp. This short-lived marker is consumed by the `PreCompact` hook and is the only signal that allows automatic compaction; do not write it before every sub-task, batch, gate, or partial stop has completed.
 
 **When the Writer dispatch IS required:** if memory append requires non-trivial prose generation (e.g., synthesizing learnings from a multi-batch run with cross-cutting patterns), dispatch `Writer — finalizing dispatch artifacts` for the memory write. At that point the step is no longer §12.1-trivial and the Writer Agent handles it. The chore commit still follows immediately; no Reviewer is dispatched for wrap-up.
 
-> **No wrap-up Reviewer (D5):** the Reviewer that previously sanity-checked the chore commit and memory entries is dropped. Wrap-up is mechanically verifiable — `git status` clean, task file absent, memory file present. The orchestrator's direct observation is sufficient.
+> **No wrap-up Reviewer (D5):** the Reviewer that previously sanity-checked the chore commit and memory entries is dropped. Wrap-up is mechanically verifiable — `git status` clean, task scope reaped (or deferred), memory file present. The orchestrator's direct observation is sufficient.
 
 ### Step 5 — End of build
 
@@ -474,7 +496,8 @@ Dispatch owns three operational pre-elections at Step 0.5 (`commit`/`branch`/`pu
 - Workers never review, never coordinate, never ask the user questions.
 - Every batch produces **one** per-batch Reviewer dispatch — batched over all sub-tasks in the batch (P2), or per-sub-task when mixed level caps or `--thorough`. Either way: one Reviewer call per batch in the nominal case.
 - Plus **one** final integration Reviewer at the end (Step 3) **when not skipped per D7** — this is the Reviewer that sees the cumulative diff across batches.
-- **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — delete task file + memory append + chore commit is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
+- **No wrap-up Reviewer at Step 4 (D5).** Wrap-up is §12.1 trivial — mark terminal + memory append + chore commit + reap phase is mechanical and the orchestrator performs it inline. The previous Reviewer at Step 4 is dropped.
+- **Reap is the only disposition path for finished artefacts.** Do not hard-delete `.hyperflow/tasks/<slug>.md` ad-hoc. Auto-reap honors `cleanup.reapOnComplete` (default true), skips when `on_complete=deploy` (deploy reaps), skips non-terminal / partial builds, and never mutates `.hyperflow-handoff/`.
 - Therefore normal-flow `review agents = batches + integration_review(0|1)`. The wrap-up Reviewer is dropped because wrap-up is §12.1 trivial. If D7 skips integration, `review agents = batches`; otherwise `review agents = batches + 1`. Inline-fast has `0 agents` and must show the foreground diff review in Evidence.
 - Any `SECURITY_VIOLATION` verdict from the batched Reviewer (or a per-sub-task reviewer) halts the chain immediately — no commits, no auto-continue. Same behavior regardless of whether review is batched or per-sub-task.
 - **Evidence + Usage fire ONLY at terminal wrap-up (or hard halt) — after Step 4, never mid-batch.** Print **Evidence first**, then Usage, per [output-style.md](references/output-style.md). Omitting Evidence after a terminal dispatch is a doctrine violation. Printing `── Hyperflow Evidence ──` or `── Hyperflow Usage ──` while sub-tasks remain pending (non-halt) is a doctrine violation. In `auto` mode, either block is a terminal signal — the chain is finished.
@@ -491,7 +514,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute
 
 `/hyperflow:dispatch` is the workhorse phase. Normal flows read a task file from `/hyperflow:plan`; deterministic inline-fast executes a proven 1–2-file reversible edit directly without creating a task file or dispatching agents.
 
-Parallel workers via `spawn` (or labelled inline workers), per-batch Reviewers as a separate spawn/inline phase that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up, and (at the end of the auto-chain) ONE combined `structured_question` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
+Parallel workers via `spawn` (or labelled inline workers), per-batch Reviewers as a separate spawn/inline phase that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up with gated **reap phase** (archive-first slug disposition; deferred when `on_complete=deploy`), and (at the end of the auto-chain) ONE combined `structured_question` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
 
 Normal-flow floor: one Reviewer per batch + one final integration Reviewer when D7 does not skip it. Inline-fast: zero agent Reviewers + one foreground diff review.
 
@@ -515,7 +538,7 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
    - **Step 2d** — Per-sub-task commits + learnings synthesis via Writer.
 4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 3.5 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
 5. Chain-end quality gates (Step 3.5) — full suite when `gate_tier` ≥ standard; skip on light. Independent of D7.
-6. Wrap-up (§12.1 inline) — freeze Evidence inputs, delete task file + append memory + `chore(memory):` commit, print **Evidence then ledger-derived Usage** (phase totals + efficiency metrics), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
+6. Wrap-up (§12.1 inline) — freeze Evidence inputs, mark terminal status, append memory + `chore(memory):` commit, run **reap phase** for `<slug>` (gated on `cleanup.reapOnComplete`; skip when `on_complete=deploy`), print Reap Report, print **Evidence then ledger-derived Usage** (phase totals + efficiency metrics), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
 7. ONE combined `structured_question` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual PRs run the screenshot pipeline before `gh pr create`. On Skill absence for follow-ups, load the target `SKILL.md` completely and continue inline.
 
 ## Output
@@ -566,6 +589,9 @@ Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commit
 | Layer 5 gate failure (lint/typecheck/test) | Worker fix + re-run. Max 3 gate cycles before escalating. |
 | Per-sub-task commit fails (hook rejects, conflict) | Stop; surface the hook error. Do NOT use `--no-verify`. Do NOT amend per-sub-task commits. |
 | Wrap-up memory append has duplicate entries (detected post-commit) | `git revert HEAD` reverts the chore(memory) commit; orchestrator rewrites and recommits. No Reviewer to catch this inline — `git log` and `git revert` are the recovery path. |
+| Reap engine refuses non-terminal slug | Expected on partial builds — print engine stderr, leave artefacts in place; do not `--force` on the auto path. |
+| `cleanup.reapOnComplete=false` | Skip reap; print skip line. Daily session-start sweep remains the safety net. |
+| `on_complete=deploy` | Defer reap to deploy; print deferred line. |
 | `structured_question` UI unavailable (Codex / OpenCode / Grok) | Print audit/deploy as a `Hyperflow Question` chat block, **end the turn**, and wait for the user's answers. |
 | Native Skill unavailable on audit/deploy Yes | Load full target `skills/audit/SKILL.md` or `skills/deploy/SKILL.md` and continue inline. Never stop with "Skill tool unavailable". |
 | No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
@@ -593,3 +619,4 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 - [git-workflow.md](references/git-workflow.md) — per-sub-task commit cadence, no AI attribution.
 - [output-style.md](references/output-style.md) — agent label + usage summary format.
 - [pr-exit.md](references/pr-exit.md) — universal PR gate + frontend/mobile screenshot mandate.
+- [`scripts/reap.py`](../../scripts/reap.py) — scope-aware post-completion reaper (Step 4 terminus; also deploy / handoff `complete`).

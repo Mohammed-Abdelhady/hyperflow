@@ -42,6 +42,7 @@ PUBLIC_SKILLS = {
     "sticky",
     "bridge",
     "flush",
+    "reap",
     "hyperflow",
 }
 

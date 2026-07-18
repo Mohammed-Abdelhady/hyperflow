@@ -50,6 +50,7 @@ These hosts load Hyperflow as skills, not as native Claude-style slash commands.
 | `/hyperflow:sticky`, `hyperflow sticky` | `sticky` |
 | `/hyperflow:bridge`, `hyperflow bridge` | `bridge` |
 | `/hyperflow:flush`, `hyperflow flush` | `flush` |
+| `/hyperflow:reap`, `hyperflow reap` | `reap` |
 | `/hyperflow:background`, `hyperflow background` | `background` |
 | `/hyperflow:scaffold`, `hyperflow scaffold` | `scaffold` |
 | `/hyperflow:hyperflow`, `hyperflow`, `use hyperflow` | `hyperflow` |

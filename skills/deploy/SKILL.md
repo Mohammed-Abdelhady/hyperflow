@@ -3,9 +3,9 @@ name: deploy
 description: |
   Use when ready to ship — runs pre-push gates (lint, typecheck, build, tests, security sweep), commits, releases, and pushes. Standalone, never auto-invoked. Push always requires explicit confirmation.
   Trigger with /hyperflow:deploy, "ship it", "ready to push", "release", "cut a release", "deploy".
-allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(./scripts/*:*), Bash(scripts/*:*), Glob, Grep, Agent, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(python3:*), Bash(./scripts/*:*), Bash(scripts/*:*), Glob, Grep, Agent, AskUserQuestion
 argument-hint: ""
-version: 3.1.3
+version: 3.1.4
 license: MIT
 compatibility: Claude Code (native Agent / AskUserQuestion); Codex / OpenCode / Grok via runtime-contract fallbacks
 tags: [release, ci, automation, push-gates]
@@ -37,6 +37,7 @@ Host ops are semantic ([runtime-contract.md](../hyperflow/runtime-contract.md)):
 | 5b | Version sync | Worker A (manifests), Worker B (changelog) | Reviewer | — |
 | 6 | Push gate | `structured_question` (`AskUserQuestion` when present) | — | structural gate; atomic-exempt; separate from audit |
 | 7 | Output | single print | — | atomic-exempt (§12.1) |
+| 8 | Reap | `shell` (`reap.py --slug`) | — | lifecycle terminus; gated on `cleanup.reapOnComplete`; after successful ship |
 
 ## Step 1 — Survey State
 
@@ -222,6 +223,35 @@ Halted at Step 2a
 
 Use `pass` / `fail` / `skipped` as plain words — no `✓` / `✗` / `—` symbols.
 
+## Step 8 — Reap (lifecycle terminus · gated)
+
+After a **successful** ship path (Steps 2–5 PASS and Step 7 printed a success Ship Result — push may be confirmed **or** held / `push=never`), dispose the shipped slug's `.hyperflow/` artefact scope via the reap phase. Deploy previously had no GC; this is its terminal cleanup.
+
+**Do not reap** when the pipeline halted on a gate / `SECURITY_VIOLATION` / incomplete ship — non-terminal work must stay in place.
+
+1. **Gate `cleanup.reapOnComplete`:** read from `~/.hyperflow/config.json` (default `true` when absent). When `false` → skip; print `Reap skipped — cleanup.reapOnComplete=false`.
+2. **Resolve `<slug>`:** chain arg / handoff package slug / most-recently-completed task under `.hyperflow/tasks/` or `.hyperflow/features/`. When no slug is known → skip; print `Reap skipped — no slug`.
+3. **Never** pass `--force` on this auto path (engine skips non-terminal without force). **Never** touch `.hyperflow-handoff/` — handoff owns package archive; reap is cache-scoped to `.hyperflow/` only.
+4. **Standard contract call** (resolve `<plugin-root>` like other scripts: `$CLAUDE_PLUGIN_ROOT` / `$CODEX_PLUGIN_ROOT` / … / path relative to this skill; hf root = `$PROJECT_ROOT/.hyperflow`):
+
+   ```bash
+   python3 <plugin-root>/scripts/reap.py "$PROJECT_ROOT/.hyperflow" --slug <slug>
+   ```
+
+5. Capture stdout JSON. Print the **Reap Report** under the Ship Result block:
+
+   ```
+   ── Reap: <slug> ──
+   Archived   : <n> → .hyperflow/archive/…
+   Deleted    : <n> ephemeral
+   Memory     : index rebuilt · <o> orphaned refs dropped · <c> compacted
+   Freed      : <bytes>   Mode: live|dry-run
+   ```
+
+6. Append one JSON line of the full report to `.hyperflow/archive/.reap-log.jsonl` (create parents if needed). Idempotent — if dispatch already reaped the same slug, this pass is a harmless no-op (report shows empty archived/deleted).
+
+When `cleanup.dryRun=true`, the engine plans without mutating; still print the report (`Mode: dry-run`).
+
 ## Anti-patterns
 
 - `--no-verify`, `--no-gpg-sign`, bypassing hooks
@@ -232,7 +262,7 @@ Use `pass` / `fail` / `skipped` as plain words — no `✓` / `✗` / `—` symb
 
 ## Memory
 
-After successful ship, append to `.hyperflow/memory/patterns.md` if any new pattern was confirmed during gates. Skip if nothing new.
+After successful ship, append to `.hyperflow/memory/patterns.md` if any new pattern was confirmed during gates. Skip if nothing new. An auto-reap at Step 8 removes no durable memory entry (it rebuilds the index and flags oversized files only); entry pruning is opt-in via `cleanup.dropOrphanRefs` and quarantines to `memory/archive/YYYY-MM.md`.
 
 ## Doctrine
 
@@ -240,7 +270,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Overview
 
-`/hyperflow:deploy` runs the pre-push gates (lint + typecheck + security sweep in parallel, then build, then tests), composes any worker-introduced fixes into a clean commit, runs the release script if present, and asks before pushing. Standalone or chain-continued — never silently auto-pushed. When `push=ask`, push requires an explicit `structured_question` / `AskUserQuestion` (or Hyperflow Question chat fallback). Never bypasses hooks, never force-pushes to main, never adds AI attribution to commits.
+`/hyperflow:deploy` runs the pre-push gates (lint + typecheck + security sweep in parallel, then build, then tests), composes any worker-introduced fixes into a clean commit, runs the release script if present, and asks before pushing. Standalone or chain-continued — never silently auto-pushed. When `push=ask`, push requires an explicit `structured_question` / `AskUserQuestion` (or Hyperflow Question chat fallback). Never bypasses hooks, never force-pushes to main, never adds AI attribution to commits. After a successful ship, Step 8 runs the slug-scoped **reap phase** (gated on `cleanup.reapOnComplete`) and prints the Reap Report.
 
 ## Prerequisites
 
@@ -252,7 +282,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Instructions
 
-The 7 numbered steps live in [Step 1 — Survey State](#step-1--survey-state) through [Step 7 — Output](#step-7--output) above. Summary:
+The 8 numbered steps live in [Step 1 — Survey State](#step-1--survey-state) through [Step 8 — Reap](#step-8--reap-lifecycle-terminus--gated) above. Summary:
 
 1. Survey state — two sub-phases in parallel: 1a repo-state scan (git status + ahead count), 1b tool detection (package manager, test runner, typed-project flag).
 2. Quality gates — three sequential sub-phases: 2a lint+typecheck (3-wide parallel Workers, no build artifact needed), 2b build (depends on 2a PASS), 2c tests (2-wide parallel, depends on 2b PASS). Runs in parallel with Step 3 at orchestrator level. Halt at first `NEEDS_REVISION`.
@@ -261,10 +291,11 @@ The 7 numbered steps live in [Step 1 — Survey State](#step-1--survey-state) th
 5. Release — two sequential sub-phases: 5a run release script, 5b verify version sync across manifests.
 6. Push gate — atomic structural gate, **independent of audit**. Honors `push` pre-election (auto/never/ask). `push=ask` fires `structured_question` (`AskUserQuestion` when present). Hold keeps everything local. Never force-push to main.
 7. Print structured ship result.
+8. Reap phase — after successful ship only; gated on `cleanup.reapOnComplete`; print Reap Report under Ship Result. Never touches `.hyperflow-handoff/`.
 
 ## Output
 
-See the ship result block in [Step 7 — Output](#step-7--output) above. Two formats: success (all gates pass, listed inline) and failure (halt at first failing gate, listed in order). Always uses plain words (`pass` / `fail` / `skipped`) — no decorative symbols.
+See the ship result block in [Step 7 — Output](#step-7--output) above. Two formats: success (all gates pass, listed inline) and failure (halt at first failing gate, listed in order). Always uses plain words (`pass` / `fail` / `skipped`) — no decorative symbols. On success, Step 8 appends the Reap Report (or a skip line).
 
 ## Error Handling
 
@@ -280,6 +311,10 @@ See the ship result block in [Step 7 — Output](#step-7--output) above. Two for
 | `structured_question` / `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the push or commit-inclusion gate as a `Hyperflow Question` chat block, **end the turn**, wait for the user's answer. |
 | Headless / non-interactive at `push=ask` | Refuse push step entirely. Print structured result with `Push: held — interactive confirmation required`. Local gates still report. |
 | Pre-existing uncommitted user changes | Use `structured_question` / `AskUserQuestion` to ask whether to include or exclude from the commit. Never silently include without a channel. |
+| `cleanup.reapOnComplete=false` | Skip Step 8; print skip line. |
+| No resolvable slug at Step 8 | Skip reap; print `Reap skipped — no slug`. |
+| Reap engine refuses non-terminal | Print engine stderr; leave artefacts in place. Do not `--force` on the auto path. |
+| Ship halted before success | Skip Step 8 entirely (no GC on failed ship). |
 
 ## Examples
 
@@ -312,6 +347,11 @@ Commit: dc38564 fix(skills): marketplace validator compliance
 Release: v3.1.2
 Push: confirmed
 ──────────────────────────────────
+── Reap: marketplace-validator ──
+Archived   : 3 → .hyperflow/archive/…
+Deleted    : 1 ephemeral
+Memory     : index rebuilt · 0 orphaned refs dropped · 0 compacted
+Freed      : 12400   Mode: live
 ```
 
 ### Gate failure halts the pipeline
@@ -355,3 +395,4 @@ Halted before commit. Rotate the credential and remove the literal from source b
 - [security.md](references/security.md) — security sweep policy and blocklists.
 - [git-workflow.md](references/git-workflow.md) — branch/commit conventions, no AI attribution rule.
 - [output-style.md](references/output-style.md) — ship result formatting.
+- [`scripts/reap.py`](../../scripts/reap.py) — scope-aware post-completion reaper (Step 8 terminus).

@@ -135,19 +135,22 @@ For each phase in order:
     ├─ phase exit criteria met → phase.md status = completed → roll decisions.md learnings to memory
     └─ advance to the next phase (gated on its `Depends on`)
     │
-All phases completed → feature.md status = completed → archive the feature folder
+All phases completed → feature.md status = completed →
+    REAP phase for <feature-slug> (whole tree: archive + memory optimize + report)
 ```
 
 Phases run **sequentially** by dependency; tasks **inside** a phase run in parallel batches exactly as today.
 A phase does not start until its `Depends on` phase is `completed` (the dispatch phase-scope gate decides whether phases run all-at-once or phase-by-phase).
+
+**Do not** slug-reap a partial feature (some phases still pending). Mid-feature leave the tree in place; set `feature.md` Status `completed` only when every phase is `completed`, then run the **reap phase** for `<feature-slug>` (gated on `cleanup.reapOnComplete`). Reap archives the entire `features/<slug>/` tree (phase folders, tasks, phase specs/research/decisions, viewer twins) archive-first under `.hyperflow/archive/features/YYYY-MM/`, optimizes durable memory, and prints the Reap Report. Daily session-start sweep is the fallback for unreaped/stale trees. Contract: [../reap/SKILL.md](../reap/SKILL.md); Layer 10 in [DOCTRINE.md](DOCTRINE.md).
 
 ## Status rollup
 
 - A **task** completes → checked off in its `phase.md` roster + the phase Progress bar advances.
 - A **phase** completes (all tasks PASS + exit criteria met) → `phase.md` status `completed` + `feature.md` Phases
   bar advances + `decisions.md` learnings append to `.hyperflow/memory/`.
-- All phases complete → `feature.md` status `completed`; the feature folder is eligible for archival
-  (`.hyperflow/archive/features/YYYY-MM/<slug>/`).
+- All phases complete → `feature.md` status `completed` → **reap phase** for the feature slug (whole tree;
+  lands under `.hyperflow/archive/features/YYYY-MM/<slug>/`).
 
 `/hyperflow:status` reads `feature.md` for the phase roster and each active `phase.md` for live task progress.
 
