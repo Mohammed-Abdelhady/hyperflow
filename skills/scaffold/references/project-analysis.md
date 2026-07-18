@@ -2,6 +2,8 @@
 
 On first `/hyperflow` session in a project, analyze the entire codebase and generate a profile in `.hyperflow/`. On subsequent sessions, the **orchestrator** evaluates staleness and decides what to refresh — it never blindly regenerates.
 
+Executable agent work uses [runtime-contract.md](../../hyperflow/runtime-contract.md) ops: prefer `spawn` for independent searchers when the host inventory supports it; otherwise run **labelled inline searcher** phases, then a **separate labelled review** when a review pass is required. Never merge searcher and reviewer responsibility. Every agent runs on the **current session model** — no model-tier selection.
+
 ## Decision Tree (Orchestrator Executes This)
 
 The orchestrator runs this decision tree at session start. No workers are dispatched until this completes.
@@ -30,23 +32,36 @@ Step 1: Does .hyperflow/ exist at project root?
                   │  → PARTIAL REFRESH
                   │    Use the Staleness Mapping table to find affected analysis files
                   │    Dispatch searcher agents ONLY for those specific analysis files
+                  │    (spawn when available; else labelled inline searcher phases)
                   │    Print "Refreshing — profile.md, dependencies.md" (example)
                   │    Rewrite .checksums with all current hashes
                   │
                   └─ ALL CHANGED (e.g., major refactor, new project)
                      → FULL ANALYSIS
-                       Dispatch 6 parallel searcher agents
-                       Regenerate everything
+                       Dispatch up to 6 searcher roles (one per analysis file)
+                       Prefer parallel sibling spawn when the host supports concurrent children;
+                       otherwise sequence labelled inline searcher phases.
+                       Regenerate everything; keep roles distinct (see Role map).
 ```
 
 ### Enforcement Rules
 
-1. **No agents if fresh.** If all checksums match, zero searcher agents are dispatched. The orchestrator reads cached files with the Read tool.
+1. **No agents if fresh.** If all checksums match, zero searcher agents are dispatched. The orchestrator reads cached files via host file-read tools (when inventory exposes them).
 2. **Partial over full.** If only `package.json` changed, only `profile.md`, `dependencies.md`, and `testing.md` get refreshed. The other 3 files are untouched.
-3. **Thinking model decides.** Staleness evaluation is never delegated to a worker agent. The orchestrator runs `sha256sum`, compares, and decides.
+3. **Orchestrator decides staleness.** Staleness evaluation is never delegated to a worker agent. The orchestrator runs checksum computation (`shell`/`sha256sum` or equivalent), compares, and decides — on the current session model, not a separate "thinking" tier.
 4. **New files trigger refresh.** A config file appearing on disk that wasn't in `.checksums` triggers refresh of its mapped analysis files.
 5. **Deleted files trigger refresh.** A config file in `.checksums` that no longer exists triggers refresh of its mapped analysis files.
-6. **Folder structure changes.** If the orchestrator notices major folder additions/removals (via `ls` or `find`), it refreshes `architecture.md` even if no config checksums changed. This is a judgment call — not every new file warrants it.
+6. **Folder structure changes.** If the orchestrator notices major folder additions/removals (via host listing tools), it refreshes `architecture.md` even if no config checksums changed. This is a judgment call — not every new file warrants it.
+
+### Role map (preserved under spawn or inline fallback)
+
+| Role | Responsibility | Review |
+|---|---|---|
+| **Searcher** | Read configs and source layout; draft one analysis file | Does not review its own draft |
+| **Analyst** (optional, orchestrator or decision pass) | Resolve conflicting configs, monorepo primary-app choice, ambiguous entry points after search output | May ask clarifying gates; does not implement |
+| **Reviewer** | Coverage/sanity check on generated analysis when the skill path requires review | Separate pass — never the same child that wrote the file |
+
+When `spawn` is absent: run `inline searcher — <analysis-file>`, then if review is required `inline reviewer — <analysis-file coverage>`. Label both phases. Never collapse them into one undifferentiated pass.
 
 ## Analysis Files
 
@@ -139,7 +154,7 @@ When dispatching workers, inject only relevant analysis under `## Project Contex
 
 ## Clarifying Questions
 
-During first analysis, if ambiguity is detected, ask via AskUserQuestion after initial file scanning — not before.
+During first analysis, if ambiguity is detected, ask via `structured_question` **after** initial file scanning — not before. Prefer the host structured UI when present; otherwise render the **Hyperflow Question** chat block and **end the turn** ([runtime-contract.md](../../hyperflow/runtime-contract.md)). Never silently pick a recommended option.
 
 **Trigger conditions:**
 - Multiple conflicting configs (e.g., both Jest and Vitest present)
@@ -148,7 +163,7 @@ During first analysis, if ambiguity is detected, ask via AskUserQuestion after i
 - No CI/CD config found
 - Multiple apps in a monorepo — which is primary?
 
-**Rules:** Max 2-3 questions total. Skip if everything is unambiguous from config files. Use multiple-choice options where possible.
+**Rules:** Max 2-3 questions total. Skip if everything is unambiguous from config files. Use multiple-choice options where possible. Multi-option lists (3+) mark `(Recommended)` on the first option; binary gates do not.
 
 ## .gitignore Integration
 
@@ -160,3 +175,9 @@ On first analysis, check if `.hyperflow/` is in `.gitignore`. If not, append:
 ```
 
 If no `.gitignore` exists, create one with just this entry.
+
+## Related
+
+- [runtime-contract.md](../../hyperflow/runtime-contract.md) — spawn / inline fallback, structured questions
+- [git-workflow.md](../../hyperflow/git-workflow.md) — commit discipline after analysis writes (when applicable)
+- Scaffold skill consumes this contract for first-run setup

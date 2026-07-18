@@ -2,6 +2,8 @@
 
 Every Hyperflow output follows this visual language. Calm, elegant, no decorative icons. Em-dash, lowercase descriptions, and box-drawing rules for section separators only.
 
+Host tools are **semantic** (`spawn`, `structured_question`, `edit`, `shell`, `usage_metrics`) — adapters map them per [runtime-contract.md](../../hyperflow/runtime-contract.md). Status is read-only: never dispatches workers, never claims a certified surface solely because files are installed.
+
 ## Allowed Characters
 
 | Symbol | Use |
@@ -29,10 +31,19 @@ One line. Version only.
 
 ## 2. Update Notification
 
+Print install-mode-appropriate update hints only. Never invent a provider command.
+
 ```
 Hyperflow update available — v1.12.1 → v1.13.0
-  run: claude plugin update hyperflow@hyperflow-marketplace
+  run: <provider-appropriate update command>
 ```
+
+| Install mode | Update hint |
+|---|---|
+| `claude-marketplace` | `claude plugin update hyperflow@hyperflow-marketplace` |
+| `codex-marketplace` | `codex plugin marketplace upgrade hyperflow-marketplace` |
+| `source-checkout` | `git pull --ff-only` (only when explicitly source) |
+| unknown | omit command line; point at install docs |
 
 Em-dash between phrase and version delta. Install hint indented two spaces, no icon prefix.
 
@@ -65,13 +76,13 @@ Two-space indent, no bullet prefix.
 
 ## 4. Agent Dispatch Labels
 
-Every agent dispatch gets a label **before** the Agent tool call. Format:
+Every agent dispatch gets a label **before** the host `spawn` (or before a labelled inline worker/reviewer phase when `spawn` is unavailable). Format:
 
 ```
 <Role> — <short lowercase description>
 ```
 
-**Review roles** (Reviewer, Debugger) wrap the role in `**bold**`:
+**Reviewer and Debugger roles** wrap the role in `**bold**`:
 
 ```
 **Reviewer** — reviewing auth middleware output
@@ -88,9 +99,9 @@ Writer — generating API documentation
 
 ### Parallel / serial dispatch (2+ agents in same batch)
 
-Header line declares **intent** (`parallel:N` or `serial:N`). Footer line proves **execution** (wall-clock vs cumulative · ratio). The ratio is what catches a batch that *was supposed to* run parallel but actually ran serial.
+Header line declares **intent** (`parallel:N` or `serial:N`). Footer line proves **execution** (wall-clock vs cumulative · ratio) **only when real timing metadata is available**. The ratio is what catches a batch that *was supposed to* run parallel but actually ran serial.
 
-**Parallel batch** (all N dispatches in one message):
+**Parallel batch** (true concurrent spawns in one turn when the host allows):
 
 ```
 Batch 1 — parallel:3 · standard profile · L1–L2
@@ -101,7 +112,7 @@ Writer         — generate test suite for auth
   wall-clock: 47s · cumulative: 2m 18s · ratio 0.34 — parallel
 ```
 
-**Serial batch** (depends on a prior batch's output):
+**Serial batch** (depends on a prior batch's output, or host only supports sequenced work):
 
 ```
 Batch 2 — serial:1 · depends on Batch 1
@@ -110,7 +121,17 @@ Implementer    — wire routes (with batch 1 learnings)
   wall-clock: 31s · cumulative: 31s · ratio 1.0 — serial (single agent)
 ```
 
-**Ratio interpretation:**
+**Sequenced inline** (no subagent API — labelled phases in the main thread):
+
+```
+Batch 1 — serial:2 · sequenced inline · standard profile · L1–L2
+
+Implementer    — write middleware + route guards
+**Reviewer**   — review middleware batch
+  wall-clock: unavailable · cumulative: unavailable — sequenced inline
+```
+
+**Ratio interpretation** (only when both wall-clock and cumulative are **observed**, not invented):
 
 | Ratio | Meaning |
 |---|---|
@@ -123,7 +144,8 @@ Rules:
 - Role left-padded to the longest role in the block (typically 13 chars for `Implementer`).
 - Description starts after the em-dash, lowercased.
 - Single-agent dispatch — header still printed (`serial:1`) but the footer is optional.
-- `wall-clock` is the elapsed real time from first `Agent()` call to last `⎿ Done`. `cumulative` is the sum of the individual agent durations reported in each `⎿ Done (... · Ym Zs)`.
+- **Parallelism claims require either true concurrent `spawn`s or explicit "sequenced inline" wording** — never claim parallel subagents when work was serial ([runtime-contract.md](../../hyperflow/runtime-contract.md) metrics honesty).
+- `wall-clock` / `cumulative` come from host-reported completion metadata, the usage ledger, or other **observed** timers. Never parse a single host's UI chrome (e.g. Claude `⎿ Done` lines) as a universal duration source. When timing is missing, print `unavailable` — do not fabricate seconds or ratios.
 
 ## 5. Agent Progress
 
@@ -154,7 +176,7 @@ Use `pass` / `fail` / `skipped` as plain words. No `✓` / `✗` / `—`. Detail
 
 ## 7. Usage Summary
 
-Printed after every completed task. The summary now surfaces `Wall-clock` and `Cumulative` rows so parallelism is provable from the numbers alone — without trusting the dispatch labels.
+Printed after every completed task when cost is reported. Prefer host-reported tokens via `usage_metrics` into the usage ledger. When metrics are unavailable: print `unavailable` or mark `estimated=true` only for documented estimators — **never fabricate** tokens, durations, cache hits, or agent counts.
 
 ```
 ── Hyperflow Usage ─────────────────────────────────────────
@@ -170,9 +192,9 @@ Total                          14 agents  243.1k tokens
 ────────────────────────────────────────────────────────────
 ```
 
-`ratio = wall-clock / cumulative`. Lower is better for parallelism. The annotation after the ratio is one of `parallel` (≤ 0.5) / `mixed` (0.5–0.8) / `serial` (≥ 0.8) per the table in §4.
+`ratio = wall-clock / cumulative`. Lower is better for parallelism. The annotation after the ratio is one of `parallel` (≤ 0.5) / `mixed` (0.5–0.8) / `serial` (≥ 0.8) per the table in §4. Emit the ratio **only** when both durations are observed.
 
-Backwards-compat: the older shorter form (no Wall-clock / Cumulative rows) is still acceptable for tasks with a single batch or a single agent — there's nothing to parallelise. For tasks with 2+ batches OR 2+ parallel-eligible workers, the two rows MUST appear.
+Backwards-compat: the older shorter form (no Wall-clock / Cumulative rows) is still acceptable for tasks with a single batch or a single agent — there's nothing to parallelise. For tasks with 2+ batches OR 2+ parallel-eligible workers, the two rows MUST appear **or** print `unavailable` explicitly.
 
 Older example (single-batch task):
 
@@ -205,7 +227,28 @@ Lowercase bracketed labels for structured multi-line blocks only:
 
 Use sparingly. Never use as a decorative prefix on a single status line.
 
-## 9. Memory Output
+## 9. Installed vs certified
+
+Status (and any `[capabilities]` block) **must** keep these distinct. Plugin presence never proves workflow certification for every host surface.
+
+| Term | Meaning |
+|---|---|
+| **Installed** | Hyperflow version / plugin tree / provider-appropriate instruction target (`AGENTS.md` or `CLAUDE.md`) present on disk for this project |
+| **Certified** | A named host surface (CLI, app-server, desktop App, etc.) has completed workflow certification for this provider lane |
+
+```
+[capabilities]
+  installed   hyperflow v3.1.3 · AGENTS.md present
+  certified   CLI (app not certified from CLI install alone)
+```
+
+Rules:
+- Codex / OpenCode / Cursor / Grok / Antigravity → prefer reporting **`AGENTS.md`** under installed.
+- Claude Code → prefer reporting **`CLAUDE.md`** under installed.
+- Never claim App / desktop certification solely because marketplace install or CLI plugin-list succeeded.
+- When certification data is absent, print `certified   (not reported)` — do not invent a surface claim.
+
+## 10. Memory Output
 
 ```
 [memory]  location: .hyperflow/memory/
@@ -216,7 +259,7 @@ Use sparingly. Never use as a decorative prefix on a single status line.
 
 Entry number two-space indent. Tier as plain word (`hot` / `warm` / `cold`), no brackets. Tags in parens at end.
 
-## 10. Task File Status
+## 11. Task File Status
 
 When creating/updating task files:
 
@@ -235,14 +278,14 @@ Task complete — implement-auth (3/3)
 
 No bullet prefixes. Status word right-padded for column alignment.
 
-## 11. Security Violations
+## 12. Security Violations
 
 ```
 SECURITY VIOLATION — hardcoded API key in src/config.ts:42
   Pipeline halted, review required
 ```
 
-## 12. Blocked Resources
+## 13. Blocked Resources
 
 ```
 BLOCKED — worker attempted to read .env
@@ -257,3 +300,4 @@ BLOCKED — worker attempted to read .env
 4. **No free-form trailing prose.** Never "Done! I completed X." For dispatch/handoff builds, work product is the structured **Evidence** block and cost is the **Usage** block (see skills/hyperflow/output-style.md §7–§8). Other skills keep Usage as cost-only; never invent free-form Done prose.
 5. **No decorative chars.** Em-dash for separators, middle dots for inline lists. Never `⚡`, `✓`, `✗`, `▸`, `→`, etc.
 6. **Bold for review roles.** Only `**Reviewer**` and `**Debugger**` are bolded. Workers stay plain.
+7. **Honest metrics only.** Never parse Claude `Agent()` / `⎿ Done` UI chrome as a universal duration or token source across hosts.
