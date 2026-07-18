@@ -1,11 +1,11 @@
 # Task Tracking
 
-Persist active task state across sessions as individual files in `.hyperflow/tasks/`. One roster file per task (`<slug>.md`). Created AFTER research, BEFORE implementation. Dynamic — updated throughout execution. Deleted on completion.
+Persist active task state across sessions as individual files in `.hyperflow/tasks/`. One roster file per task (`<slug>.md`). Created AFTER research, BEFORE implementation. Dynamic — updated throughout execution. On completion, the **reap phase** archives the slug scope (roster + brief dir + twins) — never hard-delete ad-hoc.
 
 > **Briefs sidecar.** The roster `<slug>.md` stays terse; the full, build-ready implementation brief for each
 > non-trivial sub-task lives next to it in `.hyperflow/tasks/<slug>/T<id>.md` (authored by `/hyperflow:plan` Step 9c,
 > format in [artefact-format.md](artefact-format.md)). `dispatch` loads each brief verbatim. When the task completes,
-> delete the `<slug>/` brief dir alongside `<slug>.md` (or let auto-archive move both).
+> the **reap phase** archives the `<slug>/` brief dir with `<slug>.md` (one scope — no separate delete).
 
 > **Viewer mode.** When `viewer.enabled` is true the task artefact's source of truth is
 > `.hyperflow/artefacts/task/<slug>.json` (or `feature/<slug>.json`) and `<slug>.md` is a ≤6-line stub; dispatch
@@ -109,9 +109,12 @@ UPDATE task files dynamically:
     |   - Append to Progress with timestamps
     |   - Add Learnings as discoveries happen
     |
-Review → APPROVED → DELETE task file
+Review → APPROVED → mark terminal → memory append →
+    |                    REAP phase (archive scope + optimize memory + report)
     |         → NEEDS_FIX → update task file, re-dispatch
 ```
+
+**Terminal step = reap.** After reviewer approval and acceptance criteria are met, mark the task `completed`, promote durable learnings, then run the **reap phase** for `<slug>` (gated on `cleanup.reapOnComplete`, default true): archive-first disposition of `tasks/<slug>.md` + brief dir `tasks/<slug>/` + related specs/twins, ephemeral GC, memory index rebuild, Reap Report. Do **not** hard-delete the task file as the primary cleanup. Daily session-start sweep remains the fallback for unreaped/stale artefacts. Contract: [../reap/SKILL.md](../reap/SKILL.md); Layer 10 in [DOCTRINE.md](DOCTRINE.md).
 
 ## Dynamic Updates
 
@@ -130,7 +133,7 @@ Task files are living documents. Update them after EVERY batch:
 
 **Change status** based on discoveries:
 - `in-progress` → `blocked` if waiting on another task or external dependency
-- `blocked` ��� `in-progress` when blocker resolves
+- `blocked` → `in-progress` when blocker resolves
 - `in-progress` → `in-review` when all sub-tasks complete
 
 **Add to Progress** with timestamps so context is preserved across sessions:
@@ -157,13 +160,13 @@ On session start, check `.hyperflow/tasks/` for existing files:
 3. **One file per logical unit** — not per worker dispatch. A feature with 3 sub-components = 1 task file with 3 sub-task groups
 4. **Feed into workers** — include task file's Research Findings and Learnings in worker prompts
 5. **Dynamic maintenance** — update after every batch, not just at completion
-6. **Delete only when done** — reviewer approves AND acceptance criteria met → delete
+6. **Reap only when done** — reviewer approves AND acceptance criteria met → mark terminal → **reap phase** for the slug (archive scope; never ad-hoc hard-delete)
 
 ## Directory Structure
 
 ```
 .hyperflow/
-├── tasks/            # Active task tracking (auto-cleaned)
+├── tasks/            # Active task tracking (reaped on completion; stale sweep as fallback)
 │   ├── implement-auth.md
 │   ├── build-reuse-audit.md
 │   └── fix-redirect.md
@@ -181,5 +184,5 @@ On session start, check `.hyperflow/tasks/` for existing files:
 - Maximum 10 active task files — if more, decompose differently
 - Task files are gitignored (`.hyperflow/` is already gitignored)
 - Don't track trivial tasks (single-file renames, one-line fixes) — only tasks with 2+ sub-steps
-- Reusable learnings feed into session-memory when they apply beyond this task
+- Reusable learnings feed into project memory on wrap-up; reap preserves durable entries
 - Always include timestamps in Progress entries for cross-session clarity

@@ -354,7 +354,7 @@ See [worker-briefs.md](worker-briefs.md) for the split-signal table, the `OVERSI
     - The final integration review MUST be a dispatched review pass — never silent self-approval without the reviewer label/charter.
     - If a decision agent shows `0.0k tokens` while the host reports real usage for other agents, it likely wasn't actually dispatched — treat that as a red flag, not as free work.
     - The orchestrator's own work (decomposition, coordination, tool calls) is inherently untracked. This is exactly why reviews must be dispatched — they are the only measurable decision work. When usage_metrics is unavailable, still dispatch the roles; print `unavailable` for token columns rather than inventing numbers.
-11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. Delete on completion. See [task-tracking.md](task-tracking.md).
+11. **Task tracking.** For non-trivial tasks (2+ sub-steps), create a task file in `.hyperflow/tasks/<task-name>.md` before dispatching workers. Update progress after each batch. On completion, run the **reap phase** for the finished slug (archive-first; do not hard-delete the task file ad-hoc). See [task-tracking.md](task-tracking.md) and Layer 10.
 12. **Multi-level agents inside normal-flow steps.** Every substantive step in a normal orchestrated chain MUST dispatch at least one agent via `spawn` (or a labelled inline worker/reviewer phase when `spawn` is unavailable). The sole implementation exception is a deterministic `inline_fast` branch that passed the read-only safety preflight; it performs foreground mutation, affected gates, and an allowlisted-diff review without agents. A normal-flow step counts as substantive when it produces output the next step depends on (analysis, decomposition, generation, review, decision). Pure user-interaction steps (`structured_question`, `skill_continuation` hand-off, printing a status line) are exempt. The pattern for each normal-flow substantive step:
    - **Worker role** does the production work (research, synthesis, drafting, decomposition).
    - **Decision / review role** reviews/decides on the worker's output (verdict, gate, escalation).
@@ -593,24 +593,26 @@ Reviewer that detects a security violation reports `SECURITY_VIOLATION:` — hal
 
 <!-- /portable:section -->
 
-## Layer 10: Hygiene — finalize on completion, compact proactively
+## Layer 10: Hygiene — reap on completion, compact proactively
 
 Two non-negotiable cleanup behaviours so artefact folders and the context window stay healthy across long sessions:
 
-### Finalize on completion
+### Reap phase (primary terminal cleanup)
 
-When a chain closes successfully — the final integration reviewer approved and per-task commits landed — the **last** thing the closing skill (`dispatch`, `audit`, or `deploy`) does is archive its own working artefact. The orchestrator runs:
+When a lifecycle truly ends — dispatch wrap-up after terminal status, deploy after a successful ship path, or handoff `complete` — the **last** mechanical step is the **reap phase** for the finished `<slug>`, gated on `cleanup.reapOnComplete` (default `true`). Manual operator path: `/hyperflow:reap <slug>`. Contract: [skills/reap/SKILL.md](../reap/SKILL.md). Engine:
 
 ```bash
-python3 "$CLAUDE_PLUGIN_ROOT/scripts/archive-artefacts.py" "$PROJECT/.hyperflow" --file "$ARTEFACT"
+python3 <plugin-root>/scripts/reap.py "$PROJECT/.hyperflow" --slug <slug>
 ```
 
-where `$ARTEFACT` is the task file (for `dispatch`/`deploy`) or the audit file (for `audit`). The script:
+Reap is **archive-first, memory-preserving, and reports**. For the resolved slug scope it:
 
-1. Promotes `## Learnings` / `## Decisions` / `## Anti-patterns` / `## Pitfalls` sections to `.hyperflow/memory/*.md` (whole-line de-duped).
-2. Moves the source file to `.hyperflow/archive/<type>/YYYY-MM/`.
+1. **Archive (reversible)** — promotes `## Learnings` / `## Decisions` / `## Anti-patterns` / `## Pitfalls` into durable `.hyperflow/memory/*.md`, then **moves** the whole scope (`tasks/<slug>.md`, brief dir `tasks/<slug>/`, specs/drafts, `features/<slug>/` tree, viewer JSON twins) to `.hyperflow/archive/<type>/YYYY-MM/` via `archive-artefacts.py --slug` (do **not** bare-call `archive-artefacts.py --file` as the terminal path — that mode is for the engine/sweep internals, not lifecycle skills).
+2. **Ephemeral GC** — hard-deletes regenerable leftovers past retention (`usage/*.jsonl`, oversized `.session-start.log`, terminal stale background buffers, empty settled `commits-queue/`).
+3. **Memory optimize** — rebuilds `memory/index.md`, drops orphaned refs to deleted paths, flags oversized durable files for compact. **Never deletes durable memory category entries** (see [memory-system.md](memory-system.md)).
+4. Emits a **Reap Report** (stdout + parent skill block) and appends one JSON line to `.hyperflow/archive/.reap-log.jsonl`.
 
-Net effect: durable insight compounds in memory, and `.hyperflow/{tasks,audits,specs}/` only ever holds work still in flight. Stale files left behind by interrupted runs are still caught by the daily session-start sweep (`cleanup.staleDays`, default 7).
+Net effect: durable insight compounds in memory; `.hyperflow/{tasks,features,specs,audits}/` only holds work still in flight; one disposition path for finished scope (no ad-hoc task-file delete). **Fallback:** the daily session-start sweep (`archive-artefacts.py` mtime gate, `cleanup.staleDays` default 7) still reaps unreaped/stale artefacts left by interrupted runs — primary cleanup is explicit reap-on-completion; the sweep is the safety net, not the substitute.
 
 ### Proactive `/compact`
 
@@ -685,7 +687,7 @@ Hand-off pattern (via `skill_continuation` — native Skill when present, otherw
 - Dispatch an agent without printing `Role — description` first (no icons, no brackets)
 - Finish a task without printing the usage summary
 - Dispatch workers without creating task files in `.hyperflow/tasks/` first
-- Complete a task without deleting its task file
+- Complete a terminal task without the **reap phase** when `cleanup.reapOnComplete` is true (or hard-delete the task file ad-hoc instead of reaping)
 - Sequentialize sibling workers that share a common input and have no inter-dependency, or dispatch per-sibling reviewers when a single batched reviewer covers the same review-level cap
 - Wrap every trivial mechanical step in an Agent dispatch when §12.1 inline path applies — adds latency without value
 - Let a Worker or Reviewer return preamble ("I'll now …"), postamble summary, restatement of the brief, or meta-commentary alongside the contract output — see rule 16 (Token economy)

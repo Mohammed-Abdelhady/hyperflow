@@ -174,6 +174,19 @@ There is no index step — `index.md` and `.checksums` are derived at the next s
 
 Write only from the orchestrator — never delegate memory writes to workers.
 
+## Reap × memory — preservation guarantee
+
+The **reap phase** (Layer 10; lifecycle termini + `/hyperflow:reap`) may dispose finished task/feature **artefacts**, but durable memory is the record that makes that disposal safe.
+
+| Allowed on reap | Forbidden on reap |
+|---|---|
+| Rebuild derived `index.md` / `.checksums` | Delete durable category files wholesale (`learnings.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md`, `anti-patterns.md`, `project-decisions.md`) |
+| Drop **orphaned refs** that pointed at now-archived/deleted artefact paths | Task-scoped purge of durable entries (“delete every learning from this slug”) |
+| Flag / compact oversized durable files per Compaction Protocol (stubs + archive sidecars) | Treat memory as ephemeral GC like `usage/*.jsonl` |
+| Promote task-local `## Learnings` / `## Decisions` / `## Anti-patterns` / `## Pitfalls` **into** durable `*.md` before archive | Hard-delete category bodies as “cleanup” |
+
+**Guarantee:** reap never deletes a durable memory entry. It only rebuilds the index, drops orphaned references to gone artefacts, and compacts (or flags) oversized category files. Compression/Pruning protocols below remain the sole paths that age or remove entries — and they are age/contradiction/file-existence driven, not “slug finished.”
+
 ## Compression Protocol
 
 Triggered at session start for any entry whose date crossed the 30-day threshold since last session.
