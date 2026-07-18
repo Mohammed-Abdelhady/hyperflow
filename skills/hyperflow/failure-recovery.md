@@ -1,10 +1,22 @@
 # Failure Recovery
 
-Canonical retry / escalate / abort policy for Worker errors and Quality Gate failures. Referenced from [DOCTRINE rule 14](DOCTRINE.md).
+Canonical retry / escalate / abort policy for Worker errors and Quality Gate failures. Referenced from [DOCTRINE rule 14](DOCTRINE.md). Lifecycle verbs below are semantic ops from [runtime-contract.md](runtime-contract.md); host adapters map them onto live tools.
 
 ## Why this exists
 
 Before this doc, each skill improvised its failure path. Lint failure in deploy might silently retry; Worker OOM in dispatch might hang waiting for output; a malformed Writer response in spec might cascade into a confused Reviewer. Same skill, three different recovery shapes. This file is the single source of truth so every skill behaves the same when things break.
+
+## Host lifecycle binding (retry / re-dispatch)
+
+| Recovery action | Prefer when present | Fallback when absent |
+|---|---|---|
+| Re-run same worker/reviewer brief | `follow_up` on the same child | New `spawn` with the retry brief, or labelled inline phase |
+| Collect child result before deciding | `wait` | Same-turn inline completion only — do not claim async wait |
+| Stop a stuck child | `interrupt` | Do **not** claim cancellation; stop issuing work and document the limitation |
+| Enumerate active children during recovery | `list` | Track child ids only in Hyperflow artefacts (task file, Evidence, usage ledger) |
+| Ask the user mid-recovery | Never for NEEDS_FIX / revision loops | Structural gates still use `structured_question` (native or Hyperflow Question block + end turn) — never silent default |
+
+Do not hard-require Claude `Agent`, Codex collaboration names, or any other single host tool string. Bind through the session descriptor / provider mapping.
 
 ## The taxonomy
 
@@ -12,11 +24,11 @@ Four failure classes, four recovery shapes.
 
 ### 1. Worker tool error
 
-The Agent dispatch itself failed: tool crash, OOM, network 5xx, timeout, no output stream.
+The `spawn` (or labelled inline worker phase) itself failed: tool crash, OOM, network 5xx, timeout, no output stream.
 
 | Step | Action |
 |---|---|
-| Attempt 1 fails | Retry once with identical prompt (caches may be cold; transient errors clear) |
+| Attempt 1 fails | Retry once with identical prompt via `follow_up` / new `spawn` / inline phase (caches may be cold; transient errors clear) |
 | Attempt 2 fails | Escalate depth: dispatch the same role with a standalone review pass and `## Prior attempt` block injected — the error message + any partial output |
 | Attempt 3 fails | Abort the batch. Print `WORKER_ABORT: <role> · <error-chain>` to the user. Do not advance to the next batch. The chain is in a failed state |
 
@@ -24,7 +36,7 @@ The `## Prior attempt` injection lets the escalated Worker see exactly what went
 
 ### 2. Worker malformed output
 
-The Agent returned, but the output doesn't match the expected schema: a Writer that returned code instead of prose, a Reviewer that returned a bare verdict without findings, an Implementer that returned a diff for files outside its assigned scope.
+The worker returned, but the output doesn't match the expected schema: a Writer that returned code instead of prose, a Reviewer that returned a bare verdict without findings, an Implementer that returned a diff for files outside its assigned scope.
 
 | Step | Action |
 |---|---|
@@ -32,20 +44,20 @@ The Agent returned, but the output doesn't match the expected schema: a Writer t
 | Attempt 2 violates | Escalate with a standalone review pass and same `## Violation` block |
 | Attempt 3 violates | Abort. `WORKER_ABORT: <role> · schema violation · <last-violation>` |
 
-### 3. Worker NEEDS_REVISION verdict
+### 3. Worker NEEDS_FIX / NEEDS_REVISION verdict
 
-Different from an error: the Worker produced valid output, the Reviewer judged it insufficient (incomplete implementation / missed edge case / failing test scaffold).
+Different from an error: the Worker produced valid output, the Reviewer judged it insufficient (incomplete implementation / missed edge case / failing test scaffold). Verdict tokens `NEEDS_FIX` and `NEEDS_REVISION` are equivalent for recovery.
 
 | Step | Action |
 |---|---|
-| Reviewer returns NEEDS_REVISION | Retry the Worker once with `## Learnings from review` injection containing the specific findings |
-| Second NEEDS_REVISION | Print one-line status: `NEEDS_REVISION × 2 on <sub-task> — surfacing for review`. The chain continues with the latest output marked as `partial`. Do NOT re-dispatch a third time. Do NOT fire AskUserQuestion mid-flight. The end-of-chain concerns report includes the partial sub-task |
+| Reviewer returns NEEDS_FIX / NEEDS_REVISION | Retry the Worker once with `## Learnings from review` injection containing the specific findings (`follow_up` when available, else new `spawn` / inline resume) |
+| Second NEEDS_FIX / NEEDS_REVISION | Print one-line status: `NEEDS_REVISION × 2 on <sub-task> — surfacing for review`. The chain continues with the latest output marked as `partial`. Do NOT re-dispatch a third time. Do NOT fire `structured_question` mid-flight. The end-of-chain concerns report includes the partial sub-task |
 
-NEEDS_REVISION twice usually means the Reviewer's criteria and the Worker's interpretation disagree on something the brief didn't disambiguate. A third Worker dispatch typically loops with the same misunderstanding. Surfacing it is the correct exit.
+NEEDS_FIX twice usually means the Reviewer's criteria and the Worker's interpretation disagree on something the brief didn't disambiguate. A third Worker dispatch typically loops with the same misunderstanding. Surfacing it is the correct exit. Bounded retry semantics are identical under collaboration/`spawn` profiles and under pure inline worker/reviewer phases.
 
 ### 4. Quality Gate failure (Layer 5)
 
-Lint, typecheck, build, tests, security sweep — any gate the deploy skill or the per-batch verification fires.
+Lint, typecheck, build, tests, security sweep — any gate the deploy skill or the per-batch verification fires (via host `shell` when available).
 
 | Step | Action |
 |---|---|
@@ -60,13 +72,15 @@ The Reviewer itself errored (tool crash, malformed output, timeout). Treated the
 
 If the Reviewer errors after the Worker succeeded, the Worker's output is preserved (do not discard it). The retry / escalated Reviewer reviews the same Worker output. If all Reviewer attempts fail and the abort fires, the chain still has the Worker's output but no verdict — print `REVIEWER_ABORT: <role> · output preserved · no verdict` and surface to the user as a partial result.
 
+Worker/reviewer separation never collapses during recovery: a failed reviewer does not become an implementer, and a worker never self-reviews to "unblock" the chain.
+
 ## Cross-cutting rules
 
 - **Retry budget per chain.** Each chain has a budget of **3 cumulative aborts** across all batches and sub-phases. After the third abort, the chain itself aborts and prints the full failure trail.
 - **Never `--no-verify`.** Quality gates exist for a reason. Bypassing them is a doctrine violation.
 - **Never force-push to main/master.** A failure is not a license to overwrite history.
-- **Background agent failures.** Background agents follow the same policy but failures are surfaced via `/hyperflow:background show <id>` rather than blocking the foreground chain. Foreground continues; user reviews background state asynchronously.
-- **Wall-clock accounting.** Retries count against the chain's wall-clock budget. A chain that retries every Worker once is taking 2× the wall-clock — that should appear in the end-of-chain usage summary so the user can see if there's a systemic issue (network, model degradation, prompt quality).
+- **Background agent failures.** When the host `background` op is present and a background agent was actually fired, failures surface via `/hyperflow:background show <id>` rather than blocking the foreground chain. Foreground continues; user reviews background state asynchronously. When `background` is **unavailable** (Codex default and many portable hosts): there is no background failure path — work was foreground-only; recover with the tables above. Never invent notify-on-complete hooks or pretend registry completion.
+- **Wall-clock accounting.** Retries count against the chain's wall-clock budget. A chain that retries every Worker once is taking 2× the wall-clock — that should appear in the end-of-chain usage summary so the user can see if there's a systemic issue (network, model degradation, prompt quality). Record only observed or explicitly estimated (`estimated=true`) metrics — never fabricate ([output-style.md](output-style.md) §8, [runtime-contract.md](runtime-contract.md) metrics honesty).
 
 ## What this is NOT
 
@@ -74,6 +88,7 @@ If the Reviewer errors after the Worker succeeded, the Worker's output is preser
 - **NOT a license to swallow errors.** Every aborted dispatch produces a user-visible `WORKER_ABORT` / `REVIEWER_ABORT` line.
 - **NOT a replacement for the SECURITY_VIOLATION halt** (DOCTRINE rule 9). Security violations bypass this entire policy and halt the chain immediately with no retries.
 - **NOT specific to any skill.** Every skill that dispatches Workers or runs Quality Gates follows this policy.
+- **NOT a license to claim host cancellation** when `interrupt` is missing. Stop work and document the limitation.
 
 ## Observability
 
@@ -108,9 +123,9 @@ The status line fires at the moment of the transition — before the retry or es
 
 | Failure class | Attempt 1 | Attempt 2 | Attempt 3 |
 |---|---|---|---|
-| Worker tool error | Retry | Escalate (deeper review pass) | Abort batch |
+| Worker tool error | Retry (`follow_up` / `spawn` / inline) | Escalate (deeper review pass) | Abort batch |
 | Worker malformed output | Retry with violation note | Escalate with violation note | Abort batch |
-| Worker NEEDS_REVISION | Retry with learnings | Surface as partial; continue chain | — (no third dispatch) |
+| Worker NEEDS_FIX / NEEDS_REVISION | Retry with learnings | Surface as partial; continue chain | — (no third dispatch) |
 | Quality gate failure | Retry (clear caches) | Surface stderr to user; halt push | — |
 | Reviewer error | Retry | Escalate (deeper review pass) | Surface partial output, no verdict |
 | Security violation | Halt immediately | — | — |

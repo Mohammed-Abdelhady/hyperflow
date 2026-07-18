@@ -7,6 +7,10 @@ faster than any model's cutoff. A specialist that asserts a current best practic
 This file is the **single source of truth**. Specialist charters reference it by one line —
 `Web-research-first: per web-research.md, scope=<…>` — and never restate it.
 
+Canonical op: **`web_research`** ([runtime-contract.md](runtime-contract.md)). Host adapters bind it to live
+search/fetch tools (Claude `WebSearch` / `WebFetch`, Codex `web_search` / `web_fetch`, OpenCode inventory
+equivalents, etc.). Skills never hard-require a single provider tool string.
+
 ## Mandate
 
 When a specialist runs on a **gated flow** (see below), it performs a focused online pass **before** producing its
@@ -31,20 +35,25 @@ as cheap and fast as today; the online cost is only paid where currency material
 
 Skip — and **log the skip on one line**, never silently — when ANY holds:
 
-- **Offline / `WebSearch` unavailable** → `web-research: skipped (offline)`.
+- **Offline / `web_research` unavailable** (no mapped search/fetch tools in the live inventory, sandbox blocked, or network off) → `web-research: skipped (offline)` and record `unavailable` in Evidence / context. **Never invent citations.**
 - **Cached-fresh** — a finding for this surface exists in `.hyperflow/memory/` tagged `#research #specialist`, dated
   within the recency window → `web-research: skipped (cache hit: <entry>)`.
 - **Config off** — `specialists.webResearch.enabled: false` → `web-research: skipped (disabled)`.
 
 A skip is graceful degradation, never a failure — it must not block the chain (same posture as triage fallback).
+When research was required by the gate but tools were unavailable, the specialist still produces a verdict on
+persona standards **and** marks evidence limitations explicitly (e.g. `Sources consulted: none — web_research unavailable`).
 
-## Tools
+## Tools (semantic binding)
 
-| Tool | Use for |
-|---|---|
-| `WebSearch` | discovery — find current advisories, release notes, best-practice sources |
-| `WebFetch` | read a specific source identified by search or already known (changelog, CVE entry, doc page) |
-| `context7` MCP (when available) | authoritative, version-pinned library/framework docs (matches the `research` persona convention) |
+| Semantic intent | Typical host candidates (first live match) | Use for |
+|---|---|---|
+| Discover current sources | `web_search`, `WebSearch`, provider inventory equivalents | Advisories, release notes, best-practice sources |
+| Read a known URL | `web_fetch`, `WebFetch`, provider inventory equivalents | Changelog, CVE entry, doc page identified by search or already known |
+| Version-pinned library docs | `context7` MCP (when available) | Authoritative, version-pinned framework docs (matches the `research` persona convention) |
+
+Bind only tools present in the **live** inventory. Do not invent `WebSearch` / `WebFetch` calls on hosts that
+expose different names. If no candidate is callable, take the offline-skip path above.
 
 ## Source budget
 
@@ -67,6 +76,15 @@ The specialist's output ends with a `Sources consulted:` block listing each sour
 best-practice or CVE claim is a doctrine violation** — it is indistinguishable from a hallucinated one (mirrors the
 `research` persona's evidence rule).
 
+When `web_research` was skipped (offline / disabled / cache), the block still appears:
+
+```
+Sources consulted:
+- none — web_research unavailable (offline)
+```
+
+or lists only the memory cache entry that satisfied the recency window.
+
 ```
 Sources consulted:
 - React 19 `useActionState` migration — https://react.dev/blog/… (2025-12)
@@ -88,5 +106,6 @@ surface, not every run. Use the [`cache`](../cache/SKILL.md) memory format.
 
 ## Failure recovery
 
-`WebSearch` / `WebFetch` errors follow [`failure-recovery.md`](failure-recovery.md): retry once, then degrade to the
-skip path with a logged reason. Never abort the chain over a research failure.
+`web_research` tool errors follow [`failure-recovery.md`](failure-recovery.md): retry once (same mapped tools), then
+degrade to the skip path with a logged reason. Never abort the chain over a research failure. Never fabricate
+sources to fill the citation block after a failed fetch.
