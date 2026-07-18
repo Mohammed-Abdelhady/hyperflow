@@ -419,6 +419,36 @@ class DryRunTests(FixtureBase):
                 )
 
 
+class DryRunFeatureGateTests(FixtureBase):
+    """plan_archive must apply the same completion gate as live archive_slug,
+    so --dry-run never promises a feature move that live mode would skip."""
+
+    def _feature(self, slug: str, status: str) -> Path:
+        fdir = self.hf / "features" / slug
+        fdir.mkdir(parents=True, exist_ok=True)
+        (fdir / "feature.md").write_text(
+            f"## Status\n\n| Status | {status} |\n", encoding="utf-8"
+        )
+        return fdir
+
+    def test_dry_run_omits_incomplete_feature_on_slug_collision(self) -> None:
+        slug = self._write_completed("shared")  # terminal flat task
+        self._feature(slug, "in_progress")  # but the feature is NOT done
+        report = reap_mod.reap(self.hf, slug, dry_run=True, cfg=dict(reap_mod.DEFAULTS))
+        planned = {e["path"] for e in report["archived"]}
+        self.assertIn(f"tasks/{slug}.md", planned)  # task still planned
+        self.assertNotIn(f"features/{slug}", planned)  # feature omitted
+        reasons = {(s["path"], s["reason"]) for s in report["skipped"]}
+        self.assertIn((f"features/{slug}", "feature not completed"), reasons)
+
+    def test_dry_run_includes_completed_feature(self) -> None:
+        slug = "donefeat"
+        self._feature(slug, "completed")
+        report = reap_mod.reap(self.hf, slug, dry_run=True, cfg=dict(reap_mod.DEFAULTS))
+        planned = {e["path"] for e in report["archived"]}
+        self.assertIn(f"features/{slug}", planned)
+
+
 class IdempotencyTests(FixtureBase):
     def test_second_reap_is_empty(self) -> None:
         slug = self._write_completed("idem")

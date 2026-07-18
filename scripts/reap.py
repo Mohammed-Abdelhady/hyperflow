@@ -239,6 +239,18 @@ def scope_candidates(hf: Path, slug: str) -> list[Path]:
     ]
 
 
+def is_archivable_candidate(hf: Path, slug: str, path: Path) -> bool:
+    """Whether a scope candidate would actually be archived by live archive_slug.
+
+    The feature tree is archived only when the feature is completed; every other
+    candidate archives on existence. Both the dry-run plan and any future caller
+    must apply this same gate so the plan cannot drift from live behaviour.
+    """
+    if path == hf / "features" / slug:
+        return feature_is_terminal(hf, slug)
+    return True
+
+
 def find_twins(hf: Path, slug: str) -> list[Path]:
     art = hf / "artefacts"
     if not art.is_dir():
@@ -256,12 +268,26 @@ def find_twins(hf: Path, slug: str) -> list[Path]:
     return out
 
 
-def plan_archive(hf: Path, slug: str) -> list[dict[str, str]]:
-    """Dry-run archive plan — paths that would move (no mutation)."""
+def plan_archive(
+    hf: Path, slug: str, report: dict[str, Any] | None = None
+) -> list[dict[str, str]]:
+    """Dry-run archive plan — paths that would move (no mutation).
+
+    Applies the same completion gate as live ``archive_slug`` so the plan never
+    over-reports: an incomplete ``features/<slug>/`` is omitted (and recorded in
+    ``report['skipped']`` when a report is given), matching live behaviour.
+    """
     planned: list[dict[str, str]] = []
     for path in scope_candidates(hf, slug):
-        if path.exists() and is_under(hf, path):
-            planned.append({"path": rel_hf(hf, path), "dest": f"archive/(planned)/{path.name}"})
+        if not (path.exists() and is_under(hf, path)):
+            continue
+        if not is_archivable_candidate(hf, slug, path):
+            if report is not None:
+                report["skipped"].append(
+                    {"path": rel_hf(hf, path), "reason": "feature not completed"}
+                )
+            continue
+        planned.append({"path": rel_hf(hf, path), "dest": f"archive/(planned)/{path.name}"})
     for twin in find_twins(hf, slug):
         planned.append({"path": rel_hf(hf, twin), "dest": f"archive/artefacts/(planned)/{twin.name}"})
     return planned
@@ -1005,7 +1031,7 @@ def reap(
     # ── Archive class ────────────────────────────────────────────────────────
     archive_error: str | None = None
     if effective_dry:
-        report["archived"] = plan_archive(hf, slug)
+        report["archived"] = plan_archive(hf, slug, report)
     else:
         report["archived"], archive_error = run_archive(hf, slug, cfg=cfg)
 
