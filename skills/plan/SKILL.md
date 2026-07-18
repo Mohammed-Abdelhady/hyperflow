@@ -5,9 +5,9 @@ description: |
   Trigger with /hyperflow:plan, "design this", "plan this", "decompose this", "how should we", "what's the best way to", "break this down", "enhance this prompt".
 allowed-tools: Read, Write, Edit, Bash(git:*), Bash(python3:*), Bash(mv:*), Glob, Grep, Agent, AskUserQuestion, Skill
 argument-hint: "<idea, prompt, or task> [--thorough | depth=max] [briefs=auto|terse] [noamplify]"
-version: 2.0.1
+version: 2.1.0
 license: MIT
-compatibility: Designed for Claude Code
+compatibility: Claude Code native; Codex / OpenCode / Grok via runtime-contract fallbacks
 tags: [prompt-engineering, design, brainstorming, planning, decomposition, multi-agent]
 ---
 
@@ -17,9 +17,22 @@ One chain-starter that folds three phases — **amplify** (sharpen the prompt), 
 
 **Plan never implements.** It is **thinking, not building** — no source code is written here, and it does not silently chain into `/hyperflow:dispatch`. The only writes are to `.hyperflow/specs/`, `.hyperflow/tasks/`, `.hyperflow/features/`, `.hyperflow/memory/`, and (another-session mode) the committed `.hyperflow-handoff/` package. When the task file is ready, plan **always** asks where to build it (this session / another session / stop) — that gate fires on every run, and the user's choice is the only thing that ever starts a build. It drives **Layer 0.5 (Triage)**, **Layer 4 (Brainstorming/Spec)**, **Layer 0 (Project Analysis)**, **Layer 6 (Memory)**, and **Layer 7 (Task Templates)**.
 
-**Plan runs at maximum thinking depth.** Engage extended / ultra reasoning across triage, analysis, design, and decomposition — plan is the chain's one think-heavy front door and pays the reasoning cost once so the build runs faithfully. Every substantive step **uses tools** (Agents to do the work, `Write` to persist artefacts); a plan that exists only in chat is a violation.
+**Plan runs at maximum thinking depth.** Engage extended / ultra reasoning across triage, analysis, design, and decomposition — plan is the chain's one think-heavy front door and pays the reasoning cost once so the build runs faithfully. Every substantive step **uses tools** (semantic `spawn` / labelled inline workers to do the work, `edit`/`Write` to persist artefacts); a plan that exists only in chat is a violation.
 
 **Every agent runs on the current session model — there is no model-tier routing and no model configuration.** Roles (Classifier, Searcher, Writer, Analyst, Planner, Reviewer) differ by responsibility, not by model.
+
+## Runtime contract
+
+Executable operations use [runtime-contract.md](../hyperflow/runtime-contract.md). Transitions and gates: [chain-router.md](../hyperflow/chain-router.md).
+
+| Need | Semantic op | When present | When absent |
+|---|---|---|---|
+| Worker / searcher / writer / decision agent | `spawn` | Host spawn/task/subagent (Claude `Agent`, Codex collaboration/legacy candidates, OpenCode Task, …) | Labelled **inline** phase with the same brief; never invent host agent types |
+| Reviewer (always separate) | `spawn` (second call) or sequential phase | Separate child with reviewer charter | Labelled **inline reviewer** after workers; workers never self-review |
+| Structural / clarify questions | `structured_question` | Prefer `AskUserQuestion` / host structured UI | Exact **Hyperflow Question** chat block → **end the turn**. Never silent-default |
+| Hand off to dispatch (only after build-location answer) | `skill_continuation` | Prefer native `Skill` | Load `skills/dispatch/SKILL.md` **completely**, then continue inline with the same args |
+
+Do not hardcode only `multi_agent_v1.spawn_agent` or sole `worker`/`explorer` types — map via inventory ([provider-*.md](../hyperflow/provider-codex.md)).
 
 ## Iron Rules
 
@@ -36,7 +49,7 @@ One chain-starter that folds three phases — **amplify** (sharpen the prompt), 
 
 ## Per-Step Agent Map (DOCTRINE rule 12 + 12.2)
 
-Every substantive step dispatches at least one Agent; trivial steps (§12.1) and single-pair atomic steps (§12.2.8) run as noted. All roles run on the session model — the table assigns responsibility, not tier.
+Every substantive step dispatches at least one worker via `spawn` (or a labelled inline worker phase when spawn is unavailable); trivial steps (§12.1) and single-pair atomic steps (§12.2.8) run as noted. All roles run on the session model — the table assigns responsibility, not tier. Reviewers always run as a **separate** spawn or separate inline phase.
 
 | Step | Sub-phase | Workers | Reviewers / decision agents | Notes |
 |---|---|---|---|---|
@@ -45,14 +58,14 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 | 2 — Amplify (skippable) | atomic | Writer — rewrite prompt | **Reviewer** — 8-dim rubric, one revision | Skips on clear/structured prompt |
 | 3 — Context | 3a + 3b (P1) | Searcher ×2 per sub-phase | **Reviewer** per sub-phase | 3a surface map · 3b semantic + convention scan |
 | 4 — Multi-dim analysis (P4) | 4a + 4b + 4c (P1) | Writer ×1–2 per sub-phase | **Reviewer** per sub-phase + **Analyst** synthesis | Skips when ambiguity < 0.6 ∧ complexity ≠ complex |
-| 5 — Clarify (gate) | atomic | — | — | `AskUserQuestion` only for material unknowns; bounce path 0–3 |
+| 5 — Clarify (gate) | atomic | — | — | `structured_question` only for material unknowns; bounce path 0–3 |
 | 6 — Synthesis + approaches (P4) | 6a + 6b | Writer ×1–2 per sub-phase | **Reviewer** (batched) | Skips approaches when ambiguity < 0.6 ∧ complexity ≠ complex |
 | 7 — Design sections (P1+P2) | 7a + 7b + 7c | Writer ×1–2 per sub-phase (**`architect`** authors 7a §1/§2 on architect-typed / complex / multi-subsystem tasks — embeds Mermaid graphs; **`designer`** authors the visual/experiential decisions on ui/creative-typed tasks — grounds them in `.hyperflow/design/system.md`; **`mobile`** authors the platform/device decisions on mobile/native-typed tasks — grounds them in `../hyperflow/mobile.md`) | **Reviewer** per sub-phase + 1 batched | File-first; one combined approval gate |
 | 8 — Spec finalize | atomic | Writer | **Reviewer** (final-integration) | Renames draft → `.hyperflow/specs/<slug>.md` |
 | 9 — Decompose | 9a + 9b + 9c | Planner ×1 (9a) · Searcher ×2 (9b) · **brief Writer ×1 per non-trivial sub-task (9c)** | **Reviewer** per sub-phase | 9a batch graph → 9b sizing → 9c authors a full build-ready brief per non-trivial sub-task (`briefs=auto`) |
 | 10 — Write task file (P3 w/ 11) | 10a + 10b + 10c | Writer ×2 per sub-phase | **Reviewer** per sub-phase + 1 final verify | Flat task file or feature/phase tree |
 | 11 — Memory (P3 w/ 10) | atomic | Writer appends | **Reviewer** dup/contradiction check | Concurrent with Step 10 |
-| 12 — Build-location gate | atomic | — | — | `AskUserQuestion` (ALWAYS fires): this session → `Skill` dispatch · another session → write handoff package · stop |
+| 12 — Build-location gate | atomic | — | — | `structured_question` (ALWAYS fires): this session → `skill_continuation` dispatch · another session → write handoff package · stop |
 
 **Skippable / bounce summary:** Step 2 skips for clear prompts; Step 4 and Step 6-approaches are P4-skippable; Step 5 **bounces** the design phase (Steps 6–8) entirely when the request is clear, jumping to Step 9. `--thorough` / `depth=max` disables P1/P2/P4 (sequential, every step runs, per-section reviewers, standalone final-integration pass added); P3/P5 stay on. **No step is a startup gate** — plan asks the user nothing until the Step 5 clarify questions, and the build decision waits until Step 12.
 
@@ -60,12 +73,14 @@ Every substantive step dispatches at least one Agent; trivial steps (§12.1) and
 
 | Gate | When | Format |
 |---|---|---|
-| Smart questions | Step 5, design path | `AskUserQuestion` — 0–5 material questions, scaled by ambiguity |
-| Synthesis + approach | Step 6, after batched review | `AskUserQuestion` — confirm synthesis · pick approach |
-| Design section approval | Step 7, one combined gate | `AskUserQuestion` — approve all / revise §N |
-| **Build location** | Step 12, after the task file is written — **ALWAYS** | `AskUserQuestion` — this session / another session / stop (+ handoff: review / deploy when another session) |
+| Smart questions | Step 5, design path | `structured_question` (prefer `AskUserQuestion`) — 0–5 material questions, scaled by ambiguity |
+| Synthesis + approach | Step 6, after batched review | `structured_question` — confirm synthesis · pick approach |
+| Design section approval | Step 7, one combined gate | `structured_question` — approve all / revise §N |
+| **Build location** | Step 12, after the task file is written — **ALWAYS** | `structured_question` — this session / another session / stop (+ handoff: review / deploy when another session) |
 
 The build-location gate fires on **every** run (it is the only thing that ever starts a build); the design-phase gates fire at most once each and are skipped on the bounce path. Plan asks **no startup gates** — the session/build decision and the operational choices (commit cadence · branch · push) are no longer front-loaded. When the user picks "this session," `dispatch` fires its own operational gate (its Step 0.5) before building. Markers follow DOCTRINE rule 8: multi-option/named-workflow choices carry `(Recommended)`; binary action gates (Approve/Revise) carry none.
+
+**Structured-input absence:** when `structured_question` has no host UI, render the exact **Hyperflow Question** chat block ([runtime-contract.md](../hyperflow/runtime-contract.md)), optionally write a pending-gate checkpoint under `.hyperflow/`, and **end the turn**. Never silently pick the recommended option. Never start a build without the build-location answer.
 
 ## Flow
 
@@ -115,13 +130,13 @@ Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `.hyperflow/m
 - **4c — Alternatives:** `Writer — alternatives: ≥3 distinct solutions, brief notes` (single canonical set). → `**Reviewer**`.
 - **4d — Analyst synthesis (sequential):** `**Analyst** — 6-dimension aggregation` consolidates 4a/4b/4c into the unified brief; unknowns become Step 5 questions.
 
-### Step 5 — Clarify (`AskUserQuestion` · two modes)
+### Step 5 — Clarify (`structured_question` · two modes)
 
 Pre-flight: read `.hyperflow/memory/project-decisions.md`; skip any candidate already answered there (print one line) unless the cached answer conflicts with this task (then ask "decisions say X — does this task change that?").
 
 **Bounce gate (decompose-only path):** when `ambiguity < 0.4 AND complexity IN [trivial, simple]`, the request is clear — skip Steps 6–8. Ask **0–3** post-analysis questions only for specific unresolved findings, then jump to Step 9.
 
-**Design path (everything else):** ask via `AskUserQuestion` only when an answer changes implementation. Budget by triage depth: none 0 · light 0–2 · standard 2–3 · deep 4–5. Never stack more than 2 questions per call. Multi-option lists (3+) mark a `(Recommended)` choice; binary lists carry no marker.
+**Design path (everything else):** ask via `structured_question` (prefer `AskUserQuestion` when present) only when an answer changes implementation. Budget by triage depth: none 0 · light 0–2 · standard 2–3 · deep 4–5. Never stack more than 2 questions per call. Multi-option lists (3+) mark a `(Recommended)` choice; binary lists carry no marker. If structured UI is missing: Hyperflow Question block, **end the turn**, resume on the next user message.
 
 After answers, append structural decisions (database, auth, testing, framework defaults) to `.hyperflow/memory/project-decisions.md` under a category heading with date + source slug — inline write, §12.1-trivial. Skip task-specific answers.
 
@@ -133,7 +148,7 @@ Step 5 (synthesis) and 6a both depend on the answers but not on each other — d
 - **6a — Approach candidates (P4-skip when `ambiguity < 0.6 ∧ complexity != complex`):** `Writer — lightweight candidates` ∥ `Writer — heavyweight candidates`. Each approach: Name · What · Pros · Cons · Fit.
 - **6b — Trade-off eval (sequential on 6a):** `Writer — fit analysis` ∥ `Writer — risk analysis` scoring each candidate.
 
-`**Reviewer** — batched: synthesis + approaches` ([`../hyperflow/reviewer-prompt-batched.md`](../hyperflow/reviewer-prompt-batched.md)) returns per-draft verdicts; re-dispatch only the failing draft. When 6a/6b are P4-skipped, annotate "Approach: derived from synthesis (ambiguity low)". Then present synthesis + approaches and confirm via `AskUserQuestion` — recommend one approach, the choice is the user's.
+`**Reviewer** — batched: synthesis + approaches` ([`../hyperflow/reviewer-prompt-batched.md`](../hyperflow/reviewer-prompt-batched.md)) returns per-draft verdicts; re-dispatch only the failing draft. When 6a/6b are P4-skipped, annotate "Approach: derived from synthesis (ambiguity low)". Then present synthesis + approaches and confirm via `structured_question` (prefer `AskUserQuestion`) — recommend one approach, the choice is the user's.
 
 ### Step 7 — Section-by-section design (P1 + P2 · file-first · one combined gate)
 
@@ -155,7 +170,7 @@ Sub-phases dispatch in ONE parallel message (P1), each with a per-sub-phase Revi
 
 On batched `NEEDS_FIX` for a section, re-dispatch only that section's Writer (rewrites its own H2 block). **4+ of 5 sections NEEDS_FIX** → the approach is likely wrong; bounce to Step 6 and re-pick. Worker failure: retry (max 2), then `ESCALATE` — inline drafting in chat is BANNED (violates file-first). `--thorough`: draft each section sequentially with its own approve/revise gate, then a standalone final-integration Reviewer.
 
-After review passes, fire ONE combined `AskUserQuestion` — body is a one-line section roster + the file path (NOT the content):
+After review passes, fire ONE combined `structured_question` (prefer `AskUserQuestion`) — body is a one-line section roster + the file path (NOT the content):
 
 ```
 Design draft ready at .hyperflow/specs/<slug>.draft.md
@@ -195,7 +210,7 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 ### Step 12 — Build-location gate (ALWAYS fires · plan never auto-implements)
 
-The task file is written; plan is done thinking. Fire ONE `AskUserQuestion` — this gate fires on **every** run and is the **only** thing that ever starts a build. Never skip it, never default it, never silently chain into `dispatch`, regardless of any propagated args or autonomy directive. Q1 is a named-workflow choice → recommended option first with `(Recommended)`:
+The task file is written; plan is done thinking. Fire ONE `structured_question` (prefer `AskUserQuestion` when present) — this gate fires on **every** run and is the **only** thing that ever starts a build. Never skip it, never default it, never silently chain into `dispatch`, regardless of any propagated args or autonomy directive. **No implementation and no source-code edits occur until this gate has an explicit user answer.** Q1 is a named-workflow choice → recommended option first with `(Recommended)`:
 
 ```
 Plan ready — .hyperflow/tasks/<slug>.md (N batches, M sub-tasks)
@@ -214,13 +229,13 @@ When the second session finishes building, what should it do?
   Complete to deploy  — the second session continues to /hyperflow:deploy after the build.
 ```
 
-Branch on the answer:
+**Portable-surface fallback (Codex / OpenCode / Grok):** when structured UI is absent, print the same gate as a `Hyperflow Question` chat block, persist a safe pending-gate checkpoint if needed, and **end the turn** — wait for the user's answer on the next message. Source code remains untouched. If no interactive channel exists, error and stop (never silently default to building).
 
-- **This session** → invoke `Skill` with `skill: dispatch`, `args: "<slug> triage=… mode=… briefs=…"` — appending `gh_issue=… pr=… comment=…` verbatim when present (the GitHub-native pass-through from Step 0; dispatch's Step 5 PR exit needs them). Do **not** pass `commit=` / `branch=` / `push=` — `dispatch` fires its own operational gate (its Step 0.5) before building. Print `Building here — handing to /hyperflow:dispatch…`.
+Branch on the answer (only after the answer is received):
+
+- **This session** → `skill_continuation` into dispatch. When native Skill is available: invoke `Skill` with `skill: dispatch`, `args: "<slug> triage=… mode=… briefs=…"` — appending `gh_issue=… pr=… comment=…` verbatim when present (the GitHub-native pass-through from Step 0; dispatch's Step 5 PR exit needs them). When Skill is unavailable: **load `skills/dispatch/SKILL.md` completely**, then continue inline in the coordinator with the same args and gate contract. Do **not** pass `commit=` / `branch=` / `push=` — `dispatch` fires its own operational gate (its Step 0.5) before building. Print `Building here — handing to /hyperflow:dispatch…`. Do not stop with "Skill tool unavailable".
 - **Another session** → do NOT invoke dispatch. Write the committed handoff package and STOP at the dispatch boundary (full contract: [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md)) — create `.hyperflow-handoff/<slug>/` with `HANDOFF.md` (manifest: slug, artefact type/path, resolved chain args, `on_complete` from Q2, originating commit, `Specialists` roster), `STATUS` (`planned`), a committed copy of the gitignored artefact, and `context/` copies of `.hyperflow/{conventions,profile,architecture}.md` + memory index; `git add` + commit `chore(handoff): plan <slug> for second-session build`; then print the start-session-2 instructions.
 - **Stop** → write nothing further. Print `Plan kept at .hyperflow/tasks/<slug>.md — run /hyperflow:dispatch <slug> when you're ready to build.`
-
-Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `Hyperflow Question` chat block and wait; if no interactive channel exists, error and stop (never silently default to building).
 
 ## Anti-Patterns
 
@@ -244,14 +259,16 @@ Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `H
 ## Prerequisites
 
 - `.hyperflow/` cache (run `/hyperflow:scaffold` first if missing — improves triage and planning context).
-- `AskUserQuestion` available — required for the gates. Headless / non-interactive mode is rejected at the first gate plan reaches (the Step 5 clarify questions, or the Step 12 build-location gate on the bounce path).
+- Interactive channel for structural gates: prefer `AskUserQuestion` / host `structured_question` UI; otherwise Hyperflow Question chat fallback. Headless with no channel is rejected at the first gate plan reaches (Step 5 clarify, or Step 12 build-location on the bounce path).
 - An idea, prompt, or task. Pure "should we?" design questions exercise the full flow; clear decompositions bounce past design automatically.
 
 ## Error Handling
 
 | Failure | Behavior |
 |---|---|
-| `AskUserQuestion` unavailable (headless) | Refuse at the first gate reached (Step 5 clarify, else Step 12 build-location); print error and exit. Never silently build. |
+| `structured_question` UI unavailable (Codex / OpenCode / Grok) | Emit Hyperflow Question chat block and **end the turn**. Never silently build. |
+| No interactive channel at all (headless) | Refuse at the first gate reached (Step 5 clarify, else Step 12 build-location); print error and exit. Never silently build. |
+| Native Skill unavailable on "this session" | Load full `skills/dispatch/SKILL.md` and continue inline (`skill_continuation`). Never stop with "Skill tool unavailable". |
 | Classifier rejects request (off-topic/abuse) | Stop. Print neutral reason. |
 | User picks "revise" on a design section | Loop that Writer with feedback. Max 3 cycles per section, then suggest a different approach. |
 | Searcher returns no/empty context | Downstream Writer flags `MISSING CONTEXT`; redispatch with the gap. Max 2 retries, then proceed with a caveat. |
@@ -264,6 +281,7 @@ Portable-surface fallback (Codex / OpenCode / Grok): print the same gate as a `H
 
 ## Resources
 
+- [runtime-contract.md](../hyperflow/runtime-contract.md) · [chain-router.md](../hyperflow/chain-router.md) — semantic ops, transitions, structural gates.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — shared rules (rule 8 structural gates, rule 12 per-step agents, rule 17 Brain roster).
 - [artefact-data.md](../hyperflow/artefact-data.md) — viewer-mode emit contract: when `viewer.enabled`, the spec/task/feature/memory artefacts are written as compact JSON via `scripts/artefact.py` + a slim stub, and the build-location line reads `hyperflow view <slug>` (classic markdown otherwise).
 - [prompt-rubric.md](references/prompt-rubric.md) — 8-dimension prompt-quality rubric + domain-injection skeleton (Step 2).

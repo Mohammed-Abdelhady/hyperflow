@@ -5,9 +5,9 @@ description: |
   Trigger with /hyperflow:workflow, "run a workflow", "dynamic workflow", "big task", "large migration", "repo-wide audit".
 allowed-tools: Read, Glob, Grep, AskUserQuestion, Skill
 argument-hint: "<big task description>"
-version: 1.0.0
+version: 1.1.0
 license: MIT
-compatibility: Claude Code native workflows; Codex/OpenCode/Grok portable adapter
+compatibility: Claude Code native workflows; Codex/OpenCode/Grok portable adapter via runtime-contract
 tags: [workflow, claude-code, codex, opencode, grok, large-task, orchestration, verification]
 ---
 
@@ -15,26 +15,40 @@ tags: [workflow, claude-code, codex, opencode, grok, large-task, orchestration, 
 
 Big-task path for work that is too large for normal turn-by-turn orchestration: system-wide changes, large migrations, repo-wide audits, high-confidence verification, and task prompts that explicitly ask for a workflow.
 
-- In Claude Code, use the host dynamic workflow runtime.
-- In Codex, run the portable workflow adapter with Codex subagents when exposed; otherwise run the same phases inline in the current thread.
-- In OpenCode, run the portable workflow adapter with Task/subagent dispatch when exposed; otherwise run the same phases inline in the current session.
-- In Grok, run the portable workflow adapter with `spawn_subagent` when enabled; otherwise run the same phases inline in the current session.
-- In Antigravity, Desktop/web bridge mode, or any host that cannot preserve the adapter phases, say so in one line and route to `/hyperflow:plan` with `chain-mode=auto`.
+Executable ops follow [runtime-contract.md](../hyperflow/runtime-contract.md). Never route to retired `spec` / `scope` ([chain-router.md](../hyperflow/chain-router.md)).
 
-Claude Code dynamic workflows require Claude Code v2.1.154 or later and can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. When disabled, use the portable adapter if the host is Codex, OpenCode, or Grok; otherwise route to `/hyperflow:plan` with `chain-mode=auto`.
+- In Claude Code, use the host dynamic workflow runtime when available.
+- On portable hosts (Codex, OpenCode, Grok, …), run the **portable workflow adapter**: prefer inventory-mapped `spawn` for independent units; otherwise run the same phases with labelled **inline worker** and **inline reviewer** phases.
+- In Antigravity, Desktop/web bridge mode, or any host that cannot preserve the adapter phases, say so in one line and continue via `skill_continuation` to `/hyperflow:plan` (never fall through to retired `scope`).
+
+Claude Code dynamic workflows require Claude Code v2.1.154 or later and can be disabled by `/config`, managed settings, `~/.claude/settings.json`, or `CLAUDE_CODE_DISABLE_WORKFLOWS=1`. When disabled, use the portable adapter if the host supports it; otherwise route to `/hyperflow:plan`.
 
 ## Routing Rules
 
 - Run this skill in Claude Code, Codex, OpenCode, and Grok.
 - Auto-route here when triage returns `flow=deep` or `flow=scientific`, `scope=system-wide`, or the user says `big task`, `large migration`, `repo-wide audit`, `run a workflow`, or `dynamic workflow`.
-- Do not route here for moderate multi-file work, routine bug fixes, or a task that needs user sign-off between implementation stages. Big-task workflow runs should not depend on arbitrary mid-run user input; split sign-off-heavy work into separate workflows or use `spec -> scope -> dispatch`.
+- Do not route here for moderate multi-file work, routine bug fixes, or a task that needs user sign-off between implementation stages. Big-task workflow runs should not depend on arbitrary mid-run user input; split sign-off-heavy work into separate workflows or use `plan` (decomposition) then `dispatch` — **never** the retired `spec -> scope -> dispatch` chain as a live path.
 - Do not set `/effort ultracode` or `xhigh` automatically. The user can enable `/effort ultracode` manually for session-wide workflow selection.
+- Every agent runs on the **current session model** — no model-tier routing.
+
+## Runtime ops (portable adapter)
+
+| Phase need | Semantic op | Present | Absent |
+|---|---|---|---|
+| Research / implement / write units | `spawn` | Parallel sibling children when host allows | Labelled inline worker phases |
+| Adversarial verification | `spawn` (separate) | Independent verification children | Labelled inline reviewer phases after workers |
+| Ambiguity at structural points | `structured_question` | Host structured UI | Hyperflow Question + **end the turn** |
+| Hand off to plan/dispatch/audit | `skill_continuation` | Native Skill when callable | Full target `SKILL.md` load + inline continuation |
+
+Spawn candidates come from live inventory + `config/providers.json` (Claude `Agent`; Codex `collaboration.spawn_agent` then legacy candidates; OpenCode Task / subagent; Grok `spawn_subagent`; other inventory matches). Do **not** hardcode only `multi_agent_v1.spawn_agent` or require sole `worker`/`explorer` agent types — embed Hyperflow role + charter in the brief; map legacy enums only when the session actually exposes them ([provider-codex.md](../hyperflow/provider-codex.md)).
+
+Worker and reviewer roles remain **independent** under both subagent and inline profiles.
 
 ## Provider Contracts
 
 ### Claude Code Native Workflow
 
-When this skill runs, ask the Claude Code workflow runtime to create a dynamic workflow for `$ARGUMENTS`. The generated workflow must preserve Hyperflow's doctrine inside the worker prompts and must include these phases:
+When this skill runs on Claude Code with dynamic workflows enabled, ask the Claude Code workflow runtime to create a dynamic workflow for `$ARGUMENTS`. The generated workflow must preserve Hyperflow's doctrine inside the worker prompts and must include these phases:
 
 1. Research and planning
    - Map affected files, dependency edges, tests, docs, and risk boundaries.
@@ -42,12 +56,12 @@ When this skill runs, ask the Claude Code workflow runtime to create a dynamic w
    - Produce a concise execution graph with parallelizable units and dependencies.
 
 2. Parallel implementation or investigation
-   - Fan out independent agents by subsystem or file family.
+   - Fan out independent agents by subsystem or file family via host `spawn` / workflow agents.
    - Keep each agent brief specific: objective, files in scope, constraints, acceptance criteria, and test expectations.
-   - Use the lightest model/stage that can safely do the work when the runtime supports model routing.
+   - Every child uses the current session model; never invent per-role model routing.
 
 3. Adversarial verification
-   - Run independent verification agents against each implementation or finding.
+   - Run independent verification agents against each implementation or finding (separate from implementers).
    - For audits, verify each finding before reporting it.
    - For implementation, check cross-file integration, regression risk, security-sensitive paths, and missed tests.
 
@@ -62,7 +76,7 @@ When this skill runs, ask the Claude Code workflow runtime to create a dynamic w
 
 ### Codex Portable Workflow Adapter
 
-Codex does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:workflow` as a custom Hyperflow workflow envelope around Codex subagents and inline fallback:
+Codex does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:workflow` as a custom Hyperflow workflow envelope around Codex multi-agent tools (prefer `collaboration.*` candidates, then legacy inventory matches) and inline fallback:
 
 1. Research and planning
    - Read the same `.hyperflow/` cache files listed above when present.
@@ -70,13 +84,13 @@ Codex does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow
    - Build an execution graph with parallelizable units, dependencies, expected commits, and verification commands.
 
 2. Parallel implementation or investigation
-   - If Codex subagent tools are exposed, dispatch independent searcher/worker/writer units together and collect their results before review.
-   - Map implementation and writing tasks to worker subagents; map codebase research to explorer/search subagents.
+   - If Codex `spawn` tools are exposed in inventory, dispatch independent searcher/worker/writer units together and collect their results before review.
+   - Embed Hyperflow roles in task briefs; do not require fictional agent-type enums.
    - If subagents are unavailable, run each unit inline with explicit worker and reviewer labels.
 
 3. Adversarial verification
-   - Run a separate verification pass for each completed unit before reporting it.
-   - Use Codex thinking defaults for verification and final integration review.
+   - Run a separate verification pass for each completed unit before reporting it (separate spawn or labelled inline reviewer).
+   - Use session-model reasoning effort appropriate to verification — never default to `xhigh`.
 
 4. Quality gates and commits
    - Run the detected lint, typecheck, build, and relevant tests.
@@ -85,10 +99,11 @@ Codex does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow
 
 5. Final synthesis
    - Return changed files, verification evidence, unresolved risks, and next actions.
+   - Report usage via `usage_metrics` honesty rules (observed or `estimated=true` only).
 
 ### OpenCode Portable Workflow Adapter
 
-OpenCode does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:workflow` as a custom Hyperflow workflow envelope around OpenCode's task/subagent facilities and inline fallback:
+OpenCode does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:workflow` as a custom Hyperflow workflow envelope around OpenCode's Task/subagent facilities and inline fallback:
 
 1. Research and planning
    - Read the same `.hyperflow/` cache files listed above when present.
@@ -114,7 +129,7 @@ OpenCode does not provide Claude Code's dynamic workflow runtime. Treat `/hyperf
 
 ### Grok Portable Workflow Adapter
 
-Grok does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:workflow` as a custom Hyperflow workflow envelope around Grok `spawn_subagent` and inline fallback:
+Grok does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:workflow` as a custom Hyperflow workflow envelope around inventory-mapped `spawn` (e.g. `spawn_subagent` when enabled) and inline fallback:
 
 1. Research and planning
    - Read the same `.hyperflow/` cache files listed above when present.
@@ -122,9 +137,7 @@ Grok does not provide Claude Code's dynamic workflow runtime. Treat `/hyperflow:
    - Build an execution graph with parallelizable units, dependencies, expected commits, and verification commands.
 
 2. Parallel implementation or investigation
-   - If `spawn_subagent` is available and subagents are not disabled (`GROK_SUBAGENTS` / config), dispatch independent units together:
-     - implementer/writer → `subagent_type: general-purpose`
-     - searcher/research → `subagent_type: explore`
+   - If spawn is available and subagents are not disabled, dispatch independent units together with role charters in the brief.
    - Collect results before review; spawn independent siblings in parallel when the runtime allows.
    - If subagents are unavailable, run each unit inline with explicit worker and reviewer labels.
 
@@ -157,6 +170,7 @@ Doctrine:
 - Use conventional commits, one distinct task per commit.
 - Never use --no-verify and never force-push to main/master.
 - Respect the Hyperflow security blocklist in skills/hyperflow/security.md.
+- Workers never review; reviewers never coordinate; session model only.
 
 Required phases:
 1. Research and planning.
@@ -176,3 +190,8 @@ Acceptance:
 When a run succeeds and the user will repeat it, mention that Claude Code can save the generated workflow from `/workflows` with `s`. Project workflows save under `.claude/workflows/`; personal workflows save under `~/.claude/workflows/`. Do not create those files directly from this skill because plugin packaging does not currently ship `.claude/workflows/` as a first-class component.
 
 Codex, OpenCode, and Grok adapters are not saved through `/workflows`; repeatable behavior comes from this skill, `.hyperflow/tasks/`, project memory, and provider-specific subagent/task configuration.
+
+## Related
+
+- [runtime-contract.md](../hyperflow/runtime-contract.md) · [chain-router.md](../hyperflow/chain-router.md)
+- [provider-claude.md](../hyperflow/provider-claude.md) · [provider-codex.md](../hyperflow/provider-codex.md) · [provider-opencode.md](../hyperflow/provider-opencode.md)

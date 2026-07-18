@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "kind": "codex-workflow-project-fixture",
+  "label": "workflow-canary",
+  "description": "Ephemeral fixture repo for authenticated Codex CLI workflow canaries (T12). Offline-static consumers validate this descriptor only; live lanes materialize the tree under an isolated HOME/CODEX_HOME.",
+  "project": {
+    "name": "hyperflow-canary-workflow",
+    "defaultBranch": "main",
+    "localBareOrigin": true,
+    "originName": "origin",
+    "layout": {
+      "README.md": "# Hyperflow canary workflow project\n\nSeeded fixture for offline + live Codex canaries. Not a production app.\n",
+      "package.json": "{\n  \"name\": \"hyperflow-canary-workflow\",\n  \"version\": \"0.0.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test src/math.test.js\",\n    \"lint\": \"node -e \\\"process.exit(0)\\\"\",\n    \"build\": \"node -e \\\"process.exit(0)\\\"\"\n  }\n}\n",
+      "src/math.js": "/** Minimal pure helper used by the seeded failing test. */\nexport function add(a, b) {\n  return a + b;\n}\n",
+      "src/math.test.js": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from './math.js';\n\n// Intentional seeded failure for /hyperflow:trace canary (wrong expected value).\ntest('add returns sum (seeded fail)', () => {\n  assert.equal(add(1, 1), 3);\n});\n",
+      "AGENTS.md": "# Canary project agents\n\nUser-owned rules outside Hyperflow managed blocks stay intact.\n",
+      ".hyperflow/tasks/seed-status.md": "# Seed status task\n\n| Field | Value |\n|---|---|\n| Status | in_progress |\n| Progress | `██░░░░░░░░` 1 / 5 |\n\n## Goal\n\nProvide a non-empty task surface so `/hyperflow:status` can read state without mutating source.\n\n## Tasks\n\n- [ ] T1 — noop read path\n",
+      ".hyperflow/memory/session-context.md": "# Session context\n\nSeeded context for recovery/status canaries.\n"
+    }
+  },
+  "seededFailures": [
+    {
+      "id": "failing-unit-test",
+      "path": "src/math.test.js",
+      "command": "npm test",
+      "description": "assert.equal(add(1, 1), 3) is intentionally wrong (expect 2).",
+      "expectedRootCauseHints": [
+        "expected value",
+        "off-by-one",
+        "assert.equal",
+        "add(1, 1)"
+      ]
+    }
+  ],
+  "commandMatrix": {
+    "profiles": [
+      {
+        "id": "native-collaboration",
+        "description": "Host collaboration tools available; subagent spawn allowed.",
+        "simulation": null
+      },
+      {
+        "id": "adapter-no-subagent",
+        "description": "Adapter-only simulation: fake live inventory with spawn candidates absent. Not native-host E2E evidence.",
+        "simulation": {
+          "kind": "fake-live-tool-inventory",
+          "absentOps": ["spawn"],
+          "label": "adapter-no-subagent-simulation"
+        }
+      }
+    ],
+    "skills": [
+      "status",
+      "plan",
+      "design",
+      "dispatch",
+      "workflow",
+      "audit",
+      "trace",
+      "deploy",
+      "handoff"
+    ],
+    "sandbox": "workspace-write",
+    "forbiddenFlags": [
+      "--dangerously-bypass-approvals-and-sandbox",
+      "danger-full-access"
+    ],
+    "hookTrust": {
+      "authenticatedLane": "persisted-normal",
+      "bypassFlag": "--dangerously-bypass-hook-trust",
+      "bypassAllowed": false
+    }
+  },
+  "canaries": [
+    {
+      "id": "status-readonly",
+      "skill": "status",
+      "prompts": [
+        "/hyperflow:status",
+        "what is the current hyperflow status"
+      ],
+      "profiles": ["native-collaboration", "adapter-no-subagent"],
+      "expectedGateSequence": [],
+      "invariants": [
+        "skill_recognized",
+        "no_source_mutation",
+        "no_git_mutation",
+        "read_only"
+      ]
+    },
+    {
+      "id": "plan-bounce-stop",
+      "skill": "plan",
+      "prompts": [
+        "/hyperflow:plan Add a pure function double(n) in src/math.js that returns n*2, with a unit test. Keep scope trivial."
+      ],
+      "profiles": ["native-collaboration"],
+      "path": "bounce",
+      "expectedGateSequence": ["build-location"],
+      "gateAnswers": {
+        "build-location": "Stop"
+      },
+      "invariants": [
+        "skill_recognized",
+        "task_written",
+        "briefs_or_roster_present",
+        "spec_optional_or_absent",
+        "source_unchanged",
+        "stop_honored",
+        "no_dispatch_chain"
+      ]
+    },
+    {
+      "id": "plan-design-stop",
+      "skill": "plan",
+      "prompts": [
+        "/hyperflow:plan Design a small module system for pluggable canary reporters with ambiguous trade-offs around storage and discovery."
+      ],
+      "profiles": ["native-collaboration"],
+      "path": "design",
+      "expectedGateSequence": ["design-approval-optional", "build-location"],
+      "gateAnswers": {
+        "build-location": "Stop"
+      },
+      "invariants": [
+        "skill_recognized",
+        "spec_written",
+        "task_written",
+        "briefs_or_roster_present",
+        "source_unchanged",
+        "stop_honored",
+        "no_dispatch_chain"
+      ]
+    },
+    {
+      "id": "dispatch-collaboration",
+      "skill": "dispatch",
+      "prompts": [
+        "/hyperflow:dispatch seed-status"
+      ],
+      "profiles": ["native-collaboration"],
+      "expectedGateSequence": [
+        "operational-pre-election",
+        "end-of-chain"
+      ],
+      "gateAnswers": {
+        "push": "never",
+        "pr": "never"
+      },
+      "invariants": [
+        "skill_recognized",
+        "worker_reviewer_separated",
+        "one_commit_per_accepted_task",
+        "conventional_commits"
+      ],
+      "requires": {
+        "minTasks": 1,
+        "collaboration": true
+      }
+    },
+    {
+      "id": "adapter-no-subagent-simulation",
+      "skill": "dispatch",
+      "prompts": [
+        "/hyperflow:dispatch seed-status"
+      ],
+      "profiles": ["adapter-no-subagent"],
+      "expectedGateSequence": [
+        "operational-pre-election",
+        "end-of-chain"
+      ],
+      "gateAnswers": {
+        "push": "never",
+        "pr": "never"
+      },
+      "invariants": [
+        "adapter_simulation_labelled",
+        "inline_worker_label",
+        "inline_reviewer_label",
+        "worker_reviewer_separated",
+        "not_native_host_evidence"
+      ],
+      "evidenceClass": "adapter-simulation"
+    },
+    {
+      "id": "trace-seeded-failure",
+      "skill": "trace",
+      "prompts": [
+        "/hyperflow:trace npm test fails in src/math.test.js"
+      ],
+      "profiles": ["native-collaboration"],
+      "expectedGateSequence": [],
+      "invariants": [
+        "skill_recognized",
+        "root_cause_before_patch",
+        "five_whys_or_equivalent",
+        "seeded_failure_referenced"
+      ],
+      "seededFailureId": "failing-unit-test"
+    },
+    {
+      "id": "audit-gate",
+      "skill": "audit",
+      "prompts": [
+        "/hyperflow:audit ."
+      ],
+      "profiles": ["native-collaboration"],
+      "expectedGateSequence": ["fix-gate"],
+      "gateAnswers": {
+        "fix-gate": "Hold"
+      },
+      "invariants": [
+        "skill_recognized",
+        "audit_artefact_written",
+        "fix_gate_honored",
+        "no_blind_patch"
+      ]
+    },
+    {
+      "id": "deploy-hold",
+      "skill": "deploy",
+      "prompts": [
+        "/hyperflow:deploy"
+      ],
+      "profiles": ["native-collaboration"],
+      "expectedGateSequence": [
+        "quality-gates",
+        "push-gate"
+      ],
+      "gateAnswers": {
+        "push-gate": "Hold"
+      },
+      "invariants": [
+        "skill_recognized",
+        "quality_gates_ran",
+        "local_origin_only",
+        "no_external_push",
+        "hold_honored"
+      ]
+    },
+    {
+      "id": "handoff-gate",
+      "skill": "handoff",
+      "prompts": [
+        "/hyperflow:handoff seed-status"
+      ],
+      "profiles": ["native-collaboration"],
+      "expectedGateSequence": ["handoff-confirm"],
+      "invariants": [
+        "skill_recognized",
+        "handoff_package_or_checkpoint",
+        "no_external_push"
+      ]
+    },
+    {
+      "id": "recovery-normal-trust",
+      "skill": "status",
+      "prompts": [
+        "/hyperflow:status"
+      ],
+      "profiles": ["native-collaboration"],
+      "expectedGateSequence": [],
+      "invariants": [
+        "hook_trust_normal_no_bypass",
+        "isolation_intact",
+        "session_context_readable"
+      ],
+      "hookTrust": "persisted-normal"
+    }
+  ],
+  "expectedGateCatalog": [
+    "build-location",
+    "design-approval-optional",
+    "operational-pre-election",
+    "end-of-chain",
+    "fix-gate",
+    "quality-gates",
+    "push-gate",
+    "handoff-confirm"
+  ],
+  "redaction": {
+    "literalEnvKeys": [
+      "HOME",
+      "CODEX_HOME",
+      "TMP_ROOT",
+      "REAL_USER_HOME",
+      "CODEX_API_KEY",
+      "OPENAI_API_KEY"
+    ],
+    "regex": [
+      "(?i)\\bauthorization\\s*[:=]\\s*bearer\\s+\\S+",
+      "(?i)(api[_-]?key|token|bearer|authorization)\\s*[:=]\\s*\\S+",
+      "sk-[A-Za-z0-9]{10,}",
+      "(?i)session[_-]?id\\s*[:=]\\s*\\S+",
+      "(?i)\\bsess_[A-Za-z0-9]+\\b"
+    ],
+    "replaceWith": "<REDACTED>"
+  },
+  "live": {
+    "authEnvKeys": [
+      "CODEX_API_KEY",
+      "OPENAI_API_KEY"
+    ],
+    "requireCodexCli": true,
+    "maxRetries": 1,
+    "jsonlCapture": true,
+    "sandbox": "workspace-write",
+    "skipExitCode": 0
+  }
+}

@@ -1,8 +1,20 @@
 # Worker Prompt Template
 
-Use this template when dispatching workers via the Agent tool. **Every section below is mandatory** — the Team Lead must fill each one before dispatch. A sparse / vague brief is a doctrine violation: the worker will fill the gaps with assumptions, and the per-batch Reviewer can't catch what wasn't asked for. Detail floor exists so the worker executes the right work, not a plausible-looking nearby alternative.
+Use this template when dispatching workers via the host **`spawn`** op ([runtime-contract.md](runtime-contract.md) — Claude `Agent`, Codex `collaboration.spawn_agent` / legacy candidates, OpenCode `Task` / `subagent`, or other inventory-mapped tools). When `spawn` is unavailable, run a **labelled inline worker phase** in the main thread with the same brief body. **Every section below is mandatory** — the Team Lead must fill each one before dispatch. A sparse / vague brief is a doctrine violation: the worker will fill the gaps with assumptions, and the per-batch Reviewer can't catch what wasn't asked for. Detail floor exists so the worker executes the right work, not a plausible-looking nearby alternative.
 
-**Authored at plan time by default.** For non-trivial sub-tasks, `/hyperflow:plan` writes this entire body into a brief file `.hyperflow/tasks/<slug>/T<id>.md` (or `phase-*/tasks/T<id>.md` in feature mode). At dispatch, the orchestrator loads that brief verbatim and mechanically appends Project Context + bounded rolling learnings + the specialist output-contract inline—it does not re-derive Task/Scope/Acceptance/Test-cases and does not dispatch a Composer. Only a complex missing brief can trigger one batch-level Composer for the whole missing set. This is what lets the build run faithfully on a cheaper model or a second session.
+**Authored at plan time by default.** For non-trivial sub-tasks, `/hyperflow:plan` writes this entire body into a brief file `.hyperflow/tasks/<slug>/T<id>.md` (or `phase-*/tasks/T<id>.md` in feature mode). At dispatch, the orchestrator loads that brief verbatim and mechanically appends Project Context + bounded rolling learnings + the specialist output-contract inline—it does not re-derive Task/Scope/Acceptance/Test-cases and does not dispatch a Composer. Only a complex missing brief can trigger one batch-level Composer for the whole missing set. This is what lets the build run faithfully on the current session model or a second session.
+
+**Host ops (workers never invent tool names):**
+
+| Intent | Semantic op | When present | When absent |
+|---|---|---|---|
+| Start this worker | `spawn` | Prefer parallel sibling spawns for independent work | Labelled inline worker phase |
+| Read project files | host file-read tools (inventory) | Use mapped read/search tools | Refuse to invent file contents |
+| Mutate project files | `edit` | First available edit/patch/write tool | Do not claim edits without a tool |
+| Run project commands | `shell` | First available shell inside the security blocklist | Skip command; surface unavailable |
+| Self-review | — | **Forbidden.** Workers never review their own output | Orchestrator dispatches a separate reviewer (or labelled inline reviewer phase) |
+
+Every worker runs on the **current session model**. There is no per-role model selection. Project rules resolve provider-appropriately: obey nearest `AGENTS.md`, `CLAUDE.md`, `Agents.md`, and other project instruction files whose scope covers the files in this brief (nested deeper wins; see host project-rules docs).
 
 ## Template
 
@@ -90,15 +102,15 @@ Project Context (load on demand):
   - `.hyperflow/testing.md`                — test framework, where tests live, conventions
   - `.hyperflow/memory/index.md`           — tag-keyed memory index pointing at hot/warm entries
 ```
-Workers in lean mode read these files via the `Read` tool when (and only when) their task actually needs the information. No quality regression — same content, lazy access. Saves ~2k tokens × N parallel workers per batch because the bundle isn't re-injected into every worker prompt.]
+Workers in lean mode load these files via host file-read tools (when inventory exposes them) when (and only when) their task actually needs the information. No quality regression — same content, lazy access. Saves ~2k tokens × N parallel workers per batch because the bundle isn't re-injected into every worker prompt.]
 
 ## Learnings from prior tasks
 [Rolling replacement snapshot synthesized by the orchestrator. Maximum 6 semantically unique bullets and 300 tokens total. Include only active decisions, contracts, or gotchas that can change this task; newer facts replace duplicate/obsolete bullets. Never include transcripts, completed-task narration, or raw patches. Omit section if first task.]
 
 ## Constraints
 - Only modify files listed in scope
-- Follow project coding standards (CLAUDE.md)
-- Do not add "Co-Authored-By: Claude" to any git operation
+- Follow project coding standards (nearest `AGENTS.md` / `CLAUDE.md` / project instruction files + `.hyperflow/conventions.md` when present)
+- Do not add "Co-Authored-By: Claude" (or any LLM trailer) to any git operation; never name an LLM as actor in commits, comments, or docs
 - **Token economy.** Be specific and to the point. No preamble ("I'll now …", "Let me start by …"), no restating the brief, no postamble summary, no narration of intermediate reasoning, no closing pleasantries. Return exactly the Output format below and stop. Padding burns tokens without moving the task forward.
 
 ## Security Constraints
@@ -138,10 +150,15 @@ Return ONE of (no preamble, no postamble, no extra commentary — see Constraint
 
 ## Dispatch Example (detail floor honored)
 
+Illustrative `spawn` payload shape — bind the call through the provider mapping (`Agent`, `collaboration.spawn_agent`, `Task`, …) or paste the same body into a labelled inline worker phase when `spawn` is unavailable. Do not hard-require a single host tool name.
+
 ```
-Agent({
+spawn({
   description: "T3 Implementer · UserAvatar component",
-  prompt: `## Task
+  // host maps role + charter; every agent on current session model
+  prompt: `hyperflow-role: worker
+
+## Task
 Add a UserAvatar component that displays user initials over a deterministic colored background.
 
 ## Why
@@ -205,7 +222,7 @@ Project uses React 19, TypeScript strict, Tailwind v4 with CSS variable tokens, 
 
 ## Constraints
 - Only modify files listed in scope
-- Follow project coding standards (CLAUDE.md, .hyperflow/conventions.md)
+- Follow project coding standards (nearest AGENTS.md / CLAUDE.md / project instruction files, .hyperflow/conventions.md)
 - Do NOT reference Claude / AI / assistant / LLM as actor anywhere (commit msg, comments, docs)
 - Do NOT use \`--no-verify\` on any git commit (per DOCTRINE rule 9)
 - Token economy: no preamble, no postamble, no brief-restating — return Output format and stop (per DOCTRINE rule 16)

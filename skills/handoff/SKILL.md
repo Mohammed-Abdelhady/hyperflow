@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Edit, Bash(git:*), Bash(mv:*), Glob, Grep, AskUserQu
 argument-hint: "<list | status [slug] | pickup <slug> | review <slug> | complete <slug>>"
 version: 1.0.1
 license: MIT
-compatibility: Designed for Claude Code; portable to Codex/OpenCode/Antigravity
+compatibility: Claude Code (native Skill / AskUserQuestion); Codex / OpenCode / Antigravity / Grok via runtime-contract fallbacks
 tags: [handoff, two-session, cross-environment, orchestration]
 ---
 
@@ -16,10 +16,15 @@ tags: [handoff, two-session, cross-environment, orchestration]
 Operator interface for **two-session execution**: one session plans (`session=two` at the Step 0 gate), a second
 session in another environment builds, and the first session reviews. The lifecycle and package format are defined
 in [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md); this skill is the thin set of verbs over it
-(mirrors how `/hyperflow:flush` fronts the deferred-commit machinery).
+(mirrors how `/hyperflow:flush` fronts the deferred-commit machinery). Cross-skill transitions follow
+[chain-router.md](../hyperflow/chain-router.md); host ops follow [runtime-contract.md](../hyperflow/runtime-contract.md).
 
 Packages live at `.hyperflow-handoff/<slug>/` (committed, so they travel via git). `STATUS` (`planned → built →
 reviewed`) is the single source of truth and decides which side of the handoff you are on.
+
+**Portable mechanics.** Prefer native Skill / `AskUserQuestion` when present. When absent: `skill_continuation`
+loads the **complete** target `skills/<name>/SKILL.md` before any target action; gates use the Hyperflow Question
+chat block + end turn. Never stop with "Skill tool unavailable". Never invent or widen the committed review range.
 
 ## Subcommands
 
@@ -40,20 +45,41 @@ When `STATUS=built` (or `reviewed`) and `COMPLETION.md` exists:
 When `STATUS=planned`: print that Evidence is not available until the build completes.
 
 ### `pickup <slug>` — build side
-Thin alias for starting the second-session build: invoke `Skill` with `skill: dispatch` and `args: "<slug>"`.
+Thin alias for starting the second-session build. Continue via `skill_continuation` to **`dispatch`** with args
+`"<slug>"` (and any chain args recorded in `HANDOFF.md`):
+
+- When native Skill is available: invoke `Skill` with `skill: dispatch` and `args: "<slug>"`.
+- When Skill is unavailable: **load `skills/dispatch/SKILL.md` completely**, then continue inline with the same
+  positional slug and preserved handoff context. Never stop with "Skill tool unavailable".
+
 Dispatch's Step 1.0 rehydrates `artefact/` into `.hyperflow/`, runs `/hyperflow:scaffold` if the cache is missing,
-builds the batches, writes `COMPLETION.md` (full Evidence) + `STATUS=built`, and then deploys or stops per `on_complete`.
+builds the batches, writes `COMPLETION.md` (full Evidence) + `STATUS=built`, and then deploys or stops per
+`on_complete`. Package `STATUS=planned` is required; the committed package remains authoritative for the build.
 
 ### `review <slug>` — planning side
 1. Require `STATUS=built` (else: "handoff `<slug>` is `<status>` — nothing to review yet").
-2. Read `COMPLETION.md` → extract `Diff range = <base>..<head>`.
+2. Read `COMPLETION.md` → extract `Diff range = <base>..<head>`. **That range is the sole review authority** —
+   do not widen, rewrite, or invent commits ([session-handoff.md](../hyperflow/session-handoff.md)).
 3. Print the Evidence section (or legacy fallback) so the operator sees what landed before audit runs.
-4. Invoke `Skill` with `skill: audit` and `args: "<base>..<head> level=3"` (`level=5` when the originating triage
-   flow in `HANDOFF.md` was `scientific` or `security`). The audit dispatches the matching domain specialist
-   reviewers over the second session's diff.
-5. On audit clean pass → fire the deploy gate (`AskUserQuestion` — `Run /hyperflow:deploy? Yes / No`, binary, no
-   marker). On `NEEDS_FIX` → the audit fix-gate (`Yes` → `/hyperflow:plan` → `/hyperflow:dispatch`) handles it.
-6. Set `STATUS=reviewed` once the review is accepted.
+4. Resolve level: default `level=3`; use `level=5` when the originating triage flow in `HANDOFF.md` was
+   `scientific` or `security`.
+5. Continue via `skill_continuation` to **`audit`** with exact args: `"<base>..<head> level=<n>"`.
+   - When native Skill is available: invoke `Skill` with `skill: audit` and those args.
+   - When Skill is unavailable: **load `skills/audit/SKILL.md` completely**, then continue inline with the same
+     range + level. Never stop with "Skill tool unavailable".
+6. After audit:
+   - **Clean PASS** → fire optional deploy gate via `structured_question` (Claude: `AskUserQuestion`):
+     `Run /hyperflow:deploy?` · `Yes` / `No` — binary, **no** `(Recommended)` marker. On Yes →
+     `skill_continuation` to **`deploy`** (load `skills/deploy/SKILL.md` completely when Skill is absent); deploy
+     still owns its own push gate. On No → stop.
+   - **NEEDS_FIX** → the audit fix gate owns plan continuation (audit → plan with scoped fix spec); do not
+     short-circuit past it.
+   - **SECURITY_VIOLATION** → halt; nothing posts or deploys.
+7. Set `STATUS=reviewed` once the review is accepted (PASS path or after the user declines deploy / finishes
+   the fix disposition they chose).
+
+Portable fallback for the deploy gate: if structured UI is missing, print a `Hyperflow Question` chat block and
+**end the turn**. Headless with no channel → do not auto-deploy; print that confirmation is required.
 
 ### `complete <slug>`
 Mark the lifecycle done: set `STATUS=reviewed` (if not already) and archive the package to
@@ -67,13 +93,17 @@ Mark the lifecycle done: set `STATUS=reviewed` (if not already) and archive the 
 
 ## Iron rules
 
-- **Never edit the build's commits.** `review` is read-only over the diff range; fixes flow through the audit
-  fix-gate → scope → dispatch, never by amending the second session's commits.
+- **Committed range is authoritative.** `review` uses `COMPLETION.md` `Diff range` exactly; never amend the build
+  session's commits. Fixes flow through the audit fix-gate → plan → dispatch, never by rewriting second-session history.
 - **Never force-push; never `--no-verify`.** Auto-push failures surface the exact `git push -u origin <branch>`.
 - **No AI attribution** in any commit or package file.
+- **No premature external mutations.** `list` / `status` are read-only; `pickup` / `review` only continue into
+  documented target skills; archive is a local package move + conventional commit.
 - Honors `handoff.*` config (`autoPush`, `remote`, `packageDir`).
 
 ## Doctrine
 
 Shared rules in [`../hyperflow/DOCTRINE.md`](../hyperflow/DOCTRINE.md). Package contract + templates in
-[`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md).
+[`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md). Transitions in
+[chain-router.md](../hyperflow/chain-router.md). Semantic ops in
+[runtime-contract.md](../hyperflow/runtime-contract.md).

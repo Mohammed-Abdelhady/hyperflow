@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Edit, Bash(git:*), Glob, Grep, Agent, Skill, AskUser
 argument-hint: "[target] [--level 1-5]"
 version: 3.1.3
 license: MIT
-compatibility: Designed for Claude Code
+compatibility: Claude Code (native Agent / Skill / AskUserQuestion); Codex / OpenCode / Grok via runtime-contract fallbacks
 tags: [code-review, quality, multi-level, multi-agent]
 ---
 
@@ -15,36 +15,38 @@ tags: [code-review, quality, multi-level, multi-agent]
 
 Multi-level code review. All agents inherit the session model. Reviewers bold-labeled; Workers plain.
 
-This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. After the review prints, a **fix gate** asks the user whether to apply the findings — on `Yes`, audit auto-invokes `/hyperflow:plan` with the findings as the spec, which then chains to `/hyperflow:dispatch`.
+This skill exercises **Layer 3 (Orchestrator)** and **Layer 9 (Security)**. Host ops are semantic ([runtime-contract.md](../hyperflow/runtime-contract.md)): `spawn` for Searchers/Writers/Reviewers, `structured_question` for the fix gate, `skill_continuation` for the plan handoff, `usage_metrics` for honest cost. After the review prints, a **fix gate** asks whether to apply findings — on a fix choice, audit continues to `/hyperflow:plan` with the findings as the spec ([chain-router.md](../hyperflow/chain-router.md)); plan still owns its own build-location gate.
 
 ## Iron Rules
 
 **Failure recovery (DOCTRINE rule 14).** Worker errors, malformed output, NEEDS_REVISION verdicts, and gate failures in every Step follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Audit-specific exception: a failed Reviewer at L1/L2 escalates to an L3+ Reviewer at the same severity level rather than aborting — audit exists to catch issues, so a Reviewer failure is best resolved by a more thorough Reviewer, not by stopping the chain.
+
+**Portable mechanics (do not skip gates).** Prefer native tools when the inventory exposes them (Claude: `Agent` / `AskUserQuestion` / `Skill`). When absent: labelled inline worker then **separate** labelled inline reviewer; Hyperflow Question + end turn for gates; load the complete target `SKILL.md` for continuations. Never merge worker and reviewer responsibility. Never stop with "Skill tool unavailable".
 
 ## Per-Step Agent Map (DOCTRINE rule 12)
 
 | Step | Sub-phase | Workers | Reviewers | Notes |
 |---|---|---|---|---|
 | 1 — Resolve scope | — | — | — | Mechanical decision (exempt) |
-| 2 — Gather context | 2a — Surface mapping | Searcher × 2 (glob + import-graph) | Reviewer | Parallel |
-| 2 — Gather context | 2b — Semantic indexing | Searcher × 2 (type-system + symbol-graph) | Reviewer | Parallel |
+| 2 — Gather context | 2a — Surface mapping | Searcher × 2 (glob + import-graph) | Reviewer | `spawn` parallel (or sequenced inline) |
+| 2 — Gather context | 2b — Semantic indexing | Searcher × 2 (type-system + symbol-graph) | Reviewer | `spawn` parallel (or sequenced inline) |
 | 2 — Gather context | 2c — Convention scan | Searcher × 1 (test patterns + lint config) | Reviewer | Justified single-angle |
 | 2 — Gather context | 2d — Aggregate coverage gate | — | **Reviewer** verifies aggregate coverage | Standalone coverage gate |
-| 3 — Review | 3a — L1+L2 (syntax/format/naming) | — | **Domain specialist Reviewer** × 2 (file groups, surface-matched) + Reviewer aggregates | Parallel pair dispatched as the matching domain specialists |
+| 3 — Review | 3a — L1+L2 (syntax/format/naming) | — | **Domain specialist Reviewer** × 2 (file groups, surface-matched) + Reviewer aggregates | Parallel pair as matching domain specialists |
 | 3 — Review | 3b — L3 (integration/security) | — | **Reviewer** × 2 — backend-reviewer + security-reviewer/vulnerability-reviewer + Reviewer aggregates | Parallel pair; security specialists web-research-first |
-| 3 — Review | 3c — L4+L5 (perf/scale/a11y/UX) | — | **Reviewer** × 2 — performance-reviewer + accessibility-reviewer + Reviewer aggregates | Parallel pair dispatched as the matching specialists |
+| 3 — Review | 3c — L4+L5 (perf/scale/a11y/UX) | — | **Reviewer** × 2 — performance-reviewer + accessibility-reviewer + Reviewer aggregates | Parallel pair as matching specialists |
 | 4 — Findings synthesis | 4a — Critical findings | Writer × 2 (evidence probe + impact analysis) | Reviewer | Parallel |
 | 4 — Findings synthesis | 4b — Important findings | Writer × 2 (root-cause probe + fix-path analysis) | Reviewer | Parallel |
 | 4 — Findings synthesis | 4c — Suggestions + observations | Writer × 2 (pattern analysis + praise identification) | Reviewer | Parallel |
 | 4 — Findings synthesis | 4d — Memory feedback | Writer × 1 (anti-pattern curation) | Reviewer (dedup + compaction validation) | Atomic Worker→Reviewer; runs after 4a/4b/4c complete; with compaction pass when triggered |
 | 5 — Severity reconciliation | — | — | Reviewer reconciles severity labels from Step 3 sub-phases | Atomic-exempt per DOCTRINE 12.2.8 — reads existing Step 3 labels; no Workers needed |
-| 6 — Fix gate | — | — | — | `AskUserQuestion` only (exempt — structural gate) |
+| 6 — Fix gate | — | — | — | `structured_question` only (exempt — structural gate; maps to `AskUserQuestion` when present) |
 
 ## Approval Gates
 
 | Gate | When | Format |
 |---|---|---|
-| Fix gate | Step 6, after NEEDS_FIX or PASS-with-suggestions | `AskUserQuestion` — fix all / criticals only / no |
+| Fix gate | Step 6, after NEEDS_FIX or PASS-with-suggestions | `structured_question` (`AskUserQuestion` when present) — fix all / criticals only / no |
 | Hard halt | Any `SECURITY_VIOLATION` from the reviewer | Stop, surface the finding; no fix gate |
 
 ## Inputs
@@ -73,38 +75,38 @@ Security scan (hardcoded secrets, injection, path traversal, XSS, missing valida
 
 Use the provided target or run `git diff HEAD` + `git diff --staged`. No agent dispatched (read-only git).
 
-**Targets accepted:** a path/glob, an explicit file list, or a **git range `<base>..<head>`**. The range form is how a two-session **handoff review** runs — `/hyperflow:handoff review <slug>` reads the build's `COMPLETION.md` diff range and invokes audit as `Skill audit "<base>..<head> level=<n>"`, so the review covers exactly the second session's commits (`git diff <base>..<head>`). See [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md).
+**Targets accepted:** a path/glob, an explicit file list, or a **git range `<base>..<head>`**. The range form is how a two-session **handoff review** runs — `/hyperflow:handoff review <slug>` reads the build's `COMPLETION.md` diff range and continues into audit with args `"<base>..<head> level=<n>"` **exactly** (never widen or invent commits), so the review covers the second session's commits (`git diff <base>..<head>`). See [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md) and [chain-router.md](../hyperflow/chain-router.md).
 
 ### Step 2 — Gather context
 
-Sub-phases 2a, 2b, 2c run in parallel (P1). Step 2 output is the union of their worker outputs plus three sub-phase Reviewer verdicts, handed to a standalone aggregate coverage gate. The Searchers also record **which surfaces the diff touches** (frontend / api / db / devops / mobile / data-ml / security) — this drives the domain-specialist selection in Step 3 ([`../../agents/README.md`](../../agents/README.md)).
+Sub-phases 2a, 2b, 2c run in parallel when `spawn` concurrency is available (P1); otherwise **sequenced inline** with the same Searcher → separate Reviewer role split. Step 2 output is the union of their worker outputs plus three sub-phase Reviewer verdicts, handed to a standalone aggregate coverage gate. The Searchers also record **which surfaces the diff touches** (frontend / api / db / devops / mobile / data-ml / security) — this drives the domain-specialist selection in Step 3 ([`../../agents/README.md`](../../agents/README.md)).
 
 #### Step 2a — Surface mapping
 
-Dispatch two Searcher agents in parallel:
+`spawn` two Searcher agents in parallel (or run as labelled inline searcher phases when `spawn` is unavailable):
 - Searcher — glob discovery (file extensions, directory tree, entry points)
 - Searcher — import-graph traversal (follow `import`/`require`/`use` chains from touched files)
 
-Then dispatch `**Reviewer** — 2a surface mapping coverage check`. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-dispatch only 2a.
+Then `spawn` (or labelled inline) `**Reviewer** — 2a surface mapping coverage check`. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-run only 2a. Never let a Searcher review its own output.
 
 #### Step 2b — Semantic indexing
 
-Dispatch two Searcher agents in parallel:
+`spawn` two Searcher agents in parallel (or sequenced inline):
 - Searcher — type-system probe (interface/schema definitions relevant to changed symbols)
 - Searcher — symbol-graph probe (callsites, usages, exported references of changed symbols)
 
-Then dispatch `**Reviewer** — 2b semantic indexing coverage check`. Verdict as above.
+Then `**Reviewer** — 2b semantic indexing coverage check`. Verdict as above.
 
 #### Step 2c — Convention scan
 
-Dispatch one Searcher agent (single-angle justified — test patterns and lint config are a single orthogonal corpus with no independent axis to fan out across):
+`spawn` one Searcher agent (single-angle justified — test patterns and lint config are a single orthogonal corpus with no independent axis to fan out across):
 - Searcher — convention scan (existing test patterns, lint rules, naming conventions, code-style config)
 
-Then dispatch `**Reviewer** — 2c convention scan coverage check`. Verdict as above.
+Then `**Reviewer** — 2c convention scan coverage check`. Verdict as above.
 
 #### Step 2d — Aggregate coverage gate
 
-After 2a + 2b + 2c complete, dispatch `**Reviewer** — verifying aggregate context coverage` to confirm the combined surface covers all subsystems relevant to the diff. On coverage gap: re-dispatch the affected sub-phase (max 2 retries); surface gap to user if retries exhausted.
+After 2a + 2b + 2c complete, `spawn` `**Reviewer** — verifying aggregate context coverage` to confirm the combined surface covers all subsystems relevant to the diff. On coverage gap: re-run the affected sub-phase (max 2 retries); surface gap to user if retries exhausted.
 
 ### Step 3 — Review
 
@@ -118,31 +120,31 @@ spec/task file, its Brain-decided `Specialists` roster seeds the selection.
 
 #### Step 3a — L1+L2: syntax, formatting, naming
 
-Dispatch two Reviewer agents in parallel over different file groups (split by directory or feature boundary),
+`spawn` two Reviewer agents in parallel over different file groups (split by directory or feature boundary; labelled inline reviewer phases when `spawn` is unavailable),
 each **as the domain specialist** matching that group's surface (`frontend-reviewer` / `backend-reviewer` /
 `api-reviewer` / `database-reviewer` / `devops-reviewer` / `mobile` / `data-ml-reviewer`):
 - **Reviewer** (domain specialist) — L1+L2 review, file group A (syntax errors, obvious bugs, formatting, naming conventions)
 - **Reviewer** (domain specialist) — L1+L2 review, file group B (same checklist, different file group)
 
-Then dispatch `**Reviewer** — 3a aggregation` to union the two verdicts and deduplicate overlapping findings. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-dispatch only 3a.
+Then `**Reviewer** — 3a aggregation` to union the two verdicts and deduplicate overlapping findings. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}. On `NEEDS_REVISION`, re-run only 3a.
 
 #### Step 3b — L3: integration, security (L3+ only)
 
-Dispatch two Reviewer agents in parallel over different concern dimensions — as the security specialists:
+`spawn` two Reviewer agents in parallel over different concern dimensions — as the security specialists:
 - **Reviewer** (`backend-reviewer` or `api-reviewer`) — L3 integration risks (cross-file consistency, API contract mismatches, race conditions, edge cases)
-- **Reviewer** (`security-reviewer` + `vulnerability-reviewer`) — L3 security scan (hardcoded secrets, injection, path traversal, XSS, missing validation, known-CVE exposure — per [security.md](references/security.md), web-research-first on current advisories)
+- **Reviewer** (`security-reviewer` + `vulnerability-reviewer`) — L3 security scan (hardcoded secrets, injection, path traversal, XSS, missing validation, known-CVE exposure — per [security.md](references/security.md), web-research-first on current advisories; `web_research` when available, else record `unavailable` and never invent citations)
 
 If the security Reviewer emits `SECURITY_VIOLATION:` → halt immediately; skip the fix gate; surface the finding inline; user decides remediation.
 
-Then dispatch `**Reviewer** — 3b aggregation` to union the two verdicts. Verdict as above.
+Then `**Reviewer** — 3b aggregation` to union the two verdicts. Verdict as above.
 
 #### Step 3c — L4+L5: performance, scalability, accessibility, UX (L4+ only)
 
-Dispatch two Reviewer agents in parallel — as the matching specialists:
+`spawn` two Reviewer agents in parallel — as the matching specialists:
 - **Reviewer** (`performance-reviewer`) — L4+L5 performance and scalability (algorithmic complexity, memory, bundle size, adversarial load)
 - **Reviewer** (`accessibility-reviewer`) — L4+L5 accessibility and UX (WCAG compliance, keyboard nav, screen-reader semantics, interaction design)
 
-Then dispatch `**Reviewer** — 3c aggregation` to union the two verdicts. Verdict as above.
+Then `**Reviewer** — 3c aggregation` to union the two verdicts. Verdict as above.
 
 The Reviewer uses the [reviewer-prompt.md](references/reviewer-prompt.md) template with the diff, level definition, and any applicable spec. Each sub-phase produces structured `[Critical] / [Important] / [Suggestions] / [Praise]` findings that feed into Step 4.
 
@@ -152,27 +154,27 @@ Write the full structured audit to `.hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope-s
 
 #### Step 4a — Critical findings
 
-Dispatch two Writer agents in parallel:
+`spawn` two Writer agents in parallel (or sequenced inline writers):
 - Writer — evidence probe (trace each Critical finding back to the diff line; confirm reproducibility)
 - Writer — impact analysis (articulate user-visible / system-level consequence for each Critical finding)
 
-Then dispatch `**Reviewer** — 4a critical findings review` to verify each Critical entry has a confirmed fix path and no false positives. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}.
+Then `**Reviewer** — 4a critical findings review` to verify each Critical entry has a confirmed fix path and no false positives. Verdict ∈ {`PASS`, `NEEDS_REVISION`, `ESCALATE`}.
 
 #### Step 4b — Important findings
 
-Dispatch two Writer agents in parallel:
+`spawn` two Writer agents in parallel:
 - Writer — root-cause probe (trace each Important finding to its origin; confirm it's not a symptom of a Critical)
 - Writer — fix-path analysis (propose the recommended change per finding, with file:line anchors)
 
-Then dispatch `**Reviewer** — 4b important findings review`. Verdict as above.
+Then `**Reviewer** — 4b important findings review`. Verdict as above.
 
 #### Step 4c — Suggestions, observations, and memory append
 
-Dispatch two Writer agents in parallel:
+`spawn` two Writer agents in parallel:
 - Writer — pattern analysis (identify Suggestion-level improvements; extract reusable patterns for memory)
 - Writer — praise identification (flag genuinely well-done decisions; append durable patterns to `.hyperflow/memory/learnings.md` per [memory-system.md](references/memory-system.md))
 
-Then dispatch `**Reviewer** — 4c suggestions + memory dedup check` to ensure no duplicate memory entries land and no Suggestions are mis-classified as Important. Verdict as above.
+Then `**Reviewer** — 4c suggestions + memory dedup check` to ensure no duplicate memory entries land and no Suggestions are mis-classified as Important. Verdict as above.
 
 #### Step 4d — Memory feedback (runs after 4a/4b/4c complete)
 
@@ -232,15 +234,15 @@ Written:  .hyperflow/audits/2026-05-16-1730-memory-compaction.md
 
 No `[Critical]` / `[Important]` body lines in chat. The user opens the file (or the chat host previews it). For `PASS`-clean runs (no Critical/Important), print just the one-line `Audit clean — no fixes needed.` and still write the file with the praise + suggestions list (so the audit history is preserved). Skip the file write only on `SECURITY_VIOLATION` — those need immediate eye-level surfacing; print the finding inline and halt.
 
-### Step 6 — Fix gate (STRUCTURAL GATE · DOCTRINE rule 8)
+### Step 6 — Fix gate (STRUCTURAL GATE · DOCTRINE rule 8 · [chain-router.md](../hyperflow/chain-router.md))
 
-After the summary prints, the audit skill **MUST** ask the user via `AskUserQuestion` whether to apply the findings. Per DOCTRINE rule 8, this gate always fires when findings exist — autonomy directives do NOT skip it. Defaulting silently is a doctrine violation.
+After the summary prints, the audit skill **MUST** fire `structured_question` (Claude native: `AskUserQuestion`) asking whether to apply the findings. Per DOCTRINE rule 8, this gate always fires when findings exist — autonomy directives do NOT skip it. Defaulting silently is a doctrine violation. **No fixes before the answer.**
 
 **Skip the gate only when:** verdict is `PASS` with no `[Critical]` or `[Important]` entries (Suggestions-only or Praise-only). Stop after the one-line `Audit clean — no fixes needed.` summary.
 
-**Skip the gate also when:** verdict is `SECURITY_VIOLATION`. Halt and let the user decide.
+**Skip the gate also when:** verdict is `SECURITY_VIOLATION`. Halt and let the user decide. Skipping the irreversible path is itself a `SECURITY_VIOLATION:` if the chain auto-continues past a security halt.
 
-**Otherwise**, ask:
+**Otherwise**, ask (multi-option → recommended option first with `(Recommended)`):
 
 ```
 ?  Audit findings written to .hyperflow/audits/<timestamp>-<slug>.md — apply fixes?
@@ -259,8 +261,10 @@ Recommended option scales with finding mix:
 **On any "Fix …" choice:**
 
 1. Build a spec file from the chosen findings at `.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md`. Each finding becomes a numbered fix section with: file:line, the issue, the reviewer's suggested fix (or "design needed" if no Fix: was provided), and the commit message stub. The spec file is the chain-driving artefact; do NOT paste fix bullets into chat.
-2. Invoke `Skill` with `skill: plan` and `args: "session=one spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md"`.
-3. `/hyperflow:plan` will decompose into batches; `/hyperflow:dispatch` will execute them — same per-sub-task commit cadence and per-batch L1–L<n> review as any other chain run.
+2. Continue via `skill_continuation` to **`plan`** with exact args: `session=one spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md`.
+   - When native Skill is available (Claude Code): invoke `Skill` with `skill: plan` and those args.
+   - When Skill is unavailable: **load `skills/plan/SKILL.md` completely**, then continue inline with the same args and chain context. Never stop with "Skill tool unavailable".
+3. `/hyperflow:plan` decomposes into batches and **stops at its own build-location gate** — no blind patch, no silent auto-dispatch. `/hyperflow:dispatch` runs only after the user chooses to build.
 
 **On "No":**
 
@@ -270,7 +274,7 @@ Print one line and stop:
 Audit complete — N findings recorded, no fixes applied. Re-run /hyperflow:audit later or invoke /hyperflow:plan manually if you change your mind.
 ```
 
-If `AskUserQuestion` cannot be presented as a popup, use the portable-surface fallback (Codex / OpenCode / Grok): print the fix gate as a `Hyperflow Question` chat block with numbered options, then stop and wait for the user's answer. If no interactive channel is available at all, print the findings and an error line — never silently auto-fix or silently exit.
+**Portable fallback for `structured_question`:** if `AskUserQuestion` (or equivalent) cannot be presented as a popup (Codex / OpenCode / Grok), print the fix gate as the exact `Hyperflow Question` chat block with numbered options, then **end the turn** and wait for the user's answer. If no interactive channel is available at all, print the findings and an error line — never silently auto-fix or silently exit.
 
 ## Output Format
 
@@ -352,16 +356,16 @@ Written:  .hyperflow/audits/<YYYY-MM-DD-HHmm>-<scope>.md
 ## Hand-off
 
 - **PASS** (no findings worth fixing) — print `Audit clean`. Suggest `/hyperflow:deploy` if the user is ready to release. Do not auto-ship.
-- **NEEDS_FIX** — fix gate fires (Step 6). On `Yes …` → auto-chain to `/hyperflow:plan`. On `No` → stop with findings printed.
+- **NEEDS_FIX** — fix gate fires (Step 6). On any fix choice → `skill_continuation` to `/hyperflow:plan` with the scoped audit-fix spec. On `No` → stop with findings recorded.
 - **SECURITY_VIOLATION** — halt. Skip the fix gate. User decides remediation path.
 
 ## Doctrine
 
-Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-style.md](references/output-style.md). Per-step agent dispatching follows rule 12.
+Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-style.md](references/output-style.md). Transitions in [chain-router.md](../hyperflow/chain-router.md). Semantic ops in [runtime-contract.md](../hyperflow/runtime-contract.md). Per-step agent dispatching follows rule 12.
 
 ## Overview
 
-`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. Searchers gather context; a standalone Reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — `Yes` auto-chains to `/hyperflow:plan`, which decomposes the fix and then stops at its own build-location gate before any build starts; `No` leaves the diff alone.
+`/hyperflow:audit` runs a multi-level code review against uncommitted changes, a specific commit, branch, or PR. Searchers gather context; a standalone Reviewer produces verdicts at the chosen level (L1 quick scan to L5 exhaustive). On `NEEDS_FIX`, a structural gate asks the user whether to apply findings — a fix choice continues to `/hyperflow:plan` (native Skill or full inline load of `skills/plan/SKILL.md`), which decomposes the fix and then stops at its own build-location gate before any build starts; `No` leaves the diff alone.
 
 ## Prerequisites
 
@@ -390,9 +394,10 @@ See [Output Format](#output-format) above for the exact block. Single review blo
 | No diff to review (clean working tree, no target) | Print `Nothing to review — clean working tree. Pass an explicit target.` and stop. |
 | Searcher returns no context (file gone, bad path) | Reviewer flags `[Critical] — target unreachable` and halts at Step 3. |
 | Reviewer emits `SECURITY_VIOLATION` (L3+ only) | Skip Step 4 onward. Print finding. Do not fire fix gate. User decides remediation. |
-| `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the fix gate as a `Hyperflow Question` chat block and wait for the user's answer. |
+| `structured_question` / `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the fix gate as a `Hyperflow Question` chat block, **end the turn**, wait for the user's answer. |
 | No interactive channel at all | Print findings + an error line stating the fix gate could not fire. Never silently auto-fix or silently exit. |
-| Reviewer disagrees with worker context (NEEDS_FIX on Step 2 coverage check) | Re-dispatch Searcher with the reviewer's gap list. Max 2 retries before surfacing the gap to user. |
+| Native Skill unavailable on fix choice | `skill_continuation`: load `skills/plan/SKILL.md` completely and continue inline with the same args. Never stop with "Skill tool unavailable". |
+| Reviewer disagrees with worker context (NEEDS_FIX on Step 2 coverage check) | Re-run Searcher with the reviewer's gap list. Max 2 retries before surfacing the gap to user. |
 
 ## Examples
 
@@ -401,6 +406,9 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 structural gates, #12 per-step agents).
+- [runtime-contract.md](../hyperflow/runtime-contract.md) — spawn / structured_question / skill_continuation / usage_metrics.
+- [chain-router.md](../hyperflow/chain-router.md) — audit fix gate → plan edge; argument propagation; banned silent auto-fix.
+- [session-handoff.md](../hyperflow/session-handoff.md) — authoritative `<base>..<head>` ranges for handoff review.
 - [artefact-data.md](../hyperflow/artefact-data.md) — viewer-mode emit contract: when `viewer.enabled`, write findings as the compact `audit` JSON via `scripts/artefact.py` + a slim stub, viewable with `hyperflow view <slug>` (classic markdown otherwise).
 - [review-levels.md](references/review-levels.md) — full checklist for L1-L5.
 - [reviewer-prompt.md](references/reviewer-prompt.md) — reviewer template.

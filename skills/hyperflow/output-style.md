@@ -31,10 +31,12 @@ One line. Version only.
 
 ```
 Hyperflow update available — v1.12.1 → v1.13.0
-  run: claude plugin update hyperflow@hyperflow-marketplace
+  run: <provider-appropriate update command>
 ```
 
 Em-dash between phrase and version delta. Install hint indented two spaces, no icon prefix.
+
+Resolve the update line from install mode / provider mapping ([provider-claude.md](provider-claude.md), [provider-codex.md](provider-codex.md), registry): e.g. `claude plugin update hyperflow@hyperflow-marketplace`, `codex plugin marketplace upgrade hyperflow-marketplace`, or `git pull --ff-only` for confirmed source checkouts. Never invent an updater or print a host's command on the wrong install mode.
 
 ## 3. Analysis Cache Status
 
@@ -65,7 +67,7 @@ Two-space indent, no bullet prefix.
 
 ## 4. Agent Dispatch Labels
 
-Every agent dispatch gets a label **before** the Agent tool call. Format:
+Every agent dispatch gets a label **before** the host `spawn` (or before a labelled inline worker/reviewer phase when `spawn` is unavailable). Format:
 
 ```
 <Role> — <short lowercase description>
@@ -88,9 +90,9 @@ Writer — generating API documentation
 
 ### Parallel / serial dispatch (2+ agents in same batch)
 
-Header line declares **intent** (`parallel:N` or `serial:N`). Footer line proves **execution** (wall-clock vs cumulative · ratio). The ratio is what catches a batch that *was supposed to* run parallel but actually ran serial.
+Header line declares **intent** (`parallel:N` or `serial:N`). Footer line proves **execution** (wall-clock vs cumulative · ratio) **only when real timing metadata is available**. The ratio is what catches a batch that *was supposed to* run parallel but actually ran serial.
 
-**Parallel batch** (all N dispatches in one message):
+**Parallel batch** (true concurrent spawns in one turn when the host allows):
 
 ```
 Batch 1 — parallel:3 · standard profile · L1–L2
@@ -101,7 +103,7 @@ Writer         — generate test suite for auth
   wall-clock: 47s · cumulative: 2m 18s · ratio 0.34 — parallel
 ```
 
-**Serial batch** (depends on a prior batch's output):
+**Serial batch** (depends on a prior batch's output, or host only supports sequenced work):
 
 ```
 Batch 2 — serial:1 · depends on Batch 1
@@ -110,7 +112,17 @@ Implementer    — wire routes (with batch 1 learnings)
   wall-clock: 31s · cumulative: 31s · ratio 1.0 — serial (single agent)
 ```
 
-**Ratio interpretation:**
+**Sequenced inline** (no subagent API — labelled phases in the main thread):
+
+```
+Batch 1 — serial:2 · sequenced inline · standard profile · L1–L2
+
+Implementer    — write middleware + route guards
+**Reviewer**   — review middleware batch
+  wall-clock: unavailable · cumulative: unavailable — sequenced inline
+```
+
+**Ratio interpretation** (only when both wall-clock and cumulative are **observed**, not invented):
 
 | Ratio | Meaning |
 |---|---|
@@ -123,7 +135,8 @@ Rules:
 - Role left-padded to the longest role in the block (typically 13 chars for `Implementer`).
 - Description starts after the em-dash, lowercased.
 - Single-agent dispatch — header still printed (`serial:1`) but the footer is optional.
-- `wall-clock` is the elapsed real time from first `Agent()` call to last `⎿ Done`. `cumulative` is the sum of the individual agent durations reported in each `⎿ Done (... · Ym Zs)`.
+- **Parallelism claims require either true concurrent `spawn`s or explicit "sequenced inline" wording** — never claim parallel subagents when work was serial ([runtime-contract.md](runtime-contract.md) metrics honesty).
+- `wall-clock` / `cumulative` come from host-reported completion metadata, the usage ledger, or other **observed** timers. Never parse a single host's UI chrome (e.g. Claude `⎿ Done` lines) as a universal duration source. When timing is missing, print `unavailable` — do not fabricate seconds or ratios.
 
 ## 5. Agent Progress
 
@@ -212,7 +225,9 @@ Next       audit/deploy gates
 
 ## 8. Usage Summary
 
-Printed after every completed task, **after** Evidence. Agent/token rows come from `scripts/usage-ledger.py summary`; never reconstruct them from scrollback or task prose. The summary surfaces canonical phase totals plus `Wall-clock` and `Cumulative` so cost and parallelism are auditable. Usage does **not** replace Evidence.
+Printed after every completed task, **after** Evidence. Agent/token rows come from `scripts/usage-ledger.py summary` when the ledger has records; never reconstruct them from scrollback, task prose, or host UI chrome. The summary surfaces canonical phase totals plus `Wall-clock` and `Cumulative` when those values are known so cost and parallelism are auditable. Usage does **not** replace Evidence.
+
+Semantic op: **`usage_metrics`** ([runtime-contract.md](runtime-contract.md)). Prefer host-reported input/output/cache tokens when the inventory exposes them. When estimating, set `estimated=true` and preserve `total_tokens = input_tokens + output_tokens`. **Never fabricate** tokens, durations, parallelism ratios, cache hits, or agent counts as observed data. Never parse Claude (or any host) completion UI text as a universal usage source.
 
 ```
 ── Hyperflow Usage ─────────────────────────────────────────
@@ -235,20 +250,41 @@ Ledger                          .hyperflow/usage/<chain-id>.jsonl
 ────────────────────────────────────────────────────────────
 ```
 
-`ratio = wall-clock / cumulative`. Lower is better for parallelism. The annotation after the ratio is one of `parallel` (≤ 0.5) / `mixed` (0.5–0.8) / `serial` (≥ 0.8) per the table in §4.
+When host metrics are missing (common on Codex and other portable hosts with empty `usage_metrics` candidates), print explicit unavailability instead of inventing precision:
 
-Backwards-compat: the shorter form (no Wall-clock / Cumulative rows) is acceptable for tasks with a single batch or a single agent. For tasks with 2+ batches OR 2+ parallel-eligible workers, the two rows MUST appear.
+```
+── Hyperflow Usage ─────────────────────────────────────────
+Profile: standard              budget 50.0k
+Triage                         1 agent      unavailable
+Planning                       1 agent      unavailable
+Execution                      2 agents     unavailable
+Review                         1 agent      unavailable
+Estimated records                          n/a — usage_metrics unavailable
+Wall-clock                      unavailable
+Cumulative                      unavailable
+Escalations                     0
+Total                           5 agents    unavailable
+Ledger                          .hyperflow/usage/<chain-id>.jsonl
+────────────────────────────────────────────────────────────
+```
+
+Doctrine estimators may still write ledger rows with `estimated=true`; those rows surface under `Estimated records` and must never be presented as exact observed host metadata.
+
+`ratio = wall-clock / cumulative` **only when both sides are observed**. Lower is better for parallelism. The annotation after the ratio is one of `parallel` (≤ 0.5) / `mixed` (0.5–0.8) / `serial` (≥ 0.8) per the table in §4. If either side is `unavailable`, omit the ratio (or print `ratio unavailable`) — never invent one.
+
+Backwards-compat: the shorter form (no Wall-clock / Cumulative rows) is acceptable for tasks with a single batch or a single agent, and when metrics are unavailable. For tasks with 2+ batches OR 2+ parallel-eligible workers **and** observed timings, the two rows MUST appear.
 
 Rules:
 - Top/bottom rules — `──` repeated to ~50 chars
-- Agent counts right-aligned in 3-char column
-- Token counts right-aligned in 7-char column, formatted as `Xk` or `X.Xk`
-- Breakdown after tokens (optional): `(3 reviewers: 38.4k · 1 final: 13.7k)` — middle dots between items
+- Agent counts right-aligned in 3-char column when known; never invent agent counts for foreground-only / inline-fast work (inline-fast shows `0 agents` plus the foreground review)
+- Token counts right-aligned in 7-char column, formatted as `Xk` or `X.Xk`, or the literal word `unavailable`
+- Breakdown after tokens (optional): `(3 reviewers: 38.4k · 1 final: 13.7k)` — middle dots between items — only from ledger fields
 - Phase names are exactly `Triage`, `Planning`, `Execution`, `Review`, `Verification`; omit only zero phases.
-- Duplicate-context ratio = repeated `context_tokens` (same non-empty hash after its first occurrence in that chain) ÷ total input tokens. Cache-hit rate = cached input ÷ total input.
-- `Estimated records` is always visible. A non-zero value makes clear that some provider metadata was unavailable.
+- Duplicate-context ratio = repeated `context_tokens` (same non-empty hash after its first occurrence in that chain) ÷ total input tokens. Cache-hit rate = cached input ÷ total input. Both require real ledger fields — otherwise `unavailable`.
+- `Estimated records` is always visible when a ledger exists. A non-zero value makes clear that some provider metadata was unavailable or estimated.
 - `Accepted commits` and tokens/commit come from `accepted_commit`; never infer commit count from prose.
-- Inline-fast prints `Profile: fast · inline foreground`, `0 agents`, `Total 0 agents · tokens n/a`, affected-gate results, and the one accepted commit in Evidence. It has no ledger row because no agent call occurred.
+- Inline-fast prints `Profile: fast · inline foreground`, `0 agents`, `Total 0 agents · tokens n/a` (or `unavailable`), affected-gate results, and the one accepted commit in Evidence. It has no agent-spawn ledger row because no child `spawn` occurred.
+- Usage / Evidence blocks print only at terminal wrap-up or hard halt — never mid-batch as a fake completion.
 
 ## 9. Section Headers
 

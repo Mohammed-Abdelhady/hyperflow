@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Edit, Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(.
 argument-hint: ""
 version: 3.1.3
 license: MIT
-compatibility: Designed for Claude Code
+compatibility: Claude Code (native Agent / AskUserQuestion); Codex / OpenCode / Grok via runtime-contract fallbacks
 tags: [release, ci, automation, push-gates]
 ---
 
@@ -15,7 +15,11 @@ tags: [release, ci, automation, push-gates]
 
 No gate skipped, no failure ignored. If any gate fails, halt and report. Never `--no-verify`. Never bypass.
 
+Host ops are semantic ([runtime-contract.md](../hyperflow/runtime-contract.md)): `spawn` for Workers/Reviewers, `shell` for git/npm, `structured_question` for commit-inclusion and push gates, `usage_metrics` for honest cost. Deploy remains **separately push-gated** from audit ([chain-router.md](../hyperflow/chain-router.md)) — completing local gates never implies a remote push.
+
 **Failure recovery (rule 14).** Worker errors and Quality Gate failures follow the canonical policy in [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). Gate failures are user-surfaced, never auto-fixed — print the failing command + full stderr and halt the push. Never `--no-verify`, never force-push to main.
+
+**Portable mechanics.** Prefer native tools when present (Claude: `Agent`, `AskUserQuestion`). When absent: labelled inline worker then **separate** labelled inline reviewer; Hyperflow Question + end turn for structural gates. Headless at a push/inclusion gate → hold and error; never silent-default push.
 
 ## Per-Step Agent Map
 
@@ -28,10 +32,10 @@ No gate skipped, no failure ignored. If any gate fails, halt and report. Never `
 | 2c | Test gate | Worker A (unit), Worker B (integration/E2E) | Reviewer | Parallel (P1); depends on 2b PASS |
 | 3a | Secrets scan | Worker A (diff pattern), Worker B (file pattern) | **`security-reviewer`** | Runs in parallel with Step 2 (pre-build; read-only) |
 | 3b | Dependency audit | Worker A (CVE audit), Worker B (license check) | **`vulnerability-reviewer`** (web-research-first) | — |
-| 4 | Commit | single Worker | Reviewer | atomic-exempt (DOCTRINE 12.2) |
+| 4 | Commit | single Worker | Reviewer | atomic-exempt (DOCTRINE 12.2); inclusion via `structured_question` |
 | 5a | Release execution | single Worker | Reviewer | atomic-exempt (DOCTRINE 12.2) |
 | 5b | Version sync | Worker A (manifests), Worker B (changelog) | Reviewer | — |
-| 6 | Push gate | AskUserQuestion | — | structural gate; atomic-exempt |
+| 6 | Push gate | `structured_question` (`AskUserQuestion` when present) | — | structural gate; atomic-exempt; separate from audit |
 | 7 | Output | single print | — | atomic-exempt (§12.1) |
 
 ## Step 1 — Survey State
@@ -40,21 +44,21 @@ Sub-phases run in parallel (P1).
 
 ### Step 1a — Repo-state scan
 
-Two Workers in parallel:
+`spawn` two Workers in parallel (or sequenced inline workers):
 
-- Worker A — `git status --short` — uncommitted changes, staged files
-- Worker B — `git log origin/<branch>..HEAD --oneline` — commits ahead of remote; detect branch name
+- Worker A — `shell`: `git status --short` — uncommitted changes, staged files
+- Worker B — `shell`: `git log origin/<branch>..HEAD --oneline` — commits ahead of remote; detect branch name
 
-Reviewer — verdict on repo state (clean / has uncommitted / ahead by N). If detached HEAD or no remote configured → halt with reason.
+Then a separate **Reviewer** — verdict on repo state (clean / has uncommitted / ahead by N). If detached HEAD or no remote configured → halt with reason.
 
 ### Step 1b — Tool detection
 
-Two Workers in parallel:
+`spawn` two Workers in parallel (or sequenced inline):
 
 - Worker A — Read `.hyperflow/profile.md` for package manager and project type; fallback: inspect `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`
 - Worker B — Check `.hyperflow/testing.md` for test runner; fallback: detect from `package.json` devDependencies (`vitest`, `jest`, `playwright`, `pytest`, etc.)
 
-Reviewer — produce a single tool manifest (package manager, test runner, typed-project flag, build script presence). Used by Step 2 gates.
+**Reviewer** — produce a single tool manifest (package manager, test runner, typed-project flag, build script presence). Used by Step 2 gates.
 
 ## Step 2 — Quality Gates
 
@@ -66,13 +70,13 @@ Print `Gate <letter> — <name>` before each sub-phase.
 
 ### Step 2a — Lint + typecheck (parallel; no build artifact required)
 
-Three Workers in parallel (P1). None depend on build output — safe to run alongside Step 3.
+`spawn` three Workers in parallel when concurrent (P1); otherwise sequenced inline. None depend on build output — safe to run alongside Step 3. All gate commands use `shell`.
 
 - Worker A — Detect and run primary linter: `npm run lint` / `pnpm lint` / `bun run lint` / `eslint .`. On failure: auto-fix via `--fix`, re-run once; report final error count.
 - Worker B — Detect and run formatter check: `prettier --check .` / `biome check .` / equivalent. Report diff count.
 - Worker C — Root typecheck: `tsc --noEmit` / `npm run typecheck`. Skip if not a typed project (per Step 1b tool manifest). Also run per-package typecheck if workspace detected (pnpm/yarn workspaces): iterate packages with `tsc --noEmit` in each.
 
-Reviewer — aggregate verdict across all three Workers:
+**Reviewer** — aggregate verdict across all three Workers:
 - `PASS` — all clean (or absent/untyped)
 - `NEEDS_REVISION` — any gate fails → halt before 2b. Report which specific gate(s) failed and why. Do NOT proceed to build.
 - `ESCALATE` — config errors preventing execution of any gate
@@ -132,10 +136,10 @@ Reviewer — dispatched as the [`vulnerability-reviewer`](../../agents/vulnerabi
 
 ## Step 4 — Commit
 
-Atomic — single Worker → Reviewer pair with no parallel angles. Exempt from sub-phase decomposition per DOCTRINE 12.2 atomic exemption.
+Atomic — single Worker → Reviewer pair with no parallel angles. Exempt from sub-phase decomposition per DOCTRINE 12.2 atomic exemption. Commits use `shell` (`git add` / `git commit`) inside the security blocklist.
 
 - Worker-introduced fixes from Step 2 → commit automatically with a conventional commit message.
-- Pre-existing user-owned uncommitted changes → use `AskUserQuestion` to confirm inclusion. Per DOCTRINE rule 8, this is a binary action gate — no recommendation marker:
+- Pre-existing user-owned uncommitted changes → fire `structured_question` (Claude: `AskUserQuestion`) to confirm inclusion. Per DOCTRINE rule 8, this is a binary action gate — **no** `(Recommended)` marker:
 
   ```
   Include uncommitted user changes in this commit?
@@ -143,9 +147,9 @@ Atomic — single Worker → Reviewer pair with no parallel angles. Exempt from 
     Exclude — commit only the worker fixes; user changes stay local
   ```
 
-  If the popup UI is unavailable on a portable surface (Codex / OpenCode / Grok), print the same inclusion gate as a `Hyperflow Question` chat block and wait for the user's answer.
+  If structured UI is unavailable (Codex / OpenCode / Grok), print the same inclusion gate as a `Hyperflow Question` chat block and **end the turn**. Headless / no channel → do not include user changes silently; hold and print that interactive confirmation is required.
 
-- **Never** add `Co-Authored-By: Claude` in commit messages — see [git-workflow.md](references/git-workflow.md).
+- **Never** add `Co-Authored-By: Claude` (or any AI attribution) in commit messages — see [git-workflow.md](references/git-workflow.md).
 
 ## Step 5 — Release
 
@@ -171,15 +175,15 @@ Reviewer — verdict:
 - `NEEDS_REVISION` — version mismatch or changelog missing entry → halt
 - (Skip entirely if Step 5a returned `Release: skipped`)
 
-## Step 6 — Push (honors `push` pre-election from Scope Step 2.6 · STRUCTURAL GATE when `push=ask`)
+## Step 6 — Push (honors `push` pre-election · STRUCTURAL GATE when `push=ask` · deploy-owned)
 
-Read the `push` arg from chain args (propagated from Scope Step 2.6 when `chain-mode=auto`). Three paths:
+Read the `push` arg from chain args (propagated from dispatch operational pre-election / handoff package). **Deploy owns this gate independently of audit** — a clean audit or green local gates never push. Three paths:
 
-**`push=auto`** — push immediately without asking. Print `Push: pre-elected (auto) — pushing branch + tags…`. Run `git push`, then `git push --tags` if release created tags. Skip the `AskUserQuestion` call. Per DOCTRINE rule 8, this is NOT an invented skip — the user already gave consent at Scope Step 2.6.
+**`push=auto`** — push immediately without asking. Print `Push: pre-elected (auto) — pushing branch + tags…`. Run `shell`: `git push`, then `git push --tags` if release created tags. Skip the `structured_question` call. Per DOCTRINE rule 8, this is NOT an invented skip — the user already gave consent at the operational pre-election.
 
-**`push=never`** — skip the push step entirely. Print `Push: pre-elected (never) — branch held local. Run \`git push\` manually when ready.` Do not call `git push`.
+**`push=never`** — skip the push step entirely. Print `Push: pre-elected (never) — branch held local. Run \`git push\` manually when ready.` Do not call `git push`. Local quality/security gates still run fully.
 
-**`push=ask`** (default; also fires when no operational pre-election was made — e.g. deploy invoked standalone) — fire the structural-gate `AskUserQuestion`. Per DOCTRINE rule 8, this is a binary action gate — no recommendation marker on either option.
+**`push=ask`** (default; also fires when no operational pre-election was made — e.g. deploy invoked standalone) — fire the structural-gate `structured_question` (Claude: `AskUserQuestion`). Per DOCTRINE rule 8, this is a binary action gate — **no** `(Recommended)` marker on either option.
 
 ```
 Push to origin/<branch>?
@@ -187,9 +191,10 @@ Push to origin/<branch>?
   Hold — keep local; you can push later
 ```
 
-- **Never force-push to main or master**, regardless of `push` value. `push=auto` is a plain `git push`; if the remote rejects it (non-fast-forward), surface the error and stop — do NOT add `--force`.
-- On yes (or `push=auto`) — `git push`, then `git push --tags` if release created tags.
-- If the popup UI is unavailable on a portable surface (Codex / OpenCode / Grok) for `push=ask`, print the push gate as a `Hyperflow Question` chat block and wait for the user's answer. If no interactive channel is available at all, hold the push and print `Push: held — interactive confirmation required`.
+- **Never force-push to main or master**, regardless of `push` value. `push=auto` is a plain `git push`; if the remote rejects it (non-fast-forward), surface the error and stop — do NOT add `--force`. Skipping this irreversible restriction is a `SECURITY_VIOLATION:`.
+- On yes (or `push=auto`) — `shell`: `git push`, then `git push --tags` if release created tags.
+- On **Hold** — keep local; all local gates have already run; **no push occurs**.
+- If structured UI is unavailable (Codex / OpenCode / Grok) for `push=ask`, print the push gate as a `Hyperflow Question` chat block and **end the turn**. If no interactive channel is available at all, hold the push and print `Push: held — interactive confirmation required`.
 
 ## Step 7 — Output
 
@@ -235,7 +240,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). Output style in [output-s
 
 ## Overview
 
-`/hyperflow:deploy` runs the pre-push gates (lint + typecheck + security sweep in parallel, then build, then tests), composes any worker-introduced fixes into a clean commit, runs the release script if present, and asks before pushing. Standalone — never auto-invoked from the chain. Push always requires an explicit `AskUserQuestion` confirmation. Never bypasses hooks, never force-pushes to main, never adds AI attribution to commits.
+`/hyperflow:deploy` runs the pre-push gates (lint + typecheck + security sweep in parallel, then build, then tests), composes any worker-introduced fixes into a clean commit, runs the release script if present, and asks before pushing. Standalone or chain-continued — never silently auto-pushed. When `push=ask`, push requires an explicit `structured_question` / `AskUserQuestion` (or Hyperflow Question chat fallback). Never bypasses hooks, never force-pushes to main, never adds AI attribution to commits.
 
 ## Prerequisites
 
@@ -252,9 +257,9 @@ The 7 numbered steps live in [Step 1 — Survey State](#step-1--survey-state) th
 1. Survey state — two sub-phases in parallel: 1a repo-state scan (git status + ahead count), 1b tool detection (package manager, test runner, typed-project flag).
 2. Quality gates — three sequential sub-phases: 2a lint+typecheck (3-wide parallel Workers, no build artifact needed), 2b build (depends on 2a PASS), 2c tests (2-wide parallel, depends on 2b PASS). Runs in parallel with Step 3 at orchestrator level. Halt at first `NEEDS_REVISION`.
 3. Security sweep — runs in parallel with Step 2 (P3, pre-build read-only). Two sub-phases in parallel: 3a secrets/keys scan (security-reviewer specialist), 3b dependency audit. Halt on `SECURITY_VIOLATION` or critical CVE. Both Step 2 and Step 3 must PASS before Step 4.
-4. Commit — atomic. Worker fixes auto-committed; `AskUserQuestion` for pre-existing uncommitted user changes.
+4. Commit — atomic. Worker fixes auto-committed; `structured_question` / `AskUserQuestion` for pre-existing uncommitted user changes.
 5. Release — two sequential sub-phases: 5a run release script, 5b verify version sync across manifests.
-6. Push gate — atomic structural gate. Honors `push` pre-election (auto/never/ask). `push=ask` fires `AskUserQuestion`. Never force-push to main.
+6. Push gate — atomic structural gate, **independent of audit**. Honors `push` pre-election (auto/never/ask). `push=ask` fires `structured_question` (`AskUserQuestion` when present). Hold keeps everything local. Never force-push to main.
 7. Print structured ship result.
 
 ## Output
@@ -272,9 +277,9 @@ See the ship result block in [Step 7 — Output](#step-7--output) above. Two for
 | Security sweep finds secrets | Halt with `SECURITY_VIOLATION:` marker and the file:line. User decides remediation (revert the secret + rotate the credential). |
 | `scripts/release.sh` says "nothing to release" | Skip release; print `Release: skipped (nothing to release)`. Push step still fires for non-release commits. |
 | Push rejected (non-fast-forward) | Refuse to force-push. Print: `Push rejected — branch is behind origin. Pull/rebase first.` |
-| `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the push or commit-inclusion gate as a `Hyperflow Question` chat block and wait for the user's answer. |
-| Headless / non-interactive | Refuse push step entirely. Print structured result with `Push: held — interactive confirmation required`. |
-| Pre-existing uncommitted user changes | Use `AskUserQuestion` to ask whether to include or exclude from the commit. Default: include. |
+| `structured_question` / `AskUserQuestion` popup unavailable (Codex / OpenCode / Grok) | Print the push or commit-inclusion gate as a `Hyperflow Question` chat block, **end the turn**, wait for the user's answer. |
+| Headless / non-interactive at `push=ask` | Refuse push step entirely. Print structured result with `Push: held — interactive confirmation required`. Local gates still report. |
+| Pre-existing uncommitted user changes | Use `structured_question` / `AskUserQuestion` to ask whether to include or exclude from the commit. Never silently include without a channel. |
 
 ## Examples
 
@@ -344,6 +349,8 @@ Halted before commit. Rotate the credential and remove the literal from source b
 ## Resources
 
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules (especially #8 push confirmation gate).
+- [runtime-contract.md](../hyperflow/runtime-contract.md) — spawn / shell / structured_question / usage_metrics.
+- [chain-router.md](../hyperflow/chain-router.md) — deploy push gate; banned silent auto-push.
 - [quality-gates.md](references/quality-gates.md) — full lint/typecheck/build/test policy.
 - [security.md](references/security.md) — security sweep policy and blocklists.
 - [git-workflow.md](references/git-workflow.md) — branch/commit conventions, no AI attribution rule.

@@ -25,7 +25,19 @@ PROVIDERS=()
 PROVIDER_PATHS=()
 PROVIDER_KEYS=()
 
+# Lifecycle outcome records: "Provider|outcome|detail"
+# Outcomes: installed | already_installed | command_unavailable |
+#           permission_denied | instruction_only | removed | not_installed | failed
+LIFECYCLE_RESULTS=()
+
 SECURITY_ENABLED="true"
+
+# Supported Codex marketplace lifecycle commands (must match config/providers.json).
+CODEX_MARKETPLACE_ADD="codex plugin marketplace add Mohammed-Abdelhady/hyperflow"
+CODEX_PLUGIN_ADD="codex plugin add hyperflow@hyperflow-marketplace"
+CODEX_PLUGIN_REMOVE="codex plugin remove hyperflow@hyperflow-marketplace"
+CODEX_MARKETPLACE_UPGRADE="codex plugin marketplace upgrade hyperflow-marketplace"
+FRESH_SESSION_NOTE="Verify in a fresh Codex session (restart Codex after install/update/remove)."
 
 # ─── Provider Detection ───
 
@@ -129,6 +141,168 @@ clone_or_update() {
   fi
 }
 
+# ─── Lifecycle outcome helper ───
+
+record_lifecycle() {
+  local provider="$1" outcome="$2" detail="${3:-}"
+  LIFECYCLE_RESULTS+=("${provider}|${outcome}|${detail}")
+}
+
+# ─── Codex plugin lifecycle (install / already / unavailable / denied / instruction-only) ───
+
+# Returns 0 if hyperflow appears installed for Codex (list output or cache path).
+# Uses CODEX_HOME when set so tests can isolate without touching real ~/.codex.
+codex_plugin_is_installed() {
+  local home="${CODEX_HOME:-$HOME/.codex}"
+  if command -v codex >/dev/null 2>&1; then
+    local list_out=""
+    list_out="$(codex plugin list 2>/dev/null || true)"
+    if printf '%s' "$list_out" | grep -qiE 'hyperflow'; then
+      return 0
+    fi
+  fi
+  # Cache / plugins path markers (never invent state beyond presence).
+  if [ -d "$home/plugins" ] && find "$home/plugins" -maxdepth 4 -iname '*hyperflow*' 2>/dev/null | grep -q .; then
+    return 0
+  fi
+  return 1
+}
+
+# Attempt real Codex install commands; always record a truthful outcome.
+# HYPERFLOW_CODEX_INSTRUCTION_ONLY=1 forces instruction-only (used by tests).
+install_codex_plugin() {
+  local force_instruction="${HYPERFLOW_CODEX_INSTRUCTION_ONLY:-0}"
+
+  if [ "$force_instruction" = "1" ]; then
+    step "  Codex — instruction-only (HYPERFLOW_CODEX_INSTRUCTION_ONLY=1)"
+    step "    $CODEX_MARKETPLACE_ADD"
+    step "    $CODEX_PLUGIN_ADD"
+    step "    $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_ADD"
+    return
+  fi
+
+  if ! command -v codex >/dev/null 2>&1; then
+    warn "Codex — command unavailable (codex not on PATH)"
+    step "  Install manually:"
+    step "    $CODEX_MARKETPLACE_ADD"
+    step "    $CODEX_PLUGIN_ADD"
+    step "    $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "command_unavailable" "$CODEX_PLUGIN_ADD"
+    return
+  fi
+
+  if codex_plugin_is_installed; then
+    step "  Codex — already installed"
+    step "  Update: $CODEX_MARKETPLACE_UPGRADE"
+    step "  $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "already_installed" "hyperflow@hyperflow-marketplace"
+    return
+  fi
+
+  info "Codex — installing via plugin marketplace…"
+  local add_rc=0 install_rc=0
+  local add_err="" install_err=""
+
+  set +e
+  add_err="$(codex plugin marketplace add Mohammed-Abdelhady/hyperflow 2>&1)"
+  add_rc=$?
+  install_err="$(codex plugin add hyperflow@hyperflow-marketplace 2>&1)"
+  install_rc=$?
+  set -e
+
+  if [ $install_rc -eq 0 ]; then
+    info "Codex — installed (hyperflow@hyperflow-marketplace)"
+    step "  $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "installed" "hyperflow@hyperflow-marketplace"
+    return
+  fi
+
+  # Permission / auth failures
+  if [ $add_rc -eq 126 ] || [ $install_rc -eq 126 ] \
+    || [ $add_rc -eq 13 ] || [ $install_rc -eq 13 ] \
+    || printf '%s\n%s' "$add_err" "$install_err" | grep -qiE 'permission denied|EACCES|not permitted|access denied'; then
+    warn "Codex — permission denied while running plugin commands"
+    step "  Retry with appropriate permissions, or install manually:"
+    step "    $CODEX_MARKETPLACE_ADD"
+    step "    $CODEX_PLUGIN_ADD"
+    step "    $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "permission_denied" "$CODEX_PLUGIN_ADD"
+    return
+  fi
+
+  # Already present according to CLI (race / partial state)
+  if printf '%s\n%s' "$add_err" "$install_err" | grep -qiE 'already|exists|is installed'; then
+    step "  Codex — already installed"
+    step "  Update: $CODEX_MARKETPLACE_UPGRADE"
+    step "  $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "already_installed" "hyperflow@hyperflow-marketplace"
+    return
+  fi
+
+  warn "Codex — install command failed (exit $install_rc); falling back to instructions"
+  step "  $CODEX_MARKETPLACE_ADD"
+  step "  $CODEX_PLUGIN_ADD"
+  step "  $FRESH_SESSION_NOTE"
+  if [ -n "$install_err" ]; then
+    step "  detail: $(printf '%s' "$install_err" | head -n 2 | tr '\n' ' ')"
+  fi
+  record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_ADD"
+}
+
+# Attempt real Codex remove; never runs destructive scope beyond the plugin entry.
+remove_codex_plugin() {
+  local force_instruction="${HYPERFLOW_CODEX_INSTRUCTION_ONLY:-0}"
+
+  if [ "$force_instruction" = "1" ]; then
+    step "  Codex — instruction-only removal"
+    step "    $CODEX_PLUGIN_REMOVE"
+    step "    $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_REMOVE"
+    return
+  fi
+
+  if ! command -v codex >/dev/null 2>&1; then
+    warn "Codex — command unavailable; cannot remove automatically"
+    step "  Remove manually: $CODEX_PLUGIN_REMOVE"
+    step "  $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "command_unavailable" "$CODEX_PLUGIN_REMOVE"
+    return
+  fi
+
+  if ! codex_plugin_is_installed; then
+    step "  Codex — not installed, skipping"
+    record_lifecycle "Codex" "not_installed" ""
+    return
+  fi
+
+  set +e
+  local rm_err rm_rc
+  rm_err="$(codex plugin remove hyperflow@hyperflow-marketplace 2>&1)"
+  rm_rc=$?
+  set -e
+
+  if [ $rm_rc -eq 0 ]; then
+    info "Codex — plugin removed (hyperflow@hyperflow-marketplace)"
+    step "  $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "removed" "hyperflow@hyperflow-marketplace"
+    return
+  fi
+
+  if [ $rm_rc -eq 126 ] || [ $rm_rc -eq 13 ] \
+    || printf '%s' "$rm_err" | grep -qiE 'permission denied|EACCES|not permitted|access denied'; then
+    warn "Codex — permission denied while removing plugin"
+    step "  Remove manually: $CODEX_PLUGIN_REMOVE"
+    step "  $FRESH_SESSION_NOTE"
+    record_lifecycle "Codex" "permission_denied" "$CODEX_PLUGIN_REMOVE"
+    return
+  fi
+
+  warn "Codex — remove failed (exit $rm_rc); use: $CODEX_PLUGIN_REMOVE"
+  step "  $FRESH_SESSION_NOTE"
+  record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_REMOVE"
+}
+
 # ─── Link Provider ───
 
 link_provider() {
@@ -137,14 +311,16 @@ link_provider() {
   if [ "$name" = "Claude Code" ]; then
     if [ -d "$skills_dir/hyperflow" ] || [ -L "$skills_dir/hyperflow" ]; then
       step "  Claude Code — skill already installed"
+      record_lifecycle "Claude Code" "already_installed" "hyperflow@hyperflow-marketplace"
     else
       step "  Claude Code — run 'claude plugin install hyperflow@hyperflow-marketplace' to install"
+      record_lifecycle "Claude Code" "instruction_only" "claude plugin install hyperflow@hyperflow-marketplace"
     fi
     return
   fi
 
   if [ "$name" = "Codex" ]; then
-    step "  Codex — run 'codex plugin marketplace add Mohammed-Abdelhady/hyperflow' and 'codex plugin add hyperflow@hyperflow-marketplace' to install"
+    install_codex_plugin
     return
   fi
 
@@ -323,26 +499,54 @@ print_summary() {
   step "Config:    $CONFIG_FILE"
 
   local has_non_cc=false
+  local has_codex=false
   for i in "${!PROVIDERS[@]}"; do
     if [ "${PROVIDERS[$i]}" != "Claude Code" ]; then
       has_non_cc=true
-      break
+    fi
+    if [ "${PROVIDERS[$i]}" = "Codex" ]; then
+      has_codex=true
     fi
   done
 
   if [ "$has_non_cc" = true ]; then
     step "Location:  $INSTALL_DIR"
-    step "Update:    git -C $INSTALL_DIR pull"
+    step "Update (source checkout):  git -C $INSTALL_DIR pull --ff-only"
+  fi
+  if [ "$has_codex" = true ]; then
+    step "Update (Codex marketplace): $CODEX_MARKETPLACE_UPGRADE"
+    step "  $FRESH_SESSION_NOTE"
   fi
   echo ""
 
-  if [ ${#PROVIDERS[@]} -gt 0 ]; then
+  if [ ${#LIFECYCLE_RESULTS[@]} -gt 0 ]; then
+    step "Provider lifecycle outcomes:"
+    local entry prov outcome detail rest
+    for entry in "${LIFECYCLE_RESULTS[@]}"; do
+      prov="${entry%%|*}"
+      rest="${entry#*|}"
+      outcome="${rest%%|*}"
+      detail="${rest#*|}"
+      case "$outcome" in
+        installed)          step "  $prov — installed${detail:+ ($detail)}" ;;
+        already_installed)  step "  $prov — already installed${detail:+ ($detail)}" ;;
+        command_unavailable) step "  $prov — command unavailable; manual: $detail" ;;
+        permission_denied)  step "  $prov — permission denied; manual: $detail" ;;
+        instruction_only)   step "  $prov — instruction-only; run: $detail" ;;
+        removed)            step "  $prov — removed${detail:+ ($detail)}" ;;
+        not_installed)      step "  $prov — not installed" ;;
+        failed)             step "  $prov — failed${detail:+ ($detail)}" ;;
+        *)                  step "  $prov — $outcome${detail:+ ($detail)}" ;;
+      esac
+    done
+    echo ""
+  elif [ ${#PROVIDERS[@]} -gt 0 ]; then
     step "Providers:"
     for i in "${!PROVIDERS[@]}"; do
       if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
         step "  Claude Code — plugin (claude plugin install hyperflow@hyperflow-marketplace)"
       elif [ "${PROVIDERS[$i]}" = "Codex" ]; then
-        step "  Codex — plugin (codex plugin add hyperflow@hyperflow-marketplace)"
+        step "  Codex — plugin ($CODEX_PLUGIN_ADD)"
       elif [ "${PROVIDERS[$i]}" = "Antigravity" ]; then
         step "  Antigravity — hyperflow* skills → ${PROVIDER_PATHS[$i]}"
       elif [ "${PROVIDERS[$i]}" = "Grok" ]; then
@@ -378,11 +582,13 @@ uninstall() {
 
     if [ "$name" = "Claude Code" ]; then
       step "  Claude Code — use 'claude plugin uninstall hyperflow@hyperflow-marketplace'"
+      step "  Verify removal in a fresh Claude Code session after uninstall."
+      record_lifecycle "Claude Code" "instruction_only" "claude plugin uninstall hyperflow@hyperflow-marketplace"
       continue
     fi
 
     if [ "$name" = "Codex" ]; then
-      step "  Codex — use 'codex plugin remove hyperflow@hyperflow-marketplace'"
+      remove_codex_plugin
       continue
     fi
 

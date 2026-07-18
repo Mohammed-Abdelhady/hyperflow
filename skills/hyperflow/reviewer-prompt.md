@@ -1,6 +1,21 @@
 # Reviewer Prompt Template
 
-Use this template when dispatching Reviewers via the Agent tool. Review depth scales by task complexity.
+Use this template when dispatching Reviewers via the host **`spawn`** op ([runtime-contract.md](runtime-contract.md) — Claude `Agent`, Codex collaboration / legacy spawn candidates, OpenCode `Task` / `subagent`, or other inventory-mapped tools). When `spawn` is unavailable, run a **distinct labelled inline reviewer phase** in the main thread after the worker phase completes. Review depth scales by task complexity.
+
+**Role separation (hard — never degrade):**
+
+- Reviewer children **never coordinate** the chain, never dispatch siblings, and never fire structural `structured_question` gates at the user.
+- Reviewers **never implement** the fix they request; they return a verdict only.
+- Workers **never review** their own output. Worker and reviewer are always separate spawns (or separate labelled inline phases).
+- Every reviewer runs on the **current session model**. No per-role model selection.
+- `SECURITY_VIOLATION:` still hard-halts the chain with no retries ([failure-recovery.md](failure-recovery.md)).
+
+| Intent | Semantic op | When present | When absent |
+|---|---|---|---|
+| Start this reviewer | `spawn` | Separate child with reviewer charter | Labelled inline reviewer phase |
+| Collect prior worker | `wait` / host result | Block until worker output settles | Same-turn inline path only |
+| Re-review after fix | `follow_up` or new `spawn` | Prefer same child when host supports follow-up | New reviewer phase with same scope + prior verdict context |
+| Cancel reviewer | `interrupt` | Only when the tool exists | Stop issuing work; document limitation — do not claim cancellation |
 
 ## Complexity Classification
 
@@ -12,7 +27,7 @@ The orchestrator determines complexity BEFORE dispatching the Reviewer:
 
 ## Template
 
-The first line is a literal routing marker — emit it **verbatim** as the very first line of the dispatched prompt so an upstream tiering proxy can keep review passes on the top model. It is inert to the Reviewer.
+The first line is a literal routing marker — emit it **verbatim** as the very first line of the dispatched prompt so an upstream tiering proxy or observability tool can identify the review pass. It is inert to the Reviewer. Everything after it is the review brief. (Role markers are not model routers — every agent still runs on the session model.)
 
 ```
 hyperflow-role: reviewer
@@ -79,12 +94,24 @@ If a finding needs a peer domain's judgment before you can rule on it, hold the 
 `CONSULT: <peer> — <question>` instead (you may consult any specialist in `agents/`). The Team Lead brokers the
 answer and re-dispatches you to finish the review. See DOCTRINE rule 19 / [consultation.md](consultation.md).
 
+**Verdict handling for the orchestrator (not the reviewer):**
+
+| Verdict | Orchestrator action |
+|---|---|
+| `APPROVED` | Advance; record review line in Evidence |
+| `NEEDS_FIX` / `NEEDS_REVISION` | Bounded worker retry per [failure-recovery.md](failure-recovery.md) (once with learnings; second strike surfaces partial — no third dispatch). Prefer `follow_up` on the worker child when present; otherwise new `spawn` or labelled inline resume |
+| `SECURITY_VIOLATION` | Hard halt. Print security status. No retry, no auto-fix, no push |
+
 ## Dispatch Example
 
+Illustrative `spawn` payload — bind through the provider mapping or a labelled inline reviewer phase. Never hard-require one host tool name.
+
 ```
-Agent({
+spawn({
   description: "Review auth middleware (complex)",
-  prompt: `## Review scope
+  prompt: `hyperflow-role: reviewer
+
+## Review scope
 Files: src/middleware/auth.ts, src/middleware/auth.test.ts, src/types/auth.ts, src/types/session.ts
 Task: Create JWT auth middleware with refresh logic
 Complexity: Complex (4 files, new feature, security-sensitive)

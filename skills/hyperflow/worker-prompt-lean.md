@@ -2,7 +2,9 @@
 
 Lean variant of `worker-prompt.md`. Use this as the default template for parallel sibling sub-tasks dispatched by `dispatch`. Use the full `worker-prompt.md` only when `depth=max` or `--thorough` is requested.
 
-**Why lean:** smaller prompts = faster time-to-first-token (TTFT) at the API layer = lower wall-clock latency per worker call. Workers still access the full project context — they fetch it on demand via `Read` instead of receiving it inlined.
+**Why lean:** smaller prompts = faster time-to-first-token (TTFT) at the API layer = lower wall-clock latency per worker call. Workers still access the full project context — they fetch it on demand by reading project files instead of receiving it inlined.
+
+**Execution (semantic):** dispatch each worker via the host `spawn` op ([runtime-contract.md](runtime-contract.md)). Collect results with `wait` when present; otherwise same-turn completion. When `spawn` is unavailable, run a **labelled inline worker** phase in the main thread — never fold review into that same pass (reviewer stays a separate `spawn` or **labelled inline reviewer** phase). Every worker runs on the **current session model**; roles differ by brief and responsibility only.
 
 ## Template
 
@@ -22,7 +24,7 @@ hyperflow-role: worker
 Read these files only if needed. Locations differ — check both groups:
 
 **Preferred single-read entry point:**
-  - `.hyperflow/memory/session-context.md` — bundled profile + architecture + conventions, populated by the `session-start` hook at the start of each Claude Code session. Read this ONE file instead of the three sources below to save file reads per worker.
+  - `.hyperflow/memory/session-context.md` — bundled profile + architecture + conventions, populated by the session-start hook at the start of each host session. Read this ONE file instead of the three sources below to save file reads per worker.
 
 **Fallback (when session-context.md is absent or stale):** Read the source files individually from `.hyperflow/` root (written by scaffold Step 1):
   - profile.md        — project conventions
@@ -43,8 +45,8 @@ Read a file once if the task touches its domain. Do not re-read files already in
 
 ## Constraints
 - Only modify files listed in scope
-- Follow project coding standards (CLAUDE.md)
-- Do not add "Co-Authored-By: Claude" to any git operation
+- Follow project coding standards (`CLAUDE.md` / `AGENTS.md` as present for the host)
+- Do not add "Co-Authored-By: Claude" (or any LLM attribution) to any git operation
 - Token economy: be specific and to the point. No preamble, no postamble, no brief-restating, no narration. Return exactly the Output format below and stop (per DOCTRINE rule 16)
 
 ## Security Constraints
@@ -73,10 +75,15 @@ If a referenced memory file is absent **or** appears to be an unpopulated stub (
 
 ## Dispatch Example
 
+Semantic form (host adapter binds `spawn` to the live tool — Claude `Agent`, Codex collaboration child, OpenCode task, or labelled inline worker when `spawn` is absent):
+
 ```
-Agent({
+spawn({
+  role: "worker",
   description: "Implement user avatar component",
-  prompt: `## Task
+  brief: `hyperflow-role: worker
+
+## Task
 Create a UserAvatar component that displays user initials with a colored background.
 
 ## Files in scope
@@ -114,7 +121,7 @@ Read a file once if the task touches its domain. Do not re-read files already in
 ## Constraints
 - Only modify files listed in scope
 - Follow project coding standards
-- Do not add "Co-Authored-By: Claude" to any git operation
+- Do not add "Co-Authored-By: Claude" (or any LLM attribution) to any git operation
 - Token economy: no preamble, no postamble, no brief-restating — return Output format and stop (DOCTRINE rule 16)
 
 ## Security Constraints
@@ -130,3 +137,7 @@ Return (no preamble, no postamble):
 2. Notes for future tasks`
 })
 ```
+
+**Result handoff:** after `wait` (or same-turn completion), the orchestrator records the bounded worker summary as batch evidence. Review is never part of this brief — a separate reviewer pass (batched or per-sub-task) owns PASS / NEEDS_FIX / `SECURITY_VIOLATION:`.
+
+See [worker-prompt.md](worker-prompt.md) for the full detail-floor template and [runtime-contract.md](runtime-contract.md) for spawn / wait / inline fallback policy.

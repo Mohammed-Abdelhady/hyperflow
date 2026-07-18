@@ -2,7 +2,7 @@
   "$schema": "./features.schema.json",
   "version": "5.14.0",
   "tagline": "Rules, multi-session memory, templates, and a reviewed multi-agent chain for AI coding CLIs",
-  "subtitle": "Project learnings persist under .hyperflow/memory/. Doctrine auto-routes work. Task templates decompose. Workers build; specialists review. Issue to PR when that is the job.",
+  "subtitle": "Project learnings persist under .hyperflow/memory/. Doctrine auto-routes work. Task templates decompose. Workers build; specialists review via host orchestration with inline fallbacks when subagents are unavailable. Issue to PR when that is the job. Codex CLI is preview; desktop App support pending certification.",
   "layers": [
     {
       "n": 0,
@@ -97,7 +97,7 @@
       "name": "dispatch",
       "command": "/hyperflow:dispatch",
       "tagline": "Execute the batches",
-      "purpose": "Use deterministic foreground inline-fast only for observed clear reversible 1\u20132-file work; otherwise dispatch parallel workers + Worker \u2192 Reviewer review + final integration review",
+      "purpose": "Use deterministic foreground inline-fast only for observed clear reversible 1\u20132-file work; otherwise orchestrate workers with Worker \u2192 Reviewer review (host parallel tool calls when available; labelled inline phases as fallback) + final integration review",
       "chain": "endpoint"
     },
     {
@@ -392,7 +392,7 @@
       "key": "opencode"
     },
     {
-      "name": "Codex",
+      "name": "Codex CLI (preview; App pending certification)",
       "key": "codex"
     },
     {
@@ -410,25 +410,25 @@
   ],
   "capabilities": [
     "Local visual artefact viewer (opt-in, on by default): agents emit compact validated JSON per artefact instead of verbose markdown, and a self-contained viewer served on 127.0.0.1 renders it as interactive graphs \u2014 zero upload, works offline, disable with viewer.enabled=false for classic markdown",
-    "Parallel worker dispatch (independent subtasks run simultaneously)",
+    "Worker orchestration with fallbacks: independent subtasks use host parallel tool calls when available; otherwise labelled inline worker then reviewer phases (role separation always preserved)",
     "Big-task workflow routing for deep, scientific, system-wide, migration, audit, and verification-heavy tasks",
-    "Codex/OpenCode/Grok portable workflow adapter for big tasks",
+    "Codex CLI / OpenCode / Grok portable workflow adapter for big tasks (Codex CLI preview; desktop App not certified from CLI alone)",
     "Normal orchestrated path reviews every worker output; deterministic inline-fast uses foreground diff review",
     "Lean context by default; mode=default or --thorough restores full context and ceremony",
     "Hard token ceilings: fast 10k, standard 50k, deep 200k, research 60k, creative 100k, scientific 200k",
     "Metadata-only usage ledger with phase totals, duplicate-context ratio, retry cost, cache-hit rate, accepted commits, tokens per accepted commit, and estimate count",
     "Domain-specialized reviewer & investigator agent registry (agents/) with web-research-first on gated flows",
     "Brain adaptive specialist routing (decides the responsible roster once after triage; inherited downstream)",
-    "Recursive sub-agent fan-out (depth-capped at 1, budget-bounded)",
+    "Recursive sub-agent fan-out when the host supports spawn (depth-capped at 1, budget-bounded); otherwise sequential labelled phases",
     "Universal agent consultation: any agent (current or future) can ask a peer for help mid-task \u2014 workers via an orchestrator-brokered CONSULT signal, decision agents directly; depth-1, budget-bounded, never overrides a security halt",
-    "Two-session execution: plan in one session, build in another environment (Codex/Gemini/OpenCode/Grok), review back \u2014 via a git-committed handoff package",
+    "Two-session execution: plan in one session, build in another environment (Codex CLI / Gemini / OpenCode / Grok), review back \u2014 via a git-committed handoff package",
     "Multi-level review depth (L1-L5)",
     "Systematic root-cause debugging",
     "Project-scoped persistent memory with tag taxonomy",
     "Hot/warm/cold memory tiering with user-invoked compaction (`/hyperflow:cache compact`) and automatic cold archiving",
     "Lazy memory injection (only tag-matched entries per task)",
     "Multi-tool auto-detection (AGENTS.md, CLAUDE.md)",
-    "Multi-provider support (Claude Code, Codex, OpenCode, Antigravity, Cursor, Grok)",
+    "Multi-provider support (Claude Code, Codex CLI preview, OpenCode, Antigravity, Cursor, Grok); CLI / app-server / desktop App certified separately when certificates exist",
     "Auto-detect provider via env vars or folder presence",
     "Every agent runs on the current session model; roles differ by responsibility",
     "Quality gates (lint, typecheck, build, tests)",
@@ -437,7 +437,8 @@
     "Task tracking with incomplete-task recovery across sessions",
     "Session-start update check (cached daily) with an in-session prompt to update",
     "Smart pre-compaction guard allows automatic compact only after dispatch reaches its end gate, then snapshots recoverable state",
-    "Auto-archive of stale .hyperflow/{tasks,audits,specs} \u2014 daily-gated, promotes Learnings/Decisions/Anti-patterns to memory before moving the file to .hyperflow/archive/<type>/YYYY-MM/"
+    "Auto-archive of stale .hyperflow/{tasks,audits,specs} \u2014 daily-gated, promotes Learnings/Decisions/Anti-patterns to memory before moving the file to .hyperflow/archive/<type>/YYYY-MM/",
+    "Hooks and lifecycle events register when the host exposes them; full-support rows require certificate-backed lanes (not inferred from plugin install alone)"
   ],
   "detection": {
     "shims": [
@@ -446,7 +447,7 @@
         "file": "AGENTS.md"
       },
       {
-        "tool": "Codex",
+        "tool": "Codex CLI",
         "file": "AGENTS.md"
       },
       {

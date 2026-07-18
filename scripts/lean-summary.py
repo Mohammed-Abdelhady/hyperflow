@@ -4,7 +4,8 @@ lean-summary.py — emit a single-line situational summary when mode=lean.
 
 Reads .hyperflow/ and prints ONE compact line consolidating: plugin version,
 profile/architecture/conventions freshness, memory entry count, auto-bridge
-state, sticky/auto-routing state, active-task count.
+state (provider-appropriate instruction target), sticky/auto-routing state,
+active-task count.
 
 The line is always emitted for a Hyperflow project. Surfaces that need explicit
 attention (memory compaction, cache migration, bridge refresh, handoff, update,
@@ -19,8 +20,20 @@ Always exits 0 (non-blocking). Errors go to stderr.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+
+
+# Instruction file owned per provider (mirrors scripts/auto-bridge.py).
+_PROVIDER_TARGETS: dict[str, str] = {
+    "codex": "AGENTS.md",
+    "opencode": "AGENTS.md",
+    "cursor": "AGENTS.md",
+    "grok": "AGENTS.md",
+    "antigravity": "AGENTS.md",
+    "claude-code": "CLAUDE.md",
+}
 
 
 def _read_version(plugin_root: Path) -> str:
@@ -58,6 +71,75 @@ def _memory_state(hf_dir: Path) -> tuple[str, bool]:
     return f"memory: {entries} files", False
 
 
+def _detect_provider_key() -> str | None:
+    """Lightweight provider detection from environment (no filesystem secrets).
+
+    Mirrors scripts/auto-bridge.py coarse grain for choosing the instruction
+    file target. Returns None when unknown.
+    """
+    if os.environ.get("CODEX_PLUGIN_ROOT"):
+        return "codex"
+    if os.environ.get("CLAUDE_PLUGIN_ROOT"):
+        return "claude-code"
+    if os.environ.get("OPENCODE_PLUGIN_ROOT"):
+        return "opencode"
+    if os.environ.get("GROK_PLUGIN_ROOT"):
+        return "grok"
+    if os.environ.get("ANTIGRAVITY_PLUGIN_ROOT"):
+        return "antigravity"
+    if os.environ.get("CURSOR_PLUGIN_ROOT"):
+        return "cursor"
+
+    if os.environ.get("CODEX_HOME") or os.environ.get("CODEX_SESSION_ID"):
+        return "codex"
+    if os.environ.get("CLAUDE_CODE_ENTRYPOINT") or os.environ.get("CLAUDE_PROJECT_DIR"):
+        return "claude-code"
+    if os.environ.get("OPENCODE_CONFIG") or os.environ.get("OPENCODE_DATA"):
+        return "opencode"
+    if os.environ.get("GROK_AGENT") or os.environ.get("GROK_SUBAGENTS"):
+        return "grok"
+    if os.environ.get("ANTIGRAVITY_HOME"):
+        return "antigravity"
+    if os.environ.get("CURSOR_TRACE_ID"):
+        return "cursor"
+
+    for key, value in os.environ.items():
+        if not value:
+            continue
+        upper = key.upper()
+        if upper.startswith("CODEX"):
+            return "codex"
+        if upper.startswith("CLAUDE_CODE") or upper == "CLAUDE":
+            return "claude-code"
+        if upper.startswith("OPENCODE"):
+            return "opencode"
+        if upper.startswith("GROK"):
+            return "grok"
+        if upper.startswith("ANTIGRAVITY"):
+            return "antigravity"
+        if upper.startswith("CURSOR"):
+            return "cursor"
+
+    return None
+
+
+def _instruction_target(project_root: Path, provider: str | None) -> str:
+    """Provider-appropriate instruction filename (AGENTS.md or CLAUDE.md)."""
+    if provider and provider in _PROVIDER_TARGETS:
+        return _PROVIDER_TARGETS[provider]
+
+    # Unknown: prefer an existing managed-instruction file; legacy default CLAUDE.md.
+    agents = project_root / "AGENTS.md"
+    claude = project_root / "CLAUDE.md"
+    if agents.is_file() and not claude.is_file():
+        return "AGENTS.md"
+    if claude.is_file() and not agents.is_file():
+        return "CLAUDE.md"
+    if agents.is_file() and claude.is_file():
+        return "AGENTS.md"
+    return "CLAUDE.md"
+
+
 def _bridge_state(project_root: Path) -> tuple[str, bool]:
     sticky = project_root / ".hyperflow" / ".bridge-mode"
     try:
@@ -67,11 +149,12 @@ def _bridge_state(project_root: Path) -> tuple[str, bool]:
     if value == "off":
         return "bridge: off", False
     # Auto-bridge prints its own attention-needed line when it writes/refreshes;
-    # if we're here, no attention needed.
-    claude_md = project_root / "CLAUDE.md"
-    if claude_md.exists():
-        return f"bridge: {value} · CLAUDE.md synced", False
-    return f"bridge: {value} · no CLAUDE.md yet", False
+    # if we're here, no attention needed. Report the provider-appropriate target.
+    target = _instruction_target(project_root, _detect_provider_key())
+    target_path = project_root / target
+    if target_path.exists():
+        return f"bridge: {value} · {target} synced", False
+    return f"bridge: {value} · no {target} yet", False
 
 
 def _sticky_state(hf_dir: Path) -> tuple[str, bool]:

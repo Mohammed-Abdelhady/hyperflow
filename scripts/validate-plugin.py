@@ -34,6 +34,43 @@ def section(title: str, fn: Callable[[], None]) -> None:
 
 
 PLUGIN_JSON_REQUIRED = ["name", "version", "description", "author", "homepage", "repository", "license"]
+CODEX_SCHEMA_PATH = ROOT / "config" / "codex-plugin.schema.json"
+CODEX_PLUGIN_PATH = ROOT / ".codex-plugin" / "plugin.json"
+RETIRED_SKILL_TARGETS = frozenset({"spec", "scope"})
+# Codex public-router aliases that session-start and portable SKILL.md must keep
+# discoverable. Extended when new public skills are wired into the Codex table.
+REQUIRED_CODEX_ALIAS_TARGETS = frozenset(
+    {
+        "plan",
+        "dispatch",
+        "workflow",
+        "trace",
+        "audit",
+        "deploy",
+        "cache",
+        "status",
+        "sticky",
+        "bridge",
+        "flush",
+        "handoff",
+        "background",
+        "scaffold",
+    }
+)
+# Canonical chain edges (from → to). Targets and sources must be real skills;
+# retired names never appear here.
+REQUIRED_CHAIN_TRANSITIONS = (
+    ("issue", "plan"),
+    ("design", "plan"),
+    ("plan", "dispatch"),
+    ("dispatch", "audit"),
+    ("dispatch", "deploy"),
+    ("audit", "plan"),
+    ("pr", "audit"),
+)
+# Manifest string fields that, when present, must be plugin-relative paths.
+CODEX_PATH_FIELDS = ("skills", "hooks", "apps", "mcpServers")
+CODEX_INTERFACE_PATH_FIELDS = ("composerIcon", "logo", "logoDark")
 
 
 def check_plugin_json() -> None:
@@ -56,30 +93,183 @@ def check_plugin_json() -> None:
         fail(f".claude-plugin/plugin.json version '{version}' is not strict semver MAJOR.MINOR.PATCH")
 
 
-def check_codex_plugin_json() -> None:
-    path = ROOT / ".codex-plugin" / "plugin.json"
-    if not path.exists():
-        fail(f"missing {path.relative_to(ROOT)}")
-        return
+def plugin_path_errors(root: Path, rel: str, field: str) -> list[str]:
+    """Return errors if rel is not a contained, existing path under root."""
+    errors: list[str] = []
+    if not isinstance(rel, str):
+        errors.append(f"{field}: path must be a string, got {type(rel).__name__}")
+        return errors
+    if not rel.startswith("./"):
+        errors.append(f"{field}: path must start with './' (got {rel!r})")
+        return errors
+    parts = Path(rel).parts
+    if ".." in parts:
+        errors.append(f"{field}: path escapes plugin root: {rel}")
+        return errors
+    # Absolute / rooted escapes (./ then absolute via resolve tricks).
+    candidate = (root / rel).resolve()
+    root_resolved = root.resolve()
     try:
-        data = json.loads(path.read_text())
+        candidate.relative_to(root_resolved)
+    except ValueError:
+        errors.append(f"{field}: path escapes plugin root: {rel}")
+        return errors
+    if not candidate.exists():
+        errors.append(f"{field}: path does not exist: {rel}")
+        return errors
+    return errors
+
+
+def collect_version_sources(root: Path) -> dict[str, str | None]:
+    """Map of version-bearing surfaces → version string or None if missing/unreadable."""
+    out: dict[str, str | None] = {}
+
+    def _read_json_version(path: Path, key: str = "version") -> str | None:
+        if not path.exists():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        val = data.get(key)
+        return val if isinstance(val, str) else None
+
+    out["package.json"] = _read_json_version(root / "package.json")
+    out[".claude-plugin/plugin.json"] = _read_json_version(root / ".claude-plugin" / "plugin.json")
+    out[".codex-plugin/plugin.json"] = _read_json_version(root / ".codex-plugin" / "plugin.json")
+    out["config/features.json"] = _read_json_version(root / "config" / "features.json")
+
+    version_file = root / "skills" / "hyperflow" / "VERSION"
+    if version_file.exists():
+        try:
+            out["skills/hyperflow/VERSION"] = version_file.read_text(encoding="utf-8").strip()
+        except OSError:
+            out["skills/hyperflow/VERSION"] = None
+    else:
+        out["skills/hyperflow/VERSION"] = None
+
+    marketplace = root / ".claude-plugin" / "marketplace.json"
+    market_version: str | None = None
+    if marketplace.exists():
+        try:
+            data = json.loads(marketplace.read_text(encoding="utf-8"))
+            hits = [p for p in data.get("plugins", []) if isinstance(p, dict) and p.get("name") == "hyperflow"]
+            if hits:
+                v = hits[0].get("version")
+                market_version = v if isinstance(v, str) else None
+        except (OSError, json.JSONDecodeError):
+            market_version = None
+    out["marketplace.json#hyperflow"] = market_version
+    return out
+
+
+def version_parity_errors(root: Path) -> list[str]:
+    sources = collect_version_sources(root)
+    present = {k: v for k, v in sources.items() if v}
+    if not present:
+        return ["version parity: no version sources readable"]
+    errors: list[str] = []
+    for label, val in sources.items():
+        if val is None:
+            errors.append(f"version parity: missing version at {label}")
+    versions = set(present.values())
+    if len(versions) > 1:
+        detail = ", ".join(f"{k}={v!r}" for k, v in sorted(present.items()))
+        errors.append(f"version parity: drift across surfaces — {detail}")
+    return errors
+
+
+def check_codex_manifest(root: Path) -> list[str]:
+    """Schema, path containment, hooks field, and name checks for the Codex manifest."""
+    errors: list[str] = []
+    path = root / ".codex-plugin" / "plugin.json"
+    if not path.exists():
+        return ["missing .codex-plugin/plugin.json"]
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
-        fail(f".codex-plugin/plugin.json is not valid JSON: {e}")
-        return
+        return [f".codex-plugin/plugin.json is not valid JSON: {e}"]
+
+    schema_path = root / "config" / "codex-plugin.schema.json"
+    if not schema_path.exists():
+        errors.append("config/codex-plugin.schema.json missing")
+    else:
+        try:
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            errors.append(f"config/codex-plugin.schema.json is not valid JSON: {e}")
+            schema = None
+        if isinstance(schema, dict):
+            comment = schema.get("$comment", "")
+            if isinstance(comment, str) and "official" in comment.lower() and "NOT" not in comment and "not" not in comment.lower():
+                # Soft guard: derived schemas must not claim to be official.
+                if re.search(r"\bofficial\b", comment, re.I) and not re.search(
+                    r"\b(NOT|not)\b.*\bofficial\b|\bofficial\b.*\b(NOT|not)\b|never label.*official|not an official",
+                    comment,
+                    re.I,
+                ):
+                    errors.append(
+                        "config/codex-plugin.schema.json $comment appears to claim official status "
+                        "without a clear NOT-official disclaimer"
+                    )
+            schema_errors: list[str] = []
+            validate_against_schema(data, schema, "", schema_errors)
+            for err in schema_errors:
+                errors.append(f"codex plugin.json schema: {err}")
+
     for field in PLUGIN_JSON_REQUIRED:
         if field not in data:
-            fail(f".codex-plugin/plugin.json missing required field: {field}")
+            errors.append(f".codex-plugin/plugin.json missing required field: {field}")
     if data.get("name") != "hyperflow":
-        fail(f".codex-plugin/plugin.json name is '{data.get('name')}', expected 'hyperflow'")
+        errors.append(
+            f".codex-plugin/plugin.json name is '{data.get('name')}', expected 'hyperflow'"
+        )
     version = data.get("version", "")
-    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
-        fail(f".codex-plugin/plugin.json version '{version}' is not strict semver MAJOR.MINOR.PATCH")
+    if not re.fullmatch(r"\d+\.\d+\.\d+", str(version)):
+        errors.append(
+            f".codex-plugin/plugin.json version '{version}' is not strict semver MAJOR.MINOR.PATCH"
+        )
 
-    claude_plugin = ROOT / ".claude-plugin" / "plugin.json"
-    if claude_plugin.exists():
-        claude_version = json.loads(claude_plugin.read_text()).get("version")
-        if version != claude_version:
-            fail(f".codex-plugin/plugin.json version '{version}' != .claude-plugin/plugin.json version '{claude_version}'")
+    # Certified lanes require an explicit hooks registration path.
+    hooks_rel = data.get("hooks")
+    if hooks_rel is None:
+        errors.append(
+            '.codex-plugin/plugin.json missing required field: hooks (expected "./hooks/hooks.json")'
+        )
+    elif hooks_rel != "./hooks/hooks.json":
+        errors.append(
+            f'.codex-plugin/plugin.json hooks is {hooks_rel!r}, expected "./hooks/hooks.json"'
+        )
+
+    for field in CODEX_PATH_FIELDS:
+        if field in data and isinstance(data[field], str):
+            errors.extend(plugin_path_errors(root, data[field], f".codex-plugin/plugin.json {field}"))
+
+    interface = data.get("interface")
+    if isinstance(interface, dict):
+        for field in CODEX_INTERFACE_PATH_FIELDS:
+            val = interface.get(field)
+            if isinstance(val, str) and val.startswith("./"):
+                errors.extend(
+                    plugin_path_errors(root, val, f".codex-plugin/plugin.json interface.{field}")
+                )
+        shots = interface.get("screenshots")
+        if isinstance(shots, list):
+            for i, shot in enumerate(shots):
+                if isinstance(shot, str) and shot.startswith("./"):
+                    errors.extend(
+                        plugin_path_errors(
+                            root, shot, f".codex-plugin/plugin.json interface.screenshots[{i}]"
+                        )
+                    )
+
+    errors.extend(version_parity_errors(root))
+    return errors
+
+
+def check_codex_plugin_json() -> None:
+    for err in check_codex_manifest(ROOT):
+        fail(err)
 
 
 def check_marketplace_json() -> None:
@@ -188,34 +378,126 @@ def check_skills() -> None:
             warn(f"{rel} frontmatter name '{fm['name']}' != directory '{expected_name}'")
 
 
-def check_hooks() -> None:
-    path = ROOT / "hooks" / "hooks.json"
+HOOK_NAME_RE = re.compile(r"\bhook=([A-Za-z0-9_-]+)")
+HOOKS_PATH_RE = re.compile(r"hooks/([A-Za-z0-9_-]+)")
+SH_C_RE = re.compile(r"""(?:^|\s)sh\s+-c\s+(?:'([^']*)'|"([^"]*)")""", re.DOTALL)
+
+
+def extract_hook_script_refs(command: str) -> set[str]:
+    """Extract hook script basenames referenced by a hooks.json command.
+
+    Handles both direct paths and ``sh -c 'hook=session-start; … hooks/$hook'``
+    wrappers used for multi-root discovery.
+    """
+    names: set[str] = set()
+    if not command:
+        return names
+
+    for match in HOOK_NAME_RE.finditer(command):
+        names.add(match.group(1))
+    for match in HOOKS_PATH_RE.finditer(command):
+        names.add(match.group(1))
+
+    # Peel sh -c payloads and re-scan (idempotent with the whole-command scan).
+    for match in SH_C_RE.finditer(command):
+        payload = match.group(1) or match.group(2) or ""
+        for inner in HOOK_NAME_RE.finditer(payload):
+            names.add(inner.group(1))
+        for inner in HOOKS_PATH_RE.finditer(payload):
+            names.add(inner.group(1))
+    return names
+
+
+def check_hooks_at(root: Path) -> list[str]:
+    """Validate hooks registration, required scripts, and command path refs."""
+    errors: list[str] = []
+
+    # Manifest-declared hooks path (Codex certified lanes).
+    codex_path = root / ".codex-plugin" / "plugin.json"
+    if codex_path.exists():
+        try:
+            manifest = json.loads(codex_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            manifest = {}
+        hooks_rel = manifest.get("hooks")
+        if isinstance(hooks_rel, str):
+            errors.extend(plugin_path_errors(root, hooks_rel, "codex hooks"))
+            if hooks_rel == "./hooks/hooks.json":
+                # also ensure the json is parseable below
+                pass
+
+    required_scripts = ("session-start", "pre-compact")
+    for name in required_scripts:
+        script = root / "hooks" / name
+        if not script.exists():
+            errors.append(f"hooks/{name} missing (required hook script)")
+        elif not script.is_file():
+            errors.append(f"hooks/{name} is not a regular file")
+
+    path = root / "hooks" / "hooks.json"
     if not path.exists():
-        return
+        errors.append("hooks/hooks.json missing")
+        return errors
     try:
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
-        fail(f"hooks/hooks.json is not valid JSON: {e}")
-        return
+        errors.append(f"hooks/hooks.json is not valid JSON: {e}")
+        return errors
 
     for event_name, event_blocks in data.get("hooks", {}).items():
+        if not isinstance(event_blocks, list):
+            continue
         for block in event_blocks:
+            if not isinstance(block, dict):
+                continue
             for hook in block.get("hooks", []):
-                cmd = hook.get("command", "")
-                if cmd.startswith("sh -c "):
+                if not isinstance(hook, dict):
                     continue
+                cmd = hook.get("command", "")
+                if not isinstance(cmd, str):
+                    continue
+
+                # Always extract refs from sh -c wrappers — never skip them.
+                for name in extract_hook_script_refs(cmd):
+                    script = root / "hooks" / name
+                    if not script.exists():
+                        errors.append(
+                            f"hooks.json {event_name} references non-existent hook script: hooks/{name}"
+                        )
+                    elif not script.is_file():
+                        errors.append(
+                            f"hooks.json {event_name} hook script is not a regular file: hooks/{name}"
+                        )
+
+                if cmd.startswith("sh -c "):
+                    continue  # path extraction above is the check for wrappers
+
                 resolved = (
-                    cmd.replace("${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}", str(ROOT))
-                    .replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
-                    .replace("${CODEX_PLUGIN_ROOT}", str(ROOT))
+                    cmd.replace("${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}", str(root))
+                    .replace("${CLAUDE_PLUGIN_ROOT}", str(root))
+                    .replace("${CODEX_PLUGIN_ROOT}", str(root))
                     .strip()
                     .strip('"')
                 )
-                script_path = Path(resolved.split()[0]) if resolved else None
-                if script_path and not script_path.exists():
-                    fail(f"hooks.json {event_name} references non-existent script: {script_path}")
-                elif script_path and not script_path.is_file():
-                    fail(f"hooks.json {event_name} script is not a regular file: {script_path}")
+                if not resolved:
+                    continue
+                script_path = Path(resolved.split()[0])
+                if not script_path.is_absolute():
+                    script_path = (root / script_path).resolve()
+                if not script_path.exists():
+                    errors.append(
+                        f"hooks.json {event_name} references non-existent script: {script_path}"
+                    )
+                elif not script_path.is_file():
+                    errors.append(
+                        f"hooks.json {event_name} script is not a regular file: {script_path}"
+                    )
+    return errors
+
+
+def check_hooks() -> None:
+    for err in check_hooks_at(ROOT):
+        fail(err)
 
 
 RELATIVE_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)#]+?)(?:#[^)]+)?\)")
@@ -463,6 +745,209 @@ def check_skill_count() -> None:
         fail(f"plugin.json description says '{m.group(1)} skills' but skills/ has {actual}")
 
 
+# ---------------------------------------------------------------------------
+# Public router closure (aliases + chain transitions)
+# ---------------------------------------------------------------------------
+
+# Backtick skill token, allowing optional trailing annotation: `workflow` (note)
+ALIAS_RUN_TOKEN_RE = re.compile(r"`([a-z][a-z0-9-]*)`")
+# Explicit chain edge in prose or tables: `scope` → `dispatch` or scope -> dispatch
+CHAIN_EDGE_RE = re.compile(
+    r"(?:`([a-z][a-z0-9-]*)`|([a-z][a-z0-9-]*))\s*(?:→|->)\s*(?:`([a-z][a-z0-9-]*)`|([a-z][a-z0-9-]*))"
+)
+
+
+def public_skill_names(root: Path) -> set[str]:
+    """Skills registered in features.json and/or present as skills/*/SKILL.md."""
+    names: set[str] = set()
+    skills_dir = root / "skills"
+    if skills_dir.is_dir():
+        for skill in skills_dir.glob("*/SKILL.md"):
+            names.add(skill.parent.name)
+    features_path = root / "config" / "features.json"
+    if features_path.exists():
+        try:
+            data = json.loads(features_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            data = {}
+        for entry in data.get("skills", []):
+            if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+                names.add(entry["name"])
+    return names
+
+
+def parse_alias_run_targets(text: str) -> set[str]:
+    """Extract skill targets from markdown tables with a Run column.
+
+    Looks for rows shaped like ``| … | `skill` |`` under a header that
+    contains a ``Run`` column (portable router + Codex session-start tables).
+    Shell-escaped backticks (``\\`plan\\``` inside hooks/session-start) are
+    normalized before token extraction.
+    """
+    # Normalize shell-escaped backticks so session-start payloads parse as MD.
+    normalized = text.replace("\\`", "`")
+    targets: set[str] = set()
+    lines = normalized.splitlines()
+    in_run_table = False
+    run_col = -1
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            in_run_table = False
+            run_col = -1
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        # Header row detection
+        lower_cells = [c.lower() for c in cells]
+        if any(c.replace(" ", "") == "run" or c == "run" for c in lower_cells):
+            in_run_table = True
+            run_col = next(
+                (i for i, c in enumerate(lower_cells) if c.replace(" ", "") == "run" or c == "run"),
+                -1,
+            )
+            continue
+        if not in_run_table or run_col < 0:
+            continue
+        # Skip separator rows
+        if all(re.fullmatch(r":?-+:?", c or "") for c in cells):
+            continue
+        if run_col >= len(cells):
+            continue
+        cell = cells[run_col]
+        # First backtick token is the skill target; ignore parenthetical notes.
+        match = ALIAS_RUN_TOKEN_RE.search(cell)
+        if match:
+            targets.add(match.group(1))
+    return targets
+
+
+def parse_chain_edges(text: str) -> set[tuple[str, str]]:
+    """Parse ``from → to`` / ``from -> to`` skill edges from documentation text."""
+    edges: set[tuple[str, str]] = set()
+    for match in CHAIN_EDGE_RE.finditer(text):
+        src = match.group(1) or match.group(2)
+        dst = match.group(3) or match.group(4)
+        if src and dst:
+            edges.add((src, dst))
+    return edges
+
+
+def check_router_closure(
+    root: Path,
+    *,
+    required_aliases: frozenset[str] | None = None,
+    required_transitions: tuple[tuple[str, str], ...] | None = None,
+    retired: frozenset[str] | None = None,
+    scan_chain_docs: bool = False,
+) -> list[str]:
+    """Public skill discovery, alias resolution, and retired-target rejection.
+
+    Parameters allow tests to inject incomplete alias tables / stale edges.
+    When ``scan_chain_docs`` is True, also reject retired names found as
+    active chain edges in session-start / SKILL.md prose (used by unit tests
+    with fixtures; live repo validation keeps this False until T5 rewrites
+    historical ``scope → dispatch`` narrative).
+    """
+    errors: list[str] = []
+    expected_aliases = required_aliases if required_aliases is not None else REQUIRED_CODEX_ALIAS_TARGETS
+    transitions = (
+        required_transitions if required_transitions is not None else REQUIRED_CHAIN_TRANSITIONS
+    )
+    retired_targets = retired if retired is not None else RETIRED_SKILL_TARGETS
+
+    skills = public_skill_names(root)
+    if not skills:
+        errors.append("router: no public skills discovered under skills/ or features.json")
+        return errors
+
+    for name in sorted(skills):
+        skill_md = root / "skills" / name / "SKILL.md"
+        if not skill_md.is_file():
+            errors.append(f"router: public skill '{name}' has no discoverable skills/{name}/SKILL.md")
+        if name in retired_targets:
+            errors.append(
+                f"router: retired skill name '{name}' is registered as an active skill "
+                f"(reintroduce only with a real skills/{name}/ tree and explicit un-retire)"
+            )
+
+    # Alias tables: portable SKILL.md + Codex injection. After the session-start
+    # thin-launcher refactor, the Codex alias markdown lives in hook-runtime.py;
+    # session-start still counts for fixtures / older trees that embed the table.
+    # hook-runtime is optional so minimal test fixtures without scripts/ stay valid.
+    required_alias_sources: list[tuple[str, Path]] = [
+        ("skills/hyperflow/SKILL.md", root / "skills" / "hyperflow" / "SKILL.md"),
+        ("hooks/session-start", root / "hooks" / "session-start"),
+    ]
+    optional_alias_sources: list[tuple[str, Path]] = [
+        ("scripts/hook-runtime.py", root / "scripts" / "hook-runtime.py"),
+    ]
+    sources = required_alias_sources + [
+        (label, path) for label, path in optional_alias_sources if path.exists()
+    ]
+    all_alias_targets: set[str] = set()
+    for label, path in sources:
+        if not path.exists():
+            errors.append(f"router: alias source missing: {label}")
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as e:
+            errors.append(f"router: could not read {label}: {e}")
+            continue
+        targets = parse_alias_run_targets(text)
+        all_alias_targets |= targets
+        for target in sorted(targets):
+            if target in retired_targets:
+                errors.append(
+                    f"router: alias table in {label} targets retired skill '{target}'"
+                )
+            elif target not in skills:
+                errors.append(
+                    f"router: alias table in {label} targets unresolved skill '{target}'"
+                )
+
+    missing_aliases = expected_aliases - all_alias_targets
+    for name in sorted(missing_aliases):
+        errors.append(
+            f"router: missing public alias for skill '{name}' "
+            f"(required in Codex/portable alias tables)"
+        )
+
+    # Required chain transitions must resolve to real, non-retired skills.
+    for src, dst in transitions:
+        for node, role in ((src, "source"), (dst, "target")):
+            if node in retired_targets:
+                errors.append(
+                    f"router: chain transition {src} → {dst} uses retired {role} '{node}'"
+                )
+            elif node not in skills:
+                errors.append(
+                    f"router: chain transition {src} → {dst} {role} '{node}' is not a public skill"
+                )
+
+    if scan_chain_docs:
+        for label, path in sources:
+            if not path.exists():
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            for src, dst in parse_chain_edges(text):
+                if src in retired_targets or dst in retired_targets:
+                    errors.append(
+                        f"router: stale chain edge {src} → {dst} in {label} "
+                        f"(retired target still referenced as active)"
+                    )
+
+    return errors
+
+
+def check_router() -> None:
+    for err in check_router_closure(ROOT):
+        fail(err)
+
+
 def main() -> int:
     print(f"Validating hyperflow plugin at {ROOT}")
     section("plugin.json", check_plugin_json)
@@ -473,6 +958,7 @@ def main() -> int:
     section("config/features.json", check_features)
     section("portable doctrine template", check_portable_doctrine)
     section("hooks.json", check_hooks)
+    section("public router closure", check_router)
     section("README.md internal links", check_readme_links)
     section("docs site version + refs", check_docs_site)
     section("skill count consistency", check_skill_count)

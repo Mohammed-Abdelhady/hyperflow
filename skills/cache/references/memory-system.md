@@ -1,6 +1,8 @@
 # Project Memory System
 
-Advanced project-scoped memory replacing the global `~/.claude/hyperflow-memory.md` approach. All data lives inside the project root under `.hyperflow/memory/`.
+Project-scoped memory under `.hyperflow/memory/`. All host file mutation uses the semantic `edit` op; shell probes use `shell`; irreversible clears use `structured_question` (never silent). See [runtime-contract.md](../../hyperflow/runtime-contract.md).
+
+Legacy global store `~/.claude/hyperflow-memory.md` is migration-only — not a live write path.
 
 ## Storage Layout
 
@@ -23,13 +25,13 @@ Advanced project-scoped memory replacing the global `~/.claude/hyperflow-memory.
 
 ## Derived State — index.md and .checksums
 
-`index.md` and `.checksums` are **generated, never hand-authored**. `scripts/memory-index.py` runs from the session-start hook, parses every entry heading in the category files, tiers each entry by age, and rewrites both.
+`index.md` and `.checksums` are **generated, never hand-authored**. `scripts/memory-index.py` runs from the session-start hook (after lifecycle normalization), parses every entry heading in the category files, tiers each entry by age, and rewrites both.
 
 No chain step maintains them. This is deliberate: when the index was LLM-maintained, every skill's write protocol *said* to append an index row and none of them did — the index sat at its scaffold stub while the category files grew to tens of thousands of lines, and because session start reads memory *through* the index, every stored learning was invisible. Deriving the index from the files it indexes makes that drift impossible.
 
 Consequences for writers:
 
-- **Append entries to the category file only.** Do not write index rows. Do not update `.checksums`.
+- **Append entries to the category file only** via `edit`. Do not write index rows. Do not update `.checksums` by hand.
 - The next session start picks the entry up automatically — no registration step, nothing to forget.
 - Hand-edits to `index.md` are overwritten on the next run. Edit the category files instead.
 
@@ -45,13 +47,13 @@ Files in `.hyperflow/memory/` that have a defined producer, consumer, and inject
 | `patterns.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Reusable code patterns |
 | `conventions.md` | hot/warm/cold (age-based) | orchestrator (after each batch) | all workers (tag-matched) | Project-specific conventions |
 | `anti-patterns.md` | **hot — always injected** | audit Step 4d (anti-pattern curation Writer) | all workers, all sessions | See below |
-| `project-decisions.md` | **spec-tier — spec pre-flight only** | spec Step 4 (post-collection append) | spec Step 4 (pre-flight read) | See below |
+| `project-decisions.md` | **spec-tier — plan pre-flight only** | plan structural-answer append | plan pre-flight read | See below |
 
 ### anti-patterns.md (hot-tier)
 
 Always loaded at session start alongside other hot-tier entries. Every worker prompt receives it regardless of task tags.
 
-- **Producer:** audit Step 4d dispatches a Writer that reads the existing file, extracts up to 3 new entries from `[Critical]` and `[Important]` findings, and appends or increments frequency counters. The Step 4d Reviewer validates dedup and frequency accuracy before the write lands.
+- **Producer:** audit Step 4d dispatches a Writer (`spawn` when available; otherwise labelled inline worker) that reads the existing file, extracts up to 3 new entries from `[Critical]` and `[Important]` findings, and appends or increments frequency counters via `edit`. A separate Reviewer validates dedup and frequency accuracy before the write lands.
 - **Consumer:** injected into every worker prompt under `## Known anti-patterns` at session start. Workers use it to avoid repeating mistakes that prior audits flagged.
 - **Format:**
   ```markdown
@@ -65,10 +67,10 @@ Always loaded at session start alongside other hot-tier entries. Every worker pr
 
 ### project-decisions.md (spec-tier)
 
-Not hot-tier. Only spec Step 4 reads and writes it. Injecting it into every worker prompt would be waste — workers don't make structural project decisions; they implement them.
+Not hot-tier. Only plan pre-flight reads and writes it. Injecting it into every worker prompt would be waste — workers don't make structural project decisions; they implement them.
 
-- **Producer:** spec Step 4 post-collection append — after the user answers the Smart Questions, the orchestrator scans answers for structural decisions (database choice, auth strategy, test framework, framework patterns, project-level defaults) and appends each one inline (no Agent dispatch; trivial per DOCTRINE §12.1).
-- **Consumer:** spec Step 4 pre-flight memoization check — before generating the question list, spec reads this file and skips any question whose answer is already recorded. If a cached answer conflicts with the current task's requirements, the question fires anyway, framed as "project-decisions.md says X — does this task change that?"
+- **Producer:** after structural questions are answered, the orchestrator scans answers for structural decisions (database choice, auth strategy, test framework, framework patterns, project-level defaults) and appends each one inline via `edit` (no agent dispatch; trivial).
+- **Consumer:** plan pre-flight memoization — before generating the question list, plan reads this file and skips any question whose answer is already recorded. If a cached answer conflicts with the current task's requirements, the question fires anyway, framed as "project-decisions.md says X — does this task change that?"
 - **Format:**
   ```markdown
   ## <Category>
@@ -102,6 +104,8 @@ Rules:
 ```
 
 Write new entries in this form — it is the only one that carries tags, and without tags an entry can never be warm-tier injected on a tag match.
+
+> **Viewer mode (leaner entries).** When `viewer.enabled` is true, memory is emitted as the compact `memory` artefact — each entry is `{ title, task, decision, tags }` only (the verbose `What/Why/Evidence` prose is dropped to save tokens; the viewer renders the entries as a card gallery). `tags` stays **required**: without it the warm-tier tag-matched injection above cannot fire. The markdown category files remain the on-disk form the index parser reads. See [`artefact-data.md`](../../hyperflow/artefact-data.md).
 
 The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-slug)` heading that earlier runs emitted, so existing entries stay indexed and tiered. They just never match a tag.
 
@@ -146,17 +150,17 @@ The index parser also accepts the untagged `## Short title (YYYY-MM-DD, source-s
 
 ## Read Protocol (Session Start)
 
-Steps 1–3 are automatic — `scripts/memory-index.py` runs from the session-start hook and injects their output. The orchestrator does not perform them.
+`scripts/memory-index.py` always rebuilds derived state at session start. Injection depends on mode. Host adapter details are irrelevant — the same injection contract applies on every provider.
 
-1. Rebuild `index.md` + `.checksums` from the category files; the index arrives in context under `## Project Memory Index`.
-2. Inject all **hot** entries in full (≤ 7 days) under `## Project memory — hot entries`.
-3. Inject `anti-patterns.md` in full — always, regardless of age or tags. It is permanently hot-tier (see Registered Memory Files above).
+1. Rebuild `index.md` + `.checksums` from the category files in every mode.
+2. In default/thorough mode, inject the index, hot entries, and `anti-patterns.md` as before.
+3. In lean mode (the default), inject only paths to `index.md` and `session-context.md`; infer task tags, then read matching hot/warm entries and anti-patterns on demand.
 
 The orchestrator performs the rest:
 
-4. Infer tags from the current task description. Read **warm** entries whose tags overlap — the index names the file each entry lives in.
+4. Infer tags from the current task description. Read **hot and warm** entries whose tags overlap — the index names the source file.
 5. Skip **cold** entries unless the user explicitly requests them (`hyperflow: memory show <tag>`).
-6. Inject the loaded entries into worker prompts under `## Learnings from prior sessions`. Inject `anti-patterns.md` under a separate `## Known anti-patterns` header.
+6. Inject only the loaded entries into worker prompts. Load relevant anti-pattern entries under a separate header; do not inject the whole file in lean mode.
 
 Workers receive only the subset matching their task's inferred tags — never the full dump.
 
@@ -166,11 +170,11 @@ Workers receive only the subset matching their task's inferred tags — never th
 2. Apply the test: "Would a worker on this project benefit from knowing this in 2 weeks?"
 3. Discard ephemeral learnings (task-specific facts that won't recur).
 4. Deduplicate against existing entries: if the same fact already exists (semantic match, not exact string), skip or update rather than append.
-5. Append to the appropriate file using the entry format above.
+5. Append to the appropriate file via `edit` using the entry format above.
 
 There is no index step — `index.md` and `.checksums` are derived at the next session start (see Derived State above). Appending to the category file is the whole write.
 
-Write only from the orchestrator — never delegate memory writes to workers.
+Write only from the orchestrator — never delegate memory writes to workers. Never broaden write authority to source code files from a memory intent.
 
 ## Compression Protocol
 
@@ -187,7 +191,7 @@ The index re-derives itself from the rewritten source file on the next session s
 
 ## Pruning Protocol
 
-Run at session start, after tiering is computed.
+Run at session start, after tiering is computed. File existence checks use `shell` when available (`test -f`); if `shell` is unavailable, skip orphan detection and report that probe as unavailable — do not invent file state.
 
 | Condition | Action |
 |-----------|--------|
@@ -209,11 +213,11 @@ Workers receive only the memory subset relevant to their task:
 
 ## Migration from Legacy
 
-On first session start in a project that has no `.hyperflow/memory/` but has `~/.claude/hyperflow-memory.md`:
+On first session start in a project that has no `.hyperflow/memory/` but has the legacy global file `~/.claude/hyperflow-memory.md`:
 
 1. Parse the legacy file for entries belonging to the current project path.
 2. Map each bullet point to a `learnings.md` entry, tagging as `pattern` + best-guess domain.
-3. Write migrated entries to `learnings.md`.
+3. Write migrated entries to `learnings.md` via `edit`.
 4. Print: `Hyperflow — migrated N entries from ~/.claude/hyperflow-memory.md`
 5. Do not delete the legacy file — the user may have other projects in it.
 
@@ -222,9 +226,30 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 | Command | Effect |
 |---------|--------|
 | `hyperflow: memory off` | Disable memory reads and writes for the current session |
-| `hyperflow: memory clear` | Wipe `.hyperflow/memory/` — prompts for confirmation first |
+| `hyperflow: memory clear` | **Destructive** — wipe `.hyperflow/memory/` only after gated confirmation (below) |
 | `hyperflow: memory show <tag>` | List all entries (including cold) matching the tag |
 | `hyperflow: memory show all` | Dump full index |
+
+### Destructive clear gate (structural)
+
+`clear` and `hyperflow: memory clear` **never** wipe without confirmation. Use semantic `structured_question`:
+
+```text
+This wipes all memory for this project. Are you sure?
+
+  Yes — archive then clear
+  No — keep memory intact
+```
+
+Binary action gate — **no** `(Recommended)` marker.
+
+| Host capability | Required behavior |
+|---|---|
+| `structured_question` present | Fire the gate through the mapped native tool |
+| Structured UI unavailable | Print the exact **Hyperflow Question** chat block, end the turn, and **stop**. Do not clear. Do not silently pick Yes |
+| Headless / no interactive channel | Refuse: print `clear requires interactive confirmation` and stop. No wipe |
+
+On **Yes** only: move content to `.hyperflow/memory/archive/cleared-<timestamp>.md` via `edit`/`shell`, then reset category files to empty stubs. On **No** or unanswered: leave memory unchanged.
 
 ## Constraints
 
@@ -232,6 +257,8 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 - No code snippets in memory entries — patterns and facts only.
 - Memory writes never block task execution. If a write fails, log and continue.
 - Users may edit any category file directly — it is plain markdown. `index.md` and `.checksums` are derived and get overwritten.
+- Security blocklist still applies to any `shell`/`edit` path. Return `SECURITY_VIOLATION:` on blocked-path attempts.
+- Provider adaptation never broadens memory, git, or filesystem authority beyond this protocol.
 
 ## Compaction Protocol
 
@@ -248,5 +275,7 @@ The stub format is:
 The Date/tag parser accepts BOTH `[domain, type]` (new) and `` `[domain, type]` `` (legacy backticked) so existing entries remain eligible after the feature lands.
 
 Idempotency is guaranteed by source-side stub-line match and archive-side header match (both check date + title + tags). Re-running `/hyperflow:cache compact` on a fully compacted file produces no new writes.
+
+Compaction Writer and Dedup Reviewer use `spawn` when available (separate roles; workers never self-review). Without `spawn`: labelled inline worker phase, then separate labelled inline reviewer phase. File rewrites use `edit`.
 
 See `skills/cache/references/compaction.md` for the full protocol (Compaction Writer dispatch, Dedup Reviewer reuse, Archive-sidecar writer details).

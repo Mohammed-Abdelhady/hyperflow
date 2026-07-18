@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "5.14.0",
-  "description": "Engineering system for AI coding agents: project memory across sessions, doctrine/rules, task templates, and a Worker-to-Reviewer multi-agent chain. Turn a GitHub issue into a reviewed PR. 18 skills, 22 specialists, lean mode, local artefacts. Claude Code, Codex, OpenCode, Grok, Antigravity, Cursor.",
+  "description": "Engineering system for AI coding agents: project memory across sessions, doctrine/rules, task templates, and a Worker-to-Reviewer multi-agent chain. Turn a GitHub issue into a reviewed PR. 18 skills, 22 specialists, lean mode, local artefacts. Claude Code (primary), Codex CLI (preview; desktop App pending certification), OpenCode, Grok, Antigravity, Cursor.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
