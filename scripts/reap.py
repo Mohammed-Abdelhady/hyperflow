@@ -150,17 +150,50 @@ def empty_report(slug: str, dry_run: bool) -> dict[str, Any]:
     }
 
 
-def _status_values(text: str) -> list[str]:
-    vals: list[str] = []
-    for m in STATUS_ROW_RE.finditer(text):
-        vals.append(m.group(2).strip().lower())
-    for m in STATUS_LINE_RE.finditer(text):
-        vals.append(m.group(2).strip().lower())
-    return vals
+# Table-header / column-label cells that are never a real status value — so a
+# `| Status | Value |` header row is not mistaken for the primary status.
+_STATUS_HEADER_LABELS = frozenset({"", "status", "state", "value", "field"})
+
+
+def _status_section(text: str) -> str:
+    """Return the body of the first `## Status` section, or all text if absent.
+
+    Anchoring the terminal check to this section stops a status-shaped sub-row
+    elsewhere in the file (e.g. under `## Subtasks`) from being read as the
+    task's primary status.
+    """
+    m = re.search(r"^\s*##\s+Status\b[^\n]*$", text, re.MULTILINE | re.IGNORECASE)
+    if not m:
+        return text
+    start = m.end()
+    nxt = re.search(r"^#{1,6}\s+\S", text[start:], re.MULTILINE)
+    return text[start : start + nxt.start()] if nxt else text[start:]
+
+
+def _primary_status_value(text: str) -> str | None:
+    """First meaningful Status/State value, anchored to the `## Status` section.
+
+    Scans status table rows and free-form status lines in document order,
+    skipping table-header cells, and returns the first real value — so a stray
+    terminal sub-row deeper in the file cannot flip an in-progress task to
+    terminal. Tolerates both on-disk schemas (`| Status | in_progress |` and a
+    `| State | complete |` row under a `| Status | Value |` header). None when no
+    status is present.
+    """
+    section = _status_section(text)
+    best: tuple[int, str] | None = None
+    for regex in (STATUS_ROW_RE, STATUS_LINE_RE):
+        for m in regex.finditer(section):
+            val = m.group(2).strip().lower()
+            if val in _STATUS_HEADER_LABELS:
+                continue
+            if best is None or m.start() < best[0]:
+                best = (m.start(), val)
+    return best[1] if best else None
 
 
 def flat_task_is_terminal(hf: Path, slug: str) -> bool:
-    """True when tasks/<slug>.md has Status/State complete|completed."""
+    """True when tasks/<slug>.md's primary Status/State is complete|completed."""
     task = hf / "tasks" / f"{slug}.md"
     if not task.is_file() or not is_under(hf, task):
         return False
@@ -168,7 +201,8 @@ def flat_task_is_terminal(hf: Path, slug: str) -> bool:
         text = task.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return False
-    return any(v in TERMINAL_VALUES for v in _status_values(text))
+    val = _primary_status_value(text)
+    return val in TERMINAL_VALUES if val is not None else False
 
 
 def feature_is_terminal(hf: Path, slug: str) -> bool:
@@ -180,10 +214,10 @@ def feature_is_terminal(hf: Path, slug: str) -> bool:
         text = fm.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return False
-    # Mirror archive-artefacts.feature_is_completed: Status completed only.
+    # Accept complete OR completed (align with flat-task terminal detection).
     return bool(
         re.search(
-            r"^\|\s*Status\s*\|\s*completed\b",
+            r"^\|\s*Status\s*\|\s*complete(?:d)?\b",
             text,
             re.MULTILINE | re.IGNORECASE,
         )
@@ -452,11 +486,24 @@ def reap_session_log(
         report["deleted"].append(f"{rel}#truncate:{len(lines)}->{max_lines}")
         report["bytesFreed"] += freed
         return
+    # Atomic truncation: write the kept tail to a sibling temp file, fsync, then
+    # os.replace over the log. The live log is never truncated in place, so a
+    # session-start hook appending by path never sees a torn/empty file and its
+    # lines are not lost to a read-then-overwrite race.
+    tmp = log.with_name(f"{log.name}.reap-{os.getpid()}.tmp")
     try:
-        log.write_text("".join(kept), encoding="utf-8")
+        with tmp.open("w", encoding="utf-8") as fh:
+            fh.write("".join(kept))
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, log)
         report["deleted"].append(f"{rel}#truncate:{len(lines)}->{max_lines}")
         report["bytesFreed"] += freed
     except Exception:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
         report["skipped"].append({"path": rel, "reason": "truncate-failed"})
 
 
@@ -650,6 +697,14 @@ def reap_commits_queue(
     if dry_run:
         report["deleted"].append(rel)
         report["bytesFreed"] += size
+        return
+    # Defense-in-depth: only recurse when the platform's rmtree resists symlink
+    # attacks (uses dir_fd internally). Skip loudly rather than risk following a
+    # planted symlink out of the queue.
+    if queue.is_dir() and not getattr(
+        shutil.rmtree, "avoids_symlink_attacks", False
+    ):
+        report["skipped"].append({"path": rel, "reason": "rmtree-symlink-unsafe"})
         return
     try:
         if queue.is_dir():
@@ -1025,12 +1080,22 @@ def _parse_args(argv: list[str]) -> tuple[Path, str, bool, bool, bool]:
     i = 0
     while i < len(rest):
         a = rest[i]
-        if a == "--slug" and i + 1 < len(rest):
-            slug = rest[i + 1]
+        if a == "--slug":
+            # Reject a missing or option-like value (bare `--`, `--force`, `-x`)
+            # so `--slug --force` errors instead of binding slug="--force".
+            if i + 1 >= len(rest):
+                raise ReapError("missing value for --slug")
+            val = rest[i + 1]
+            if val == "--" or val.startswith("-"):
+                raise ReapError(f"invalid --slug value {val!r}: expected a slug")
+            slug = val
             i += 2
             continue
         if a.startswith("--slug="):
-            slug = a.split("=", 1)[1]
+            val = a.split("=", 1)[1]
+            if not val or val.startswith("-"):
+                raise ReapError(f"invalid --slug value {val!r}: expected a slug")
+            slug = val
             i += 1
             continue
         if a == "--dry-run":
