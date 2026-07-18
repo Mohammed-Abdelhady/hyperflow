@@ -120,6 +120,17 @@ the verbose prose of classic memory entries is dropped. `tags` is retained (not
 optional): the tag-matched lazy-injection tier ([`memory-system.md`](memory-system.md))
 breaks without it. See [`memory-system.md`](memory-system.md) for the full rule.
 
+## Live dispatch
+
+When viewer mode is on, `dispatch` keeps a `dispatch` artefact live: it writes it
+once at the start (all tasks `pending`, `totals.terminal:false`) and **rewrites it
+via `artefact.py` after each task PASS** (updating that task's `status`/`tokens`/
+`wallclock` and the running `totals`). At wrap-up it sets `totals.terminal:true`.
+The viewer polls the dispatch JSON every ~2.5s and re-renders only on change,
+stopping when `terminal` is true — so the "Live progress" label and the
+`in_progress` pulse reflect real state, not decoration. Same rewrite-same-slug
+mechanic as any other artefact; no sockets, no server push.
+
 ## Handoff mode
 
 The compact JSON is the artefact's substance in viewer mode, so the committed

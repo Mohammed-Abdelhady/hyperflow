@@ -110,6 +110,24 @@
     },
   };
 
+  const POLL_MS = 2500;
+  let poller = null;
+  function stopPoll() { if (poller) { clearInterval(poller); poller = null; } }
+  function isTerminal(env) { return !!(env && env.payload && env.payload.totals && env.payload.totals.terminal); }
+
+  // Live dispatch: re-fetch the JSON and re-render only when it changed; stop at
+  // terminal. This is what makes the "Live progress" label + pulse animation true.
+  function startDispatchPoll(slug, lastText) {
+    poller = setInterval(async () => {
+      try {
+        const env = await getJSON(`/artefacts/dispatch/${slug}.json`);
+        const text = JSON.stringify(env);
+        if (text !== lastText) { lastText = text; renderEnv(env); }
+        if (isTerminal(env)) stopPoll();
+      } catch (_e) { stopPoll(); }
+    }, POLL_MS);
+  }
+
   function mount(nodes) {
     app.replaceChildren();
     for (const n of nodes) if (n) app.append(n);
@@ -127,7 +145,9 @@
   async function showArtefact(type, slug) {
     try {
       mount([el("div", { class: "loading" }, "Loading…")]);
-      renderEnv(await getJSON(`/artefacts/${type}/${slug}.json`));
+      const env = await getJSON(`/artefacts/${type}/${slug}.json`);
+      renderEnv(env);
+      if (type === "dispatch" && !isTerminal(env)) startDispatchPoll(slug, JSON.stringify(env));
     } catch (_e) {
       mount([HF.emptyState("No visual artefact here",
         `No JSON at .hyperflow/artefacts/${type}/${slug}.json. Enable viewer mode and re-run the chain to generate one.`)]);
@@ -167,6 +187,7 @@
   }
 
   function route() {
+    stopPoll();  // leaving any view halts a live dispatch poll
     const hash = location.hash.replace(/^#/, "");
     if (!hash || hash === "gallery") return showGallery();
     const [a, b] = hash.split("/");
