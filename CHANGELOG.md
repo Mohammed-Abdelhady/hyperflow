@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.16.1] — 2026-07-18
+
+### Fixed
+- Auto-open falls back to task/feature when a plan has no spec
+
+
 ## [5.16.0] — 2026-07-18
 
 ### Added
@@ -1411,7 +1417,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.16.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.16.1...HEAD
+[5.16.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.16.0...v5.16.1
 [5.16.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...v5.16.0
 [5.15.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.14.0...v5.15.0
 [5.14.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.13.0...v5.14.0
