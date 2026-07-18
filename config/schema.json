@@ -157,6 +157,11 @@
           "type": "boolean",
           "description": "Global dry-run override for reap/archive (report plan, mutate nothing). Default: false.",
           "default": false
+        },
+        "dropOrphanRefs": {
+          "type": "boolean",
+          "description": "Opt in to quarantining durable memory entries whose Evidence paths no longer resolve. When false (default), reap never removes a durable entry — it only rebuilds the index and flags oversized files. When true, an orphaned entry is moved to memory/archive/YYYY-MM.md (never hard-deleted). Default: false.",
+          "default": false
         }
       },
       "additionalProperties": false
