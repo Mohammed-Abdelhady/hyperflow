@@ -103,8 +103,10 @@ class CodexRouterTests(unittest.TestCase):
     def test_parse_alias_tables_from_live_sources(self) -> None:
         skill_md = (REPO_ROOT / "skills" / "hyperflow" / "SKILL.md").read_text(encoding="utf-8")
         session = (REPO_ROOT / "hooks" / "session-start").read_text(encoding="utf-8")
+        runtime = (REPO_ROOT / "scripts" / "hook-runtime.py").read_text(encoding="utf-8")
         portable = vp.parse_alias_run_targets(skill_md)
-        codex = vp.parse_alias_run_targets(session)
+        # session-start is a thin launcher; Codex alias markdown lives in hook-runtime.
+        codex = vp.parse_alias_run_targets(session) | vp.parse_alias_run_targets(runtime)
         self.assertIn("plan", portable)
         self.assertIn("dispatch", portable)
         self.assertIn("plan", codex)

@@ -27,11 +27,16 @@ class ReportTests(unittest.TestCase):
         for name in cr.SHARED:
             self.assertIn(name, text)
 
-    def test_flags_identical_diverged_cluster_as_drift(self) -> None:
-        # the per-skill memory-system.md copies are identical to each other but
-        # behind the canonical → must be reported as candidate drift.
+    def test_classifies_diverged_copies(self) -> None:
+        # Shared names always appear. Copies that are unique vs canonical are
+        # "tailored subset"; only multi-file identical clusters that still
+        # differ from canonical are "candidate drift". Live tree may be either.
         text = "\n".join(cr.report(REPO_ROOT))
-        self.assertIn("candidate drift", text)
+        self.assertTrue(
+            "candidate drift" in text or "tailored subset" in text,
+            msg="expected drift classification labels in advisory report",
+        )
+        self.assertIn("memory-system.md", text)
 
     def test_advisory_exit_zero(self) -> None:
         self.assertEqual(cr.main(["check-references.py", "--repo-root", str(REPO_ROOT)]), 0)

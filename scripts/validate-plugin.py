@@ -870,10 +870,19 @@ def check_router_closure(
                 f"(reintroduce only with a real skills/{name}/ tree and explicit un-retire)"
             )
 
-    # Alias tables: portable SKILL.md + Codex session-start injection.
-    sources: list[tuple[str, Path]] = [
+    # Alias tables: portable SKILL.md + Codex injection. After the session-start
+    # thin-launcher refactor, the Codex alias markdown lives in hook-runtime.py;
+    # session-start still counts for fixtures / older trees that embed the table.
+    # hook-runtime is optional so minimal test fixtures without scripts/ stay valid.
+    required_alias_sources: list[tuple[str, Path]] = [
         ("skills/hyperflow/SKILL.md", root / "skills" / "hyperflow" / "SKILL.md"),
         ("hooks/session-start", root / "hooks" / "session-start"),
+    ]
+    optional_alias_sources: list[tuple[str, Path]] = [
+        ("scripts/hook-runtime.py", root / "scripts" / "hook-runtime.py"),
+    ]
+    sources = required_alias_sources + [
+        (label, path) for label, path in optional_alias_sources if path.exists()
     ]
     all_alias_targets: set[str] = set()
     for label, path in sources:
