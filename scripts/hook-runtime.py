@@ -33,6 +33,7 @@ import json
 import math
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -94,12 +95,16 @@ DEFAULT_CONTEXT_WINDOW = 200_000
 DEFAULT_AUTO_COMPACT_MIN_PERCENT = 72
 DEFAULT_READY_TTL_MINUTES = 30
 
-# Install-mode → update command templates. Source uses plugin_root substitution.
+# Install-mode → update command templates. Source uses a shell-safe quoted root.
 UPDATE_COMMANDS = {
     "codex-marketplace": "codex plugin marketplace upgrade hyperflow-marketplace",
     "claude-marketplace": "claude plugin update hyperflow@hyperflow-marketplace",
-    "source-checkout": 'git -C "{plugin_root}" pull --ff-only',
+    # plugin_root is injected via shlex.quote in select_update_command — never raw.
+    "source-checkout": "git -C {plugin_root} pull --ff-only",
 }
+
+# Cap untrusted transcript reads for auto-compact token estimation.
+MAX_TRANSCRIPT_READ_BYTES = 8 * 1024 * 1024
 
 
 # ─── Data types ───────────────────────────────────────────────────────────────
@@ -369,10 +374,12 @@ def select_update_command(
     git pull --ff-only only when install_mode is source-checkout.
     Marketplace caches that contain .git remain marketplace.
     unknown → None (no false upgrade path).
+    plugin_root is always shell-quoted so metacharacters cannot inject.
     """
     mode = (install_mode or "unknown").strip()
     if mode == "source-checkout":
-        return UPDATE_COMMANDS["source-checkout"].format(plugin_root=str(plugin_root))
+        quoted = shlex.quote(str(plugin_root))
+        return UPDATE_COMMANDS["source-checkout"].format(plugin_root=quoted)
     if mode == "codex-marketplace":
         return UPDATE_COMMANDS["codex-marketplace"]
     if mode == "claude-marketplace":
@@ -381,6 +388,65 @@ def select_update_command(
     if mode == "unknown" and provider in {"codex", "claude-code"}:
         return None
     return None
+
+
+def is_safe_transcript_path(
+    transcript_path: str | Path,
+    *,
+    project_root: Path | None = None,
+    home: Path | str | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> bool:
+    """Allowlist untrusted transcript_path to known roots only.
+
+    Accepts files under: project_root, home, TMPDIR/temp, and common host
+    transcript directories. Rejects path escape and non-files.
+    """
+    env = environ if environ is not None else os.environ
+    try:
+        path = Path(transcript_path).expanduser().resolve(strict=False)
+    except (OSError, RuntimeError, ValueError):
+        return False
+    if not path.is_file():
+        return False
+
+    candidates: list[Path] = []
+    if project_root is not None:
+        try:
+            candidates.append(Path(project_root).resolve())
+        except (OSError, RuntimeError):
+            pass
+    if home is not None:
+        try:
+            candidates.append(Path(home).expanduser().resolve())
+        except (OSError, RuntimeError):
+            pass
+    for key in ("TMPDIR", "TMP", "TEMP"):
+        raw = env.get(key)
+        if raw:
+            try:
+                candidates.append(Path(raw).expanduser().resolve())
+            except (OSError, RuntimeError):
+                pass
+    # Host transcript caches (Claude / Codex) when present as real dirs.
+    for fragment in (
+        Path.home() / ".claude" / "projects",
+        Path.home() / ".codex" / "sessions",
+        Path.home() / ".codex" / "transcripts",
+    ):
+        try:
+            if fragment.is_dir():
+                candidates.append(fragment.resolve())
+        except (OSError, RuntimeError):
+            pass
+
+    for root in candidates:
+        try:
+            path.relative_to(root)
+            return True
+        except ValueError:
+            continue
+    return False
 
 
 def version_tuple(version: str) -> tuple[int, ...]:
@@ -557,11 +623,20 @@ def strings_from_message(value: Any):
                 yield from strings_from_message(item)
 
 
-def estimate_transcript_tokens(transcript_path: Path) -> int:
+def estimate_transcript_tokens(
+    transcript_path: Path,
+    *,
+    max_bytes: int = MAX_TRANSCRIPT_READ_BYTES,
+) -> int:
     chars = 0
+    bytes_read = 0
     try:
         with open(transcript_path, encoding="utf-8", errors="ignore") as f:
             for line in f:
+                encoded = line.encode("utf-8", errors="ignore")
+                bytes_read += len(encoded)
+                if bytes_read > max_bytes:
+                    break
                 try:
                     row = json.loads(line)
                 except (json.JSONDecodeError, TypeError, ValueError):
@@ -655,8 +730,20 @@ def evaluate_auto_compact(
         return CompactDecision(action="allow", reason="", consume_marker=True)
 
     tpath = Path(transcript_path)
-    # Treat path as untrusted: only read if it is a regular file.
-    if not tpath.is_file():
+    # Untrusted host path: allowlist roots + regular file + size-capped read.
+    project_guess: Path | None = None
+    if ready_path is not None:
+        try:
+            # ready_path is typically <project>/.hyperflow/.dispatch-auto-compact-ready
+            project_guess = ready_path.resolve().parent.parent
+        except (OSError, RuntimeError):
+            project_guess = None
+    if not is_safe_transcript_path(
+        tpath,
+        project_root=project_guess,
+        home=home,
+        environ=env,
+    ):
         return CompactDecision(action="allow", reason="", consume_marker=True)
 
     tokens = estimate_transcript_tokens(tpath)

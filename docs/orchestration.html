@@ -391,7 +391,7 @@
 
         <p>
           On any <code>Fix &hellip;</code> choice, audit builds a spec file at <code>.hyperflow/specs/audit-&lt;timestamp&gt;.md</code> from the chosen findings
-          and invokes <code>Skill</code> with <code>skill: scope, args: "chain-mode=auto spec=&lt;path&gt;"</code> &mdash; the chain runs again to fix what the audit caught.
+          and continues via <code>skill_continuation</code> into <strong>plan</strong> with <code>session=one spec=&lt;path&gt;</code> (or loads <code>skills/plan/SKILL.md</code> completely when native Skill is absent). Plan still owns the build-location gate &mdash; <code>scope</code> is retired and never re-entered.
         </p>
 
         <!-- Deploy -->
