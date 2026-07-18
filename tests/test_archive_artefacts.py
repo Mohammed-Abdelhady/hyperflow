@@ -18,6 +18,7 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "archive-artefacts.py"
@@ -438,6 +439,131 @@ class PathSafetyTests(unittest.TestCase):
         result = aa.atomic_move(self.hf, src, outside)
         self.assertIsNone(result)
         self.assertTrue(src.exists())
+
+
+class AutoGateTests(unittest.TestCase):
+    """cleanup.auto=false must disable ONLY the daily sweep — targeted --slug /
+    --file modes still archive regardless of the master switch (F2)."""
+
+    def setUp(self) -> None:
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.hf = Path(self.tmp.name) / ".hyperflow"
+        (self.hf / "tasks").mkdir(parents=True)
+        (self.hf / "memory").mkdir(parents=True)
+        (self.hf / "artefacts" / "task").mkdir(parents=True)
+        # Fake HOME whose config disables auto cleanup.
+        self.home = Path(self.tmp.name) / "home"
+        (self.home / ".hyperflow").mkdir(parents=True)
+        (self.home / ".hyperflow" / "config.json").write_text(
+            json.dumps({"cleanup": {"auto": False}})
+        )
+
+    def _run(self, *extra: str) -> tuple[str, str]:
+        argv = ["archive-artefacts.py", str(self.hf), *extra]
+        old = sys.argv
+        out, err = io.StringIO(), io.StringIO()
+        with patch.dict(os.environ, {"HOME": str(self.home)}):
+            try:
+                sys.argv = argv
+                with redirect_stdout(out), redirect_stderr(err):
+                    aa.main()
+            finally:
+                sys.argv = old
+        return out.getvalue(), err.getvalue()
+
+    def test_config_disables_auto(self) -> None:
+        # Guard: the fixture config really resolves to auto=false.
+        with patch.dict(os.environ, {"HOME": str(self.home)}):
+            self.assertFalse(aa.load_cfg()["auto"])
+
+    def test_auto_false_slug_still_archives(self) -> None:
+        task = self.hf / "tasks" / "demo.md"
+        task.write_text("# Demo\n\n## Learnings\n- slug under auto-false\n")
+        out, _ = self._run("--slug", "demo")
+        payload = json.loads(out.strip())
+        self.assertEqual(len(payload["archived"]), 1)
+        self.assertFalse(task.exists())  # targeted mode ignores cleanup.auto
+        self.assertTrue(list((self.hf / "archive" / "tasks").rglob("demo.md")))
+        self.assertIn(
+            "- slug under auto-false",
+            (self.hf / "memory" / "learnings.md").read_text(),
+        )
+
+    def test_auto_false_file_still_archives(self) -> None:
+        task = self.hf / "tasks" / "done.md"
+        task.write_text("# D\n\n## Learnings\n- file under auto-false\n")
+        self._run("--file", str(task))
+        self.assertFalse(task.exists())
+        self.assertTrue(list((self.hf / "archive" / "tasks").rglob("done.md")))
+
+    def test_auto_false_daily_sweep_is_noop(self) -> None:
+        task = self.hf / "tasks" / "stale.md"
+        task.write_text("# S\n\n## Learnings\n- should not move\n")
+        ts = time.time() - 10 * aa.DAY
+        os.utime(task, (ts, ts))
+        # --force bypasses the daily gate, but the auto switch must still no-op.
+        self._run("--force")
+        self.assertTrue(task.exists())  # untouched — auto gate blocked the sweep
+        self.assertFalse((self.hf / "memory" / "learnings.md").exists())
+        self.assertFalse((self.hf / ".last-cleanup").exists())  # marker unwritten
+
+
+class SlugCollisionFeatureGuardTests(unittest.TestCase):
+    """A terminal flat task must not drag an in-progress same-named feature into
+    the archive (F9 / spec §4: never archive a partial feature)."""
+
+    def setUp(self) -> None:
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.hf = Path(self.tmp.name) / ".hyperflow"
+        (self.hf / "tasks").mkdir(parents=True)
+        (self.hf / "memory").mkdir(parents=True)
+
+    def test_incomplete_feature_kept_when_task_shares_slug(self) -> None:
+        task = self.hf / "tasks" / "foo.md"
+        task.write_text("# Foo\n\n## Learnings\n- flat task done\n")
+        fdir = self.hf / "features" / "foo"
+        fdir.mkdir(parents=True)
+        (fdir / "feature.md").write_text(
+            "## Status\n\n| Status | in_progress |\n\n## Learnings\n- wip\n"
+        )
+        summary = aa.archive_slug(self.hf, "foo")
+
+        paths = {e["path"] for e in summary["archived"]}
+        self.assertIn("tasks/foo.md", paths)       # flat task archived
+        self.assertNotIn("features/foo", paths)     # feature tree NOT archived
+        self.assertFalse(task.exists())
+        self.assertTrue(fdir.is_dir())              # feature folder stays put
+        self.assertTrue((fdir / "feature.md").is_file())
+        skipped = {e["path"] for e in summary["skipped"]}
+        self.assertIn("features/foo", skipped)
+
+    def test_completed_feature_archived_on_slug(self) -> None:
+        fdir = self.hf / "features" / "bar"
+        fdir.mkdir(parents=True)
+        (fdir / "feature.md").write_text(
+            "## Status\n\n| Status | completed |\n\n## Learnings\n- shipped\n"
+        )
+        summary = aa.archive_slug(self.hf, "bar")
+        paths = {e["path"] for e in summary["archived"]}
+        self.assertIn("features/bar", paths)
+        self.assertFalse(fdir.exists())
+        self.assertEqual(summary["skipped"], [])
+
+    def test_complete_value_feature_archived_on_slug(self) -> None:
+        # Parity with reap.feature_is_terminal: a feature written `complete`
+        # (not `completed`) must also be recognized as done and archived.
+        fdir = self.hf / "features" / "baz"
+        fdir.mkdir(parents=True)
+        (fdir / "feature.md").write_text(
+            "## Status\n\n| Status | complete |\n\n## Learnings\n- shipped\n"
+        )
+        summary = aa.archive_slug(self.hf, "baz")
+        paths = {e["path"] for e in summary["archived"]}
+        self.assertIn("features/baz", paths)
+        self.assertFalse(fdir.exists())
+        self.assertEqual(summary["skipped"], [])
 
 
 if __name__ == "__main__":
