@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Installer opt-in: auto-update hyperflow on every Claude Code session start — sets the marketplace `autoUpdate` flag plus a background, fail-silent `SessionStart` hook that refreshes the repo clone and marketplace cache (off by default; idempotent; skipped in non-interactive installs)
+
 ## [5.16.1] — 2026-07-18
 
 ### Fixed

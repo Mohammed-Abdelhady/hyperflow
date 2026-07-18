@@ -204,6 +204,10 @@ Plans, graphs, audits, and local usage/ROI tiles can render via `hyperflow view`
 
 At plan completion, `viewer.autoOpen` (default `false`) generates and opens a static, self-contained `.hyperflow/exports/spec-<slug>.html` review template (both Mermaid graphs inlined; not the server) before the build-location gate — headless prints the path. Opt in via `~/.hyperflow/config.json`.
 
+## Auto-update (opt-in)
+
+`install.sh` offers to keep hyperflow current on every Claude Code session start (off by default): it sets the marketplace `autoUpdate` flag and adds a background, fail-silent `SessionStart` hook that refreshes the repo clone and marketplace cache. Idempotent and skipped in non-interactive installs; enable or remove it anytime via `~/.claude/settings.json` (or `/hooks`).
+
 ---
 
 ## Guardrails
