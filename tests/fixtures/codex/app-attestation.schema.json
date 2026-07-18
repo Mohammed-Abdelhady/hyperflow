@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/tests/fixtures/codex/app-attestation.schema.json",
+  "title": "Hyperflow Codex desktop App attestation",
+  "description": "Evidence contract for desktop Codex App certification. Schema-valid JSON alone does not unlock App claims: CI provenance, digest binding, freshness, and immutable artifact reference are mandatory. Hand-written or manual provenance fails verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "certificateId",
+    "issuer",
+    "reviewer",
+    "commit",
+    "tag",
+    "createdAt",
+    "expiresAt",
+    "evidenceDigestSha256",
+    "immutableCiRef",
+    "platform",
+    "appBuild",
+    "pluginVersion",
+    "redaction",
+    "checks",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "kind": {
+      "type": "string",
+      "const": "codex-desktop-app-attestation"
+    },
+    "certificateId": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Stable certificate identifier produced by the certifier lane."
+    },
+    "issuer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human or bot identity that issued the attestation (CI job identity preferred)."
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Independent reviewer identity that accepted the evidence package."
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "Full 40-char Hyperflow git commit SHA bound to this attestation."
+    },
+    "tag": {
+      "type": ["string", "null"],
+      "description": "Optional release tag when certifying a tagged candidate; null for untagged commits."
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 creation timestamp (UTC preferred)."
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 expiry; stale attestations fail verification."
+    },
+    "evidenceDigestSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 hex digest of the redacted evidence bundle (screenshots/logs checklist JSON)."
+    },
+    "immutableCiRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Immutable CI reference (workflow run URL with run id, or actions/run-id@sha form)."
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "arch"],
+      "properties": {
+        "os": {
+          "type": "string",
+          "enum": ["macos", "linux"]
+        },
+        "arch": {
+          "type": "string",
+          "enum": ["x86_64", "aarch64"]
+        }
+      }
+    },
+    "appBuild": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product", "version", "buildId"],
+      "properties": {
+        "product": {
+          "type": "string",
+          "const": "codex-desktop"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "buildId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["stable", "beta", "nightly", "dev"]
+        }
+      }
+    },
+    "pluginVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Hyperflow plugin semver installed during desktop acceptance."
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "rules"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["redacted", "partial", "unredacted"]
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "result"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "install",
+              "skills-discoverable",
+              "hooks-session-start",
+              "hooks-pre-compact",
+              "gate-plan-stop",
+              "subagent-or-inline-fallback",
+              "resume",
+              "upgrade",
+              "uninstall",
+              "no-profile-mutation-outside-fixture"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "enum": ["pass", "fail", "skip"]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "repository",
+        "runId",
+        "workflow",
+        "workflowRef",
+        "job",
+        "sha",
+        "artifactName",
+        "artifactDigestSha256"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["github-actions"],
+          "description": "Only CI-issued provenance unlocks App claims. manual/hand-written is rejected by the verifier even if schema validation is relaxed."
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runAttempt": {
+          "type": "string"
+        },
+        "workflow": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workflowRef": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Immutable ref to the workflow definition (e.g. repo/.github/workflows/codex-app-conformance.yml@<sha>)."
+        },
+        "job": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "artifactName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactDigestSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "serverUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "evidenceArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "digestSha256"],
+        "properties": {
+          "name": { "type": "string" },
+          "digestSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "mediaType": { "type": "string" }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
