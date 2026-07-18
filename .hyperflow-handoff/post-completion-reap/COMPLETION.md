@@ -7,9 +7,9 @@
 | Status | built |
 | Built by | grok (session 2 dispatch) |
 | Base | `3b13041718baf7b3a5ed12c716bd9e676b11707f` |
-| Head | `dd065b1d976fe404447f5613c6f76a339aa6027e` |
-| Diff range | `3b13041718baf7b3a5ed12c716bd9e676b11707f..${HEAD}` |
-| Commits | 9 |
+| Head | `3b4a439578178f64e402979af04abfc153c32def` |
+| Diff range | `3b13041718baf7b3a5ed12c716bd9e676b11707f..3b4a439578178f64e402979af04abfc153c32def` |
+| Commits | 10 |
 | Branch | `feat/portable-runtime-ops` |
 | Result | built · 8/8 sub-tasks |
 
@@ -29,6 +29,7 @@
 
 ### Commits
 ```
+3b4a439 chore(handoff): finalize post-completion-reap Evidence head
 dd065b1 chore(handoff): build complete post-completion-reap
 945e256 docs(cleanup): document reap config and verify end-to-end
 c72ea8d docs(doctrine): define reap as terminal cleanup phase
@@ -59,4 +60,4 @@ d7bab59 feat(lifecycle): invoke reap at dispatch deploy and handoff termini
 Return to session 1:
 `/hyperflow:handoff review post-completion-reap`
 or
-`/hyperflow:audit 3b13041718baf7b3a5ed12c716bd9e676b11707f..dd065b1d976fe404447f5613c6f76a339aa6027e level=3`
+`/hyperflow:audit 3b13041718baf7b3a5ed12c716bd9e676b11707f..3b4a439578178f64e402979af04abfc153c32def level=3`
