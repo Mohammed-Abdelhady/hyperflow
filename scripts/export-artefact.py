@@ -16,6 +16,7 @@ Default output: .hyperflow/exports/<type>-<slug>.html. Stdlib only. No network.
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import sys
 from pathlib import Path
@@ -49,7 +50,9 @@ def build_html(env: dict) -> str:
     js = "\n".join((_VIEWER / f).read_text(encoding="utf-8") for f in _JS)
     # Escape any </ so an artefact string can't break out of the inline <script>.
     data = json.dumps(env, ensure_ascii=False).replace("</", "<\\/")
-    title = env.get("title", env.get("slug", "Hyperflow artefact"))
+    # Escape the title before it hits the <title> tag — an artefact title is
+    # untrusted content and could otherwise break out into markup (XSS).
+    title = html.escape(str(env.get("title", env.get("slug", "Hyperflow artefact"))), quote=True)
     boot = (
         "(function(){var env=" + data + ";var HF=window.HF;"
         "var app=document.getElementById('app');"
