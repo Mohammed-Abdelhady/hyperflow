@@ -36,6 +36,22 @@ Last verified: **2026-07-10** (against v5.5.0). Re-run section 4 before trusting
 
 Not currently listed in [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) — a submission there is a growth item, not a sync obligation.
 
+### Ready-to-run: submit to the official Anthropic registry
+
+The highest-trust discovery channel. Prepared submission (maintainer runs it — a
+PR to a third-party repo is never opened automatically):
+
+```bash
+gh repo fork anthropics/claude-plugins-official --clone
+# add hyperflow to the registry manifest (name, description, source/repo, version),
+# mirroring the .claude-plugin/marketplace.json entry — keep the one canonical
+# hero line ("Point it at a GitHub issue. Get back a reviewed pull request.").
+gh pr create --title "Add hyperflow — multi-agent orchestration (issue → reviewed PR)" \
+  --body "Adds hyperflow (v$(cat .claude-plugin/plugin.json | python3 -c 'import json,sys;print(json.load(sys.stdin)["version"])')): plan → dispatch → review chain, 22 specialists, local-first memory, multi-provider. MIT."
+```
+
+Pre-submit check: `./scripts/validate-plugin.py` green, README hero matches every surface, latest tag pushed.
+
 ### Ready-to-run: the unfreeze PR to Jeremy's marketplace
 
 ```bash
