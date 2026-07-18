@@ -174,6 +174,19 @@ There is no index step — `index.md` and `.checksums` are derived at the next s
 
 Write only from the orchestrator — never delegate memory writes to workers.
 
+## Reap × memory — preservation guarantee
+
+The **reap phase** (Layer 10; lifecycle termini + `/hyperflow:reap`) may dispose finished task/feature **artefacts**, but durable memory is the record that makes that disposal safe.
+
+| Allowed on reap | Forbidden on reap |
+|---|---|
+| Rebuild derived `index.md` / `.checksums` | Delete durable category files wholesale (`learnings.md`, `decisions.md`, `pitfalls.md`, `patterns.md`, `conventions.md`, `anti-patterns.md`, `project-decisions.md`) |
+| Quarantine **orphaned entries** whose Evidence no longer resolves — **opt-in** only (`cleanup.dropOrphanRefs`, default `false`); moved to `memory/archive/YYYY-MM.md`, never hard-deleted | Remove a durable entry on an **auto-reap** (the default), or task-scoped purge of durable entries (“delete every learning from this slug”) |
+| Flag / compact oversized durable files per Compaction Protocol (stubs + archive sidecars) | Treat memory as ephemeral GC like `usage/*.jsonl` |
+| Promote task-local `## Learnings` / `## Decisions` / `## Anti-patterns` / `## Pitfalls` **into** durable `*.md` before archive | Hard-delete category bodies as “cleanup” |
+
+**Guarantee:** an **auto-reap never removes a durable memory entry**. Its always-on work is limited to rebuilding the index (and `.checksums`) and the compaction advisory that flags/compacts oversized category files. Entry-dropping is **opt-in** behind `cleanup.dropOrphanRefs` (default `false`); when enabled, an entry whose Evidence no longer resolves is **quarantined** to `memory/archive/YYYY-MM.md` (never hard-deleted), so even the opt-in path stays recoverable. Compression/Pruning protocols below remain the sole paths that age or remove entries — age/contradiction/file-existence driven, not “slug finished.”
+
 ## Compression Protocol
 
 Triggered at session start for any entry whose date crossed the 30-day threshold since last session.

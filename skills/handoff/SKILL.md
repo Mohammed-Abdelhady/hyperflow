@@ -3,9 +3,9 @@ name: handoff
 description: |
   Use when managing a two-session handoff — inspecting, picking up, or reviewing a committed handoff package produced by a session=two scope run. The operator interface over the cross-environment handoff lifecycle (plan in one session, build in another, review back in the first).
   Trigger with /hyperflow:handoff, "list handoffs", "pick up the handoff", "review the handoff build".
-allowed-tools: Read, Write, Edit, Bash(git:*), Bash(mv:*), Glob, Grep, AskUserQuestion, Skill
+allowed-tools: Read, Write, Edit, Bash(git:*), Bash(mv:*), Bash(python3:*), Glob, Grep, AskUserQuestion, Skill
 argument-hint: "<list | status [slug] | pickup <slug> | review <slug> | complete <slug>>"
-version: 1.0.1
+version: 1.0.2
 license: MIT
 compatibility: Claude Code (native Skill / AskUserQuestion); Codex / OpenCode / Antigravity / Grok via runtime-contract fallbacks
 tags: [handoff, two-session, cross-environment, orchestration]
@@ -82,8 +82,33 @@ Portable fallback for the deploy gate: if structured UI is missing, print a `Hyp
 **end the turn**. Headless with no channel → do not auto-deploy; print that confirmation is required.
 
 ### `complete <slug>`
-Mark the lifecycle done: set `STATUS=reviewed` (if not already) and archive the package to
-`.hyperflow-handoff/.archive/<slug>/`. Commit `chore(handoff): archive <slug>`.
+Mark the lifecycle done:
+
+1. Set `STATUS=reviewed` (if not already).
+2. Archive the **handoff package** to `.hyperflow-handoff/.archive/<slug>/` (handoff owns this path — never delegated to reap).
+3. Commit `chore(handoff): archive <slug>`.
+4. **Reap phase** for the same `<slug>` — dispose the `.hyperflow/` task scope (task file · brief dir · specs/drafts · feature tree · viewer twins · ephemeral GC · memory optimize). Today only the package moved; reap also cleans the project cache for that slug. Idempotent if dispatch/deploy already reaped.
+
+   - **Gate `cleanup.reapOnComplete`:** read from `~/.hyperflow/config.json` (default `true` when absent). When `false` → skip; print `Reap skipped — cleanup.reapOnComplete=false`.
+   - **Standard contract call** (resolve `<plugin-root>` like other scripts; hf root = `$PROJECT_ROOT/.hyperflow`):
+
+     ```bash
+     python3 <plugin-root>/scripts/reap.py "$PROJECT_ROOT/.hyperflow" --slug <slug>
+     ```
+
+   - Capture stdout JSON. Print the **Reap Report**:
+
+     ```
+     ── Reap: <slug> ──
+     Archived   : <n> → .hyperflow/archive/…
+     Deleted    : <n> ephemeral
+     Memory     : index rebuilt · <o> orphaned refs dropped · <c> compacted
+     Freed      : <bytes>   Mode: live|dry-run
+     ```
+
+   - Append one JSON line of the full report to `.hyperflow/archive/.reap-log.jsonl` (create parents if needed).
+   - **Never** pass `.hyperflow-handoff` paths to reap; **never** let reap move/delete under `.hyperflow-handoff/` — package archive is step 2 only. Reap is cache-scoped to `.hyperflow/`.
+   - Do not pass `--force` on this auto path; engine skips non-terminal without force.
 
 ## Resolution
 
@@ -98,12 +123,15 @@ Mark the lifecycle done: set `STATUS=reviewed` (if not already) and archive the 
 - **Never force-push; never `--no-verify`.** Auto-push failures surface the exact `git push -u origin <branch>`.
 - **No AI attribution** in any commit or package file.
 - **No premature external mutations.** `list` / `status` are read-only; `pickup` / `review` only continue into
-  documented target skills; archive is a local package move + conventional commit.
-- Honors `handoff.*` config (`autoPush`, `remote`, `packageDir`).
+  documented target skills; archive is a local package move + conventional commit; `complete` may also run the
+  gated reap phase on `.hyperflow/` only.
+- **Handoff owns `.hyperflow-handoff/`.** Reap never mutates handoff packages or `.archive/`; package archival stays in `complete` step 2.
+- Honors `handoff.*` config (`autoPush`, `remote`, `packageDir`) and `cleanup.reapOnComplete` (default true) for the terminal reap.
 
 ## Doctrine
 
 Shared rules in [`../hyperflow/DOCTRINE.md`](../hyperflow/DOCTRINE.md). Package contract + templates in
 [`../hyperflow/session-handoff.md`](../hyperflow/session-handoff.md). Transitions in
 [chain-router.md](../hyperflow/chain-router.md). Semantic ops in
-[runtime-contract.md](../hyperflow/runtime-contract.md).
+[runtime-contract.md](../hyperflow/runtime-contract.md). Reaper engine:
+[`../../scripts/reap.py`](../../scripts/reap.py).

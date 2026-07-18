@@ -27,7 +27,7 @@ Provider-neutral transition contract for Hyperflow skills. The router preserves 
 | `workflow` | `skills/workflow/SKILL.md` | Portable multi-unit envelope (not a chain edge to retired skills) |
 | `trace` | `skills/trace/SKILL.md` | Debug entry; may continue into plan/dispatch per its own flow |
 | `scaffold` | `skills/scaffold/SKILL.md` | Setup only; does not start the plan→dispatch chain |
-| Others (`cache`, `status`, `sticky`, `bridge`, `flush`, `background`, `hyperflow`) | matching `skills/<name>/SKILL.md` | Operator / support skills; not primary auto-chain edges |
+| Others (`cache`, `status`, `sticky`, `bridge`, `flush`, `reap`, `background`, `hyperflow`) | matching `skills/<name>/SKILL.md` | Operator / support skills; not primary auto-chain edges |
 
 Alias entry points (`/hyperflow:<name>`, `hyperflow <name>`, natural-language function aliases) resolve through [SKILL.md](SKILL.md) portable function router, then load the skill above. Unknown-command replies for `/hyperflow:*` on portable hosts are banned.
 

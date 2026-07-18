@@ -28,7 +28,7 @@
         },
         "autoOpen": {
           "type": "boolean",
-          "description": "Automatically open the browser when an artefact is written in viewer mode. Default: false.",
+          "description": "Auto-open the plan's self-contained HTML view in the browser at the end of /hyperflow:plan (before the build-location gate). Best-effort and non-blocking. Default: false.",
           "default": false
         }
       },
@@ -111,6 +111,57 @@
           "description": "Line count at or above which /hyperflow:cache compact warns and is recommended.",
           "default": 300,
           "minimum": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "cleanup": {
+      "description": "Artefact archive/reap hygiene. Daily session-start sweep plus lifecycle-terminal reap (dispatch/deploy/handoff complete).",
+      "type": "object",
+      "properties": {
+        "auto": {
+          "type": "boolean",
+          "description": "Master switch for the daily session-start archive/prune sweep. Default: true.",
+          "default": true
+        },
+        "staleDays": {
+          "type": "integer",
+          "description": "Age in days after which tasks/audits/specs (and completed features) are archived. Default: 7.",
+          "default": 7,
+          "minimum": 1
+        },
+        "pruneDays": {
+          "type": "integer",
+          "description": "Age in days after which entries under .hyperflow/archive/ are deleted. Default: 30.",
+          "default": 30,
+          "minimum": 1
+        },
+        "reapOnComplete": {
+          "type": "boolean",
+          "description": "Fire slug-scoped reap at lifecycle termini (dispatch wrap-up, deploy end, handoff complete). Default: true.",
+          "default": true
+        },
+        "usageRetentionDays": {
+          "type": "integer",
+          "description": "Retention window for .hyperflow/usage/*.jsonl ledgers. Default: 30.",
+          "default": 30,
+          "minimum": 1
+        },
+        "logMaxLines": {
+          "type": "integer",
+          "description": "Max lines retained in .session-start.log after truncation. Default: 2000.",
+          "default": 2000,
+          "minimum": 100
+        },
+        "dryRun": {
+          "type": "boolean",
+          "description": "Global dry-run override for reap/archive (report plan, mutate nothing). Default: false.",
+          "default": false
+        },
+        "dropOrphanRefs": {
+          "type": "boolean",
+          "description": "Opt in to quarantining durable memory entries whose Evidence paths no longer resolve. When false (default), reap never removes a durable entry — it only rebuilds the index and flags oversized files. When true, an orphaned entry is moved to memory/archive/YYYY-MM.md (never hard-deleted). Default: false.",
+          "default": false
         }
       },
       "additionalProperties": false

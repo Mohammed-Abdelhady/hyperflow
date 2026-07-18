@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Plan-completion auto-open of the static, self-contained plan HTML (`.hyperflow/exports/spec-<slug>.html`, both Mermaid graphs inlined) as a pre-gate review template, gated on `viewer.autoOpen` (default off); headless prints the export path
+- Post-completion reap — slug-scoped archive-first cleanup at dispatch wrap-up, deploy end, and handoff complete (gated on `cleanup.reapOnComplete`), plus `/hyperflow:reap <slug>`
+- `cleanup` config block fully schema-validated: `auto`, `staleDays`, `pruneDays`, `reapOnComplete`, `usageRetentionDays`, `logMaxLines`, `dryRun`, `dropOrphanRefs`
+- Ephemeral retention for unbounded `usage/*.jsonl` ledgers and `.session-start.log` truncation; durable memory optimized in place — an auto-reap drops no durable entry (index rebuild + compaction advisory only). Entry pruning is opt-in (`cleanup.dropOrphanRefs`, default off) and quarantines orphaned entries to `memory/archive/YYYY-MM.md`, never hard-deleting
+
+### Changed
+- Document the full `cleanup.*` block and reap lifecycle in orchestration docs
+- Lifecycle wrap-up disposes finished artefact scopes via `scripts/reap.py` instead of ad-hoc task-file deletes
+
 ## [5.15.0] — 2026-07-18
 
 ### Added
@@ -64,7 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extract graph-core.js + node unit tests for parser/layout
 - Cover migrate-cache version ordering, no-op, migration, idempotency, no-clobber
 - Cover archive-artefacts promotion, dedup idempotency, prune
-
 
 ## [5.14.0] — 2026-07-17
 
