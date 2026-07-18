@@ -150,6 +150,27 @@ class FixtureBase(unittest.TestCase):
                 payload = None
         return code, payload, text, err.getvalue()
 
+    def _write_home_config(
+        self, cleanup: dict | None = None, memory: dict | None = None
+    ) -> Path:
+        """Write ``~/.hyperflow/config.json`` inside the patched (temp) HOME.
+
+        Lets a test exercise reap()'s OWN ``load_cfg()`` — call ``reap`` with no
+        ``cfg=`` so it reads this file — proving config-dependent behavior
+        (``cleanup.auto``, ``cleanup.dryRun``) rather than an injected dict.
+        Safe because setUp isolated HOME/USERPROFILE (F5).
+        """
+        home_hf = Path(os.environ["HOME"]) / ".hyperflow"
+        home_hf.mkdir(parents=True, exist_ok=True)
+        doc: dict = {}
+        if cleanup is not None:
+            doc["cleanup"] = cleanup
+        if memory is not None:
+            doc["memory"] = memory
+        cfg_path = home_hf / "config.json"
+        cfg_path.write_text(json.dumps(doc), encoding="utf-8")
+        return cfg_path
+
 
 class TerminalDetectionTests(FixtureBase):
     def test_flat_status_completed(self) -> None:
@@ -407,6 +428,139 @@ class IdempotencyTests(FixtureBase):
         self.assertEqual(second["archived"], [])
         # No new deletions required on empty ephemeral either
         self.assertEqual(second["deleted"], [])
+
+    def test_second_reap_leaves_memory_unmutated(self) -> None:
+        # F12: a repeat pass must not re-mutate durable memory. Capture every
+        # memory/*.md byte-for-byte AFTER the first (mutating) reap, then assert
+        # the forced second pass leaves each file identical — in addition to the
+        # empty archived/deleted contract above.
+        slug = self._write_completed("idem-mem")
+        reap_mod.reap(self.hf, slug, cfg=dict(reap_mod.DEFAULTS))
+        memory = self.hf / "memory"
+
+        def snapshot() -> dict[str, bytes]:
+            return {
+                str(p.relative_to(memory)): p.read_bytes()
+                for p in sorted(memory.rglob("*.md"))
+                if p.is_file()
+            }
+
+        before = snapshot()
+        self.assertTrue(before, "expected memory files to snapshot")
+
+        second = reap_mod.reap(self.hf, slug, force=True, cfg=dict(reap_mod.DEFAULTS))
+        self.assertEqual(second["archived"], [])
+        self.assertEqual(second["deleted"], [])
+
+        after = snapshot()
+        self.assertEqual(set(before), set(after))
+        for rel, data in before.items():
+            self.assertEqual(after[rel], data, msg=f"memory/{rel} re-mutated")
+
+
+class MemoryCoverageTests(FixtureBase):
+    """F12: positive coverage for the always-on memory optimizations —
+    compaction advisory (oversized file flagged) and index rebuild (index.md
+    actually (re)written), which the existing suites only shape-check."""
+
+    def test_oversized_memory_flagged_as_compacted(self) -> None:
+        slug = self._write_completed("mem-big")
+        # Durable category file at/over the compaction threshold.
+        bloated = self.hf / "memory" / "bloated.md"
+        bloated.write_text(
+            "# Bloated\n\n" + "".join(f"- line {i}\n" for i in range(400)),
+            encoding="utf-8",
+        )
+
+        cfg = dict(reap_mod.DEFAULTS)
+        cfg["compactionThreshold"] = 300
+        report = reap_mod.reap(self.hf, slug, cfg=cfg)
+
+        self.assertIn("memory/bloated.md", report["memory"]["compacted"])
+        # Advisory only — the oversized file is never deleted/truncated by reap.
+        self.assertTrue(bloated.is_file())
+        # A small durable file stays below threshold and is not flagged.
+        self.assertNotIn("memory/learnings.md", report["memory"]["compacted"])
+
+    def test_index_rebuilt_and_index_md_written(self) -> None:
+        slug = self._write_completed("mem-idx")
+        index = self.hf / "memory" / "index.md"
+        # Seed a stale index so a genuine rebuild must overwrite its content.
+        stale = "# STALE INDEX\n\nthis is not the derived index\n"
+        index.write_text(stale, encoding="utf-8")
+
+        report = reap_mod.reap(self.hf, slug, cfg=dict(reap_mod.DEFAULTS))
+
+        self.assertIs(report["memory"]["indexRebuilt"], True)
+        self.assertTrue(index.is_file())
+        rebuilt = index.read_text(encoding="utf-8")
+        self.assertNotEqual(rebuilt, stale)
+        self.assertTrue(rebuilt.strip())
+
+
+class HomeConfigTests(FixtureBase):
+    """F5: config read from the (isolated) HOME governs a cfg-less reap.
+
+    Locks T3-F2 through the real config path — targeted `--slug` archival runs
+    even under `cleanup.auto=false`, and `cleanup.dryRun=true` forces a dry run
+    with zero mutation. reap() is called WITHOUT `cfg=` so its own load_cfg()
+    reads the file."""
+
+    def test_archives_with_home_cleanup_auto_false(self) -> None:
+        slug = self._write_completed("cfg-auto")
+        self._write_home_config(cleanup={"auto": False})
+
+        # No cfg= → reap.load_cfg() reads the hostile HOME config (auto=false).
+        report = reap_mod.reap(self.hf, slug)
+
+        self.assertNotIn("archiveError", report)
+        self.assertGreater(len(report["archived"]), 0)
+        paths = {e["path"] for e in report["archived"]}
+        self.assertIn(f"tasks/{slug}.md", paths)
+        # Targeted archival is unconditional — source moved out despite auto=false.
+        self.assertFalse((self.hf / "tasks" / f"{slug}.md").exists())
+
+    def test_home_cleanup_dry_run_true_zero_mutation(self) -> None:
+        slug = self._write_completed("cfg-dry")
+        usage = self.hf / "usage" / "stale.jsonl"
+        usage.write_text("x\n", encoding="utf-8")
+        self._age(usage, 40)
+        self._write_home_config(cleanup={"dryRun": True})
+
+        before = {
+            str(p.relative_to(self.hf)): (p.stat().st_size, p.read_bytes())
+            for p in self.hf.rglob("*")
+            if p.is_file()
+        }
+
+        report = reap_mod.reap(self.hf, slug)
+
+        self.assertTrue(report["dryRun"])
+        self.assertGreater(len(report["archived"]), 0)
+        # Nothing moved or deleted: source + stale ledger both survive.
+        self.assertTrue((self.hf / "tasks" / f"{slug}.md").exists())
+        self.assertTrue(usage.exists())
+        after = {
+            str(p.relative_to(self.hf)): (p.stat().st_size, p.read_bytes())
+            for p in self.hf.rglob("*")
+            if p.is_file()
+        }
+        self.assertEqual(before, after)
+
+
+class ReapLogTests(FixtureBase):
+    """F12 reap-log append smoke.
+
+    The `archive/.reap-log.jsonl` append is orchestrated by the reap SKILL
+    (skills/deploy, skills/dispatch, skills/handoff, DOCTRINE), not by
+    scripts/reap.py — the Python engine emits its report to stdout and never
+    writes the log itself. There is no engine-level surface to assert here.
+    """
+
+    @unittest.skip("E2E: reap-log append covered at skill level")
+    def test_reap_log_append(self) -> None:  # pragma: no cover
+        # E2E: reap-log append covered at skill level
+        pass
 
 
 class OrphanMemoryTests(FixtureBase):
