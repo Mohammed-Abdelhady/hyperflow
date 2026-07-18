@@ -174,6 +174,32 @@ class TerminalDetectionTests(FixtureBase):
         )
         self.assertTrue(reap_mod.is_terminal(self.hf, "feat-x"))
 
+    def test_feature_complete_value(self) -> None:
+        # F8: feature terminal must accept `complete` as well as `completed`.
+        fdir = self.hf / "features" / "feat-c"
+        fdir.mkdir(parents=True)
+        (fdir / "feature.md").write_text(
+            "## Status\n\n| Status | complete |\n", encoding="utf-8"
+        )
+        self.assertTrue(reap_mod.feature_is_terminal(self.hf, "feat-c"))
+        self.assertTrue(reap_mod.is_terminal(self.hf, "feat-c"))
+
+    def test_stray_terminal_subrow_not_terminal(self) -> None:
+        # F7: the primary `## Status` row is in_progress; a stray terminal
+        # sub-row under a later heading must NOT make the task reapable.
+        (self.hf / "tasks" / "anchored.md").write_text(
+            "# Anchored Task\n\n"
+            "## Status\n\n"
+            "| Field | Value |\n|---|---|\n"
+            "| Status | in_progress |\n\n"
+            "## Subtasks\n\n"
+            "| Field | Value |\n|---|---|\n"
+            "| State | complete |\n",
+            encoding="utf-8",
+        )
+        self.assertFalse(reap_mod.flat_task_is_terminal(self.hf, "anchored"))
+        self.assertFalse(reap_mod.is_terminal(self.hf, "anchored"))
+
 
 class CompletedReapTests(FixtureBase):
     def test_completed_task_archives_and_preserves_memory(self) -> None:
@@ -587,6 +613,105 @@ class CliTests(FixtureBase):
         code, _payload, out, err = self._run_cli("--json")
         self.assertNotEqual(code, 0)
         self.assertIn("refused", err.lower())
+
+
+class ArgParseTests(FixtureBase):
+    """F10: `--slug` must not swallow an option-like value."""
+
+    def test_slug_consumes_dash_prefixed_value_refused(self) -> None:
+        with self.assertRaises(reap_mod.ReapError):
+            reap_mod._parse_args(["reap.py", str(self.hf), "--slug", "--force"])
+
+    def test_slug_bare_double_dash_refused(self) -> None:
+        with self.assertRaises(reap_mod.ReapError):
+            reap_mod._parse_args(["reap.py", str(self.hf), "--slug", "--"])
+
+    def test_slug_missing_trailing_value_refused(self) -> None:
+        with self.assertRaises(reap_mod.ReapError):
+            reap_mod._parse_args(["reap.py", str(self.hf), "--slug"])
+
+    def test_slug_equals_dash_value_refused(self) -> None:
+        with self.assertRaises(reap_mod.ReapError):
+            reap_mod._parse_args(["reap.py", str(self.hf), "--slug=--force"])
+
+    def test_valid_slug_still_parses(self) -> None:
+        hf, slug, dry_run, force, as_json = reap_mod._parse_args(
+            ["reap.py", str(self.hf), "--slug", "good-slug", "--force", "--json"]
+        )
+        self.assertEqual(slug, "good-slug")
+        self.assertTrue(force)
+        self.assertTrue(as_json)
+        self.assertFalse(dry_run)
+
+    def test_dash_slug_cli_exit_nonzero(self) -> None:
+        code, _payload, out, err = self._run_cli("--slug", "--force", "--json")
+        self.assertNotEqual(code, 0)
+        self.assertEqual(out.strip(), "")
+        self.assertIn("refused", err.lower())
+
+
+class AtomicLogTruncationTests(FixtureBase):
+    """F6: session-log truncation must be atomic (temp file + os.replace) so a
+    concurrent append-by-path never observes a torn/empty log or loses lines."""
+
+    def _write_log(self, n: int) -> Path:
+        log = self.hf / ".session-start.log"
+        log.write_text(
+            "".join(f"line-{i}\n" for i in range(n)), encoding="utf-8"
+        )
+        return log
+
+    def test_truncation_keeps_recent_tail(self) -> None:
+        log = self._write_log(2500)
+        report = reap_mod.empty_report("log", False)
+        reap_mod.reap_session_log(
+            self.hf, log_max_lines=200, dry_run=False, report=report
+        )
+        lines = log.read_text(encoding="utf-8").splitlines()
+        # Exactly the kept tail, ending with the most-recently-appended line.
+        self.assertEqual(len(lines), 200)
+        self.assertEqual(lines[-1], "line-2499")
+        self.assertEqual(lines[0], "line-2300")
+        self.assertTrue(any("truncate" in d for d in report["deleted"]))
+
+    def test_no_leftover_temp_file(self) -> None:
+        self._write_log(2500)
+        report = reap_mod.empty_report("log", False)
+        reap_mod.reap_session_log(
+            self.hf, log_max_lines=200, dry_run=False, report=report
+        )
+        leftovers = [p.name for p in self.hf.iterdir() if ".tmp" in p.name]
+        self.assertEqual(leftovers, [])
+
+    def test_concurrent_append_never_sees_torn_log(self) -> None:
+        # Interpose on os.replace to inspect state at the atomic-swap instant:
+        # the live log must still hold its COMPLETE original content (never an
+        # in-place truncation), and an append that races in right before the
+        # swap must not corrupt the committed result.
+        log = self._write_log(2500)
+        original = log.read_text(encoding="utf-8")
+        real_replace = os.replace
+        observed: dict[str, object] = {}
+
+        def spy_replace(src: object, dst: object) -> None:
+            # Original log untouched until the swap — proves no torn write.
+            observed["intact"] = log.read_text(encoding="utf-8") == original
+            # A session-start hook appends by path during the operation.
+            with open(log, "a", encoding="utf-8") as fh:
+                fh.write("CONCURRENT-APPEND\n")
+            real_replace(src, dst)
+
+        report = reap_mod.empty_report("log", False)
+        with patch.object(reap_mod.os, "replace", spy_replace):
+            reap_mod.reap_session_log(
+                self.hf, log_max_lines=200, dry_run=False, report=report
+            )
+
+        self.assertTrue(observed.get("intact"))
+        lines = log.read_text(encoding="utf-8").splitlines()
+        # Committed log is complete and well-formed (no partial/torn line).
+        self.assertEqual(len(lines), 200)
+        self.assertEqual(lines[-1], "line-2499")
 
 
 class ValidateSlugUnitTests(unittest.TestCase):
