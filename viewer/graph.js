@@ -144,9 +144,10 @@
         inbound[n.id] ? `depends on ${inbound[n.id].join(", ")}` : "",
         outbound[n.id] ? `leads to ${outbound[n.id].join(", ")}` : "",
       ].filter(Boolean).join("; ");
-      const ariaLabel = [n.label, n.sub, deps].filter(Boolean).join(". ");
+      const interactive = !!opts.onNode;
+      const ariaLabel = [n.label, n.sub, deps, interactive ? "Activate to open its brief" : ""].filter(Boolean).join(". ");
       const node = el("div",
-        { class: `hf-node shape-${n.shape || "step"}`, "data-id": n.id, tabindex: "0", role: "group", "aria-label": ariaLabel, title: n.sub ? `${n.label} — ${n.sub}` : n.label },
+        { class: `hf-node shape-${n.shape || "step"}`, "data-id": n.id, tabindex: "0", role: interactive ? "button" : "group", "aria-label": ariaLabel, title: n.sub ? `${n.label} — ${n.sub}` : n.label },
         el("span", { class: "hf-node-head" },
           n.status && el("span", { class: `hf-node-dot st-${n.status}` }),
           n.tag && el("span", { class: "hf-node-tag" }, n.tag),
@@ -156,7 +157,12 @@
       if (n.accent) node.style.setProperty("--accent", n.accent);
       node.style.left = p.x + "px"; node.style.top = p.y + "px";
       node.style.setProperty("--i", i);
-      if (opts.onNode) node.addEventListener("click", () => opts.onNode(n));
+      if (opts.onNode) {
+        node.addEventListener("click", () => opts.onNode(n));
+        node.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); opts.onNode(n); }
+        });
+      }
       canvas.append(node);
       nodeEls.set(n.id, node);
     });

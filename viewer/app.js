@@ -4,7 +4,7 @@
 (function () {
   "use strict";
   const HF = window.HF, el = HF.el;
-  const TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review"];
+  const TYPES = ["spec", "task", "feature", "dispatch", "audit", "memory", "review", "usage"];
   const app = document.getElementById("app");
 
   async function getJSON(url) {
@@ -125,6 +125,23 @@
       return [HF.statusHead({ ...env, status: p.verdict }),
         HF.section("Findings", ...(p.findings && p.findings.length ? HF.findings(p.findings) : [HF.emptyState("Clean")]))];
     },
+    // Basic usage view; the full stat-tile/sparkline telemetry dashboard is Phase 3.
+    usage(env) {
+      const p = env.payload || {}, t = p.totals || {};
+      const out = [HF.statusHead(env),
+        HF.section("Totals", el("p", { class: "tldr" },
+          `${t.tokens || 0} tokens · ${t.acceptedCommits || 0} commits · ${t.tokensPerCommit || 0} tokens/commit · ${t.agents || 0} agents`))];
+      if (p.phases && p.phases.length) {
+        out.push(HF.section("By phase", HF.table(
+          [{ label: "Phase" }, { label: "Agents", num: true }, { label: "Tokens", num: true }],
+          p.phases.map((ph) => [ph.name, { text: ph.agents || 0, num: true }, { text: ph.tokens || 0, num: true }]))));
+      }
+      if (p.ratios) {
+        out.push(HF.section("Ratios", el("p", { class: "dag-meta" },
+          Object.entries(p.ratios).map(([k, v]) => `${k}: ${v}`).join("  ·  "))));
+      }
+      return out;
+    },
   };
 
   const POLL_MS = 2500;
@@ -135,11 +152,17 @@
   // Live dispatch: re-fetch the JSON and re-render only when it changed; stop at
   // terminal. This is what makes the "Live progress" label + pulse animation true.
   function startDispatchPoll(slug, lastText) {
+    stopPoll();  // clear any orphan interval before installing a new one
     poller = setInterval(async () => {
+      if (location.hash.slice(1) !== `dispatch/${slug}`) { stopPoll(); return; }  // navigated away
       try {
         const env = await getJSON(`/artefacts/dispatch/${slug}.json`);
         const text = JSON.stringify(env);
-        if (text !== lastText) { lastText = text; renderEnv(env, false); }
+        if (text !== lastText) {
+          lastText = text; renderEnv(env, false);
+          const all = (env.payload.batches || []).flatMap((b) => b.tasks || []);
+          announce(`${all.filter((t) => t.status === "completed").length} of ${all.length} tasks complete`);
+        }
         if (isTerminal(env)) stopPoll();
       } catch (_e) { stopPoll(); }
     }, POLL_MS);
