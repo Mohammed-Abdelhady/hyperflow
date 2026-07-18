@@ -1,7 +1,8 @@
 /* Hyperflow viewer — graph canvas, nodes, edges, and motion.
    Node size must match graph.js: NODE_W 208 / NODE_H 78. */
 
-.hf-canvas-wrap { overflow-x: auto; overflow-y: hidden; margin: 4px -6px 0; padding: 6px; }
+.hf-canvas-wrap { overflow-x: auto; overflow-y: hidden; margin: 4px -6px 0; padding: 6px; cursor: grab; }
+.hf-canvas-wrap.panning { cursor: grabbing; user-select: none; }
 .hf-canvas {
   position: relative;
   background-image: radial-gradient(color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px);

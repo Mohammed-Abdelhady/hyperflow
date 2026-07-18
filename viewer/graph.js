@@ -86,7 +86,28 @@
 
     wireHover(nodeEls, edgeEls, model.edges);
     requestAnimationFrame(() => animate(canvas, edgeEls, nodeEls, horizontal));
-    return el("div", { class: "hf-canvas-wrap" }, canvas);
+    const wrap = el("div", { class: "hf-canvas-wrap" }, canvas);
+    wirePan(wrap);
+    return wrap;
+  }
+
+  // Drag the empty canvas to pan a wide graph (node interactions still win).
+  function wirePan(wrap) {
+    let on = false, sx = 0, sl = 0, st = 0, sy = 0;
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.target.closest(".hf-node")) return;
+      on = true; sx = e.clientX; sy = e.clientY; sl = wrap.scrollLeft; st = wrap.scrollTop;
+      wrap.classList.add("panning");
+      try { wrap.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+    });
+    wrap.addEventListener("pointermove", (e) => {
+      if (!on) return;
+      wrap.scrollLeft = sl - (e.clientX - sx);
+      wrap.scrollTop = st - (e.clientY - sy);
+    });
+    const end = () => { on = false; wrap.classList.remove("panning"); };
+    wrap.addEventListener("pointerup", end);
+    wrap.addEventListener("pointercancel", end);
   }
 
   function wireHover(nodeEls, edgeEls, edges) {
