@@ -93,12 +93,17 @@
   function render(model, opts = {}) {
     if (!model.nodes || !model.nodes.length) return HF.emptyState("Nothing to diagram", "This artefact has no graph nodes yet.");
     const { pos, w, h, horizontal } = layout(model);
-    const canvas = el("div", { class: "hf-canvas" });
+    const canvas = el("div", { class: "hf-canvas", role: "group", "aria-label": opts.ariaLabel || "dependency graph" });
     canvas.style.width = w + "px";
     canvas.style.height = h + "px";
 
+    // Edge/dependency structure for screen readers (SVG edges are decorative).
+    const inbound = {}, outbound = {};
+    model.edges.forEach((e) => { (outbound[e.from] = outbound[e.from] || []).push(e.to); (inbound[e.to] = inbound[e.to] || []).push(e.from); });
+
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("class", "hf-edges");
+    svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("width", w); svg.setAttribute("height", h);
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     const defs = document.createElementNS(NS, "defs");
@@ -135,8 +140,13 @@
       const p = pos.get(n.id);
       // Build children via el() (which filters falsy) — native append would
       // stringify undefined/false into literal "undefined" text nodes.
+      const deps = [
+        inbound[n.id] ? `depends on ${inbound[n.id].join(", ")}` : "",
+        outbound[n.id] ? `leads to ${outbound[n.id].join(", ")}` : "",
+      ].filter(Boolean).join("; ");
+      const ariaLabel = [n.label, n.sub, deps].filter(Boolean).join(". ");
       const node = el("div",
-        { class: `hf-node shape-${n.shape || "step"}`, "data-id": n.id, tabindex: "0", title: n.sub ? `${n.label} — ${n.sub}` : n.label },
+        { class: `hf-node shape-${n.shape || "step"}`, "data-id": n.id, tabindex: "0", role: "group", "aria-label": ariaLabel, title: n.sub ? `${n.label} — ${n.sub}` : n.label },
         el("span", { class: "hf-node-head" },
           n.status && el("span", { class: `hf-node-dot st-${n.status}` }),
           n.tag && el("span", { class: "hf-node-tag" }, n.tag),

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="graph.css" />
 </head>
 <body>
+  <a class="skip-link" href="#app">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="#gallery" aria-label="Hyperflow artefact gallery">
       <span class="brand-mark" aria-hidden="true"></span>
@@ -19,9 +20,11 @@
     <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light and dark theme">◐</button>
   </header>
 
-  <main id="app" class="app" aria-live="polite">
+  <main id="app" class="app" tabindex="-1">
     <div class="loading">Loading artefact…</div>
   </main>
+
+  <div id="hf-live" class="sr-only" aria-live="polite" role="status"></div>
 
   <footer class="footer">
     <span>Rendered locally · nothing left your machine</span>

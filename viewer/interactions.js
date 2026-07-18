@@ -7,11 +7,14 @@
   const HF = window.HF, el = HF.el;
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  function flip(card) { card.classList.toggle("flipped"); }
+  function flip(card) {
+    const flipped = card.classList.toggle("flipped");
+    card.setAttribute("aria-pressed", flipped ? "true" : "false");
+  }
 
   function decisionCards(decisions) {
     return el("div", { class: "grid flipwrap reveal-group" }, ...decisions.map((d) => {
-      const card = el("div", { class: "flip reveal", tabindex: "0", role: "button",
+      const card = el("div", { class: "flip reveal", tabindex: "0", role: "button", "aria-pressed": "false",
         "aria-label": `Decision: ${d.decision || ""}. Activate to see the trade-off.` },
         el("div", { class: "flip-inner" },
           el("div", { class: "flip-face" },
