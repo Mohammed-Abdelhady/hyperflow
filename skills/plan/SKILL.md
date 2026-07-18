@@ -210,6 +210,8 @@ Per-section revise loops only that Writer (max 3 cycles per section); the rest o
 
 ### Step 12 — Build-location gate (ALWAYS fires · plan never auto-implements)
 
+**Auto-open (best-effort, before the gate):** when `viewer.enabled && viewer.autoOpen`, run `python3 $PLUGIN_ROOT/scripts/open-artefact.py $PROJECT_ROOT/.hyperflow <slug> --type spec` and print the opened/available path. This is non-blocking and never gates — a headless/no-browser environment just prints the path; the build-location gate below fires regardless of outcome. Skip silently when `autoOpen=false` (the default) or `viewer.enabled=false`.
+
 The task file is written; plan is done thinking. Fire ONE `structured_question` (prefer `AskUserQuestion` when present) — this gate fires on **every** run and is the **only** thing that ever starts a build. Never skip it, never default it, never silently chain into `dispatch`, regardless of any propagated args or autonomy directive. **No implementation and no source-code edits occur until this gate has an explicit user answer.** Q1 is a named-workflow choice → recommended option first with `(Recommended)`:
 
 ```
