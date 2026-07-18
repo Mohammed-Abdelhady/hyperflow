@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Plan-completion auto-open now works for plans that only produced classic markdown (the common case — the plan skill writes markdown, not always a JSON artefact): when no `.hyperflow/artefacts/<type>/<slug>.json` exists, it renders the plan's `specs/<slug>.md` / `tasks/<slug>.md` (with any Mermaid graphs) to a self-contained HTML via the new `scripts/render-md.py` and opens that. Model-independent and works for already-created plans.
+
 ## [5.17.0] — 2026-07-18
 
 ### Added

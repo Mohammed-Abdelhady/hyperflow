@@ -35,6 +35,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import artefact_lib as lib  # noqa: E402
+import open_md_fallback as md_fallback  # noqa: E402
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
 _PLUGIN_ROOT = SCRIPTS_DIR.parent
@@ -241,12 +242,15 @@ def open_artefact(
         return 0
 
     resolved_type = resolve_type(hf, slug, art_type)
-    if resolved_type is None:
-        label = f"{art_type} " if art_type else ""
-        print(f"no {label}artefact for '{slug}' — skipping auto-open")
-        return 0
+    if resolved_type is not None:
+        export_path = ensure_export(hf, slug, resolved_type)
+    else:
+        # No JSON artefact — fall back to rendering the plan's classic markdown.
+        export_path = md_fallback.render_markdown_fallback(hf, slug)
+        if export_path is None:
+            print(f"no artefact or plan markdown for '{slug}' — skipping auto-open")
+            return 0
 
-    export_path = ensure_export(hf, slug, resolved_type)
     if not export_path.is_file():
         print(f"export not generated for '{slug}' — skipping auto-open")
         return 0
