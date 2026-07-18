@@ -125,20 +125,28 @@
       return [HF.statusHead({ ...env, status: p.verdict }),
         HF.section("Findings", ...(p.findings && p.findings.length ? HF.findings(p.findings) : [HF.emptyState("Clean")]))];
     },
-    // Basic usage view; the full stat-tile/sparkline telemetry dashboard is Phase 3.
+    // Telemetry / ROI dashboard — stat tiles + sparkline over the usage rollup.
     usage(env) {
-      const p = env.payload || {}, t = p.totals || {};
-      const out = [HF.statusHead(env),
-        HF.section("Totals", el("p", { class: "tldr" },
-          `${t.tokens || 0} tokens · ${t.acceptedCommits || 0} commits · ${t.tokensPerCommit || 0} tokens/commit · ${t.agents || 0} agents`))];
+      const p = env.payload || {}, t = p.totals || {}, r = p.ratios || {};
+      const fmt = (n) => (n || 0).toLocaleString();
+      const pct = (n) => Math.round((n || 0) * 100) + "%";
+      const tiles = el("div", { class: "stat-grid" },
+        HF.statTile("Tokens", fmt(t.tokens), `${t.agents || 0} agents`),
+        HF.statTile("Tokens / commit", fmt(t.tokensPerCommit), "lower is leaner"),
+        HF.statTile("Accepted commits", t.acceptedCommits || 0, "shipped"),
+        ("cacheHit" in r) && HF.statTile("Cache hit", pct(r.cacheHit), "context reused", { tone: r.cacheHit >= 0.25 ? "good" : "warn" }),
+        ("duplicateContext" in r) && HF.statTile("Duplicate context", pct(r.duplicateContext), "wasted", { tone: r.duplicateContext > 0.2 ? "warn" : "good" }),
+        ("retryCost" in r) && HF.statTile("Retry cost", fmt(r.retryCost), "tokens on retries"));
+      const out = [HF.statusHead(env), HF.section("ROI at a glance", tiles)];
+      if (p.chains && p.chains.length) {
+        out.push(HF.section("Tokens per chain",
+          HF.sparkline(p.chains.map((c) => c.tokens || 0)),
+          el("p", { class: "dag-meta", style: "margin-top:8px" }, p.chains.map((c) => `${c.id}: ${fmt(c.tokens)}`).join("  ·  "))));
+      }
       if (p.phases && p.phases.length) {
         out.push(HF.section("By phase", HF.table(
           [{ label: "Phase" }, { label: "Agents", num: true }, { label: "Tokens", num: true }],
-          p.phases.map((ph) => [ph.name, { text: ph.agents || 0, num: true }, { text: ph.tokens || 0, num: true }]))));
-      }
-      if (p.ratios) {
-        out.push(HF.section("Ratios", el("p", { class: "dag-meta" },
-          Object.entries(p.ratios).map(([k, v]) => `${k}: ${v}`).join("  ·  "))));
+          p.phases.map((ph) => [ph.name, { text: ph.agents || 0, num: true }, { text: fmt(ph.tokens), num: true }]))));
       }
       return out;
     },
