@@ -5,7 +5,7 @@
     "url": "https://github.com/Mohammed-Abdelhady"
   },
   "metadata": {
-    "description": "Official marketplace for Hyperflow — multi-agent orchestration with a reviewed-every-step pipeline, 22 specialist agents, and persistent per-project memory",
+    "description": "Official marketplace for Hyperflow: issue-to-reviewed-PR multi-agent orchestration, 22 specialists, lean mode, local visual artefacts, project memory",
     "version": "5.14.0"
   },
   "plugins": [
@@ -15,7 +15,7 @@
         "source": "url",
         "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
       },
-      "description": "Point it at a GitHub issue and get back a reviewed pull request. Hyperflow turns one AI coding session into a structured engineering pipeline: plan sharpens and decomposes the work, dispatch fans out parallel workers, and a domain specialist reviews every step — nothing ships unreviewed. 18 skills, 22 specialist reviewer and investigator agents, adaptive depth so a 5-line fix never triggers a deep run, and persistent per-project memory that lives in your repo and never leaves it. Runs on whatever model your session already uses — zero config, no API keys, no daemon. Works across Claude Code, Codex App/CLI, OpenCode, Grok, Antigravity, and Cursor.",
+      "description": "Point it at a GitHub issue, get back a reviewed PR. Adaptive multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity, and Cursor. Inline-fast for proven 1-2 file fixes; Worker to Reviewer for the rest. Lean mode default, local visual artefacts and ROI dashboard, project memory that stays in your repo.",
       "version": "5.14.0",
       "author": {
         "name": "Mohammed Abdelhady",
@@ -30,8 +30,10 @@
         "flow-profiles",
         "parallel-execution",
         "code-review",
+        "visual-artefacts",
         "project-memory",
-        "multi-tool"
+        "multi-tool",
+        "lean-mode"
       ],
       "strict": true
     }

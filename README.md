@@ -9,9 +9,11 @@
 
 <p align="center">
   <strong>Point it at a GitHub issue. Get back a reviewed pull request.</strong><br/>
-  Hyperflow turns one AI coding session into an adaptive engineering pipeline — tiny proven-safe edits run inline,
-  while planners design, workers build in parallel, and domain specialists review orchestrated work.<br/>
-  Runs on Claude Code, Codex, OpenCode, Grok, Antigravity &amp; Cursor — on your session model, zero config.
+  One AI coding session becomes an adaptive pipeline: clear 1–2 file fixes run <strong>inline-fast</strong> in the
+  foreground; everything else is planned, built by parallel workers, and reviewed by domain specialists.
+  Plans, graphs, and token/ROI views open in a <strong>local viewer</strong> (loopback only).
+  Lean mode is the default. First use auto-scaffolds the project.<br/>
+  Claude Code, Codex, OpenCode, Grok, Antigravity, and Cursor. Your session model. Zero config.
 </p>
 
 <p align="center">
@@ -70,37 +72,45 @@ codex plugin marketplace add Mohammed-Abdelhady/hyperflow
 codex plugin add hyperflow@hyperflow-marketplace
 ```
 
-Initialize the project once, then invoke any skill:
+Then type a goal. Chain-starters **auto-scaffold** `.hyperflow/` on first use (idempotent; you can still run
+`/hyperflow:scaffold` yourself).
 
 ```text
-/hyperflow:scaffold                                        # first: set up the project (once per repo)
 /hyperflow:issue https://github.com/you/app/issues/42      # issue → triage → plan → dispatch → gated PR
 /hyperflow:plan "add user auth with login + middleware"    # sharpen → design → decompose → dispatch
+/hyperflow:pr https://github.com/you/app/pull/43           # review an incoming PR (real code, not just the diff text)
 /hyperflow:workflow "large migration across the repo"      # big-task workflow lane
 /hyperflow:trace "tests fail after the auth refactor"      # root-cause a bug
 /hyperflow:deploy                                          # pre-push gates + ship
+hyperflow view                                             # local graphs + artefact dashboard (127.0.0.1)
 ```
 
-Auto-routing is on by default — say "audit the diff" or "debug this test" and the right skill runs without the
+Auto-routing is on by default: say "audit the diff" or "debug this test" and the right skill runs without the
 `/hyperflow:*` prefix. In Codex, `hyperflow <skill>` is the portable spelling. Setup and host notes → [Installation](docs/installation.md).
 
-Hyperflow uses **lean mode by default**: it loads only the context needed for the current phase. Pass `mode=default`
-or `--thorough` when you explicitly want the full-context, full-ceremony path.
+**Lean mode is the default.** Only the context for the current phase is loaded. Pass `mode=default` or `--thorough`
+for the full-context, full-ceremony path. Structural gates (build location, audit, deploy, push) stay on either way.
 
 ## What makes it different
 
-- **Review matches the path.** The normal orchestrated path keeps Worker → Reviewer at every granularity, plus a final
-  integration pass. Deterministic inline-fast work uses a foreground diff review because no worker is dispatched.
-- **Memory that's yours.** Learnings, decisions, and pitfalls persist in `.hyperflow/memory/` — plain markdown, committed
-  with your repo, never uploaded, never mixed across projects.
-- **Depth that adapts.** A deterministic preflight admits inline-fast only after observing a clear, reversible change
-  in exactly 1–2 ordinary files. Gated, generated, or migration surfaces — and every uncertain task — keep the normal
-  heavyweight path. Hard ceilings stop profiles at 10k–200k tokens.
+- **Two execution paths, one rule.** Clear, reversible work in exactly 1–2 ordinary files can take **inline-fast**
+  (foreground edit + allowlisted diff review, zero dispatched agents). Everything else uses Worker → Reviewer batches
+  plus a final integration pass. Nothing on the normal path ships unreviewed.
+- **Issue and PR front doors.** `/hyperflow:issue` turns a thread into a gated PR (`Closes #N`). `/hyperflow:pr`
+  audits an incoming PR against real fetched code (static analysis only; merge always gated).
+- **Local visual artefacts.** Plans, specs, task graphs, audits, and usage/ROI tiles render in a self-contained viewer
+  on `127.0.0.1` (`hyperflow view`). Compact JSON payloads, optional offline export, no upload. Prefer markdown only?
+  Set `viewer.enabled=false`.
+- **Memory that stays in the repo.** Learnings live under `.hyperflow/memory/` as plain markdown. Project-scoped,
+  never mixed across repos, never uploaded by the plugin. (Normal orchestrated runs also keep a **local metadata-only
+  usage ledger** for phase/token accounting. No prompts, file contents, or secrets. No cloud analytics.)
+- **Depth and cost that adapt.** Flow profiles (`fast` through `scientific`) cap workers and tokens. Hard ceilings
+  range from 10k to 200k. Lean mode keeps phase context small unless you opt into thorough.
 
 ## How it works
 
-Invoke a skill. Chain-starters auto-advance through the rest — no always-on orchestrator, no background process,
-everything in your terminal, every agent on your current session model.
+Invoke a skill. Chain-starters auto-advance through the rest. No always-on orchestrator, no background daemon:
+everything runs in your terminal on the current session model.
 
 | # | Skill | What it does |
 |---|-------|--------------|
@@ -111,7 +121,8 @@ everything in your terminal, every agent on your current session model.
 | 4 | `audit` | L1–L5 review on the result |
 | 5 | `deploy` | Pre-push gates (lint · typecheck · build · tests · security) → commit → release → push |
 
-`audit` and `deploy` are gates — they fire only on your explicit yes. `scaffold` is a one-time project setup.
+`audit` and `deploy` are gates (explicit yes only). `scaffold` still exists for manual setup; chain-starters also
+auto-scaffold when `.hyperflow/` is missing.
 
 | Role | Does |
 |------|------|
@@ -173,14 +184,22 @@ Learnings live at `.hyperflow/memory/` — plain markdown, committed with your r
 - **Derived index** — `index.md` is rebuilt from the memory files at every session start, so a stored learning is
   never left unindexed and invisible. Writers append to the category file; nothing to register.
 
-## Visual artefacts (local viewer)
+## Visual artefacts (local viewer + dashboard)
 
-Plans, specs, task graphs, audits, and memory don't have to be walls of markdown. With the viewer on (the default), each artefact-producing agent emits a **compact validated JSON payload** instead of hand-writing status tables, ASCII diagrams, and progress bars — and a self-contained local viewer renders it as **interactive graphs**.
+Plans, specs, task graphs, audits, and usage do not have to be walls of markdown. With the viewer on (default),
+artefact producers emit a **compact validated JSON payload**. A self-contained local app renders it.
 
-- **`hyperflow view [slug]`** — serves the viewer on `127.0.0.1` and opens the artefact (or a gallery of every template). Architecture and data-flow diagrams, batch execution graphs, and feature-phase graphs render as real node/edge canvases; decisions flip, sections reveal on scroll.
-- **Zero upload, works offline.** The renderer ships in the plugin and binds loopback only — **nothing leaves your machine**, no daemon, no API key, no external asset. Same privacy posture as memory.
-- **Saves tokens.** Agents stop writing presentation; the substance (decisions, briefs, acceptance criteria) still gets written. A ≤6-line greppable, git-diffable stub stays at each canonical path; `render-artefact.py <slug>` regenerates the full markdown on demand.
-- **Fully optional.** Prefer classic markdown? Set `viewer.enabled=false` in `config/defaults.json` (or `~/.hyperflow/config.json`) and every skill writes full markdown exactly as before. Config: `viewer.enabled` (default `true`), `viewer.port` (`7777`), `viewer.markdown` (`on-demand`/`always`/`never`), `viewer.autoOpen` (`false`).
+- **`hyperflow view [slug]`** — loopback server on `127.0.0.1`, opens one artefact or the searchable index.
+  Architecture / data-flow diagrams, batch graphs, and feature-phase graphs are real node/edge canvases.
+  Live dispatch progress can re-render until a terminal state.
+- **Dashboard / ROI** — usage rollups (phase totals, cache hits, tokens per accepted commit estimates) as tiles
+  and sparklines from the local metadata ledger (`usage-aggregate.py`). No cloud.
+- **Offline export** — self-contained read-only HTML export of an artefact (title HTML-escaped). Zero upload.
+- **Token savings** — agents write substance (decisions, briefs, acceptance criteria), not presentation chrome.
+  A short greppable stub stays at the canonical path; `render-artefact.py <slug>` rebuilds full markdown when needed.
+- **Optional** — set `viewer.enabled=false` in `config/defaults.json` or `~/.hyperflow/config.json` for classic
+  full markdown. Other knobs: `viewer.port` (`7777`), `viewer.markdown` (`on-demand` / `always` / `never`),
+  `viewer.autoOpen` (`false`).
 
 ## Guardrails
 
@@ -205,7 +224,7 @@ Eighteen skills. Two chain-starters auto-advance through the chain; the rest are
 | `pr` | `/hyperflow:pr` | Standalone | Review an incoming pull request — L1–L5 audit on the real diff, one batched GitHub review, fix chain, gated merge |
 | `design` | `/hyperflow:design` | Standalone | Domain-grounded design system + prior-art research + local taste skills, anti-slop; hands off to the build chain |
 | `workflow` | `/hyperflow:workflow` | Big-task lane | Native Claude Code workflows; portable Codex/OpenCode/Grok adapter for migrations, audits, and verification-heavy work |
-| `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims |
+| `scaffold` | `/hyperflow:scaffold` | Standalone | Project setup — `.hyperflow/` cache + multi-tool shims (also auto-run on first chain-starter use) |
 | `trace` | `/hyperflow:trace` | Standalone | Systematic root-cause debugging — 5 Whys, never patches symptoms |
 | `audit` | `/hyperflow:audit` | Standalone | L1 quick → L5 exhaustive review on changes, files, or PRs |
 | `deploy` | `/hyperflow:deploy` | Standalone | Pre-push gates → commit → release → push (push always asks) |

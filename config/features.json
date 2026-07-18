@@ -1,8 +1,8 @@
 {
   "$schema": "./features.schema.json",
   "version": "5.14.0",
-  "tagline": "From GitHub issue to reviewed pull request \u2014 multi-agent orchestration on your session model",
-  "subtitle": "Tiny proven-safe edits run inline; planners, parallel workers, and 22 specialists handle orchestrated work. 18 skills, adaptive depth, persistent per-project memory.",
+  "tagline": "From GitHub issue to reviewed pull request: multi-agent orchestration on your session model",
+  "subtitle": "Inline-fast for proven 1-2 file fixes; planners, parallel workers, and 22 specialists for the rest. Lean mode default, local visual artefacts and ROI, persistent per-project memory.",
   "layers": [
     {
       "n": 0,

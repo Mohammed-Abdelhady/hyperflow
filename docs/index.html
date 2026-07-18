@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hyperflow — Multi-Agent Orchestration for AI Coding CLIs</title>
-  <meta name="description" content="Turn a GitHub issue into a reviewed PR. Hyperflow orchestrates AI coding agents on Claude Code, Codex, OpenCode & Cursor — every step reviewed, memory kept local." />
+  <title>Hyperflow — From GitHub issue to reviewed PR</title>
+  <meta name="description" content="Point it at a GitHub issue, get a reviewed PR. Adaptive multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity, and Cursor. Inline-fast for tiny fixes, specialist review for the rest, local visual artefacts and ROI on 127.0.0.1." />
   <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta name="theme-color" content="#0B0F1A" />
 
@@ -15,19 +15,19 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hyperflow" />
-  <meta property="og:title" content="Hyperflow — Multi-Agent Orchestration for AI Coding CLIs" />
-  <meta property="og:description" content="Turn a GitHub issue into a reviewed PR. Hyperflow orchestrates AI coding agents on Claude Code, Codex, OpenCode & Cursor — every step reviewed, memory kept local." />
+  <meta property="og:title" content="Hyperflow — From GitHub issue to reviewed PR" />
+  <meta property="og:description" content="Adaptive multi-agent orchestration for AI coding CLIs. Inline-fast for proven 1–2 file fixes; Worker → Reviewer for everything else. Local graphs, lean mode, memory that stays in your repo." />
   <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/" />
   <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:alt" content="Hyperflow — from GitHub issue to reviewed PR: plan, dispatch, audit, deploy" />
+  <meta property="og:image:alt" content="Hyperflow: GitHub issue to reviewed PR with plan, dispatch, audit, deploy" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Hyperflow — Multi-Agent Orchestration for AI Coding CLIs" />
-  <meta name="twitter:description" content="Turn a GitHub issue into a reviewed PR. Normal-flow work uses specialist reviews; proven-safe tiny edits use inline diff review." />
+  <meta name="twitter:title" content="Hyperflow — From GitHub issue to reviewed PR" />
+  <meta name="twitter:description" content="Inline-fast for tiny fixes. Specialist-reviewed multi-agent chain for real work. Local visual artefacts and lean mode by default." />
   <meta name="twitter:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -46,7 +46,7 @@
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux",
         "softwareVersion": "5.14.0",
-        "description": "Point it at a GitHub issue, get back a reviewed pull request. Multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity & Cursor — every step reviewed, memory that stays in your repo.",
+        "description": "Point it at a GitHub issue, get back a reviewed pull request. Adaptive multi-agent orchestration for Claude Code, Codex, OpenCode, Grok, Antigravity, and Cursor. Inline-fast for proven 1-2 file fixes; specialist review for the rest. Local visual artefacts and lean mode by default.",
         "url": "https://mohammed-abdelhady.github.io/hyperflow/",
         "downloadUrl": "https://github.com/Mohammed-Abdelhady/hyperflow",
         "license": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
@@ -85,6 +85,7 @@
       <ul class="nav-links" role="list">
         <li class="nav-anchor"><a href="#chain">Chain</a></li>
         <li class="nav-anchor"><a href="#issue-to-pr">Issue → PR</a></li>
+        <li class="nav-anchor"><a href="#viewer">Viewer</a></li>
         <li class="nav-anchor"><a href="#memory">Memory</a></li>
         <li class="nav-anchor"><a href="#install">Install</a></li>
         <li><a href="installation.html">Installation</a></li>
@@ -102,10 +103,10 @@
         <p class="hero-eyebrow">Codex · Claude Code · OpenCode · Grok · Antigravity · Cursor</p>
         <h1 id="hero-heading">Point it at a GitHub issue.<br />Get back a reviewed pull request.</h1>
         <p class="hero-sub">
-          One session becomes a whole engineering team: tiny proven-safe edits run inline; planners design,
-          parallel workers build, and 22 domain specialists review the normal orchestrated path.
-          On your session model, zero config. Learnings persist in local per-project
-          memory — never uploaded, never mixed across repos.
+          One session becomes a full pipeline. Clear 1–2 file fixes run <strong>inline-fast</strong> in the
+          foreground. Everything else is planned, built by parallel workers, and reviewed by 22 specialists.
+          Lean mode is the default. Plans and ROI open in a local viewer on <code>127.0.0.1</code>.
+          First use auto-scaffolds the project. Your session model, zero config.
         </p>
         <div class="hero-cta" role="group" aria-label="Install Hyperflow">
           <span class="cmd"><span class="prompt">$</span> <span id="hero-cmd">curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash</span>
@@ -248,9 +249,9 @@
             <span class="badge badge-plan">Decision agents</span>
             <h3>Plan, route, review</h3>
             <p>
-              Planners, the triage Brain, and 17 specialist reviewers — frontend,
-              security, database, performance, accessibility, and more — routed per
-              task. Reviewers research current best practices and CVEs before judging.
+              Planners, the triage Brain, and domain specialists (frontend, security, database,
+              performance, accessibility, and more) are routed per task. On deep or security work they
+              research current best practices and CVEs before judging.
             </p>
           </div>
           <div class="card reveal">
@@ -319,8 +320,11 @@
               every future session, version-controllable with your repo.
             </p>
             <p>
-              <strong>Never uploaded. Never mixed across repos.</strong> There is no
-              telemetry, no account, no cloud sync — the memory is a folder you own.
+              <strong>Never uploaded. Never mixed across repos.</strong> There is no cloud
+              analytics account and no phone-home. Memory is a folder under
+              <code>.hyperflow/memory/</code>. Normal orchestrated runs also write a
+              <strong>local metadata-only usage ledger</strong> (phase totals, cache hits,
+              no prompts or file contents) for the ROI dashboard.
             </p>
           </div>
           <div class="terminal reveal">
@@ -346,12 +350,30 @@
         <p class="section-label">Visual artefacts</p>
         <h2 id="viewer-heading">See the plan, not a wall of markdown.</h2>
         <p class="section-intro">
-          Plans, specs, task graphs, audits, and token/ROI telemetry render as interactive graphs in a
-          self-contained local viewer — <code>hyperflow view</code>, served on <code>127.0.0.1</code>. Agents emit
-          compact JSON instead of hand-writing verbose markdown, so it saves tokens; the renderer ships in the
-          plugin and binds loopback only, so <strong>nothing leaves your machine</strong>. Prefer classic markdown?
-          One config flag turns it off.
+          Plans, specs, task graphs, audits, and usage/ROI tiles render in a self-contained
+          local viewer (<code>hyperflow view</code> on <code>127.0.0.1</code>). Agents emit compact
+          JSON instead of hand-writing verbose markdown. Live dispatch progress can re-render until
+          the run finishes. Export a read-only offline HTML snapshot when you need to share without
+          a server. Prefer classic markdown? One config flag turns the viewer off.
         </p>
+        <div class="grid-2" style="margin-bottom: 1.5rem;">
+          <div class="card reveal">
+            <span class="badge badge-exec">Local only</span>
+            <h3>Loopback, no upload</h3>
+            <p>
+              The renderer ships in the plugin and binds loopback only. Nothing leaves your machine
+              for viewing. Same privacy posture as project memory.
+            </p>
+          </div>
+          <div class="card reveal">
+            <span class="badge badge-plan">Dashboard</span>
+            <h3>Usage and ROI tiles</h3>
+            <p>
+              Metadata ledger rollups (phase totals, cache hits, tokens per accepted commit estimates)
+              show as tiles and sparklines. No cloud analytics.
+            </p>
+          </div>
+        </div>
         <figure class="viewer-shot reveal">
           <img src="pr-media/visual-artefacts/feature-phase-graph.png" width="1512" height="806"
                loading="lazy" decoding="async"
@@ -375,12 +397,12 @@
               <tr><th scope="col">Profile</th><th scope="col">Use when</th><th scope="col">Shape</th></tr>
             </thead>
             <tbody>
-              <tr><td><strong>fast</strong></td><td>Typos, small fixes, single-file edits</td><td>1 worker, light review</td></tr>
-              <tr><td><strong>standard</strong></td><td>Typical features and refactors</td><td>Parallel batches, per-batch review</td></tr>
-              <tr><td><strong>deep</strong></td><td>Cross-cutting changes, risky surfaces</td><td>Full fan-out, integration review</td></tr>
+              <tr><td><strong>fast</strong></td><td>Clear, reversible 1–2 ordinary-file fixes (inline-fast preflight)</td><td>0 dispatched workers; foreground edit + allowlisted diff review</td></tr>
+              <tr><td><strong>standard</strong></td><td>Typical features and refactors</td><td>1–2 workers; per-batch review</td></tr>
+              <tr><td><strong>deep</strong></td><td>Cross-cutting or risky surfaces</td><td>3+ workers; integration review</td></tr>
               <tr><td><strong>research</strong></td><td>Unknowns needing external evidence</td><td>Web-research-first specialists</td></tr>
               <tr><td><strong>creative</strong></td><td>Design systems, visual work</td><td>Designer + taste review</td></tr>
-              <tr><td><strong>scientific</strong></td><td>Numerical, data, ML correctness</td><td>Reproducibility discipline</td></tr>
+              <tr><td><strong>scientific</strong></td><td>Numerical, data, ML correctness</td><td>Reproducibility discipline + TDD bias</td></tr>
             </tbody>
           </table>
         </div>
@@ -480,14 +502,17 @@
             <span class="install-block-title">First run</span>
           </div>
           <div class="install-code">
-            <span class="comment"># Set up a new project (builds .hyperflow/ cache)</span><br />
-            /hyperflow:scaffold<br />
-            <br />
-            <span class="comment"># Start the full chain from a feature description</span><br />
+            <span class="comment"># Type a goal (first chain-starter auto-scaffolds .hyperflow/ if missing)</span><br />
             /hyperflow:plan "add user auth with login page and middleware"<br />
             <br />
-            <span class="comment"># Or start straight from a GitHub issue</span><br />
-            /hyperflow:issue https://github.com/you/app/issues/42
+            <span class="comment"># Or start from a GitHub issue</span><br />
+            /hyperflow:issue https://github.com/you/app/issues/42<br />
+            <br />
+            <span class="comment"># Optional: open local graphs + dashboard</span><br />
+            hyperflow view<br />
+            <br />
+            <span class="comment"># Optional manual setup still works</span><br />
+            /hyperflow:scaffold
           </div>
         </div>
 
