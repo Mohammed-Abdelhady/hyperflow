@@ -28,7 +28,7 @@
         },
         "autoOpen": {
           "type": "boolean",
-          "description": "Automatically open the browser when an artefact is written in viewer mode. Default: false.",
+          "description": "Auto-open the plan's self-contained HTML view in the browser at the end of /hyperflow:plan (before the build-location gate). Best-effort and non-blocking. Default: false.",
           "default": false
         }
       },
