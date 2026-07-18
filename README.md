@@ -202,6 +202,8 @@ No always-on daemon. Skills run in your terminal on the current session model.
 
 Plans, graphs, audits, and local usage/ROI tiles can render via `hyperflow view` on `127.0.0.1` (loopback only, optional offline export). Agents emit compact JSON; full markdown regenerates on demand. Disable with `viewer.enabled=false`.
 
+At plan completion, `viewer.autoOpen` (default `false`) generates and opens a static, self-contained `.hyperflow/exports/spec-<slug>.html` review template (both Mermaid graphs inlined; not the server) before the build-location gate — headless prints the path. Opt in via `~/.hyperflow/config.json`.
+
 ---
 
 ## Guardrails

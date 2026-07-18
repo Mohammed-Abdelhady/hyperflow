@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Plan-completion auto-open of the static, self-contained plan HTML (`.hyperflow/exports/spec-<slug>.html`, both Mermaid graphs inlined) as a pre-gate review template, gated on `viewer.autoOpen` (default off); headless prints the export path
 - Post-completion reap — slug-scoped archive-first cleanup at dispatch wrap-up, deploy end, and handoff complete (gated on `cleanup.reapOnComplete`), plus `/hyperflow:reap <slug>`
 - `cleanup` config block fully schema-validated: `auto`, `staleDays`, `pruneDays`, `reapOnComplete`, `usageRetentionDays`, `logMaxLines`, `dryRun`, `dropOrphanRefs`
 - Ephemeral retention for unbounded `usage/*.jsonl` ledgers and `.session-start.log` truncation; durable memory optimized in place — an auto-reap drops no durable entry (index rebuild + compaction advisory only). Entry pruning is opt-in (`cleanup.dropOrphanRefs`, default off) and quarantines orphaned entries to `memory/archive/YYYY-MM.md`, never hard-deleting
