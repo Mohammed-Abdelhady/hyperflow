@@ -491,6 +491,90 @@ setup_project_detection() {
   bash "$detection_script" "$project_path"
 }
 
+# ─── Auto-update on session start (opt-in) ───
+
+setup_auto_update() {
+  # Skip if non-interactive
+  if [[ "${INSTALL_NONINTERACTIVE:-0}" == "1" ]] || [[ "$-" != *i* && ! -t 0 ]]; then
+    return
+  fi
+
+  echo ""
+  if ! pick_yes_no "Auto-update hyperflow on every Claude Code session start? (marketplace autoUpdate + a background SessionStart hook that refreshes $INSTALL_DIR). Off by default." "n"; then
+    return
+  fi
+
+  local settings="$HOME/.claude/settings.json"
+  mkdir -p "$HOME/.claude" "$HOME/.hyperflow"
+
+  if ! command -v python3 &>/dev/null; then
+    warn "python3 not found — cannot edit $settings safely. Skipping auto-update setup."
+    return
+  fi
+
+  INSTALL_DIR="$INSTALL_DIR" python3 - "$settings" <<'PYEOF'
+import json, os, sys
+
+settings_path = sys.argv[1]
+install_dir = os.environ.get("INSTALL_DIR", os.path.expanduser("~/.hyperflow/repo"))
+mp_cache = os.path.expanduser("~/.claude/plugins/marketplaces/hyperflow-marketplace")
+log = os.path.expanduser("~/.hyperflow/auto-update.log")
+
+try:
+    with open(settings_path) as f:
+        cfg = json.load(f)
+    if not isinstance(cfg, dict):
+        cfg = {}
+except FileNotFoundError:
+    cfg = {}
+except Exception:
+    print("SKIP: existing settings.json is not valid JSON — not touching it")
+    sys.exit(0)
+
+# 1) Native marketplace auto-update for the Claude Code plugin.
+mkts = cfg.setdefault("extraKnownMarketplaces", {})
+entry = mkts.setdefault("hyperflow-marketplace", {
+    "source": {"source": "github", "repo": "Mohammed-Abdelhady/hyperflow"}
+})
+entry["autoUpdate"] = True
+
+# 2) Async, fail-silent SessionStart hook that refreshes the repo clone
+#    (symlink-based providers) + the marketplace cache. Idempotent.
+MARKER = "hyperflow auto-update"
+cmd = (
+    '{ echo "--- $(date) %s ---"; '
+    'git -C "%s" pull --ff-only; '
+    'git -C "%s" pull --ff-only; } '
+    '>> "%s" 2>&1 || true'
+) % (MARKER, install_dir, mp_cache, log)
+
+hooks = cfg.setdefault("hooks", {})
+sessions = hooks.setdefault("SessionStart", [])
+already = any(
+    MARKER in h.get("command", "")
+    for group in sessions if isinstance(group, dict)
+    for h in group.get("hooks", []) if isinstance(h, dict)
+)
+if not already:
+    sessions.append({
+        "hooks": [{
+            "type": "command",
+            "command": cmd,
+            "async": True,
+            "timeout": 60,
+            "statusMessage": "Updating hyperflow",
+        }]
+    })
+
+with open(settings_path, "w") as f:
+    json.dump(cfg, f, indent=2)
+    f.write("\n")
+print("OK: auto-update enabled" + (" (hook already present)" if already else ""))
+PYEOF
+
+  info "Auto-update enabled — takes effect from your next session (open /hooks or restart to register the hook)."
+}
+
 # ─── Summary ───
 
 print_summary() {
@@ -738,6 +822,8 @@ main() {
   write_config
 
   setup_project_detection
+
+  setup_auto_update
 
   print_summary
 }
