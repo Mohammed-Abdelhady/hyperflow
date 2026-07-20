@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "5.18.0",
+  "version": "5.19.0",
   "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex CLI (preview; desktop App pending certification), OpenCode, Grok, Antigravity, Cursor.",
   "type": "module",
   "license": "MIT",
