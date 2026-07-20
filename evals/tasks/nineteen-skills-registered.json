@@ -1,0 +1,5 @@
+{
+  "id": "nineteen-skills-registered",
+  "title": "features.json skills match skill directories",
+  "checks": ["features_skills_match_dirs"]
+}
