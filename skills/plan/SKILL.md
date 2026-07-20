@@ -132,6 +132,8 @@ Read `.hyperflow/profile.md`, `architecture.md`, `conventions.md`, `.hyperflow/m
 
 ### Step 5 — Clarify (`structured_question` · two modes)
 
+**Decision cards (architecture / privacy / storage / test shape):** when a clarify item is a multi-option irreversible choice (framework, DB shape, auth vendor, test runner, public API surface), present it as a [decision card](../../docs/decision-cards.md) using [`templates/decision-card.md`](../../templates/decision-card.md) — numbered options, one recommended, max 4 choices. After the user locks a number, **same turn** append the lock to `.hyperflow/memory/decisions.md` (title, choice, why, date, revisit-if). Do not re-ask locked decisions later unless requirements conflict.
+
 Pre-flight: read `.hyperflow/memory/project-decisions.md`; skip any candidate already answered there (print one line) unless the cached answer conflicts with this task (then ask "decisions say X — does this task change that?").
 
 **Bounce gate (decompose-only path):** when `ambiguity < 0.4 AND complexity IN [trivial, simple]`, the request is clear — skip Steps 6–8. Ask **0–3** post-analysis questions only for specific unresolved findings, then jump to Step 9.

@@ -1,0 +1,5 @@
+{
+  "id": "memory-hygiene-script",
+  "title": "Memory hygiene script exists",
+  "checks": ["file:scripts/memory-hygiene.py"]
+}

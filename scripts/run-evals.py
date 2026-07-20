@@ -47,6 +47,11 @@ def check(name: str) -> tuple[bool, str]:
             return False, "could not parse skill count from README"
         n = int(m.group(1))
         return n == actual, f"README {n} vs dirs {actual}"
+    if name.startswith("run:"):
+        import subprocess, shlex
+        cmd = name.split(":", 1)[1]
+        r = subprocess.run(shlex.split(cmd), cwd=ROOT, capture_output=True, text=True)
+        return r.returncode == 0, (r.stdout + r.stderr)[-200:]
     if name == "features_skills_match_dirs":
         data = json.loads((ROOT / "config" / "features.json").read_text(encoding="utf-8"))
         registered = set()

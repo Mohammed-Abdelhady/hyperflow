@@ -34,6 +34,13 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Handoff shape test  
 - Optional junior-proof TDD plan habit  
 
+## Shipped in the 5.22 market-bar train
+
+- Market bar scorecard + `score-market-bar.py`
+- vs Superpowers positioning
+- Plan decision-card wiring + dispatch specialist-priority
+- Expanded evals (market bar score gate)
+
 ## Next trains
 
 ### Reliability

@@ -1,0 +1,5 @@
+{
+  "id": "market-bar-score",
+  "title": "Market bar score >= 16/20",
+  "checks": ["run:python3 scripts/score-market-bar.py"]
+}
