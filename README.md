@@ -8,10 +8,10 @@
 <h1 align="center">Hyperflow</h1>
 
 <p align="center">
-  <strong>An engineering system for AI coding agents: rules, memory, templates, and a reviewed multi-agent chain.</strong><br/>
-  Point it at a GitHub issue and get a reviewed PR when that is the job. More broadly, Hyperflow is how the agent
-  <em>learns your repo across sessions</em>, follows a fixed doctrine (not vibes), reuses task templates, and keeps
-  Worker outputs under specialist review.<br/>
+  <strong>Project memory + reviewed multi-agent chain for AI coding CLIs.</strong><br/>
+  Hyperflow is how the agent <em>learns your repo across sessions</em>, follows fixed doctrine
+  (not vibes), reuses task templates, and keeps Worker output under specialist review.
+  Issue→PR is a mode when you need it — not the only job.<br/>
   Claude Code, Codex CLI (preview), OpenCode, Grok, Antigravity, and Cursor. Your session model. Zero extra API keys.
 </p>
 
@@ -29,9 +29,12 @@
 
 <p align="center">
   <a href="https://mohammed-abdelhady.github.io/hyperflow/">Landing site</a> &middot;
+  <a href="docs/getting-started.md">Getting started</a> &middot;
+  <a href="docs/golden-path.md">Golden path</a> &middot;
   <a href="docs/installation.md">Installation</a> &middot;
   <a href="docs/orchestration.md">Orchestration</a> &middot;
   <a href="docs/codex.md">Codex support</a> &middot;
+  <a href="docs/proof.md">Proof</a> &middot;
   <a href="CHANGELOG.md">Changelog</a> &middot;
   <a href="PRIVACY.md">Privacy</a>
 </p>
@@ -47,7 +50,9 @@
 
 ## What Hyperflow is
 
-Hyperflow is a **plugin + doctrine + project workspace** for AI coding CLIs.
+**One line:** project memory + reviewed multi-agent chain for AI coding CLIs.
+
+Hyperflow is a **plugin + doctrine + project workspace** for AI coding CLIs. Start with the [golden path](docs/golden-path.md) (about five minutes). Use [getting started](docs/getting-started.md) for default vs advanced skills.
 
 | Layer | What it is |
 |-------|------------|
@@ -59,6 +64,12 @@ Hyperflow is a **plugin + doctrine + project workspace** for AI coding CLIs.
 | **Cross-session / cross-env handoff** | Two-session mode writes a **git-committed** `.hyperflow-handoff/<slug>/` package so plan in one environment and build in another without relying on gitignored memory alone. |
 
 It is not a hosted agent cloud. It runs in *your* CLI on *your* model. The plugin does not phone home.
+
+### Default skills (start here)
+
+`plan` · `dispatch` · `status` · `cache` · `trace`
+
+Everything else is advanced (issue, pr, audit, deploy, workflow, handoff, …). Full table below.
 
 ---
 
@@ -256,7 +267,8 @@ Every agent uses the **current session model** (no model tier config, no second 
 
 ## Documentation
 
-- [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Codex support matrix](docs/codex.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
+- [Getting started](docs/getting-started.md) · [Golden path](docs/golden-path.md) · [Proof pack](docs/proof.md) · [Roadmap](docs/roadmap.md)
+- [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Dispatch resume](docs/dispatch-resume.md) · [Codex support matrix](docs/codex.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
 - [Memory system](skills/hyperflow/memory-system.md) · [Task templates](skills/hyperflow/task-templates.md) · [Session handoff](skills/hyperflow/session-handoff.md)
 - [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
 
