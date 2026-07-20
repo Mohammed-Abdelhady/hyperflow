@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.22.1] — 2026-07-20
+
+### Changed
+- Move market bar to docs/internal (maintainer-only)
+- Refresh AGENTS.md doctrine stamp for v5.22.0
+
+
 ## [5.22.0] — 2026-07-20
 
 ### Added
@@ -1477,7 +1484,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.1...HEAD
+[5.22.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.0...v5.22.1
 [5.22.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.21.0...v5.22.0
 [5.21.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.20.0...v5.21.0
 [5.20.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.19.0...v5.20.0
