@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.20.0] — 2026-07-20
+
+### Added
+- Memory hygiene scan and specialist priority stack
+
+### Changed
+- Refresh AGENTS.md doctrine stamp for v5.19.0
+
+
 ## [5.19.0] — 2026-07-20
 
 ### Added
@@ -1450,7 +1459,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.19.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.20.0...HEAD
+[5.20.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.19.0...v5.20.0
 [5.19.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.18.0...v5.19.0
 [5.18.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.17.1...v5.18.0
 [5.17.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.17.0...v5.17.1
