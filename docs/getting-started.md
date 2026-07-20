@@ -48,4 +48,8 @@ Daily habit:
 
 1. [Golden path (5 minutes)](golden-path.md)  
 2. [Proof pack](proof.md)  
-3. [Orchestration](orchestration.md)  
+3. [Orchestration](orchestration.md)
+
+## Market bar
+
+We score ourselves in [market-bar.md](market-bar.md). Target: 16/20.

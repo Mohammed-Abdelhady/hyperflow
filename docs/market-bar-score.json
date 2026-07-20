@@ -1,0 +1,13 @@
+{
+  "time_to_first_win": 2,
+  "default_surface": 2,
+  "project_memory": 2,
+  "review_quality": 2,
+  "proof": 2,
+  "evals": 2,
+  "host_honesty": 2,
+  "monorepo_dx": 2,
+  "failure_ux": 2,
+  "differentiation": 2,
+  "total": 20
+}
