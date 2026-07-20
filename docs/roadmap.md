@@ -1,0 +1,48 @@
+# Roadmap (clarity → proof → depth)
+
+Product direction after v5.17. Not a commitment calendar; ordered by leverage.
+
+## Theme
+
+Stop adding surface area. Make the default path obvious, measurable, and reliable.
+
+## Shipped in the 5.18+ clarity train
+
+- Golden path + getting started (default vs advanced)  
+- Proof pack template  
+- This roadmap  
+
+## Next trains
+
+### Reliability
+
+- Eval harness with golden tasks (see `evals/`)  
+- Host parity smoke in CI  
+- Dispatch resume UX (failed chain recovery)  
+- Memory hygiene (conflict + prune quality)  
+
+### Congar-class depth
+
+- Monorepo template (turbo/pnpm gates, dirty worktree isolation)  
+- Decision cards → `.hyperflow/memory/decisions.md`  
+- Handoff round-trip test  
+- Privacy one-pager for skeptical adopters  
+
+### Growth (only after reliability)
+
+- Marketplace listing screenshots from golden path  
+- Honest "Hyperflow vs Superpowers" note (different jobs)  
+- Template gallery (API scaffold, RN screen, marketing polish)  
+
+## Explicit non-goals (near term)
+
+- Hosted agent cloud  
+- Chasing star parity feature-for-feature  
+- More specialist agents without ROI measurement  
+- Claiming certified Codex support while certificates are preview  
+
+## Related
+
+- [Getting started](getting-started.md)  
+- [Golden path](golden-path.md)  
+- [Proof](proof.md)  
