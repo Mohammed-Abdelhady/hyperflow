@@ -9,3 +9,6 @@ node_modules/
 # package must travel via git so a build session in another environment can read it.
 .claude/
 .test/
+
+__pycache__/
+*.py[cod]
