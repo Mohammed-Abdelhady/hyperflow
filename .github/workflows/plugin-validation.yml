@@ -75,6 +75,7 @@ jobs:
           jq empty config/features.json
           jq empty config/features.schema.json
           jq empty config/host-parity.json
+          jq empty config/specialist-priority.json
           jq empty .codex-plugin/plugin.json
           jq empty config/codex-plugin.schema.json
           jq empty tests/fixtures/codex/marketplace-v1.json

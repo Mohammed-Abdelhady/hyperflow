@@ -146,3 +146,7 @@ tools: Read, Grep, Glob, Agent, WebSearch, WebFetch
 **Output format:** verdict block | findings block; `Sources consulted:` when research ran.
 **Composes with:** …
 ```
+
+## Priority stack
+
+Default review order and task-tag subsets live in [`config/specialist-priority.json`](../config/specialist-priority.json). Prefer that list over spawning every specialist.

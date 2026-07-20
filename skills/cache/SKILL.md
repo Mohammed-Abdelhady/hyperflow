@@ -251,3 +251,13 @@ Oldest: 2026-02-14   Newest: 2026-05-16
 - [output-style.md](references/output-style.md) — label and table conventions.
 - [runtime-contract.md](../hyperflow/runtime-contract.md) — `structured_question`, spawn/inline, honest metrics.
 - [DOCTRINE.md](../hyperflow/DOCTRINE.md) — orchestration rules.
+
+## Hygiene check
+
+Read-only conflict scan (does not mutate memory):
+
+```bash
+python3 scripts/memory-hygiene.py --memory-dir .hyperflow/memory
+```
+
+Use before large prune/archive runs. Duplicate decision headings are reported as CONFLICT.
