@@ -17,6 +17,12 @@ Workhorse phase. Picks up a task file from `/hyperflow:plan` and runs it through
 
 This skill exercises **Layer 3 (Orchestrator)**, **Layer 5 (Quality Gates)**, **Layer 6 (Project Memory)**, **Layer 8 (Git Workflow)**, and **Layer 9 (Security)** from the doctrine. Multi-level review (L1–L5) is applied per the triage's flow profile.
 
+
+## Specialist selection
+
+Default reviewer/worker specialist order: [`config/specialist-priority.json`](../../config/specialist-priority.json).
+Use `by_task_tag` when triage tags match (`api`, `mobile`, `web`, `infra`, `data`). Do **not** spawn every agent in `agents/` by default.
+
 ## Runtime contract
 
 Executable operations use [runtime-contract.md](../hyperflow/runtime-contract.md). Transitions and end-of-chain edges: [chain-router.md](../hyperflow/chain-router.md).
