@@ -10,7 +10,14 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 
 - Golden path + getting started (default vs advanced)  
 - Proof pack template  
+- Dispatch resume doc  
 - This roadmap  
+
+## Shipped in the 5.19 reliability train
+
+- Eval harness (`evals/` + `scripts/run-evals.py`)  
+- Host parity config (`config/host-parity.json` + checker)  
+- CI steps for evals + host parity  
 
 ## Next trains
 

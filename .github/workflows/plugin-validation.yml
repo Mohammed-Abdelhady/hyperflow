@@ -48,6 +48,11 @@ jobs:
       - name: Run unit tests
         run: python3 -m unittest discover tests -v
 
+      - name: Eval harness + host parity
+        run: |
+          python3 scripts/run-evals.py
+          python3 scripts/check-host-parity.py
+
       - name: Codex offline-static workflow canaries
         run: python3 tests/codex/workflow_canaries.py --offline-static
 
@@ -69,6 +74,7 @@ jobs:
           jq empty config/schema.json
           jq empty config/features.json
           jq empty config/features.schema.json
+          jq empty config/host-parity.json
           jq empty .codex-plugin/plugin.json
           jq empty config/codex-plugin.schema.json
           jq empty tests/fixtures/codex/marketplace-v1.json
