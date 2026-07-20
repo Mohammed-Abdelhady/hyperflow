@@ -1,4 +1,7 @@
-# Market bar (what "best" means)
+# Market bar (maintainer-only)
+
+**Not public product marketing.** Lives under `docs/internal/` so only maintainers use it to steer fix/feature release trains.
+
 
 Hyperflow does not chase stars. Best means **best operating system for serious AI coding on real repos**.
 
@@ -19,7 +22,7 @@ Score each dimension 0-2. Ship releases until **total >= 16/20** and no dimensio
 
 ## Current self-score (maintainer)
 
-Update via `python3 scripts/score-market-bar.py`.
+Update via `python3 scripts/score-market-bar.py` (writes `docs/internal/market-bar-score.json`).
 
 ## Non-goals
 
