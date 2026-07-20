@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "5.22.1",
+  "version": "5.22.2",
   "description": "Rules, multi-session project memory, templates, and reviewed multi-agent workflows for Codex CLI (preview; desktop App support pending certification). Issue to PR when you need it. Memory and doctrine stay in your project.",
   "author": {
     "name": "Mohammed Abdelhady",

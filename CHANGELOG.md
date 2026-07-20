@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.22.2] — 2026-07-20
+
+### Fixed
+- Stop tracking pycache from market-bar move
+
+### Changed
+- Refresh AGENTS.md doctrine stamp for v5.22.1
+
+
 ## [5.22.1] — 2026-07-20
 
 ### Changed
@@ -1484,7 +1493,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.2...HEAD
+[5.22.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.1...v5.22.2
 [5.22.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.0...v5.22.1
 [5.22.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.21.0...v5.22.0
 [5.21.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.20.0...v5.21.0
