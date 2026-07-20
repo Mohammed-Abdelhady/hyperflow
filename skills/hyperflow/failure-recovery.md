@@ -2,6 +2,10 @@
 
 Canonical retry / escalate / abort policy for Worker errors and Quality Gate failures. Referenced from [DOCTRINE rule 14](DOCTRINE.md). Lifecycle verbs below are semantic ops from [runtime-contract.md](runtime-contract.md); host adapters map them onto live tools.
 
+## Operator resume UX
+
+When a chain fails mid-flight, print the `DISPATCH_RESUME` block and follow [docs/dispatch-resume.md](../../docs/dispatch-resume.md) before re-planning.
+
 ## Why this exists
 
 Before this doc, each skill improvised its failure path. Lint failure in deploy might silently retry; Worker OOM in dispatch might hang waiting for output; a malformed Writer response in spec might cascade into a confused Reviewer. Same skill, three different recovery shapes. This file is the single source of truth so every skill behaves the same when things break.

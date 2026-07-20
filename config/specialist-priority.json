@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "Default specialist order for dispatch review. Prefer fewer high-signal reviewers.",
+  "default_stack": [
+    "architect",
+    "security-reviewer",
+    "backend-reviewer",
+    "api-reviewer",
+    "database-reviewer",
+    "frontend-reviewer",
+    "mobile",
+    "devops-reviewer",
+    "performance-reviewer",
+    "accessibility-reviewer"
+  ],
+  "by_task_tag": {
+    "api": ["architect", "api-reviewer", "backend-reviewer", "database-reviewer", "security-reviewer"],
+    "mobile": ["mobile", "frontend-reviewer", "accessibility-reviewer", "security-reviewer"],
+    "web": ["frontend-reviewer", "accessibility-reviewer", "performance-reviewer", "security-reviewer"],
+    "infra": ["devops-reviewer", "security-reviewer", "architect"],
+    "data": ["database-reviewer", "database-optimization-reviewer", "backend-reviewer"]
+  },
+  "always_optional": [
+    "motion",
+    "data-ml-reviewer",
+    "algorithm-reviewer",
+    "searcher"
+  ],
+  "notes": "Agents should start from default_stack or by_task_tag, not spawn every specialist."
+}
