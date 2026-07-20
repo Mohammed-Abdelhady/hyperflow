@@ -19,6 +19,21 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Host parity config (`config/host-parity.json` + checker)  
 - CI steps for evals + host parity  
 
+
+## Shipped in the 5.20 train
+
+- Memory hygiene script + tests  
+- Specialist priority config  
+- Failure-recovery link to dispatch resume  
+
+## Shipped in the 5.21 train
+
+- Monorepo AGENTS snippet  
+- Decision cards template + docs  
+- Privacy one-pager  
+- Handoff shape test  
+- Optional junior-proof TDD plan habit  
+
 ## Next trains
 
 ### Reliability
