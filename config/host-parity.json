@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "description": "Host support claims vs required smoke evidence. Update when certificates land.",
+  "hosts": [
+    {
+      "id": "claude-code",
+      "claim": "primary",
+      "smoke": "plugin-validation",
+      "status": "supported"
+    },
+    {
+      "id": "codex-cli",
+      "claim": "preview",
+      "smoke": "codex-conformance-offline",
+      "status": "preview_uncertified"
+    },
+    {
+      "id": "codex-app",
+      "claim": "pending",
+      "smoke": "codex-app-conformance-offline",
+      "status": "pending_certification"
+    },
+    {
+      "id": "opencode",
+      "claim": "supported",
+      "smoke": "plugin-validation",
+      "status": "supported_shim"
+    },
+    {
+      "id": "cursor",
+      "claim": "supported",
+      "smoke": "plugin-validation",
+      "status": "supported_shim"
+    },
+    {
+      "id": "grok",
+      "claim": "supported",
+      "smoke": "plugin-validation",
+      "status": "supported_shim"
+    },
+    {
+      "id": "antigravity",
+      "claim": "supported",
+      "smoke": "plugin-validation",
+      "status": "supported_shim"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "id": "default-path-docs",
+  "title": "Golden path and getting started exist and are linked from README",
+  "checks": ["file:docs/golden-path.md", "file:docs/getting-started.md", "readme_contains:docs/golden-path.md", "readme_contains:plan", "readme_contains:dispatch"]
+}
