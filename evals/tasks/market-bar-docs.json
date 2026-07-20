@@ -1,5 +1,5 @@
 {
   "id": "market-bar-docs",
   "title": "Market bar and vs-superpowers docs exist",
-  "checks": ["file:docs/market-bar.md", "file:docs/vs-superpowers.md", "file:docs/decision-cards.md"]
+  "checks": ["file:docs/internal/market-bar.md", "file:docs/vs-superpowers.md", "file:docs/decision-cards.md"]
 }

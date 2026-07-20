@@ -36,10 +36,10 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 
 ## Shipped in the 5.22 market-bar train
 
-- Market bar scorecard + `score-market-bar.py`
+- Maintainer scorecard under docs/internal (not public README)
 - vs Superpowers positioning
 - Plan decision-card wiring + dispatch specialist-priority
-- Expanded evals (market bar score gate)
+- Expanded evals (optional maintainer score gate)
 
 ## Next trains
 
