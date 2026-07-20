@@ -1,0 +1,5 @@
+{
+  "id": "codex-preview-honesty",
+  "title": "README does not claim bare certified Codex without preview qualifier",
+  "checks": ["readme_contains:Codex CLI (preview)", "readme_not_contains:works with-Codex|without preview"]
+}
