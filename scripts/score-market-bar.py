@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Heuristic market-bar score from repo evidence (not vibes alone)."""
+"""Maintainer-only market-bar score (docs/internal). Not a public product claim."""
 from __future__ import annotations
 
 import json
