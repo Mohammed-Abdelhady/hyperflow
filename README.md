@@ -270,7 +270,7 @@ Every agent uses the **current session model** (no model tier config, no second 
 - [Getting started](docs/getting-started.md) · [Golden path](docs/golden-path.md) · [Proof pack](docs/proof.md) · [Roadmap](docs/roadmap.md)
 - [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Dispatch resume](docs/dispatch-resume.md) · [Codex support matrix](docs/codex.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
 - [Memory system](skills/hyperflow/memory-system.md) · [Task templates](skills/hyperflow/task-templates.md) · [Session handoff](skills/hyperflow/session-handoff.md)
-- [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
+- [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [Privacy one-pager](docs/privacy-one-pager.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
 
 ---
 
