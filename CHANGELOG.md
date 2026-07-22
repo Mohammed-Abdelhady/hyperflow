@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.23.0] — 2026-07-22
+
+### Added
+- Deterministic status one-screen and DISPATCH_RESUME emitter
+
+### Changed
+- Refresh AGENTS.md doctrine stamp for v5.22.2
+
+
 ### Added
 - Deterministic project status script with DISPATCH_RESUME emitter (`scripts/status.py`)
 
@@ -1500,7 +1509,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.23.0...HEAD
+[5.23.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.2...v5.23.0
 [5.22.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.1...v5.22.2
 [5.22.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.0...v5.22.1
 [5.22.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.21.0...v5.22.0
