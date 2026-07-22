@@ -41,14 +41,21 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Plan decision-card wiring + dispatch specialist-priority
 - Expanded evals (optional maintainer score gate)
 
+## Shipped in the 5.23 failure-UX train
+
+- Deterministic `scripts/status.py` one-screen snapshot  
+- `DISPATCH_RESUME` emitter (`--resume` / `--resume-only` / `--json`)  
+- Status skill prefers the script; dispatch-resume + failure-recovery wired  
+- Eval + unit tests for status/resume  
+
 ## Next trains
 
 ### Reliability
 
 - Eval harness with golden tasks (see `evals/`)  
 - Host parity smoke in CI  
-- Dispatch resume UX (failed chain recovery)  
 - Memory hygiene (conflict + prune quality)  
+- Status script feature-phase depth + background registry richness  
 
 ### Congar-class depth
 

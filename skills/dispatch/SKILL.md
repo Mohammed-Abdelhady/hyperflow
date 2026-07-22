@@ -258,7 +258,7 @@ When all workers have returned (host `wait` when present; same-turn collection o
 
 _(Path note: `reviewer-prompt-batched.md` lives in `skills/hyperflow/` because it is a cross-skill template shared across the chain; `reviewer-prompt.md` stays in `dispatch/references/` from prior convention. The asymmetric paths are intentional.)_
 
-**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate (add a deeper review pass) → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail.
+**Failure recovery:** DOCTRINE rule 14 — [`skills/hyperflow/failure-recovery.md`](../hyperflow/failure-recovery.md). When a Worker errors out (tool crash, OOM, 5xx, timeout) or returns malformed output: retry → escalate (add a deeper review pass) → abort. After 3 cumulative aborts in the chain, the chain itself aborts and prints the full failure trail. On any abort or mid-chain stop, run `python3 scripts/status.py --resume` (or `--resume-only`) and print the `DISPATCH_RESUME` block before stopping — see [docs/dispatch-resume.md](../../docs/dispatch-resume.md).
 
 Parse the per-sub-task verdicts:
 - `SECURITY_VIOLATION` — **halt the chain** immediately. Surface the finding; do not commit anything in the batch.
