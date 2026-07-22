@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Deterministic project status script with DISPATCH_RESUME emitter (`scripts/status.py`)
+
+### Changed
+- Status skill prefers `scripts/status.py`; dispatch abort path prints resume block
+- Failure-UX market bar requires status script (not docs alone)
+
 ## [5.22.2] — 2026-07-20
 
 ### Fixed

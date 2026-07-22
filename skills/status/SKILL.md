@@ -3,9 +3,9 @@ name: status
 description: |
   Use when the user wants a one-screen view of current hyperflow project state — version, install vs certification, profile freshness, memory count, and live progress on every in-flight task. Read-only; never modifies state, never dispatches workers.
   Trigger with /hyperflow:status, "what is hyperflow doing", "show task progress", "where are we".
-allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Bash(grep:*), Bash(sed:*), Bash(cut:*), Bash(head:*), Bash(awk:*), Glob, Grep
-argument-hint: ""
-version: 3.1.3
+allowed-tools: Read, Bash(git:*), Bash(ls:*), Bash(stat:*), Bash(date:*), Bash(grep:*), Bash(sed:*), Bash(cut:*), Bash(head:*), Bash(awk:*), Bash(python3:*), Glob, Grep
+argument-hint: "[--resume]"
+version: 3.2.0
 license: MIT
 compatibility: Portable — Claude Code, Codex, OpenCode, Antigravity, Cursor, Grok (semantic ops via runtime-contract)
 tags: [introspection, read-only, project-state]
@@ -16,11 +16,31 @@ tags: [introspection, read-only, project-state]
 Read-only snapshot of the current hyperflow project, with live progress on every active task file. Standalone — does
 not auto-chain and is never invoked by other skills. Invoked manually via `/hyperflow:status`.
 
-Semantic host ops used only for reads: `shell` (git/stat/ls), file Read. Never `spawn`, never `edit`, never
+Semantic host ops used only for reads: `shell` (git/stat/ls/python3), file Read. Never `spawn`, never `edit`, never
 `background` fire. Metrics honesty follows [runtime-contract.md](../hyperflow/runtime-contract.md). Output
 conventions: [output-style.md](references/output-style.md).
 
-The skill has four sections:
+## Preferred path (deterministic)
+
+When the plugin checkout is available, **run the script first** and print its stdout. Do not re-parse task files by hand unless the script is missing.
+
+```bash
+# one-screen status (project cwd)
+python3 "$PLUGIN_ROOT/scripts/status.py"
+
+# status + DISPATCH_RESUME blocks (failed / mid-flight chains)
+python3 "$PLUGIN_ROOT/scripts/status.py" --resume
+
+# resume blocks only
+python3 "$PLUGIN_ROOT/scripts/status.py" --resume-only
+
+# machine-readable
+python3 "$PLUGIN_ROOT/scripts/status.py" --json
+```
+
+If `$PLUGIN_ROOT` is unknown, try in order: path next to this skill (`../../scripts/status.py` from `skills/status/`), then `scripts/status.py` under the hyperflow install root. Fall back to the manual parse sections below only when the script cannot run.
+
+The skill has four sections (script covers all of them):
 
 1. **Static snapshot** — version, profile freshness, memory count
 2. **Capabilities** — **installed/enabled** vs **hooks/workflows certified** (never conflated)
