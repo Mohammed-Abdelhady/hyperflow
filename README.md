@@ -249,7 +249,7 @@ Shipped defaults in `config/defaults.json`:
 | `deploy` | `/hyperflow:deploy` | Gates + commit + release + gated push |
 | `cache` | `/hyperflow:cache` | Memory CRUD |
 | `handoff` | `/hyperflow:handoff` | Two-session handoff packages |
-| `status` | `/hyperflow:status` | Read-only project + in-flight snapshot |
+| `status` | `/hyperflow:status` | Read-only project + in-flight snapshot (`scripts/status.py`; `--resume` emits `DISPATCH_RESUME`) |
 | `background` | `/hyperflow:background` | Background agent controls |
 | `sticky` | `/hyperflow:sticky` | Auto-routing mode |
 | `bridge` | `/hyperflow:bridge` | Embed portable doctrine into `CLAUDE.md` |

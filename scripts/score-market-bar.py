@@ -55,9 +55,25 @@ def score() -> list[tuple[str, int, str]]:
     s = 2 if has("templates", "monorepo", "AGENTS.snippet.md") else 1 if has("templates") else 0
     out.append(("monorepo_dx", s, "monorepo template"))
 
-    # 9 failure UX
-    s = 2 if has("docs", "dispatch-resume.md") and "DISPATCH_RESUME" in (ROOT / "docs" / "dispatch-resume.md").read_text(encoding="utf-8") else 1 if has("skills", "hyperflow", "failure-recovery.md") else 0
-    out.append(("failure_ux", s, "dispatch-resume"))
+    # 9 failure UX — docs alone are not enough; require deterministic status/resume script
+    resume_doc = has("docs", "dispatch-resume.md") and "DISPATCH_RESUME" in (
+        ROOT / "docs" / "dispatch-resume.md"
+    ).read_text(encoding="utf-8")
+    status_script = has("scripts", "status.py")
+    s = (
+        2
+        if resume_doc and status_script
+        else 1
+        if resume_doc or has("skills", "hyperflow", "failure-recovery.md")
+        else 0
+    )
+    out.append(
+        (
+            "failure_ux",
+            s,
+            "status.py + dispatch-resume" if s == 2 else "partial failure UX",
+        )
+    )
 
     # 10 differentiation
     s = 2 if has("docs", "vs-superpowers.md") and has("docs", "decision-cards.md") else 1 if "memory" in r.lower() else 0
@@ -76,7 +92,15 @@ def main() -> int:
     # write machine snapshot
     snap = {n: s for n, s, _ in rows}
     snap["total"] = total
-    (ROOT / "docs" / "market-bar-score.json").write_text(json.dumps(snap, indent=2) + "\n", encoding="utf-8")
+    out_dir = ROOT / "docs" / "internal"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "market-bar-score.json").write_text(
+        json.dumps(snap, indent=2) + "\n", encoding="utf-8"
+    )
+    # legacy path kept in sync only if still present (pre-internal move)
+    legacy = ROOT / "docs" / "market-bar-score.json"
+    if legacy.is_file():
+        legacy.write_text(json.dumps(snap, indent=2) + "\n", encoding="utf-8")
     return 0 if total >= target else 1
 
 
