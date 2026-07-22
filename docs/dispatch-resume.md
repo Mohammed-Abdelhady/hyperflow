@@ -4,20 +4,28 @@ When `plan` → `dispatch` dies mid-chain, do not restart from zero.
 
 ## One-screen recovery
 
-Run:
+Prefer the deterministic script (same output the `/hyperflow:status` skill should print):
 
-```text
-/hyperflow:status
+```bash
+python3 scripts/status.py --resume
 ```
+
+Or from a non-plugin cwd with the install root known:
+
+```bash
+python3 "$PLUGIN_ROOT/scripts/status.py" --root /path/to/project --resume
+```
+
+Agent shortcut: `/hyperflow:status` (skill runs the script when available).
 
 Then answer:
 
 | Question | Where to look |
 |---|---|
-| What feature/slug was running? | `.hyperflow/` tasks / artefacts / status output |
-| Which batch finished? | Task file batch checkboxes / Evidence |
-| What failed? | Last worker error, gate log, `WORKER_ABORT` line |
-| What memory is trusted? | `.hyperflow/memory/decisions.md` + learnings (hot tier) |
+| What feature/slug was running? | `DISPATCH_RESUME` slug / `.hyperflow/tasks/` / status output |
+| Which batch finished? | `finished_batches` / task file batch checkboxes / Evidence |
+| What failed? | `failed_at` + `error` / `WORKER_ABORT` line / gate log |
+| What memory is trusted? | `memory_ok` / `.hyperflow/memory/decisions.md` + learnings (hot tier) |
 
 ## Resume rules
 
@@ -29,7 +37,7 @@ Then answer:
 
 ## Print template (agents)
 
-When dispatch fails, print exactly:
+When dispatch fails, run `python3 scripts/status.py --resume-only` (or print the same shape by hand):
 
 ```text
 DISPATCH_RESUME
@@ -47,4 +55,4 @@ Then stop for structural user input only if the next step is abort, push, or dep
 
 - [Failure recovery](../skills/hyperflow/failure-recovery.md)  
 - [Orchestration](orchestration.md)  
-- `/hyperflow:status`  
+- `/hyperflow:status` · `scripts/status.py`  

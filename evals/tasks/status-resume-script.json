@@ -1,0 +1,10 @@
+{
+  "id": "status-resume-script",
+  "title": "Deterministic status + DISPATCH_RESUME script exists",
+  "checks": [
+    "file:scripts/status.py",
+    "file:tests/test_status.py",
+    "file:docs/dispatch-resume.md",
+    "run:python3 scripts/status.py --help"
+  ]
+}
