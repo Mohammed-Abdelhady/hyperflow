@@ -147,6 +147,26 @@ WORKER_ABORT: implementer · tool timeout
             after = {p.name for p in hf.iterdir()}
             self.assertEqual(before, after)
 
+    def test_memory_ok_polarity_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            tasks = root / ".hyperflow" / "tasks"
+            mem = root / ".hyperflow" / "memory"
+            tasks.mkdir(parents=True)
+            mem.mkdir(parents=True)
+            (mem / "decisions.md").write_text(
+                "## Use Hono\nlocked\n\n## Avoid Hono\nold note\n",
+                encoding="utf-8",
+            )
+            (tasks / "t.md").write_text(
+                "## Status\n\n| Status | in_progress |\n| Progress | 0 / 1 |\n\n- [ ] a\n",
+                encoding="utf-8",
+            )
+            r = _run("--root", str(root), "--resume-only")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("memory_ok: review memory", r.stdout)
+            self.assertIn("polarity", r.stdout.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

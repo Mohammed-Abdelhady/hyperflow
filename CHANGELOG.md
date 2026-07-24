@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Memory hygiene depth: polarity conflicts (Use X vs Avoid X), near-duplicate topics, cold/empty/tag prune hints, `--strict` / `--json` / `--threshold`
+- Status `memory_ok` and DISPATCH_RESUME share the hygiene scanner
+
+### Changed
+- Cache skill hygiene section documents CONFLICT / WARN / PRUNE prefixes
+
 ## [5.23.0] — 2026-07-22
+
 
 ### Added
 - Deterministic status one-screen and DISPATCH_RESUME emitter
