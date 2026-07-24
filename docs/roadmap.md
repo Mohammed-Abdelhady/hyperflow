@@ -48,14 +48,21 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Status skill prefers the script; dispatch-resume + failure-recovery wired  
 - Eval + unit tests for status/resume  
 
+## Shipped in the 5.24 memory-hygiene depth train
+
+- Conflict quality beyond duplicate headings (Use/Avoid polarity, near-duplicate topics)  
+- Prune suggestions (compaction threshold, cold entries, empty bodies, missing type tags)  
+- `--strict` / `--json` / `--threshold`; status `memory_ok` shares scanner  
+- Expanded unit tests + eval checks  
+
 ## Next trains
 
 ### Reliability
 
 - Eval harness with golden tasks (see `evals/`)  
 - Host parity smoke in CI  
-- Memory hygiene (conflict + prune quality)  
 - Status script feature-phase depth + background registry richness  
+- Memory auto-archive helpers (still manual compact)  
 
 ### Congar-class depth
 

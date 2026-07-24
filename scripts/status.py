@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import subprocess
@@ -25,6 +26,25 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = PLUGIN_ROOT / "skills" / "hyperflow" / "VERSION"
+_HYGIENE_PATH = Path(__file__).resolve().parent / "memory-hygiene.py"
+
+
+def _load_memory_hygiene():
+    """Load scripts/memory-hygiene.py (hyphenated filename) once."""
+    name = "hyperflow_memory_hygiene"
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, _HYGIENE_PATH)
+    if spec is None or spec.loader is None:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    try:
+        spec.loader.exec_module(mod)
+    except Exception:
+        sys.modules.pop(name, None)
+        return None
+    return mod
 
 CHECKBOX_RE = re.compile(r"^- \[(?P<mark>[ xX~])\]\s*(?P<body>.+)$", re.MULTILINE)
 TABLE_ROW_RE = re.compile(
@@ -278,11 +298,20 @@ def _memory_line(hf: Path) -> str:
 
 
 def _memory_ok(hf: Path) -> str:
-    decisions = hf / "memory" / "decisions.md"
+    """Delegate to memory-hygiene (duplicate + polarity conflicts); fall back lightly."""
+    mem = hf / "memory"
+    hygiene = _load_memory_hygiene()
+    if hygiene is not None and hasattr(hygiene, "memory_ok_summary"):
+        try:
+            return str(hygiene.memory_ok_summary(mem))
+        except Exception:
+            pass
+    decisions = mem / "decisions.md"
+    if not mem.is_dir():
+        return "review decisions.md (missing dir)"
     if not decisions.is_file():
         return "review decisions.md (missing)"
     text = _read_text(decisions)
-    # light conflict: duplicate H2/H3
     titles: dict[str, int] = {}
     for line in text.splitlines():
         m = re.match(r"^#{2,3}\s+(.+)$", line.strip())
