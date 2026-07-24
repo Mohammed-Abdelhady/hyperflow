@@ -254,10 +254,20 @@ Oldest: 2026-02-14   Newest: 2026-05-16
 
 ## Hygiene check
 
-Read-only conflict scan (does not mutate memory):
+Read-only conflict + prune scan (does not mutate memory):
 
 ```bash
 python3 scripts/memory-hygiene.py --memory-dir .hyperflow/memory
+python3 scripts/memory-hygiene.py --memory-dir .hyperflow/memory --json
+python3 scripts/memory-hygiene.py --memory-dir .hyperflow/memory --strict   # exit 1 on CONFLICT
 ```
 
-Use before large prune/archive runs. Duplicate decision headings are reported as CONFLICT.
+Use before large prune/archive runs. Reports:
+
+| Prefix | Meaning |
+|---|---|
+| `CONFLICT` | Duplicate decision headings, or polarity clash (e.g. **Use X** vs **Avoid X**) |
+| `WARN` | Near-duplicate topics, titles shared across `decisions.md` and `project-decisions.md` |
+| `PRUNE` | Compaction candidates (over line threshold), cold-tier entries, empty bodies, missing type tags |
+
+`--strict` fails CI/local gates when CONFLICT rows exist; PRUNE/WARN stay advisory. `/hyperflow:status` and `DISPATCH_RESUME` `memory_ok` use the same scanner.
