@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.24.0] — 2026-07-24
+
+### Added
+- Deepen memory hygiene conflicts and prune hints
+
+### Changed
+- Refresh AGENTS.md doctrine stamp for v5.23.0
+
+
 ### Added
 - Memory hygiene depth: polarity conflicts (Use X vs Avoid X), near-duplicate topics, cold/empty/tag prune hints, `--strict` / `--json` / `--threshold`
 - Status `memory_ok` and DISPATCH_RESUME share the hygiene scanner
@@ -1517,7 +1526,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.23.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.24.0...HEAD
+[5.24.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.23.0...v5.24.0
 [5.23.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.2...v5.23.0
 [5.22.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.1...v5.22.2
 [5.22.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.0...v5.22.1
