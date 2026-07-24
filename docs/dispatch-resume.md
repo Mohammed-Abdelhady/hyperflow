@@ -25,7 +25,7 @@ Then answer:
 | What feature/slug was running? | `DISPATCH_RESUME` slug / `.hyperflow/tasks/` / status output |
 | Which batch finished? | `finished_batches` / task file batch checkboxes / Evidence |
 | What failed? | `failed_at` + `error` / `WORKER_ABORT` line / gate log |
-| What memory is trusted? | `memory_ok` / `.hyperflow/memory/decisions.md` + learnings (hot tier) |
+| What memory is trusted? | `memory_ok` (from `scripts/memory-hygiene.py`: duplicate + polarity conflicts) / `.hyperflow/memory/decisions.md` + learnings (hot tier) |
 
 ## Resume rules
 
@@ -46,8 +46,10 @@ finished_batches: <n>
 failed_at: <batch|gate|worker|review>
 error: <one line>
 next: <re-dispatch batch K | fix gates | abort>
-memory_ok: <yes|review decisions.md>
+memory_ok: <yes|review memory (...conflict...)>
 ```
+
+`memory_ok` is produced by the same scanner as `scripts/memory-hygiene.py` (duplicate headings + Use/Avoid polarity clashes). Run `python3 scripts/memory-hygiene.py --memory-dir .hyperflow/memory` for CONFLICT/WARN/PRUNE detail before resuming when it is not `yes`.
 
 Then stop for structural user input only if the next step is abort, push, or deploy.
 

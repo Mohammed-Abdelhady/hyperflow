@@ -1,5 +1,10 @@
 {
   "id": "memory-hygiene-script",
-  "title": "Memory hygiene script exists",
-  "checks": ["file:scripts/memory-hygiene.py"]
+  "title": "Memory hygiene conflict + prune scanner",
+  "checks": [
+    "file:scripts/memory-hygiene.py",
+    "file:tests/test_memory_hygiene.py",
+    "run:python3 scripts/memory-hygiene.py --help",
+    "run:python3 -c \"import pathlib,re; t=pathlib.Path('scripts/memory-hygiene.py').read_text(); assert 'polarity' in t and 'PRUNE' in t and '--strict' in t\""
+  ]
 }
