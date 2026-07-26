@@ -167,6 +167,199 @@ WORKER_ABORT: implementer · tool timeout
             self.assertIn("memory_ok: review memory", r.stdout)
             self.assertIn("polarity", r.stdout.lower())
 
+    def test_feature_phase_progress_and_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            feat = root / ".hyperflow" / "features" / "checkout-redesign"
+            p1 = feat / "phase-1-data-layer"
+            p2 = feat / "phase-2-api"
+            p3 = feat / "phase-3-ui"
+            for d in (p1, p2, p3):
+                d.mkdir(parents=True)
+            (feat / "feature.md").write_text(
+                """# Feature: checkout
+
+## Status
+
+| Field | Value |
+|---|---|
+| Status | in_progress |
+| Branch | `feat/checkout-redesign` |
+""",
+                encoding="utf-8",
+            )
+            (p1 / "phase.md").write_text(
+                """## Status
+
+| Status | completed |
+| Progress | 2 / 2 tasks |
+
+## Tasks
+- [x] T1 models
+- [x] T2 migrations
+""",
+                encoding="utf-8",
+            )
+            (p2 / "phase.md").write_text(
+                """## Status
+
+| Status | in_progress |
+| Progress | 2 / 5 tasks (40%) |
+| Depends on | phase-1-data-layer |
+
+## Exit criteria
+- [ ] API green
+
+## Tasks
+- [x] T1 routes
+- [x] T2 schemas
+- [~] T3 handlers
+- [ ] T4 auth
+- [ ] T5 tests
+""",
+                encoding="utf-8",
+            )
+            (p3 / "phase.md").write_text(
+                """## Status
+
+| Status | pending |
+| Depends on | phase-2-api |
+
+## Tasks
+- [ ] UI shell
+""",
+                encoding="utf-8",
+            )
+            r = _run("--root", str(root), "--resume")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("Feature: checkout-redesign", r.stdout)
+            self.assertIn("1 / 3 phases", r.stdout)
+            self.assertIn("phase-2-api", r.stdout)
+            self.assertIn("2/5", r.stdout)
+            self.assertIn("running: T3 handlers", r.stdout)
+            self.assertIn("depends on phase-2-api", r.stdout)
+            self.assertIn("DISPATCH_RESUME", r.stdout)
+            self.assertIn("slug: checkout-redesign", r.stdout)
+            self.assertIn("phase: phase-2-api", r.stdout)
+            self.assertIn("finished_batches: 1", r.stdout)
+
+            j = _run("--root", str(root), "--json")
+            self.assertEqual(j.returncode, 0, j.stdout + j.stderr)
+            data = json.loads(j.stdout)
+            self.assertEqual(len(data["features"]), 1)
+            feat_j = data["features"][0]
+            self.assertEqual(feat_j["current_phase"], "phase-2-api")
+            self.assertTrue(feat_j["needs_resume"])
+            p2j = next(p for p in feat_j["phases"] if p["name"] == "phase-2-api")
+            self.assertEqual(p2j["done"], 2)
+            self.assertEqual(p2j["total"], 5)
+            self.assertEqual(p2j["running"], "T3 handlers")
+            self.assertEqual(p2j["exit_criteria_open"], 1)
+
+    def test_feature_phase_tasks_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            phase = root / ".hyperflow" / "features" / "f" / "phase-1-core"
+            tasks = phase / "tasks"
+            tasks.mkdir(parents=True)
+            (root / ".hyperflow" / "features" / "f" / "feature.md").write_text(
+                "## Status\n\n| Status | in_progress |\n",
+                encoding="utf-8",
+            )
+            (phase / "phase.md").write_text(
+                "## Status\n\n| Status | in_progress |\n",
+                encoding="utf-8",
+            )
+            (tasks / "T1-a.md").write_text(
+                "## Status\n\n| Status | completed |\n", encoding="utf-8"
+            )
+            (tasks / "T2-b.md").write_text(
+                "## Status\n\n| Status | in_progress |\n\n- [~] mid\n",
+                encoding="utf-8",
+            )
+            (tasks / "T3-c.md").write_text(
+                "## Status\n\n| Status | pending |\n", encoding="utf-8"
+            )
+            r = _run("--root", str(root), "--json")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            data = json.loads(r.stdout)
+            p = data["features"][0]["phases"][0]
+            self.assertEqual(p["done"], 1)
+            self.assertEqual(p["total"], 3)
+            self.assertEqual(p["pending"], 1)
+            self.assertIn("mid", p["running"] or "")
+
+    def test_background_agents_key_and_timeout_stall(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            bg = root / ".hyperflow" / "background"
+            bg.mkdir(parents=True)
+            (root / ".hyperflow").mkdir(exist_ok=True)
+            (bg / "registry.json").write_text(
+                json.dumps(
+                    {
+                        "agents": [
+                            {
+                                "id": "bg-1-gates",
+                                "purpose": "Layer 5 quality gates",
+                                "status": "running",
+                                "fired_at": "2020-01-01T00:00:00Z",
+                                "timeout_at": "2020-01-01T00:30:00Z",
+                                "output_buffer": ".hyperflow/background/bg-1-gates.md",
+                                "blocks_step": None,
+                            },
+                            {
+                                "id": "bg-2-ci",
+                                "purpose": "CI watcher",
+                                "status": "complete",
+                                "collected": False,
+                                "output_buffer": ".hyperflow/background/bg-2-ci.md",
+                            },
+                            {
+                                "id": "bg-3-ok",
+                                "purpose": "still running",
+                                "status": "running",
+                                "timeout_at": "2099-01-01T00:00:00Z",
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            r = _run("--root", str(root), "--json")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            data = json.loads(r.stdout)
+            bgj = data["background"]
+            self.assertIsInstance(bgj, dict)
+            self.assertEqual(bgj["counts"]["stalled"], 1)
+            self.assertEqual(bgj["counts"]["uncollected"], 1)
+            self.assertEqual(bgj["counts"]["running"], 1)
+            ids = {a["id"]: a["status"] for a in bgj["agents"]}
+            self.assertEqual(ids["bg-1-gates"], "stalled")
+            self.assertEqual(ids["bg-2-ci"], "uncollected")
+            self.assertEqual(ids["bg-3-ok"], "running")
+
+            text = _run("--root", str(root))
+            self.assertEqual(text.returncode, 0, text.stdout + text.stderr)
+            self.assertIn("Background", text.stdout)
+            self.assertIn("1 running", text.stdout)
+            self.assertIn("1 uncollected", text.stdout)
+            self.assertIn("1 stalled", text.stdout)
+            self.assertIn("bg-1-gates", text.stdout)
+
+    def test_background_legacy_jobs_key(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            bg = root / ".hyperflow" / "background"
+            bg.mkdir(parents=True)
+            (bg / "registry.json").write_text(
+                json.dumps({"jobs": [{"id": "j1", "status": "running", "purpose": "x"}]}),
+                encoding="utf-8",
+            )
+            r = _run("--root", str(root), "--json")
+            data = json.loads(r.stdout)
+            self.assertEqual(data["background"]["counts"]["running"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
