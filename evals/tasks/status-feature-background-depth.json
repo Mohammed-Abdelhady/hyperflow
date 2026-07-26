@@ -1,0 +1,10 @@
+{
+  "id": "status-feature-background-depth",
+  "title": "Status script covers feature-phase progress and background agents registry",
+  "checks": [
+    "file:scripts/status.py",
+    "file:tests/test_status.py",
+    "run:python3 -c \"import pathlib; t=pathlib.Path('scripts/status.py').read_text(); assert 'agents' in t and '_phase_task_progress' in t and '_normalize_bg_status' in t\"",
+    "run:python3 -m unittest tests.test_status -v"
+  ]
+}

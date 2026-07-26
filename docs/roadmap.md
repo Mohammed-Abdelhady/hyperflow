@@ -55,13 +55,18 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - `--strict` / `--json` / `--threshold`; status `memory_ok` shares scanner  
 - Expanded unit tests + eval checks  
 
+## Shipped in the 5.25 status depth train
+
+- Feature-phase progress: tasks/ files, Progress row, Tasks checkboxes, current phase, depends-on  
+- Background registry: canonical `agents` key, timeout→stalled, uncollected, per-agent rows + JSON  
+- DISPATCH_RESUME for mid-flight features (`phase:` field)  
+
 ## Next trains
 
 ### Reliability
 
 - Eval harness with golden tasks (see `evals/`)  
 - Host parity smoke in CI  
-- Status script feature-phase depth + background registry richness  
 - Memory auto-archive helpers (still manual compact)  
 
 ### Congar-class depth
