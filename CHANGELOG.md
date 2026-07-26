@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.25.0] — 2026-07-26
+
+### Added
+- Deepen status feature-phase progress and background registry
+
+### Changed
+- Refresh AGENTS.md doctrine stamp for v5.24.0
+
+
 ### Added
 - Status feature-phase depth + background registry richness
 
@@ -1529,7 +1538,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.24.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.25.0...HEAD
+[5.25.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.24.0...v5.25.0
 [5.24.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.23.0...v5.24.0
 [5.23.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.2...v5.23.0
 [5.22.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.22.1...v5.22.2
