@@ -22,8 +22,8 @@ Then answer:
 
 | Question | Where to look |
 |---|---|
-| What feature/slug was running? | `DISPATCH_RESUME` slug / `.hyperflow/tasks/` / status output |
-| Which batch finished? | `finished_batches` / task file batch checkboxes / Evidence |
+| What feature/slug was running? | `DISPATCH_RESUME` slug (+ `phase:` for multi-phase features) / `.hyperflow/tasks/` / `.hyperflow/features/` / status output |
+| Which batch finished? | `finished_batches` / task file batch checkboxes / feature phases completed / Evidence |
 | What failed? | `failed_at` + `error` / `WORKER_ABORT` line / gate log |
 | What memory is trusted? | `memory_ok` (from `scripts/memory-hygiene.py`: duplicate + polarity conflicts) / `.hyperflow/memory/decisions.md` + learnings (hot tier) |
 
@@ -41,11 +41,12 @@ When dispatch fails, run `python3 scripts/status.py --resume-only` (or print the
 
 ```text
 DISPATCH_RESUME
-slug: <feature-slug>
+slug: <feature-or-task-slug>
+phase: <phase-n-name>          # multi-phase features only
 finished_batches: <n>
-failed_at: <batch|gate|worker|review>
+failed_at: <batch|gate|worker|review|phase>
 error: <one line>
-next: <re-dispatch batch K | fix gates | abort>
+next: <re-dispatch batch K | re-dispatch phase … | fix gates | abort>
 memory_ok: <yes|review memory (...conflict...)>
 ```
 

@@ -88,18 +88,20 @@ Rules:
 ### Active features (multi-phase work)
 
 For every `.hyperflow/features/*/feature.md` (see [feature-phases.md](../hyperflow/feature-phases.md)), parse its
-`## Status` block and the phase roster, then for each `phase-<n>-*/phase.md` show the phase status + Progress bar:
+`## Status` block and the phase roster, then for each `phase-<n>-*/phase.md` show the phase status + Progress bar.
+Progress prefers (1) `phase/tasks/*.md` status files, (2) the phase `Progress` table row, (3) `## Tasks` checkboxes
+(exit-criteria checkboxes are not counted as tasks):
 
 ```
-── Feature: checkout-redesign ──  (2 / 3 phases)
-  phase-1-data-layer   completed
-  phase-2-api          in_progress  [████░░░░]  2/5 tasks · running: T3-handlers
+── Feature: checkout-redesign ──  (2 / 3 phases)  branch feat/checkout-redesign
+  Current     phase-2-api
+  phase-1-data-layer   completed  [██████████] 2/2
+  phase-2-api          in_progress  [████░░░░░░] 2/5 · running: T3-handlers
   phase-3-ui           pending      depends on phase-2
 ```
 
-The per-phase bar uses the same parsing as the per-task-file section below (each `phase.md` carries the same
-`## Status` block shape). Omit this section when no `.hyperflow/features/*/` exist. Use plain words only — no
-decorative status icons (see [output-style.md](references/output-style.md) banned characters).
+`--resume` / `--resume-only` also emit `DISPATCH_RESUME` blocks for mid-flight features (includes `phase:`).
+`--slug` accepts a feature folder name as well as a flat task slug.
 
 ### In-flight work (per task file)
 
@@ -118,12 +120,22 @@ For every `.hyperflow/tasks/*.md`, parse its `## Status` block (written by `/hyp
 
 ### Background (optional)
 
-If `.hyperflow/background/registry.json` exists and has entries, print a one-line summary:
-`Background  N running · N uncollected · N stalled` (counts from real registry only).
+If `.hyperflow/background/registry.json` exists and has entries under `agents` (canonical),
+`jobs`, or `entries`, print a one-line summary plus up to five agent rows:
 
-If missing or empty: omit the section, or print `Background  (none)` — never invent job IDs. On hosts without the
-`background` op, do not claim in-flight background agents unless the registry literally contains them from a prior
-capable session.
+```
+Background  N running · N uncollected · N stalled
+  - bg-<id>  running  <purpose>
+  - bg-<id>  stalled  <purpose>  (timeout <iso>)
+```
+
+Counts come from real registry only. `running` past `timeout_at` is treated as **stalled**.
+`complete` with `collected: false` counts as **uncollected**. If missing or empty: omit the
+section, or print `Background  (none)` — never invent job IDs. On hosts without the
+`background` op, do not claim in-flight background agents unless the registry literally
+contains them from a prior capable session.
+
+JSON mode exposes structured `background.summary`, `background.counts`, and `background.agents`.
 
 ## How to compute each field
 
