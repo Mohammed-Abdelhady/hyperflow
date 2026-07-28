@@ -78,8 +78,17 @@ Per [memory-system.md](references/memory-system.md) pruning protocol:
 Print summary of removed/archived counts.
 
 ### `archive`
-Compress hot entries older than 30 days → `.hyperflow/memory/archive/YYYY-MM.md`.
+Compress cold entries older than 30 days → `.hyperflow/memory/archive/YYYY-MM.md`.
 Leave one-line summary in original file. The stub keeps its date, so the derived index re-tiers it to `cold` on its own.
+
+**Prefer the deterministic helper** (no LLM):
+
+```bash
+python3 <plugin-root>/scripts/memory-compact.py --memory-dir .hyperflow/memory --mode archive
+python3 <plugin-root>/scripts/memory-compact.py --memory-dir .hyperflow/memory --mode archive --apply
+```
+
+Dry-run is default; `--apply` mutates. Same stub + monthly archive contract as `compact`.
 
 ### `clear` (STRUCTURAL DESTRUCTIVE GATE — never silent)
 
@@ -116,19 +125,29 @@ Do not require Claude-only paths when they are absent; do not invent migrated co
 Print: "Memory writes disabled for this session." No files modified.
 
 ### `compact`
-User-invoked memory compaction. Summarises entries older than 7 days into stub lines and preserves the full text in monthly archive sidecars at `.hyperflow/memory/archive/YYYY-MM.md`.
+User-invoked memory compaction. Replaces entries older than 7 days with one-line stubs and preserves the full text in monthly archive sidecars at `.hyperflow/memory/archive/YYYY-MM.md`.
 
-Flow:
-1. The compact subcommand handler reads the target memory file (default: `learnings.md`; pass a path to target another).
-2. The Date/tag parser splits entries into hot (≤7 days, preserved) and eligible (>7 days). Both `[domain, type]` and legacy backticked `` `[domain, type]` `` tag forms are accepted.
-3. **Compaction Writer** — prefer `spawn` for an independent writer child when the host collaboration inventory exposes it; otherwise run a labelled **inline worker** phase (`Worker — compacting memory entries`). Never require an unmapped Claude-only Agent API as the sole path ([runtime-contract.md](../hyperflow/runtime-contract.md)).
-4. The Stub formatter renders each replacement line as `### [YYYY-MM-DD] Short title  [domain, type] — summarized, see archive/YYYY-MM.md`.
-5. **Dedup Reviewer** — separate `spawn` or labelled **inline reviewer** phase (`**Reviewer** — memory compact dedup`). Source-side stub-line match and archive-side header match (date + title + tags). Workers never self-review.
-6. The Archive-sidecar writer appends accepted entries to `archive/YYYY-MM.md`, grouped by each entry's calendar month.
-7. The source file is rewritten with stubs replacing the original entries.
-8. Refresh `.hyperflow/memory/.checksums` (memory-scoped sidecar — distinct from `.hyperflow/.checksums` which scaffold staleness owns) when that sidecar is in use, then print a summary.
+**Prefer the deterministic helper** (no LLM, default dry-run):
 
-Output: `N entries compacted into archive/YYYY-MM.md · M stubs rejected as duplicates · source N→M lines`. Full protocol in [compaction.md](references/compaction.md).
+```bash
+python3 <plugin-root>/scripts/memory-compact.py --memory-dir .hyperflow/memory
+python3 <plugin-root>/scripts/memory-compact.py --memory-dir .hyperflow/memory --apply
+python3 <plugin-root>/scripts/memory-compact.py --memory-dir .hyperflow/memory --file learnings.md --apply
+```
+
+Resolve `<plugin-root>` like bridge (`$CODEX_PLUGIN_ROOT` / `$CLAUDE_PLUGIN_ROOT` / path relative to this skill). After `--apply`, the script rebuilds `index.md` + `.checksums` via `memory-index.py`.
+
+Mechanical flow (script):
+1. Parse target category files (default: learnings/decisions/pitfalls/patterns/conventions; skips `anti-patterns.md` + `project-decisions.md` unless `--include-special`).
+2. Date/tag parser splits hot (≤7 days) vs eligible (>7 days). Accepts both `[domain, type]` and legacy `` `[domain, type]` ``.
+3. Skip already-stubbed lines (`— summarized, see archive/…`).
+4. Append full original blocks to `archive/YYYY-MM.md` (header dedup: date + title + tags).
+5. Rewrite source with stubs: `### [YYYY-MM-DD] Short title  [domain, type] — summarized, see archive/YYYY-MM.md`.
+6. Rebuild derived index/checksums.
+
+**LLM path (optional):** only when the user wants shorter rewritten titles/bodies beyond mechanical stubbing — Compaction Writer + Dedup Reviewer as labelled inline/spawn phases. Never require an unmapped Claude-only Agent API ([runtime-contract.md](../hyperflow/runtime-contract.md)). Full protocol in [compaction.md](references/compaction.md).
+
+Output: `N entries compacted · M stubs rejected as duplicates · dry-run|applied`.
 
 ## Flow
 
@@ -271,3 +290,15 @@ Use before large prune/archive runs. Reports:
 | `PRUNE` | Compaction candidates (over line threshold), cold-tier entries, empty bodies, missing type tags |
 
 `--strict` fails CI/local gates when CONFLICT rows exist; PRUNE/WARN stay advisory. `/hyperflow:status` and `DISPATCH_RESUME` `memory_ok` use the same scanner.
+
+## Auto-archive / compact helper
+
+When hygiene or session-start flags oversized / cold memory, run the deterministic helper instead of hand-editing:
+
+```bash
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory                 # dry-run plan
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --apply         # compact (>7d)
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --mode archive --apply
+```
+
+Never hard-deletes entries — full text lands in `memory/archive/YYYY-MM.md`.

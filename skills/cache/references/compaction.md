@@ -6,15 +6,35 @@
 
 Compaction reduces memory files that have grown beyond a useful line count by replacing old entries with one-line stubs and archiving their full content to monthly sidecars. It keeps hot (recent) entries intact while making older context retrievable without inflating context windows.
 
-## Two flows
+## Three flows
 
 ### Session-start advisory (non-LLM)
 
-At session start, the Session-start lineCount checker reads `.hyperflow/memory/.checksums` and compares the stored `lineCount` for each memory file against `memory.compactionThreshold` from `~/.hyperflow/config.json` (default 300). Uses `python3` — not `jq`. No LLM call is made. If any file exceeds the threshold, the Warning printer emits a single advisory line naming the file and its current count. Non-blocking — the session continues regardless.
+At session start, the Session-start lineCount checker reads `.hyperflow/memory/.checksums` and compares the stored `lineCount` for each memory file against `memory.compactionThreshold` from `~/.hyperflow/config.json` (default 300). Uses `python3` — not `jq`. No LLM call is made. If any file exceeds the threshold, the Warning printer emits a single advisory line naming the file and its current count (and points at `scripts/memory-compact.py`). Non-blocking — the session continues regardless.
 
-### User-invoked compact
+### Deterministic helper (preferred, non-LLM)
 
-Triggered by `/hyperflow:cache compact`. Eight-step flow:
+`scripts/memory-compact.py` is the default path for `/hyperflow:cache compact` and `archive`:
+
+```bash
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory            # dry-run
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --apply    # compact age>7d
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --mode archive --apply  # cold age>30d
+```
+
+Behaviour:
+
+1. Parse category files (learnings/decisions/pitfalls/patterns/conventions; skips anti-patterns + project-decisions unless `--include-special`).
+2. Date/tag parser splits hot vs eligible; skips undated, future-dated, and already-stubbed entries.
+3. Append full original blocks to `archive/YYYY-MM.md` with header dedup (date + title + tags).
+4. Rewrite source with stub lines.
+5. Rebuild `index.md` + `.checksums` via `memory-index.py`.
+
+Idempotent. Default dry-run; `--apply` required to mutate. No automatic session-start mutation — user/agent still opts in.
+
+### User-invoked compact (LLM optional)
+
+Triggered by `/hyperflow:cache compact` when mechanical stubbing is not enough (e.g. user wants rewritten short titles). Prefer running `memory-compact.py` first. Optional eight-step LLM flow:
 
 1. Compact subcommand handler reads the target memory file.
 2. Date/tag parser splits entries into hot (≤ 7 days) and eligible (> 7 days).
@@ -97,12 +117,14 @@ Re-running `/hyperflow:cache compact` on a file that has already been fully comp
 | Trigger | Component(s) involved | LLM | Blocking | Outputs |
 |---|---|---|---|---|
 | Session start | Session-start lineCount checker, Warning printer | no | no | one-line advisory or silence |
-| `/hyperflow:cache compact` | compact subcommand handler, Date/tag parser, Compaction Writer, Stub formatter, Dedup Reviewer, Archive-sidecar writer | yes (Compaction Writer only) | yes | rewritten source file, appended archive sidecar, refreshed checksums |
+| `scripts/memory-compact.py` | Date/tag parser, stub formatter, archive append, memory-index rebuild | no | yes when `--apply` | plan (default) or rewritten sources + archive sidecars + checksums |
+| `/hyperflow:cache compact` (LLM optional) | prefers script; else Compaction Writer + Dedup Reviewer | optional | yes | rewritten source file, appended archive sidecar, refreshed checksums |
 
 ## See also
 
 - `.hyperflow/specs/memory-compaction.md` — full design spec including all 13 key decisions and 22 edge cases
 - `memory-system.md` (mirrored across cache, hyperflow, trace, dispatch, spec, audit skills) — the `## Compaction Protocol` section in each links back here
-- `skills/cache/SKILL.md` — `### compact` subcommand block
+- `skills/cache/SKILL.md` — `### compact` / `### archive` subcommand blocks
+- `scripts/memory-compact.py` — deterministic helper (preferred)
 - `hooks/session-start` — Session-start lineCount checker implementation
 - `config/schema.json` — `memory.compactionThreshold` property

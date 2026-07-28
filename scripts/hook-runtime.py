@@ -1056,7 +1056,7 @@ def memory_compaction_advisory(hf_dir: Path, home: Path, log_path: Path | None) 
     if not over:
         return ""
     names = ", ".join(f"{os.path.basename(p)} ({lc} lines)" for p, lc in over)
-    return f"- {names} — at or above {threshold}, run `/hyperflow:cache compact` when convenient"
+    return f"- {names} — at or above {threshold}, run `python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --apply` (or `/hyperflow:cache compact`) when convenient"
 
 
 def sticky_status_line(hf_dir: Path) -> str:
