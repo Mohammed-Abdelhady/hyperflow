@@ -61,18 +61,24 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Background registry: canonical `agents` key, timeout→stalled, uncollected, per-agent rows + JSON  
 - DISPATCH_RESUME for mid-flight features (`phase:` field)  
 
+## Shipped in the 5.26 memory auto-archive train
+
+- Deterministic `scripts/memory-compact.py` (dry-run default, `--apply`, compact >7d / archive >30d)  
+- Stub + `memory/archive/YYYY-MM.md` sidecars, header dedup, index rebuild  
+- Cache skill + compaction protocol prefer the helper; hygiene + session-start point at it  
+
 ## Next trains
 
 ### Reliability
 
 - Eval harness with golden tasks (see `evals/`)  
 - Host parity smoke in CI  
-- Memory auto-archive helpers (still manual compact)  
+- Optional session-start auto-compact when over threshold and config opt-in (still off by default)  
 
 ### Congar-class depth
 
-- Monorepo template (turbo/pnpm gates, dirty worktree isolation)  
-- Decision cards → `.hyperflow/memory/decisions.md`  
+- Monorepo dirty-worktree isolation helpers  
+- Decision cards → `.hyperflow/memory/decisions.md` wiring depth  
 - Handoff round-trip test  
 - Privacy one-pager for skeptical adopters  
 

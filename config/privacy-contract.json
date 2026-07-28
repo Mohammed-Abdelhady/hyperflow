@@ -16,7 +16,7 @@
       "category": "automatic",
       "description": "Daily-cached public tag lookup so SessionStart can surface an in-session update notice when a newer Hyperflow release exists.",
       "owner": "scripts/hook-runtime.py:check_update_notice",
-      "trigger": "SessionStart / session.after_clear / session.after_compact via hooks/session-start → scripts/hook-runtime.py",
+      "trigger": "SessionStart / session.after_clear / session.after_compact via hooks/session-start \u2192 scripts/hook-runtime.py",
       "method": "git ls-remote --tags --refs --sort=-v:refname",
       "destination": "https://github.com/Mohammed-Abdelhady/hyperflow.git",
       "destinationKind": "public-git-remote",
@@ -27,7 +27,7 @@
       "cachePath": "~/.hyperflow/.update-check",
       "cacheContents": "latest public semver tag string only (no repo contents, no credentials)",
       "payloadSent": "none beyond the standard git ls-remote handshake to the public remote",
-      "failureBehavior": "OSError, SubprocessError, timeout, or non-zero exit → latest left empty; no update notice; session continues (non-blocking)",
+      "failureBehavior": "OSError, SubprocessError, timeout, or non-zero exit \u2192 latest left empty; no update notice; session continues (non-blocking)",
       "offlineBehavior": "HYPERFLOW_HOOK_OFFLINE or --offline skips network; stale cache outside TTL is not used as a fresh claim",
       "optOut": [
         "HYPERFLOW_HOOK_OFFLINE=1",
@@ -55,7 +55,7 @@
       "category": "optional",
       "description": "Gated specialist web research via the host's web_search / web_fetch tools (or inventory equivalents). Not a plugin-owned HTTP client.",
       "owner": "skills/hyperflow/web-research.md",
-      "trigger": "Specialist agents only when flow ∈ {deep, research, scientific}, triage security:true, or audit/deploy; skipped when specialists.webResearch.enabled=false, offline, or cache-fresh",
+      "trigger": "Specialist agents only when flow \u2208 {deep, research, scientific}, triage security:true, or audit/deploy; skipped when specialists.webResearch.enabled=false, offline, or cache-fresh",
       "method": "host-bound web_research (WebSearch/WebFetch or provider inventory equivalents)",
       "destination": "sites chosen by the host search/fetch tools for the specialist question (CVE advisories, docs, release notes)",
       "failureBehavior": "graceful skip with logged reason; chain continues; never invent citations",
@@ -275,7 +275,7 @@
       "id": "usage-ledger",
       "path": ".hyperflow/usage/<chain-id>.jsonl",
       "when": "orchestrated dispatch records metadata-only usage",
-      "contents": "phase/role/token counts/context hash — no prompts, file contents, or secrets",
+      "contents": "phase/role/token counts/context hash \u2014 no prompts, file contents, or secrets",
       "category": "user-invoked"
     },
     {
@@ -307,6 +307,12 @@
       "path": "user-chosen export path (self-contained HTML)",
       "when": "export-artefact.py / hyperflow view export flows",
       "category": "user-invoked"
+    },
+    {
+      "id": "memory-compact",
+      "path": ".hyperflow/memory/*.md and .hyperflow/memory/archive/YYYY-MM.md",
+      "when": "scripts/memory-compact.py --apply or /hyperflow:cache compact|archive",
+      "category": "user-invoked"
     }
   ],
   "runtimeScanRoots": [
@@ -316,6 +322,7 @@
     "scripts/archive-artefacts.py",
     "scripts/migrate-cache.py",
     "scripts/memory-index.py",
+    "scripts/memory-compact.py",
     "scripts/lean-summary.py",
     "scripts/view.py",
     "scripts/usage-ledger.py",
