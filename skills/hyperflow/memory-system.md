@@ -250,7 +250,13 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 
 ## Compaction Protocol
 
-Memory files crossing a line-count threshold (default 300, configurable via `memory.compactionThreshold` in `~/.hyperflow/config.json`) can be compacted via the user-invoked `/hyperflow:cache compact` subcommand. Compaction summarises entries older than 7 days into stub lines and preserves the full text in monthly archive sidecars at `<memory-dir>/archive/YYYY-MM.md`.
+Memory files crossing a line-count threshold (default 300, configurable via `memory.compactionThreshold` in `~/.hyperflow/config.json`) can be compacted via the deterministic helper `scripts/memory-compact.py` (preferred) or the user-invoked `/hyperflow:cache compact` subcommand. Compaction replaces entries older than 7 days with stub lines and preserves the full text in monthly archive sidecars at `<memory-dir>/archive/YYYY-MM.md`.
+
+```bash
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory            # dry-run
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --apply    # mutate
+python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --mode archive --apply
+```
 
 A non-blocking session-start advisory is emitted by the Session-start lineCount checker when any tracked memory file's cached `lineCount` (stored in `.hyperflow/memory/.checksums`, scoped to memory files only — not to be confused with `.hyperflow/.checksums` which the scaffold staleness check owns) meets or exceeds the threshold.
 
@@ -262,6 +268,6 @@ The stub format is:
 
 The Date/tag parser accepts BOTH `[domain, type]` (new) and `` `[domain, type]` `` (legacy backticked) so existing entries remain eligible after the feature lands.
 
-Idempotency is guaranteed by source-side stub-line match and archive-side header match (both check date + title + tags). Re-running `/hyperflow:cache compact` on a fully compacted file produces no new writes.
+Idempotency is guaranteed by source-side stub-line match and archive-side header match (both check date + title + tags). Re-running compact on a fully compacted file produces no new writes.
 
-See `skills/cache/references/compaction.md` for the full protocol (Compaction Writer dispatch, Dedup Reviewer reuse, Archive-sidecar writer details).
+See `skills/cache/references/compaction.md` for the full protocol (deterministic helper, optional Compaction Writer dispatch, Dedup Reviewer reuse, Archive-sidecar writer details).

@@ -302,7 +302,7 @@ def build_prune_suggestions(
         if meta.get("exists") and int(meta.get("lines", 0)) >= threshold:
             prune.append(
                 f"compact {meta['name']}: {meta['lines']} lines >= threshold {threshold} "
-                f"(/hyperflow:cache compact)"
+                f"(python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --apply)"
             )
 
     cold = [e for e in entries if e.tier == "cold"]
@@ -312,7 +312,8 @@ def build_prune_suggestions(
         for e in shown:
             age = e.age_days if e.age_days is not None else "?"
             prune.append(
-                f"cold entry ({age}d) in {e.file}: {e.raw_title[:70]} — stub+archive candidate"
+                f"cold entry ({age}d) in {e.file}: {e.raw_title[:70]} — stub+archive candidate "
+                f"(memory-compact.py --mode archive)"
             )
         if len(cold) > len(shown):
             prune.append(f"... and {len(cold) - len(shown)} more cold entries")
