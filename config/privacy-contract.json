@@ -242,6 +242,14 @@
       "category": "automatic"
     },
     {
+      "id": "memory-auto-compact",
+      "path": ".hyperflow/memory/{category files,archive/YYYY-MM.md}",
+      "when": "SessionStart when memory.autoCompact=true and a category file reaches memory.compactionThreshold",
+      "contents": "one-line stubs for aged entries and append-only monthly archive sidecars; hot and structural entries are preserved",
+      "owner": "scripts/hook-runtime.py -> scripts/memory-compact.py",
+      "category": "automatic"
+    },
+    {
       "id": "archive-cleanup",
       "path": ".hyperflow/archive/** and .hyperflow/.last-cleanup",
       "when": "SessionStart archive-artefacts.py (daily-gated)",

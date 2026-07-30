@@ -65,7 +65,7 @@ After answers arrive, append to the matching file using:
 **Evidence:** ...
 ```
 
-That is the whole write. `index.md` is derived — `scripts/memory-index.py` rebuilds it at the next session start. Never append index rows by hand; to refresh it now, run `python3 <plugin-root>/scripts/memory-index.py .hyperflow` when the script is available (resolve plugin root like bridge: `$CODEX_PLUGIN_ROOT` / `$CLAUDE_PLUGIN_ROOT` / … / path relative to this skill).
+That is the whole write. `index.md` is derived — `scripts/memory-index.py` rebuilds it at the next session start. Never append index rows by hand; to refresh it now, run `python3 <plugin-root>/scripts/memory-index.py .hyperflow` when the script is available (resolve plugin root like bridge: `$CODEX_PLUGIN_ROOT` / `$CLAUDE_PLUGIN_ROOT` / … / path relative to this skill). Session-start memory auto-compaction is off by default; enable it with `memory.autoCompact: true` in `~/.hyperflow/config.json` when you want oversized category files compacted automatically.
 
 ### `edit <entry-id>`
 Locate by date+title slug. Show current value, prompt for new value via `structured_question` (same portable fallback as `add`), update in place. No silent overwrite without the new value from the user.
