@@ -146,6 +146,14 @@ class CleanupSchemaStructureTests(unittest.TestCase):
         memory = self.schema["properties"]["memory"]
         self.assertEqual(memory.get("additionalProperties"), False)
 
+    def test_memory_auto_compact_is_opt_in(self) -> None:
+        memory = self.schema["properties"]["memory"]
+        props = memory["properties"]
+        self.assertEqual(tuple(props), ("compactionThreshold", "autoCompact"))
+        self.assertEqual(props["compactionThreshold"]["default"], 300)
+        self.assertEqual(props["autoCompact"]["type"], "boolean")
+        self.assertIs(props["autoCompact"]["default"], False)
+
     def test_cleanup_property_defaults_and_bounds(self) -> None:
         expected = {
             "auto": ("boolean", True, None),
@@ -202,7 +210,7 @@ class CleanupValidationTests(unittest.TestCase):
 
     def test_existing_top_level_blocks_still_validate(self) -> None:
         sample = {
-            "memory": {"compactionThreshold": 300},
+            "memory": {"compactionThreshold": 300, "autoCompact": False},
             "context": {
                 "windowTokens": 200000,
                 "autoCompactMinPercent": 72,

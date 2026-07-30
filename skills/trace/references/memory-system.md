@@ -249,7 +249,7 @@ On first session start in a project that has no `.hyperflow/memory/` but has the
 
 ## Compaction Protocol
 
-Memory files crossing a line-count threshold (default 300, configurable via `memory.compactionThreshold` in `~/.hyperflow/config.json`) can be compacted via the user-invoked `/hyperflow:cache compact` subcommand. Compaction summarises entries older than 7 days into stub lines and preserves the full text in monthly archive sidecars at `<memory-dir>/archive/YYYY-MM.md`.
+Memory files crossing a line-count threshold (default 300, configurable via `memory.compactionThreshold` in `~/.hyperflow/config.json`) can be compacted via the user-invoked `/hyperflow:cache compact` subcommand. Compaction summarises entries older than 7 days into stub lines and preserves the full text in monthly archive sidecars at `<memory-dir>/archive/YYYY-MM.md`. Session-start can run the deterministic helper automatically only when `memory.autoCompact` is explicitly `true`; it is off by default.
 
 A non-blocking session-start advisory is emitted by the Session-start lineCount checker when any tracked memory file's cached `lineCount` (stored in `.hyperflow/memory/.checksums`, scoped to memory files only — not to be confused with `.hyperflow/.checksums` which the scaffold staleness check owns) meets or exceeds the threshold.
 

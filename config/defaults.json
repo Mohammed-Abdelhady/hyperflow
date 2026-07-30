@@ -5,6 +5,10 @@
     "markdown": "on-demand",
     "autoOpen": false
   },
+  "memory": {
+    "compactionThreshold": 300,
+    "autoCompact": false
+  },
   "handoff": {
     "autoPush": true,
     "remote": "origin",

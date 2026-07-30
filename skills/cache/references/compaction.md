@@ -10,7 +10,7 @@ Compaction reduces memory files that have grown beyond a useful line count by re
 
 ### Session-start advisory (non-LLM)
 
-At session start, the Session-start lineCount checker reads `.hyperflow/memory/.checksums` and compares the stored `lineCount` for each memory file against `memory.compactionThreshold` from `~/.hyperflow/config.json` (default 300). Uses `python3` — not `jq`. No LLM call is made. If any file exceeds the threshold, the Warning printer emits a single advisory line naming the file and its current count (and points at `scripts/memory-compact.py`). Non-blocking — the session continues regardless.
+At session start, the Session-start lineCount checker reads `.hyperflow/memory/.checksums` and compares the stored `lineCount` for each memory file against `memory.compactionThreshold` from `~/.hyperflow/config.json` (default 300). Uses `python3` — not `jq`. No LLM call is made. If any category file exceeds the threshold, the Warning printer emits a single advisory line naming the file and its current count (and points at `scripts/memory-compact.py`). With the explicit opt-in `memory.autoCompact: true`, the same hook runs the deterministic helper with `--apply`; only aged eligible entries are stubbed and archived, while hot, undated, structural, and already-stubbed entries remain untouched. The default is false. Non-blocking — the session continues regardless.
 
 ### Deterministic helper (preferred, non-LLM)
 
@@ -30,7 +30,7 @@ Behaviour:
 4. Rewrite source with stub lines.
 5. Rebuild `index.md` + `.checksums` via `memory-index.py`.
 
-Idempotent. Default dry-run; `--apply` required to mutate. No automatic session-start mutation — user/agent still opts in.
+Idempotent. Default is dry-run (plan only). Pass --apply to mutate. Session-start auto-compaction is the only automatic mutation and requires `memory.autoCompact: true`.
 
 ### User-invoked compact (LLM optional)
 
@@ -116,7 +116,7 @@ Re-running `/hyperflow:cache compact` on a file that has already been fully comp
 
 | Trigger | Component(s) involved | LLM | Blocking | Outputs |
 |---|---|---|---|---|
-| Session start | Session-start lineCount checker, Warning printer | no | no | one-line advisory or silence |
+| Session start | Session-start lineCount checker, optional deterministic helper, Warning printer | no | no | one-line advisory, auto-compact result, or silence |
 | `scripts/memory-compact.py` | Date/tag parser, stub formatter, archive append, memory-index rebuild | no | yes when `--apply` | plan (default) or rewritten sources + archive sidecars + checksums |
 | `/hyperflow:cache compact` (LLM optional) | prefers script; else Compaction Writer + Dedup Reviewer | optional | yes | rewritten source file, appended archive sidecar, refreshed checksums |
 
@@ -127,4 +127,4 @@ Re-running `/hyperflow:cache compact` on a file that has already been fully comp
 - `skills/cache/SKILL.md` — `### compact` / `### archive` subcommand blocks
 - `scripts/memory-compact.py` — deterministic helper (preferred)
 - `hooks/session-start` — Session-start lineCount checker implementation
-- `config/schema.json` — `memory.compactionThreshold` property
+- `config/schema.json` — `memory.compactionThreshold` and `memory.autoCompact` properties
