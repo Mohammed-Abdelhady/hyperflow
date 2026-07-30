@@ -67,13 +67,18 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Stub + `memory/archive/YYYY-MM.md` sidecars, header dedup, index rebuild  
 - Cache skill + compaction protocol prefer the helper; hygiene + session-start point at it  
 
+## Shipped in the 5.27 memory reliability train
+
+- Opt-in `memory.autoCompact` session-start hook for oversized category files
+- Deterministic helper remains the only writer; hot, undated, structural, and already-stubbed entries are preserved
+- Config/schema, privacy inventory, integration coverage, and mirrored memory protocol docs
+
 ## Next trains
 
 ### Reliability
 
 - Eval harness with golden tasks (see `evals/`)  
 - Host parity smoke in CI  
-- Optional session-start auto-compact when over threshold and config opt-in (still off by default)  
 
 ### Congar-class depth
 

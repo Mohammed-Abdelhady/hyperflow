@@ -250,7 +250,7 @@ On first session start in a project that has no `.hyperflow/memory/` but has `~/
 
 ## Compaction Protocol
 
-Memory files crossing a line-count threshold (default 300, configurable via `memory.compactionThreshold` in `~/.hyperflow/config.json`) can be compacted via the deterministic helper `scripts/memory-compact.py` (preferred) or the user-invoked `/hyperflow:cache compact` subcommand. Compaction replaces entries older than 7 days with stub lines and preserves the full text in monthly archive sidecars at `<memory-dir>/archive/YYYY-MM.md`.
+Memory files crossing a line-count threshold (default 300, configurable via `memory.compactionThreshold` in `~/.hyperflow/config.json`) can be compacted via the deterministic helper `scripts/memory-compact.py` (preferred) or the user-invoked `/hyperflow:cache compact` subcommand. Compaction replaces entries older than 7 days with stub lines and preserves the full text in monthly archive sidecars at `<memory-dir>/archive/YYYY-MM.md`. Session-start can run that helper automatically only when `memory.autoCompact` is explicitly `true`; it is off by default.
 
 ```bash
 python3 scripts/memory-compact.py --memory-dir .hyperflow/memory            # dry-run
