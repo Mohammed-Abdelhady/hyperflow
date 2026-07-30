@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.27.0] — 2026-07-30
+
+### Added
+- Opt in to session-start auto-compaction
+
+### Changed
+- Refresh AGENTS.md doctrine stamp for v5.26.0
+- Codex CLI remains preview and uncertified; this release makes no certification claim.
+
+
 ### Added
 - Opt-in session-start memory auto-compaction via `memory.autoCompact` when a category file reaches `memory.compactionThreshold`
 - Session-start integration coverage and privacy/config contract entries for automatic memory stubs and archive sidecars
@@ -1557,7 +1567,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.26.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.0...HEAD
+[5.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.26.0...v5.27.0
 [5.26.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.25.0...v5.26.0
 [5.25.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.24.0...v5.25.0
 [5.24.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.23.0...v5.24.0
