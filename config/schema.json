@@ -111,6 +111,11 @@
           "description": "Line count at or above which /hyperflow:cache compact warns and is recommended.",
           "default": 300,
           "minimum": 50
+        },
+        "autoCompact": {
+          "type": "boolean",
+          "description": "Run the deterministic memory compact helper at session start when a category file reaches compactionThreshold. Off by default; only aged eligible entries are changed.",
+          "default": false
         }
       },
       "additionalProperties": false

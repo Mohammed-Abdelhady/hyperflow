@@ -628,6 +628,25 @@ def load_context_config(home: Path | str | None) -> dict[str, Any]:
         return {}
 
 
+def load_memory_config(home: Path | str | None) -> dict[str, Any]:
+    """Load the small memory config surface used by session-start helpers.
+
+    Invalid or unreadable user config is deliberately treated as the safe,
+    opt-in-off default. The hook must never turn a malformed config into an
+    automatic project mutation.
+    """
+    if not home:
+        return {}
+    config_path = Path(home) / ".hyperflow" / "config.json"
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            cfg = json.load(f)
+        raw = cfg.get("memory", {})
+        return raw if isinstance(raw, dict) else {}
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return {}
+
+
 def strings_from_message(value: Any):
     if isinstance(value, str):
         if value.startswith("/") and len(value) < 300:
@@ -1029,16 +1048,8 @@ def memory_compaction_advisory(hf_dir: Path, home: Path, log_path: Path | None) 
     checksums_path = hf_dir / "memory" / ".checksums"
     if not checksums_path.is_file():
         return ""
-    threshold = 300
-    config_path = home / ".hyperflow" / "config.json"
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            cfg = json.load(f)
-        threshold = int(cfg.get("memory", {}).get("compactionThreshold", 300))
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
-        pass
-    if threshold < 50:
-        threshold = 300
+    memory_cfg = load_memory_config(home)
+    threshold = _as_int(memory_cfg.get("compactionThreshold"), 300, 50)
     try:
         with open(checksums_path, encoding="utf-8") as f:
             checksums = json.load(f)
@@ -1057,6 +1068,93 @@ def memory_compaction_advisory(hf_dir: Path, home: Path, log_path: Path | None) 
         return ""
     names = ", ".join(f"{os.path.basename(p)} ({lc} lines)" for p, lc in over)
     return f"- {names} — at or above {threshold}, run `python3 scripts/memory-compact.py --memory-dir .hyperflow/memory --apply` (or `/hyperflow:cache compact`) when convenient"
+
+
+def auto_memory_compaction(
+    hf_dir: Path,
+    home: Path,
+    plugin_root: Path,
+    log_path: Path | None,
+) -> str:
+    """Optionally compact oversized memory at session start.
+
+    This is intentionally separate from the context-window PreCompact guard:
+    it is a project-memory hygiene feature, not a conversation compaction
+    request. It is disabled unless ``memory.autoCompact`` is explicitly true.
+    The deterministic helper remains the sole writer and skips hot, undated,
+    structural, and already-stubbed entries.
+    """
+    memory = hf_dir / "memory"
+    checksums_path = memory / ".checksums"
+    if not checksums_path.is_file():
+        return ""
+
+    memory_cfg = load_memory_config(home)
+    if memory_cfg.get("autoCompact") is not True:
+        return ""
+    threshold = _as_int(memory_cfg.get("compactionThreshold"), 300, 50)
+
+    try:
+        with open(checksums_path, encoding="utf-8") as f:
+            checksums = json.load(f)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return ""
+    if not isinstance(checksums, dict) or len(checksums) > 10000:
+        return ""
+
+    category_files = {
+        "learnings.md",
+        "decisions.md",
+        "pitfalls.md",
+        "patterns.md",
+        "conventions.md",
+    }
+    over = []
+    for path, meta in checksums.items():
+        name = os.path.basename(str(path))
+        if (
+            name in category_files
+            and isinstance(meta, dict)
+            and isinstance(meta.get("lineCount"), int)
+            and meta["lineCount"] >= threshold
+        ):
+            over.append((name, meta["lineCount"]))
+    if not over:
+        return ""
+
+    output = _run_helper(
+        plugin_root,
+        "memory-compact.py",
+        ["--memory-dir", str(memory), "--apply", "--json"],
+        log_path,
+    )
+    if not output:
+        return ""
+    try:
+        report = json.loads(output)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return "- Automatic memory compact produced an unreadable helper report; see `.hyperflow/.session-start.log`"
+    if not isinstance(report, dict):
+        return "- Automatic memory compact produced an invalid helper report; see `.hyperflow/.session-start.log`"
+    if report.get("ok") is not True:
+        errors = report.get("errors")
+        detail = "; ".join(str(e) for e in errors) if isinstance(errors, list) else "unknown helper error"
+        return f"- Automatic memory compact skipped ({detail}); see `.hyperflow/.session-start.log`"
+
+    compacted = report.get("compacted", 0)
+    sources = report.get("source_files") or []
+    archives = report.get("archive_files") or []
+    if compacted:
+        locations = ", ".join(str(p) for p in sources) or "memory files"
+        archive_note = f"; archives: {', '.join(str(p) for p in archives)}" if archives else ""
+        return (
+            f"- Automatically compacted {compacted} aged entr{'y' if compacted == 1 else 'ies'} "
+            f"from {locations} (threshold {threshold}){archive_note}"
+        )
+    return (
+        f"- Automatic memory compact checked {', '.join(name for name, _ in over)} "
+        f"(threshold {threshold}) but found no eligible aged entries"
+    )
 
 
 def sticky_status_line(hf_dir: Path) -> str:
@@ -1326,6 +1424,11 @@ def enrich_session_content(ctx: SessionContext, content: str) -> str:
             [str(hf_dir)],
             log_path,
         )
+    auto_compact = auto_memory_compaction(
+        hf_dir, ctx.home, ctx.plugin_root, log_path
+    )
+    if auto_compact:
+        content = _append_section(content, "Automatic Memory Compaction", auto_compact)
     if ctx.mode != "lean":
         index_path = hf_dir / "memory" / "index.md"
         if index_path.is_file():

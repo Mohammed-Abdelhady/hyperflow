@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Opt-in session-start memory auto-compaction via `memory.autoCompact` when a category file reaches `memory.compactionThreshold`
+- Session-start integration coverage and privacy/config contract entries for automatic memory stubs and archive sidecars
+
+### Changed
+- Mirrored memory compaction protocol docs now document the opt-in automatic path
+
 ## [5.26.0] — 2026-07-28
 
 ### Added

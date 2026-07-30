@@ -129,6 +129,30 @@ class SessionStartTests(unittest.TestCase):
         self.assertIn("## Handoff pending", content)
         self.assertIn("`demo` awaiting build", content)
 
+    def test_session_start_auto_compact_is_explicitly_opt_in(self) -> None:
+        old = self.memory / "learnings.md"
+        old.write_text(
+            "### [2020-01-01] Archived startup lesson `[test, learning]`\n"
+            "**What:** an old lesson\n**Why it matters:** keeps startup memory small\n"
+            + "".join(f"detail {i}\n" for i in range(60)),
+            encoding="utf-8",
+        )
+        config = self.home / ".hyperflow" / "config.json"
+        config.write_text(
+            json.dumps(
+                {"memory": {"compactionThreshold": 50, "autoCompact": True}}
+            ),
+            encoding="utf-8",
+        )
+
+        content = self.run_hook()
+
+        self.assertIn("## Automatic Memory Compaction", content)
+        self.assertIn("Automatically compacted 1 aged entry", content)
+        source = old.read_text(encoding="utf-8")
+        self.assertIn("— summarized, see archive/2020-01.md", source)
+        self.assertTrue((self.memory / "archive" / "2020-01.md").is_file())
+
     def test_lean_preserves_bridge_and_update_notices(self) -> None:
         (self.hf / ".bridge-mode").write_text("auto\n", encoding="utf-8")
         (self.home / ".hyperflow" / ".update-check").write_text(
