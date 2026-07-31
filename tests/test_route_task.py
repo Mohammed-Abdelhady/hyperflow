@@ -185,6 +185,12 @@ class RouteTaskTests(unittest.TestCase):
             "Fix the authentication bug in src/auth.ts",
             "Release the version in package.json",
             "Rename the database table in schema.sql",
+            "How do I format README.md?",
+            "What does rename mean for README.md?",
+            "Should I rename README.md?",
+            r"Fix the typo in docs\README.md",
+            "Fix the typo in README.md and Dockerfile",
+            "Fix the typo in .github/workflows/ci.yml",
         ]
         for request in cases:
             with self.subTest(request=request):
@@ -196,6 +202,15 @@ class RouteTaskTests(unittest.TestCase):
             router.route_task(
                 "Fix the typo in README.md",
                 files=["src/other.ts"],
+                auto_observe=True,
+                project_root=ROOT,
+            )["route"],
+            "classifier",
+        )
+        self.assertEqual(
+            router.route_task(
+                "Fix the typo",
+                files=["README.md"],
                 auto_observe=True,
                 project_root=ROOT,
             )["route"],

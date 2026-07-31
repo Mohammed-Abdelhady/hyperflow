@@ -52,14 +52,19 @@ RELEASE_RE = re.compile(
 SYSTEM_RISK_RE = re.compile(
     r"\b(?:database|db|schema|api|endpoint|service|infrastructure|"
     r"production|prod|config|configuration|environment|env|dependency|"
-    r"dependencies)\b",
+    r"dependencies|ci|workflow|workflows|github actions|gitlab|terraform|"
+    r"helm|kubernetes|k8s)\b",
     re.IGNORECASE,
 )
 SAFE_EDIT_RE = re.compile(
-    r"\b(?:fix\s+(?:the\s+)?(?:typo|spelling|whitespace|format)|"
+    r"^\s*(?:please\s+)?(?:fix\s+(?:the\s+)?(?:typo|spelling|whitespace|format)|"
     r"correct\s+(?:the\s+)?(?:typo|spelling)|rename\b|reword\b|"
     r"format\b|update\s+(?:the\s+)?(?:comment|docs?|documentation|test)|"
     r"add\s+(?:a\s+)?missing\s+import)\b",
+    re.IGNORECASE,
+)
+QUESTION_RE = re.compile(
+    r"\?|^\s*(?:how|what|why|should|can|could|would|is|does|do)\b",
     re.IGNORECASE,
 )
 FILE_REFERENCE_RE = re.compile(
@@ -68,6 +73,18 @@ FILE_REFERENCE_RE = re.compile(
     r"css|scss|html|tsx?|jsx?|py|sh|bash|go|rs|java|rb|php|sql)\b",
     re.IGNORECASE,
 )
+PATH_TOKEN_RE = re.compile(r"`[^`]+`|'[^']+'|\"[^\"]+\"|[^\s]+")
+KNOWN_PATH_BASENAMES = {
+    "dockerfile",
+    "makefile",
+    "justfile",
+    "procfile",
+    "gemfile",
+    "rakefile",
+    "license",
+    "readme",
+    "changelog",
+}
 
 GENERATED_NAMES = {
     "package-lock.json",
@@ -138,10 +155,54 @@ def _extract_file_references(request: str) -> list[str]:
     return _normalize_files(FILE_REFERENCE_RE.findall(request))
 
 
+def _extract_path_like_tokens(request: str) -> list[str]:
+    """Return explicit path-shaped tokens, including unsupported filenames."""
+    tokens: list[str] = []
+    for raw in PATH_TOKEN_RE.findall(request):
+        token = raw.strip("`'\".,;:!?()[]{}")
+        if not token or "://" in token:
+            continue
+        lowered = token.lower()
+        if (
+            "/" in token
+            or "\\" in token
+            or lowered.startswith(".")
+            or lowered in KNOWN_PATH_BASENAMES
+        ):
+            tokens.append(token)
+    for reference in _extract_file_references(request):
+        if reference not in tokens:
+            tokens.append(reference)
+    return tokens
+
+
+def _is_control_plane_surface(path: str) -> bool:
+    parts = {part.lower() for part in PurePosixPath(path).parts}
+    if ".github" in parts and parts & {"workflows", "actions"}:
+        return True
+    return bool(
+        parts
+        & {
+            ".gitlab",
+            ".circleci",
+            ".buildkite",
+            "terraform",
+            "infra",
+            "infrastructure",
+            "deploy",
+            "deployment",
+            "helm",
+            "k8s",
+            "kubernetes",
+        }
+    )
+
+
 def _auto_observe_safe_edit(
     request: str,
     files: list[str],
     explicit_files: list[str],
+    path_tokens: list[str],
 ) -> bool:
     """Prove a tiny edit is safe enough to bypass the classifier.
 
@@ -151,6 +212,7 @@ def _auto_observe_safe_edit(
     """
     return (
         bool(SAFE_EDIT_RE.search(request))
+        and not QUESTION_RE.search(request)
         and not AMBIGUITY_RE.search(request)
         and not SECURITY_RE.search(request)
         and not INTEGRATION_RE.search(request)
@@ -158,8 +220,12 @@ def _auto_observe_safe_edit(
         and not SYSTEM_RISK_RE.search(request)
         and not RELEASE_RE.search(request)
         and 1 <= len(files) <= 2
-        and (not explicit_files or set(explicit_files) == set(files))
+        and bool(explicit_files)
+        and set(explicit_files) == set(files)
+        and set(explicit_files) == set(_normalize_files(path_tokens))
+        and not any("\\" in path for path in path_tokens)
         and not any(_is_generated_surface(path) for path in files)
+        and not any(_is_control_plane_surface(path) for path in files)
     )
 
 
@@ -257,9 +323,15 @@ def route_task(
     auto_observed = False
     if auto_observe:
         explicit_files = _extract_file_references(stripped)
+        path_tokens = _extract_path_like_tokens(stripped)
         if not normalized_files:
             normalized_files = explicit_files
-        if _auto_observe_safe_edit(stripped, normalized_files, explicit_files):
+        if _auto_observe_safe_edit(
+            stripped,
+            normalized_files,
+            explicit_files,
+            path_tokens,
+        ):
             if risk == "unknown":
                 risk = "reversible"
             if clarity == "unknown":

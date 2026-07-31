@@ -18,7 +18,7 @@ python3 "$PLUGIN_ROOT/scripts/route-task.py" "$USER_REQUEST" \
 
 `inline_fast` is valid only when the observed scope is 1–2 files, risk is reversible, intent is clear, and no security, integration, generated-file, migration, explicit Hyperflow, or thorough-mode signal exists. It emits a complete fast triage object with `triage_source: deterministic`; skip the Classifier and proceed through the fast pipeline. `classifier` means dispatch the Classifier below. Unknown scope/risk always falls through.
 
-With `--auto-observe`, the preflight may fill unknown observations only when the request contains an explicit relative file reference and one of the narrow safe-edit forms (typo/spelling/whitespace/format, rename, reword, docs/comment/test update, or missing import). Ambiguous, security, integration, migration, generated, release, and scope-free requests still fall through. The preflight never invents a file path or infers a broad `fix` task is safe.
+With `--auto-observe`, the preflight may fill unknown observations only when the request starts with a narrow imperative safe-edit form and contains supported explicit relative file reference(s) whose scope matches the caller map. It rejects questions/advice, unsupported or backslash paths, control-plane paths (`.github/workflows`, infrastructure, deployment, CI), ambiguity, security, integration, migration, generated, release, and scope-free requests. The preflight never invents a file path or infers a broad `fix` task is safe.
 
 Skip both paths only when already mid-flow or handling a pure meta-command such as `hyperflow memory show`.
 
