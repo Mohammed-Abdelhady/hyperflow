@@ -192,6 +192,9 @@ class RouteTaskTests(unittest.TestCase):
             ("Fix the typo in README.md and foo.lock", ["README.md", "foo.lock"]),
             ("Fix the typo in README.md and .travis.yml", ["README.md", ".travis.yml"]),
             ("Fix the typo in README.md and azure-pipelines.yml", ["README.md", "azure-pipelines.yml"]),
+            ("Fix the typo in README.md and Jenkinsfile", ["README.md"]),
+            ("Fix the typo in control-plane.yml", ["control-plane.yml"]),
+            ("Fix the typo in control-plane/manifest.yml", ["control-plane/manifest.yml"]),
         ]
         for request, files in cases:
             with self.subTest(request=request):

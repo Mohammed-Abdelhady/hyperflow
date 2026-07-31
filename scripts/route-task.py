@@ -84,6 +84,7 @@ KNOWN_PATH_BASENAMES = {
     "license",
     "readme",
     "changelog",
+    "jenkinsfile",
 }
 CONTROL_PLANE_NAMES = {
     ".travis.yml",
@@ -192,9 +193,13 @@ def _extract_path_like_tokens(request: str) -> list[str]:
 
 
 def _is_control_plane_surface(path: str) -> bool:
-    parts = {part.lower() for part in PurePosixPath(path).parts}
-    name = PurePosixPath(path).name.lower()
-    if name in CONTROL_PLANE_NAMES:
+    pure = PurePosixPath(path)
+    parts = {part.lower() for part in pure.parts}
+    name = pure.name.lower()
+    stem = pure.stem.lower()
+    if name in CONTROL_PLANE_NAMES or stem in {"control-plane", "control_plane", "controlplane"}:
+        return True
+    if {"control-plane", "control_plane", "controlplane"} & parts:
         return True
     if ".github" in parts and parts & {"workflows", "actions"}:
         return True
