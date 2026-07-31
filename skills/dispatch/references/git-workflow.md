@@ -94,7 +94,7 @@ The dispatch skill then asks the user **up to three** end-of-chain questions in 
 
 1. **Run `/hyperflow:audit` on the changes?** — binary.
 2. **Run `/hyperflow:deploy` (full gates + commit + push)?** — binary. Deploy has its own push gate.
-3. **Open a pull request?** — when `pr=ask` (default on every dispatch). Frontend/mobile PRs require screenshots — see [pr-exit.md](pr-exit.md).
+3. **Open a pull request?** — when `pr=ask` (default on every dispatch). Frontend/mobile changes may use local visual verification, but screenshots never enter the PR — see [pr-exit.md](pr-exit.md).
 
 The orchestrator does **NOT** auto-invoke audit or deploy. PR opens only on yes / `pr=auto`. Binary action gates carry no `(Recommended)` marker.
 

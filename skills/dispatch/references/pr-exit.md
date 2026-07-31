@@ -19,9 +19,9 @@ Issue chains (`gh_issue=<n>`) still use the same gate. They only **add**:
 
 Unauthenticated `gh` (via `shell`) → do not open; print `gh auth login` + full `gh pr create` recovery. Never half-post. Never force-push. Never push to `main`/`master` directly — feature branch only.
 
-## Visual-required detection
+## Visual verification detection
 
-A PR is **visual-required** (images mandatory) when **any** of:
+A chain is **visual-verification** when **any** of:
 
 1. Triage `types[]` intersects `{frontend, ui, mobile, creative}` (from chain `triage=` JSON / task `Specialists` / Brain roster), **or**
 2. Changed files in the chain range match UI/mobile surfaces **and** the change is not docs-only:
@@ -29,39 +29,37 @@ A PR is **visual-required** (images mandatory) when **any** of:
    - Path segments: `components/`, `screens/`, `pages/`, `app/` (Expo/Next), `ios/`, `android/`, `*.xcassets`
 3. Chain arg `pr_images=require`
 
-**Not** visual-required when types are only `api` / `db` / `docs` / `devops` / `security` (etc.) **and** no UI files changed — unless `pr_images=require`.
+**Not** visual-verification when types are only `api` / `db` / `docs` / `devops` / `security` (etc.) **and** no UI files changed — unless `pr_images=require`.
 
-Force-skip media (rare): `pr_images=never` — document in Evidence Risks that screenshots were waived.
+Force-skip local visual verification: `pr_images=never` — document in Evidence Risks that visual verification was waived.
 
-## Image acquisition (visual-required only)
+## Local visual verification (visual changes only)
 
-Run **before** `gh pr create`, after the user said Yes (or `pr=auto`).
+Run **before** `gh pr create`, after the user said Yes (or `pr=auto`) when the project has a capture path. This is a local or CI quality check only. Screenshots are never PR media.
 
 ### 1. Try auto-capture (best effort, short timeout)
 
 1. Prefer a project script if `.hyperflow/testing.md` or `package.json` documents one (`screenshot`, `capture`, Maestro/Detox) — run via `shell`.
 2. Web: if Playwright CLI or a host capture tool is available and a local/staging base URL is known (README, `.env.example` `PORT`, common `localhost:3000`), capture the primary changed route.
 3. Mobile: only if a project screenshot/Maestro/Detox path exists; otherwise go to user-supply.
-4. On success: write files under `docs/pr-media/<slug>/` (e.g. `after.png`) via `edit` / project write tools, commit with `shell` as `chore(pr-media): <slug>`, include in the branch push.
+4. On success: store temporary captures outside tracked source, preferably under `.hyperflow/evidence/<slug>/`. Inspect them locally or in CI, then remove them or leave them in the ignored evidence directory. Never copy them into `docs/pr-media/`, commit them, upload them, or embed them in the PR body.
 
-### 2. User-supply fallback (mandatory if capture fails)
+### 2. User-supply fallback (optional)
 
-Fire a **second** `structured_question` (not crammed into the audit/deploy/PR triple):
+Do not block the PR on a missing capture. If a user supplies a screenshot for local review, inspect it without copying it into the branch:
 
-- Options: provide path(s) / cancel PR  
-- When structured UI is missing: exact **Hyperflow Question** chat block from the runtime contract, end the turn, resume on the next user answer — never skip, never invent paths  
+- Use a local path only. Do not ask for screenshots solely to satisfy a PR-media requirement.
+- When structured UI is missing, continue with text-only PR evidence rather than inventing paths or stopping the chain.
 
-Copy validated image files into `docs/pr-media/<slug>/`, commit, push.
+### 3. No PR media
 
-### 3. Hard block
+If visual-verification did not run or produced **zero** captures:
 
-If visual-required and still **zero** images:
+- Continue to `gh pr create` when the normal PR gate is green.
+- Record `Visual verification: unavailable` or `Visual verification: passed locally` in the Validation section.
+- Never add a Screenshots section, image markdown, `docs/pr-media/` files, or screenshot URLs to the PR.
 
-- **Do not** run `gh pr create`
-- Print recovery: expected paths, how to re-invoke, and the drafted `gh pr create` body template
-- Evidence / Next: `PR blocked — screenshots required`
-
-Minimum: **≥1** image. Before/after preferred when both exist; not required for v1.
+There is no image minimum for opening a PR. The PR remains reviewable from the diff, tests, deployment links, and written validation.
 
 ## PR create steps
 
@@ -69,12 +67,10 @@ All git/gh steps use the `shell` op inside the security blocklist. Never force-p
 
 1. Resolve default base branch: `main`, else `master`, else remote default (`gh repo view --json defaultBranchRef` when `gh` is authenticated).
 2. `git push -u origin <feature-branch>` (never force, never to main/master).
-3. Build body from the template below (include Screenshots section iff visual-required).
-4. Image markdown URLs after push:
-   `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/docs/pr-media/<slug>/<file>`
-5. `gh pr create --base <base> --head <branch> --title "<conventional title>" --body-file <tmp>`
-6. Title from dominant conventional commit type on the chain range.
-7. No AI attribution in title or body.
+3. Build body from the template below. Never include screenshot or image media.
+4. `gh pr create --base <base> --head <branch> --title "<conventional title>" --body-file <tmp>`
+5. Title from dominant conventional commit type on the chain range.
+6. No AI attribution in title or body.
 
 ## Body template
 
@@ -87,13 +83,11 @@ All git/gh steps use the `shell` op inside the security blocklist. Never force-p
 
 <gates · tests · review summary from Evidence>
 
-## Screenshots
+## Visual validation
 
-<!-- omit entire section when not visual-required -->
+<Visual verification: passed locally | unavailable | not applicable>
 
-| | |
-|--|--|
-| After | ![after](https://raw.githubusercontent.com/<owner>/<repo>/<branch>/docs/pr-media/<slug>/after.png) |
+<!-- Do not add screenshots, image markdown, media files, or screenshot URLs. -->
 
 ## Issue
 
@@ -120,12 +114,12 @@ Binary action gate — no `(Recommended)` marker. Combined call still ≤ 4 ques
 |---|---|
 | User answers **No** | No push for PR, no `gh pr create`, no issue comment. Print ready-to-run `gh pr create` only. |
 | `pr=never` | Same as No for external writes; print the command in wrap-up. |
-| Visual-required + no media | PR path **blocked** until ≥1 image lands under `docs/pr-media/<slug>/`. |
+| Visual verification unavailable | Open the PR with written validation; do not add screenshots or block PR creation. |
 | `comment=never` or comment declined | Do not post on the issue even if a PR opens. |
 
 ## Evidence
 
 On PR opened: Next may include `PR #<n> · <url>`.  
-On blocked media: Risks / Next note the block.  
+On unavailable visual verification: record it in Validation / Risks.
 On skipped (`pr=never` or user No): print the ready command only.  
 Never invent PR numbers, URLs, or media paths when the create step did not run.
