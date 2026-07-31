@@ -153,6 +153,28 @@ class SessionStartTests(unittest.TestCase):
         self.assertIn("— summarized, see archive/2020-01.md", source)
         self.assertTrue((self.memory / "archive" / "2020-01.md").is_file())
 
+    def test_session_context_bundle_is_bounded_with_explicit_omission_markers(self) -> None:
+        config = self.home / ".hyperflow" / "config.json"
+        config.write_text(
+            json.dumps({"context": {"sessionContextMaxChars": 3000}}),
+            encoding="utf-8",
+        )
+        for name in ("profile.md", "architecture.md", "conventions.md"):
+            (self.hf / name).write_text(
+                "# source\n" + "\n".join(f"source-line-{i}" for i in range(500)),
+                encoding="utf-8",
+            )
+
+        self.run_hook()
+        bundle = (self.memory / "session-context.md").read_text(encoding="utf-8")
+
+        self.assertLessEqual(len(bundle), 3000)
+        self.assertIn("## Profile", bundle)
+        self.assertIn("## Architecture", bundle)
+        self.assertIn("## Conventions", bundle)
+        self.assertIn("source excerpt truncated", bundle)
+        self.assertIn("read .hyperflow/profile.md", bundle)
+
     def test_lean_preserves_bridge_and_update_notices(self) -> None:
         (self.hf / ".bridge-mode").write_text("auto\n", encoding="utf-8")
         (self.home / ".hyperflow" / ".update-check").write_text(

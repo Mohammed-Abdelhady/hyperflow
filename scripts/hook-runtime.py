@@ -91,6 +91,9 @@ MATCHER_TO_EVENT = {
 
 UPDATE_CACHE_MINUTES = 1440
 PRECOMPACT_RECOVERY_MINUTES = 60
+DEFAULT_SESSION_CONTEXT_MAX_CHARS = 12000
+MIN_SESSION_CONTEXT_MAX_CHARS = 2000
+MAX_SESSION_CONTEXT_MAX_CHARS = 50000
 DEFAULT_CONTEXT_WINDOW = 200_000
 DEFAULT_AUTO_COMPACT_MIN_PERCENT = 72
 DEFAULT_READY_TTL_MINUTES = 30
@@ -1006,10 +1009,40 @@ def _append_section(content: str, title: str, body: str) -> str:
     return f"{content}\n\n## {title}\n{body}"
 
 
-def write_session_context(hf_dir: Path, log_path: Path | None) -> None:
+def _bounded_section(lines: list[str], filename: str, max_chars: int) -> list[str]:
+    """Keep a deterministic head/tail excerpt while preserving the source pointer."""
+    text = "\n".join(lines)
+    if len(text) <= max_chars:
+        return lines
+
+    marker = (
+        f"<!-- source excerpt truncated for {filename}; "
+        f"read .hyperflow/{filename} for the complete context -->"
+    )
+    available = max(0, max_chars - len(marker) - 2)
+    head_chars = available // 2
+    tail_chars = available - head_chars
+    head = text[:head_chars].rsplit("\n", 1)[0]
+    tail = text[-tail_chars:].split("\n", 1)[-1]
+    return [head, marker, tail]
+
+
+def write_session_context(
+    hf_dir: Path,
+    log_path: Path | None,
+    *,
+    max_chars: int = DEFAULT_SESSION_CONTEXT_MAX_CHARS,
+) -> None:
     memory = hf_dir / "memory"
     if not memory.is_dir():
         return
+    max_chars = _as_int(
+        max_chars,
+        DEFAULT_SESSION_CONTEXT_MAX_CHARS,
+        MIN_SESSION_CONTEXT_MAX_CHARS,
+        MAX_SESSION_CONTEXT_MAX_CHARS,
+    )
+    section_budget = max(256, max_chars // 3)
     parts: list[str] = []
     for label, filename in (
         ("Profile", "profile.md"),
@@ -1023,18 +1056,17 @@ def write_session_context(hf_dir: Path, log_path: Path | None) -> None:
                 lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 lines = []
-            parts.extend(lines[:500])
-            if len(lines) > 500:
-                parts.append(
-                    f"<!-- truncated: {filename} has {len(lines)} lines, showing first 500 -->"
-                )
+            parts.extend(_bounded_section(lines, filename, section_budget))
         else:
             parts.append(
                 f"<!-- .hyperflow/{filename} not found — run /hyperflow:scaffold to populate -->"
             )
         parts.append("")
     try:
-        (memory / "session-context.md").write_text("\n".join(parts) + "\n", encoding="utf-8")
+        output = "\n".join(parts) + "\n"
+        if len(output) > max_chars:
+            output = output[:max_chars].rsplit("\n", 1)[0] + "\n"
+        (memory / "session-context.md").write_text(output, encoding="utf-8")
     except OSError as exc:
         if log_path is not None:
             try:
@@ -1402,8 +1434,19 @@ def enrich_session_content(ctx: SessionContext, content: str) -> str:
         log_path,
     )
 
-    # Session context bundle
-    write_session_context(hf_dir, log_path)
+    # Session context bundle — bounded so project memory cannot inflate every worker prompt.
+    context_cfg = load_context_config(ctx.home)
+    session_context_max_chars = _as_int(
+        context_cfg.get("sessionContextMaxChars"),
+        DEFAULT_SESSION_CONTEXT_MAX_CHARS,
+        MIN_SESSION_CONTEXT_MAX_CHARS,
+        MAX_SESSION_CONTEXT_MAX_CHARS,
+    )
+    write_session_context(
+        hf_dir,
+        log_path,
+        max_chars=session_context_max_chars,
+    )
 
     # Full-mode project snapshot
     if ctx.mode != "lean":
