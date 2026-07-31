@@ -9,6 +9,9 @@
     "compactionThreshold": 300,
     "autoCompact": false
   },
+  "context": {
+    "sessionContextMaxChars": 12000
+  },
   "handoff": {
     "autoPush": true,
     "remote": "origin",
