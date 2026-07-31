@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.27.1] — 2026-07-31
+
+### Fixed
+- Require auto-observe proof before fast route
+- Block generic control-plane paths
+- Close remaining auto-observe gaps
+- Fail closed on ambiguous path preflight
+
+### Changed
+- Lazy-load usage ledger contract (#34)
+- Lazy-load usage ledger contract
+- Add bounded safe-edit preflight
+- Deduplicate worker context contracts
+- Bound session-start memory bundle
+- Keep screenshots out of pull requests
+
+
 ## [5.27.0] — 2026-07-30
 
 ### Added
@@ -1567,7 +1584,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.1...HEAD
+[5.27.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.0...v5.27.1
 [5.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.26.0...v5.27.0
 [5.26.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.25.0...v5.26.0
 [5.25.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.24.0...v5.25.0
