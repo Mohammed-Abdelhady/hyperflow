@@ -170,6 +170,7 @@ class RouteTaskTests(unittest.TestCase):
     def test_auto_preflight_extracts_explicit_safe_file_reference(self):
         result = router.route_task(
             "Fix the typo in README.md",
+            files=["README.md"],
             auto_observe=True,
             project_root=ROOT,
         )
@@ -177,9 +178,37 @@ class RouteTaskTests(unittest.TestCase):
         self.assertEqual(result["observed_files"], ["README.md"])
         self.assertIn("auto_observed_safe_edit", result["reasons"])
 
+    def test_auto_preflight_accepts_normalized_relative_reference(self):
+        result = router.route_task(
+            "Fix the typo in ./README.md",
+            files=["README.md"],
+            auto_observe=True,
+            project_root=ROOT,
+        )
+        self.assertEqual(result["route"], "inline_fast")
+
+    def test_auto_preflight_rejects_unsupported_and_control_plane_paths(self):
+        cases = [
+            ("Fix the typo in README.md and foo.lock", ["README.md", "foo.lock"]),
+            ("Fix the typo in README.md and .travis.yml", ["README.md", ".travis.yml"]),
+            ("Fix the typo in README.md and azure-pipelines.yml", ["README.md", "azure-pipelines.yml"]),
+        ]
+        for request, files in cases:
+            with self.subTest(request=request):
+                self.assertEqual(
+                    router.route_task(
+                        request,
+                        files=files,
+                        auto_observe=True,
+                        project_root=ROOT,
+                    )["route"],
+                    "classifier",
+                )
+
     def test_auto_preflight_never_guesses_scope_or_intent(self):
         cases = [
             "Fix the typo",
+            "Fix the typo in README.md",
             "Maybe fix the typo in README.md",
             "How should we change README.md?",
             "Fix the authentication bug in src/auth.ts",
@@ -224,6 +253,8 @@ class RouteTaskTests(unittest.TestCase):
                 str(SCRIPT),
                 "Fix the typo in README.md",
                 "--auto-observe",
+                "--file",
+                "README.md",
                 "--project-root",
                 str(ROOT),
             ],
