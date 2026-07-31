@@ -209,9 +209,9 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L1 — Lightweight Classifier (D1)
 
-**What it is:** Run deterministic `route-task.py` first. Dispatch the lean structured-output Classifier only when the preflight cannot safely prove an inline-fast route.
+**What it is:** Run deterministic `route-task.py --auto-observe` first. It may extract an explicit relative file reference and prove only a narrow safe edit (typo/spelling/whitespace/format, rename, reword, docs/comment/test update, or missing import). Dispatch the lean structured-output Classifier only when that proof fails.
 
-**When applicable:** Every new-work request runs deterministic preflight; uncertain, explicit, gated, or non-fast requests then use the Classifier. Both paths produce the same triage contract. Classifier runs on the **current session model** (no cheaper-tier routing).
+**When applicable:** Every new-work request runs deterministic preflight; uncertain, explicit, gated, broad, or non-fast requests then use the Classifier. Both paths produce the same triage contract. Classifier runs on the **current session model** (no cheaper-tier routing).
 
 **`--thorough` behavior:** Does NOT change this lever. Lean classification is high-quality for the structured JSON output shape; no accuracy tradeoff justifies a heavier ceremony prompt.
 
