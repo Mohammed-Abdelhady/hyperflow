@@ -85,6 +85,19 @@ KNOWN_PATH_BASENAMES = {
     "readme",
     "changelog",
 }
+CONTROL_PLANE_NAMES = {
+    ".travis.yml",
+    ".drone.yml",
+    ".gitlab-ci.yml",
+    "azure-pipelines.yml",
+    "appveyor.yml",
+    "circle.yml",
+    "jenkinsfile",
+    "bitbucket-pipelines.yml",
+    "buildkite.yml",
+    "cloudbuild.yaml",
+    "codebuild.yml",
+}
 
 GENERATED_NAMES = {
     "package-lock.json",
@@ -159,14 +172,16 @@ def _extract_path_like_tokens(request: str) -> list[str]:
     """Return explicit path-shaped tokens, including unsupported filenames."""
     tokens: list[str] = []
     for raw in PATH_TOKEN_RE.findall(request):
-        token = raw.strip("`'\".,;:!?()[]{}")
+        token = raw.strip("`'\" \t,;:!?()[]{}")
+        while token.endswith(".") and not token.endswith(".."):
+            token = token[:-1]
         if not token or "://" in token:
             continue
         lowered = token.lower()
         if (
             "/" in token
             or "\\" in token
-            or lowered.startswith(".")
+            or "." in token
             or lowered in KNOWN_PATH_BASENAMES
         ):
             tokens.append(token)
@@ -178,6 +193,9 @@ def _extract_path_like_tokens(request: str) -> list[str]:
 
 def _is_control_plane_surface(path: str) -> bool:
     parts = {part.lower() for part in PurePosixPath(path).parts}
+    name = PurePosixPath(path).name.lower()
+    if name in CONTROL_PLANE_NAMES:
+        return True
     if ".github" in parts and parts & {"workflows", "actions"}:
         return True
     return bool(
@@ -324,8 +342,6 @@ def route_task(
     if auto_observe:
         explicit_files = _extract_file_references(stripped)
         path_tokens = _extract_path_like_tokens(stripped)
-        if not normalized_files:
-            normalized_files = explicit_files
         if _auto_observe_safe_edit(
             stripped,
             normalized_files,
