@@ -209,7 +209,7 @@ Round 2 reduces call **count** by eliminating unnecessary review passes. The doc
 
 ### L1 — Lightweight Classifier (D1)
 
-**What it is:** Run deterministic `route-task.py --auto-observe` first. It may extract matching explicit relative file references and prove only a narrow imperative safe edit (typo/spelling/whitespace/format, rename, reword, docs/comment/test update, or missing import). Questions, unsupported/backslash paths, control-plane paths, and mismatched scope fall through to the lean structured-output Classifier.
+**What it is:** Run deterministic `route-task.py --auto-observe` first. It may extract matching explicit relative file references and prove only a narrow imperative safe edit (typo/spelling/whitespace/format, rename, reword, docs/comment/test update, or missing import). Questions, unsupported/backslash paths, control-plane paths, mismatched scope, and failed proofs remain Classifier fallbacks even when caller observations say `reversible` and `clear`.
 
 **When applicable:** Every new-work request runs deterministic preflight; uncertain, explicit, gated, broad, or non-fast requests then use the Classifier. Both paths produce the same triage contract. Classifier runs on the **current session model** (no cheaper-tier routing).
 

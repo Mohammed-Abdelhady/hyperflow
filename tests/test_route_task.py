@@ -208,6 +208,32 @@ class RouteTaskTests(unittest.TestCase):
                     "classifier",
                 )
 
+    def test_auto_observe_proof_failure_overrides_caller_observations(self):
+        cases = [
+            ("Fix the typo in README.lock", ["README.lock"]),
+            ("Fix the typo in Jenkinsfile", ["Jenkinsfile"]),
+            ("Fix the typo in README.md and Jenkinsfile", ["README.md"]),
+            ("Fix the typo in control-plane.yml", ["control-plane.yml"]),
+            ("Fix the typo in control-plane/manifest.yml", ["control-plane/manifest.yml"]),
+            ("Fix the typo in ci.yml", ["ci.yml"]),
+            ("Fix the typo in ci/config.yml", ["ci/config.yml"]),
+            (r"Fix the typo in docs\\README.md", ["docs/README.md"]),
+            ("Can you format README.md?", ["README.md"]),
+            ("How do I format README.md", ["README.md"]),
+        ]
+        for request, files in cases:
+            with self.subTest(request=request):
+                result = router.route_task(
+                    request,
+                    files=files,
+                    risk="reversible",
+                    clarity="clear",
+                    auto_observe=True,
+                    project_root=ROOT,
+                )
+                self.assertEqual(result["route"], "classifier")
+                self.assertIn("auto_observe_proof_failed", result["reasons"])
+
     def test_auto_preflight_never_guesses_scope_or_intent(self):
         cases = [
             "Fix the typo",

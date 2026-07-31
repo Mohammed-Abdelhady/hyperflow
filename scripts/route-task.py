@@ -98,6 +98,8 @@ CONTROL_PLANE_NAMES = {
     "buildkite.yml",
     "cloudbuild.yaml",
     "codebuild.yml",
+    "ci.yml",
+    "ci.yaml",
 }
 
 GENERATED_NAMES = {
@@ -217,6 +219,7 @@ def _is_control_plane_surface(path: str) -> bool:
             "helm",
             "k8s",
             "kubernetes",
+            "ci",
         }
     )
 
@@ -389,6 +392,8 @@ def route_task(
     }
     reasons.extend(sorted(unsafe_reasons))
 
+    if auto_observe and not auto_observed:
+        reasons.append("auto_observe_proof_failed")
     if reasons:
         return {
             "route": "classifier",
