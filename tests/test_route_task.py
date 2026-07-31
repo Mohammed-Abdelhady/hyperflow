@@ -167,6 +167,59 @@ class RouteTaskTests(unittest.TestCase):
         )
         self.assertEqual(json.loads(completed.stdout)["route"], "inline_fast")
 
+    def test_auto_preflight_extracts_explicit_safe_file_reference(self):
+        result = router.route_task(
+            "Fix the typo in README.md",
+            auto_observe=True,
+            project_root=ROOT,
+        )
+        self.assertEqual(result["route"], "inline_fast")
+        self.assertEqual(result["observed_files"], ["README.md"])
+        self.assertIn("auto_observed_safe_edit", result["reasons"])
+
+    def test_auto_preflight_never_guesses_scope_or_intent(self):
+        cases = [
+            "Fix the typo",
+            "Maybe fix the typo in README.md",
+            "How should we change README.md?",
+            "Fix the authentication bug in src/auth.ts",
+            "Release the version in package.json",
+            "Rename the database table in schema.sql",
+        ]
+        for request in cases:
+            with self.subTest(request=request):
+                self.assertEqual(
+                    router.route_task(request, auto_observe=True, project_root=ROOT)["route"],
+                    "classifier",
+                )
+        self.assertEqual(
+            router.route_task(
+                "Fix the typo in README.md",
+                files=["src/other.ts"],
+                auto_observe=True,
+                project_root=ROOT,
+            )["route"],
+            "classifier",
+        )
+
+    def test_auto_preflight_cli_flag_returns_the_same_contract(self):
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "Fix the typo in README.md",
+                "--auto-observe",
+                "--project-root",
+                str(ROOT),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["route"], "inline_fast")
+        self.assertEqual(result["observed_files"], ["README.md"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -45,6 +45,29 @@ INTEGRATION_RE = re.compile(
     re.IGNORECASE,
 )
 MIGRATION_RE = re.compile(r"\b(?:migration|migrate|schema change)\b", re.IGNORECASE)
+RELEASE_RE = re.compile(
+    r"\b(?:release|deploy|push|merge|publish|commit|tag|package|version)\b",
+    re.IGNORECASE,
+)
+SYSTEM_RISK_RE = re.compile(
+    r"\b(?:database|db|schema|api|endpoint|service|infrastructure|"
+    r"production|prod|config|configuration|environment|env|dependency|"
+    r"dependencies)\b",
+    re.IGNORECASE,
+)
+SAFE_EDIT_RE = re.compile(
+    r"\b(?:fix\s+(?:the\s+)?(?:typo|spelling|whitespace|format)|"
+    r"correct\s+(?:the\s+)?(?:typo|spelling)|rename\b|reword\b|"
+    r"format\b|update\s+(?:the\s+)?(?:comment|docs?|documentation|test)|"
+    r"add\s+(?:a\s+)?missing\s+import)\b",
+    re.IGNORECASE,
+)
+FILE_REFERENCE_RE = re.compile(
+    r"(?<![\w/:])(?:\./)?(?:[A-Za-z0-9_.-]+/)*"
+    r"[A-Za-z0-9_.-]+\.(?:md|mdx|txt|json|yaml|yml|toml|ini|cfg|"
+    r"css|scss|html|tsx?|jsx?|py|sh|bash|go|rs|java|rb|php|sql)\b",
+    re.IGNORECASE,
+)
 
 GENERATED_NAMES = {
     "package-lock.json",
@@ -108,6 +131,36 @@ def _normalize_files(files: Iterable[str]) -> list[str]:
             normalized.append(value)
             seen.add(value)
     return normalized
+
+
+def _extract_file_references(request: str) -> list[str]:
+    """Extract only explicit relative file references; never infer a scope."""
+    return _normalize_files(FILE_REFERENCE_RE.findall(request))
+
+
+def _auto_observe_safe_edit(
+    request: str,
+    files: list[str],
+    explicit_files: list[str],
+) -> bool:
+    """Prove a tiny edit is safe enough to bypass the classifier.
+
+    This is deliberately narrower than the classifier vocabulary. If the
+    request is not an explicit, low-risk edit with an explicit file scope, the
+    caller keeps the existing model-backed fallback.
+    """
+    return (
+        bool(SAFE_EDIT_RE.search(request))
+        and not AMBIGUITY_RE.search(request)
+        and not SECURITY_RE.search(request)
+        and not INTEGRATION_RE.search(request)
+        and not MIGRATION_RE.search(request)
+        and not SYSTEM_RISK_RE.search(request)
+        and not RELEASE_RE.search(request)
+        and 1 <= len(files) <= 2
+        and (not explicit_files or set(explicit_files) == set(files))
+        and not any(_is_generated_surface(path) for path in files)
+    )
 
 
 def _is_generated_surface(path: str) -> bool:
@@ -189,6 +242,7 @@ def route_task(
     thorough: bool = False,
     explicit_hyperflow: bool | None = None,
     project_root: str | Path | None = None,
+    auto_observe: bool = False,
 ) -> dict[str, object]:
     """Return an ``inline_fast`` or ``classifier`` routing decision.
 
@@ -199,6 +253,18 @@ def route_task(
     normalized_files = _normalize_files(files)
     stripped = request.strip()
     reasons: list[str] = []
+
+    auto_observed = False
+    if auto_observe:
+        explicit_files = _extract_file_references(stripped)
+        if not normalized_files:
+            normalized_files = explicit_files
+        if _auto_observe_safe_edit(stripped, normalized_files, explicit_files):
+            if risk == "unknown":
+                risk = "reversible"
+            if clarity == "unknown":
+                clarity = "clear"
+            auto_observed = True
 
     detected_explicit = bool(EXPLICIT_HYPERFLOW_RE.search(stripped))
     if explicit_hyperflow or detected_explicit:
@@ -238,10 +304,13 @@ def route_task(
             "observed_files": normalized_files,
         }
 
+    success_reasons = ["clear_reversible_non_sensitive_1_to_2_file_scope"]
+    if auto_observed:
+        success_reasons.append("auto_observed_safe_edit")
     return {
         "route": "inline_fast",
         "confidence": "high",
-        "reasons": ["clear_reversible_non_sensitive_1_to_2_file_scope"],
+        "reasons": success_reasons,
         "observed_files": normalized_files,
         "triage_source": TRIAGE_SOURCE,
         "types": [],
@@ -276,6 +345,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--integration-risk", action="store_true")
     parser.add_argument("--thorough", action="store_true")
     parser.add_argument("--explicit-hyperflow", action="store_true")
+    parser.add_argument(
+        "--auto-observe",
+        action="store_true",
+        help="derive only explicit safe-edit observations; otherwise fall back",
+    )
     parser.add_argument("--project-root")
     return parser
 
@@ -293,6 +367,7 @@ def main(argv: list[str] | None = None) -> int:
         thorough=args.thorough,
         explicit_hyperflow=True if args.explicit_hyperflow else None,
         project_root=args.project_root,
+        auto_observe=args.auto_observe,
     )
     print(json.dumps(result, sort_keys=True))
     return 0
