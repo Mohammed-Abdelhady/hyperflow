@@ -32,7 +32,7 @@ Scan every user message for these verbs/phrases. If matched, route immediately. 
 | Status / progress | `status`, `progress`, `what's running`, `how much done`, `eta` | `/hyperflow:status` |
 | Background agents | `list background`, `what's in background`, `cancel background`, `show background` | `/hyperflow:background` |
 
-Verb-matching is case-insensitive and word-boundary-aware. A verb selects a candidate workflow, not its weight: map the affected surface, then run `scripts/route-task.py`. Explicit Hyperflow commands always keep their requested workflow.
+Verb-matching is case-insensitive and word-boundary-aware. A verb selects a candidate workflow, not its weight: map the affected surface, then run `scripts/route-task.py --auto-observe`. Explicit Hyperflow commands always keep their requested workflow.
 
 **Tier 2 — `state: on` (full sticky):** every task-shaped user message routes, even without an intent verb. Useful when the user is in a sustained build session and wants every message — even short ones like "the dashboard component" — interpreted as work. Uses the message-shape heuristic from the original sticky contract (verb-led → plan; etc.).
 

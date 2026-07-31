@@ -175,6 +175,13 @@
       "description": "Conversation context-budget settings used by smart compaction hooks.",
       "type": "object",
       "properties": {
+        "sessionContextMaxChars": {
+          "type": "integer",
+          "description": "Maximum characters in the generated .hyperflow/memory/session-context.md bundle. Full source files remain on disk.",
+          "default": 12000,
+          "minimum": 2000,
+          "maximum": 50000
+        },
         "windowTokens": {
           "type": "integer",
           "description": "Approximate active model context window used to estimate transcript usage.",

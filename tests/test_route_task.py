@@ -167,6 +167,134 @@ class RouteTaskTests(unittest.TestCase):
         )
         self.assertEqual(json.loads(completed.stdout)["route"], "inline_fast")
 
+    def test_auto_preflight_extracts_explicit_safe_file_reference(self):
+        result = router.route_task(
+            "Fix the typo in README.md",
+            files=["README.md"],
+            auto_observe=True,
+            project_root=ROOT,
+        )
+        self.assertEqual(result["route"], "inline_fast")
+        self.assertEqual(result["observed_files"], ["README.md"])
+        self.assertIn("auto_observed_safe_edit", result["reasons"])
+
+    def test_auto_preflight_accepts_normalized_relative_reference(self):
+        result = router.route_task(
+            "Fix the typo in ./README.md",
+            files=["README.md"],
+            auto_observe=True,
+            project_root=ROOT,
+        )
+        self.assertEqual(result["route"], "inline_fast")
+
+    def test_auto_preflight_rejects_unsupported_and_control_plane_paths(self):
+        cases = [
+            ("Fix the typo in README.md and foo.lock", ["README.md", "foo.lock"]),
+            ("Fix the typo in README.md and .travis.yml", ["README.md", ".travis.yml"]),
+            ("Fix the typo in README.md and azure-pipelines.yml", ["README.md", "azure-pipelines.yml"]),
+            ("Fix the typo in README.md and Jenkinsfile", ["README.md"]),
+            ("Fix the typo in control-plane.yml", ["control-plane.yml"]),
+            ("Fix the typo in control-plane/manifest.yml", ["control-plane/manifest.yml"]),
+        ]
+        for request, files in cases:
+            with self.subTest(request=request):
+                self.assertEqual(
+                    router.route_task(
+                        request,
+                        files=files,
+                        auto_observe=True,
+                        project_root=ROOT,
+                    )["route"],
+                    "classifier",
+                )
+
+    def test_auto_observe_proof_failure_overrides_caller_observations(self):
+        cases = [
+            ("Fix the typo in README.lock", ["README.lock"]),
+            ("Fix the typo in Jenkinsfile", ["Jenkinsfile"]),
+            ("Fix the typo in README.md and Jenkinsfile", ["README.md"]),
+            ("Fix the typo in control-plane.yml", ["control-plane.yml"]),
+            ("Fix the typo in control-plane/manifest.yml", ["control-plane/manifest.yml"]),
+            ("Fix the typo in ci.yml", ["ci.yml"]),
+            ("Fix the typo in ci/config.yml", ["ci/config.yml"]),
+            (r"Fix the typo in docs\\README.md", ["docs/README.md"]),
+            ("Can you format README.md?", ["README.md"]),
+            ("How do I format README.md", ["README.md"]),
+        ]
+        for request, files in cases:
+            with self.subTest(request=request):
+                result = router.route_task(
+                    request,
+                    files=files,
+                    risk="reversible",
+                    clarity="clear",
+                    auto_observe=True,
+                    project_root=ROOT,
+                )
+                self.assertEqual(result["route"], "classifier")
+                self.assertIn("auto_observe_proof_failed", result["reasons"])
+
+    def test_auto_preflight_never_guesses_scope_or_intent(self):
+        cases = [
+            "Fix the typo",
+            "Fix the typo in README.md",
+            "Maybe fix the typo in README.md",
+            "How should we change README.md?",
+            "Fix the authentication bug in src/auth.ts",
+            "Release the version in package.json",
+            "Rename the database table in schema.sql",
+            "How do I format README.md?",
+            "What does rename mean for README.md?",
+            "Should I rename README.md?",
+            r"Fix the typo in docs\README.md",
+            "Fix the typo in README.md and Dockerfile",
+            "Fix the typo in .github/workflows/ci.yml",
+        ]
+        for request in cases:
+            with self.subTest(request=request):
+                self.assertEqual(
+                    router.route_task(request, auto_observe=True, project_root=ROOT)["route"],
+                    "classifier",
+                )
+        self.assertEqual(
+            router.route_task(
+                "Fix the typo in README.md",
+                files=["src/other.ts"],
+                auto_observe=True,
+                project_root=ROOT,
+            )["route"],
+            "classifier",
+        )
+        self.assertEqual(
+            router.route_task(
+                "Fix the typo",
+                files=["README.md"],
+                auto_observe=True,
+                project_root=ROOT,
+            )["route"],
+            "classifier",
+        )
+
+    def test_auto_preflight_cli_flag_returns_the_same_contract(self):
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "Fix the typo in README.md",
+                "--auto-observe",
+                "--file",
+                "README.md",
+                "--project-root",
+                str(ROOT),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["route"], "inline_fast")
+        self.assertEqual(result["observed_files"], ["README.md"])
+
 
 if __name__ == "__main__":
     unittest.main()
