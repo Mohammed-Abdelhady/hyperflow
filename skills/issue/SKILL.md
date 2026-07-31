@@ -99,7 +99,7 @@ Issue chains contribute:
 
 - `gh_issue=<n>` → PR body includes `Closes #<n>`; optional courtesy comment after open (`comment=ask|never`).
 - Same `pr=ask|auto|never` pre-election as any other chain.
-- **Frontend / mobile / UI work still requires screenshots** in the PR (capture or user-supplied) — issue linkage does not waive media.
+- Frontend / mobile / UI work may use local visual verification, but screenshots must never be committed, uploaded, or embedded in the PR. Issue linkage does not change this rule.
 - Conventional title from the dominant commit type. No AI attribution.
 - **Never force-push. Never push to `main`/`master` directly.** The PR branch is the only outbound surface.
 

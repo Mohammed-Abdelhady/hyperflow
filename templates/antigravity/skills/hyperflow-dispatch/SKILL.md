@@ -47,7 +47,7 @@ On handoff builds, also write the same Evidence fields into `.hyperflow-handoff/
    - Run `hyperflow-audit`?
    - Run `hyperflow-deploy`? (never auto-push; deploy has its own push gate)
    - **Open a pull request?** (default ask on every build — not only issue chains)
-10. **If opening a PR** and the work is frontend / UI / mobile / creative (or UI files changed): **screenshots are required**. Try auto-capture; if that fails, ask the user for image paths. Commit under `docs/pr-media/<slug>/`, push the feature branch, embed images in the PR body. **Do not** `gh pr create` without ≥1 image on visual work. Full contract: `skills/dispatch/references/pr-exit.md`. Non-visual PRs need no Screenshots section. Add `Closes #<n>` only when the chain came from an issue.
+10. **If opening a PR** and the work is frontend / UI / mobile / creative (or UI files changed): local visual verification may run, but screenshots are never committed, uploaded, or embedded in the PR. If verification is unavailable, record that in Validation and continue with a text-only PR. Full contract: `skills/dispatch/references/pr-exit.md`. Add `Closes #<n>` only when the chain came from an issue.
 
 ## Rules
 

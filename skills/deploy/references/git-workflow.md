@@ -117,7 +117,7 @@ The dispatch skill then asks the user via `structured_question` (Hyperflow Quest
 
 1. **Run `/hyperflow:audit` on the changes?** — binary. Audit gives an outside-eye L3 review on the cumulative diff.
 2. **Run `/hyperflow:deploy` (full gates + commit + push)?** — binary. Deploy is independent and asks its own push-confirmation gate at Step 6.
-3. **Open a pull request?** — when `pr=ask` (default on **every** dispatch). Full contract: [`../../dispatch/references/pr-exit.md`](../../dispatch/references/pr-exit.md). Frontend / ui / mobile / creative surfaces **require screenshots** in the PR body (auto-capture or user-supplied); block `gh pr create` until ≥1 image is on the branch under `docs/pr-media/<slug>/`.
+3. **Open a pull request?** — when `pr=ask` (default on **every** dispatch). Full contract: [`../../dispatch/references/pr-exit.md`](../../dispatch/references/pr-exit.md). Frontend / ui / mobile / creative surfaces may use local visual verification, but screenshots are never committed, uploaded, or embedded in the PR.
 
 The orchestrator does **NOT** auto-invoke audit or deploy. PR opens only on explicit yes / `pr=auto`. Binary gates carry **no** `(Recommended)` marker.
 

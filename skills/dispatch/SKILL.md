@@ -53,7 +53,7 @@ Every substantive step dispatches at least one worker via `spawn` (or a labelled
 | 3 — Final integration review | — (atomic · §12.2.8) | **Reviewer** — broadest matching specialist(s), L1–L<n> over full diff | Single Reviewer dispatch; skipped under D7 incl. single-specialist coverage (rule 17) |
 | 3.5 — Chain-end quality gates | Worker — full lint/typecheck/tests/(build) when tier ≥ standard | **Reviewer** — judges suite | Skipped on light tier; independent of D7 |
 | 4 — Wrap up | Writer — optional; only if memory prose is non-trivial | — | §12.1 trivial-inline; no Reviewer (D5); terminal reap phase (gated) |
-| 5 — End of chain | — (exempt) | — | ONE `structured_question` with audit + deploy + PR (when `pr=ask`); visual PRs require screenshots per [pr-exit.md](references/pr-exit.md) |
+| 5 — End of chain | — (exempt) | — | ONE `structured_question` with audit + deploy + PR (when `pr=ask`); visual changes may use local verification, but PRs never carry screenshots |
 
 Normal-flow iron rule — `review agents = batches + integration_review(0|1)` (one batched Reviewer per batch, plus final integration when D7 does not skip it). The batched Reviewer counts as 1 per batch regardless of sub-task count. Deterministic inline-fast is the explicit exception: zero agent Reviewers and one foreground diff review.
 
@@ -443,9 +443,9 @@ On deploy `Yes` → `skill_continuation` to deploy: prefer invoke `Skill` with `
 **PR exit (every dispatch — full contract: [pr-exit.md](references/pr-exit.md)).** Fires after the deploy answer is processed:
 
 - `pr=ask` (default) → question [3] above. `pr=auto` → open without asking. `pr=never` → skip; print ready-to-run `gh pr create`.
-- **Visual-required** (frontend / ui / mobile / creative triage, or UI file globs, or `pr_images=require`): **must** attach ≥1 screenshot before `gh pr create`. Try auto-capture; on failure ask for local image paths; **block** PR create until images exist. Commit media under `docs/pr-media/<slug>/`, push, embed `raw.githubusercontent.com` URLs in the body `## Screenshots` section.
-- Non-visual PRs: no Screenshots section required.
-- On PR yes/auto (after media gate if visual): `git push -u origin <branch>` (never force, never to `main`/`master` — feature branch only), then `gh pr create` with conventional title + body (Summary · Validation · optional Screenshots · `Closes #<n>` only if `gh_issue=` set). No AI attribution.
+- **Visual verification** (frontend / ui / mobile / creative triage, or UI file globs, or `pr_images=require`): may run a local or CI capture before `gh pr create`, but screenshots must never be committed, uploaded, or embedded in the PR. If unavailable, write that in Validation and continue with the normal PR gate.
+- PRs are text-only: use Summary, Validation, and `Closes #<n>` only when `gh_issue=` is set. Never add a Screenshots section or image media.
+- On PR yes/auto: `git push -u origin <branch>` (never force, never to `main`/`master` — feature branch only), then `gh pr create` with conventional title + body. No AI attribution.
 - After the PR opens: when `gh_issue=` present and `comment=ask`, offer one courtesy comment on issue `#<n>` linking the PR; `comment=never` skips. One batched comment — never incremental updates.
 - `gh` unauthenticated or push rejected → print recovery commands and stop cleanly. Never half-post.
 
@@ -481,7 +481,7 @@ Dispatch owns three operational pre-elections at Step 0.5 (`commit`/`branch`/`pu
 | `push` | `ask` / `auto` / `never` | `ask` | Forwarded to Deploy Step 6 via chain args |
 | `pr` | `ask` / `auto` / `never` | `ask` | Step 5 PR exit — **every** dispatch (not only issue chains) |
 | `comment` | `ask` / `never` | `ask` | Courtesy comment on originating issue — only when `gh_issue=<n>` |
-| `pr_images` | `auto` / `require` / `never` | `auto` | `auto` = require images when visual-required; `require` = always; `never` = waive (note in Evidence) |
+| `pr_images` | `auto` / `require` / `never` | `auto` | `auto` = attempt local visual verification; `require` = require local verification but never attach media; `never` = waive and note in Evidence |
 
 **`commit=per-task`** (default) — commit after every sub-task PASS as the existing flow. Commits land directly on the user's working branch as they happen.
 **`commit=per-batch`** — accumulate sub-task changes; commit once per batch after all sub-tasks PASS, with a message rolling up the batch (`feat(<scope>): batch <n> — <one-line summary>`). One per-batch commit per batch.
@@ -520,7 +520,7 @@ Full rules in [DOCTRINE.md](../hyperflow/DOCTRINE.md). This skill is the execute
 
 `/hyperflow:dispatch` is the workhorse phase. Normal flows read a task file from `/hyperflow:plan`; deterministic inline-fast executes a proven 1–2-file reversible edit directly without creating a task file or dispatching agents.
 
-Parallel workers via `spawn` (or labelled inline workers), per-batch Reviewers as a separate spawn/inline phase that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up with gated **reap phase** (archive-first slug disposition; deferred when `on_complete=deploy`), and (at the end of the auto-chain) ONE combined `structured_question` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs require screenshots per [pr-exit.md](references/pr-exit.md).
+Parallel workers via `spawn` (or labelled inline workers), per-batch Reviewers as a separate spawn/inline phase that send work back with `NEEDS_FIX`, a conditional final integration review (skipped when all batches pass first-try with no escalations), inline wrap-up with gated **reap phase** (archive-first slug disposition; deferred when `on_complete=deploy`), and (at the end of the auto-chain) ONE combined `structured_question` gate with audit, deploy, and (when `pr=ask`) PR questions. Frontend/mobile PRs may run local visual verification, but screenshots never enter the PR.
 
 Normal-flow floor: one Reviewer per batch + one final integration Reviewer when D7 does not skip it. Inline-fast: zero agent Reviewers + one foreground diff review.
 
@@ -545,7 +545,7 @@ The numbered steps live in [Step 0 — Choose mode](#step-0--choose-mode-only-if
 4. Final integration review — conditional (D7): skip if all batches PASSed first try + no escalations + no security flags. Otherwise: Reviewer dispatched over cumulative diff; verdict routes to Step 3.5 (PASS), re-dispatch (NEEDS_FIX), or halt (SECURITY_VIOLATION). Atomic per §12.2.8.
 5. Chain-end quality gates (Step 3.5) — full suite when `gate_tier` ≥ standard; skip on light. Independent of D7.
 6. Wrap-up (§12.1 inline) — freeze Evidence inputs, mark terminal status, append memory + `chore(memory):` commit, run **reap phase** for `<slug>` (gated on `cleanup.reapOnComplete`; skip when `on_complete=deploy`), print Reap Report, print **Evidence then ledger-derived Usage** (phase totals + efficiency metrics), write `.hyperflow/.dispatch-auto-compact-ready`. No Reviewer (D5). Writer Agent required only if memory prose generation is non-trivial.
-7. ONE combined `structured_question` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual PRs run the screenshot pipeline before `gh pr create`. On Skill absence for follow-ups, load the target `SKILL.md` completely and continue inline.
+7. ONE combined `structured_question` gate with audit + deploy + PR (when `pr=ask`) — process answers in order; visual changes may run local verification before `gh pr create`, but no screenshot pipeline may add media to the branch or PR. On Skill absence for follow-ups, load the target `SKILL.md` completely and continue inline.
 
 ## Output
 
@@ -603,7 +603,7 @@ Plus the End-of-Chain one-liner listing batches, agents, and per-sub-task commit
 | No interactive channel for audit/deploy gates | Print end-of-chain block with `Audit/Deploy gates skipped — interactive mode required`. Do NOT silently auto-invoke either. |
 | Thinking-agent count < batches + 1 at end (when integration review ran) | Print explicit doctrine violation warning in usage summary. Suggests a per-step reviewer was skipped. |
 | Usage ledger or budget guard fails | Stop before another agent dispatch; surface the accounting command/error. Never continue unmetered. |
-| Visual PR without screenshots | **Block** `gh pr create`; ask for image paths or cancel; print recovery. Never open a frontend/mobile PR with text-only body. |
+| Visual verification unavailable | Continue with text-only PR validation; record the limitation. Never commit or attach screenshots. |
 | `gh` unauthenticated on PR yes | Print `gh auth login` + draft create command; do not half-post. |
 
 ## Examples
@@ -624,5 +624,5 @@ Worked transcripts moved to [examples.md](references/examples.md) so the SKILL b
 - [quality-gates.md](references/quality-gates.md) — Layer 5 lint/typecheck/test policy.
 - [git-workflow.md](references/git-workflow.md) — per-sub-task commit cadence, no AI attribution.
 - [output-style.md](references/output-style.md) — agent label + usage summary format.
-- [pr-exit.md](references/pr-exit.md) — universal PR gate + frontend/mobile screenshot mandate.
+- [pr-exit.md](references/pr-exit.md) — universal PR gate + local-only visual verification policy.
 - [`scripts/reap.py`](../../scripts/reap.py) — scope-aware post-completion reaper (Step 4 terminus; also deploy / handoff `complete`).

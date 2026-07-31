@@ -48,7 +48,7 @@ Every live cross-skill edge. `Target` is a skill name or a non-skill package act
 | `plan` | **Stop** | _(none)_ | Task file remains | Build-location gate; print keep path |
 | `dispatch` | End-of-chain audit **Yes** | `audit` | `level=3` (or `level=5` scientific); cumulative diff context | Step 5 combined gate (audit + deploy [+ PR when `pr=ask`]) |
 | `dispatch` | End-of-chain deploy **Yes** | `deploy` | Propagated `push=` and chain context; deploy owns push gate | Same Step 5 gate; process after audit answer |
-| `dispatch` | PR **Yes** / `pr=auto` | PR exit (dispatch-owned) | Branch, `gh_issue`, `comment`, `pr_images` | Step 5 question [3] or auto; visual PRs require screenshots before create |
+| `dispatch` | PR **Yes** / `pr=auto` | PR exit (dispatch-owned) | Branch, `gh_issue`, `comment`, `pr_images` | Step 5 question [3] or auto; visual changes may use local verification, but screenshots never enter the PR |
 | `dispatch` | Handoff build `on_complete=deploy` | `deploy` | Handoff `HANDOFF.md` args; COMPLETION written first | **Skip** normal audit/deploy AskUserQuestion — disposition already encoded |
 | `dispatch` | Handoff build `on_complete=review` | _(stop)_ | COMPLETION + `STATUS=built`; range for later audit | Operator returns to session 1 (`handoff review` or `audit <base>..<head>`) |
 | `audit` | Fix gate **Fix all** / **Criticals…** | `plan` | `session=one`, `spec=.hyperflow/specs/audit-<YYYY-MM-DD>-<scope-slug>.md` (scoped fix plan) | Step 6 fix gate after findings; plan then stops at **its own** build-location gate — no blind patch |
