@@ -76,6 +76,19 @@ class ContextBudgetTests(unittest.TestCase):
             self.assertFalse(report["ok"])
             self.assertIn("over_limit:fixture.md:20>10", report["violations"])
 
+    def test_dispatch_usage_contract_is_lazy_and_resolves(self) -> None:
+        dispatch_path = ROOT / "skills" / "dispatch" / "SKILL.md"
+        dispatch = dispatch_path.read_text(encoding="utf-8")
+        usage = ROOT / "skills" / "dispatch" / "references" / "usage-ledger.md"
+        usage_text = usage.read_text(encoding="utf-8")
+
+        self.assertIn("[usage-ledger.md](references/usage-ledger.md)", dispatch)
+        self.assertIn("before the first worker, Composer, Reviewer, or gate dispatch", usage_text)
+        self.assertIn("# Dispatch usage ledger and budget boundaries", usage_text)
+        self.assertIn("scripts/usage-ledger.py record", usage_text)
+        self.assertIn("scripts/budget-guard.py", usage_text)
+        self.assertLess(dispatch_path.stat().st_size, 72_000)
+
     def test_duplicate_prompt_references_resolve_to_canonical_sources(self) -> None:
         self.assertEqual(references.check(ROOT), [])
         pointer = ROOT / "skills" / "dispatch" / "references" / "worker-prompt.md"
