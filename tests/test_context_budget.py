@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -88,6 +89,47 @@ class ContextBudgetTests(unittest.TestCase):
         self.assertIn("scripts/usage-ledger.py record", usage_text)
         self.assertIn("scripts/budget-guard.py", usage_text)
         self.assertLess(dispatch_path.stat().st_size, 72_000)
+
+    def test_plan_approval_contract_is_lazy_and_resolves(self) -> None:
+        plan_path = ROOT / "skills" / "plan" / "SKILL.md"
+        plan = plan_path.read_text(encoding="utf-8")
+        gates = plan_path.parent / "references" / "approval-gates.md"
+        gates_text = gates.read_text(encoding="utf-8")
+        runtime_contract = (gates.parent / "../../hyperflow/runtime-contract.md").resolve()
+
+        pointer = "[approval-gates.md](references/approval-gates.md)"
+        pointer_match = re.search(r"\[approval-gates\.md\]\(([^)]+)\)", plan)
+        self.assertIsNotNone(pointer_match)
+        assert pointer_match is not None
+        pointer_href = pointer_match.group(1)
+        self.assertEqual(pointer_href, "references/approval-gates.md")
+        self.assertIn(pointer, plan)
+        self.assertLess(plan.index(pointer), plan.index("### Step 5 — Clarify"))
+        self.assertEqual((plan_path.parent / pointer_href).resolve(), gates.resolve())
+        self.assertTrue(gates.is_file())
+
+        runtime_match = re.search(r"\[runtime-contract\.md\]\(([^)]+)\)", gates_text)
+        self.assertIsNotNone(runtime_match)
+        assert runtime_match is not None
+        runtime_href = runtime_match.group(1)
+        self.assertEqual(runtime_href, "../../hyperflow/runtime-contract.md")
+        self.assertEqual((gates.parent / runtime_href).resolve(), runtime_contract)
+        self.assertTrue(runtime_contract.is_file())
+
+        self.assertIn("The build-location gate remains mandatory on every run", plan)
+        self.assertIn("The build-location gate fires on **every** run", gates_text)
+        for marker in (
+            "Smart questions",
+            "Synthesis + approach",
+            "Design section approval",
+            "| **Build location** |",
+            "end the turn",
+            "Never silently pick the recommended option",
+            "Never start a build without the build-location answer",
+        ):
+            self.assertIn(marker, gates_text)
+        self.assertIn("[runtime-contract.md](../../hyperflow/runtime-contract.md)", gates_text)
+        self.assertLess(plan_path.stat().st_size, 42_000)
 
     def test_duplicate_prompt_references_resolve_to_canonical_sources(self) -> None:
         self.assertEqual(references.check(ROOT), [])
