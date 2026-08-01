@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.28.0] — 2026-08-01
+
+### Added
+- Add lazy doctrine reference index
+
+### Changed
+- Lazy-load approval gate contract (#35)
+
+
 ## [5.27.1] — 2026-07-31
 
 ### Fixed
@@ -1584,7 +1593,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...HEAD
+[5.28.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/preview/v5.27.1...v5.28.0
 [5.27.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.0...v5.27.1
 [5.27.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.26.0...v5.27.0
 [5.26.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.25.0...v5.26.0
