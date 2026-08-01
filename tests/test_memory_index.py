@@ -15,6 +15,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import tempfile
 import unittest
 from datetime import date, timedelta
@@ -112,6 +113,14 @@ class EndToEndTests(unittest.TestCase):
         )
         # Hook-generated and bridge-copied files are not memory entries.
         (self.memory / "session-context.md").write_text("## Profile\n## Ancient\n", encoding="utf-8")
+        (self.memory / "doctrine-index.md").write_text("# Generated index\n", encoding="utf-8")
+
+    def test_fifo_memory_file_is_ignored_without_blocking(self):
+        learnings = self.memory / "learnings.md"
+        learnings.unlink()
+        os.mkfifo(learnings)
+        self.run_script()
+        self.assertNotIn("learnings.md", (self.memory / "index.md").read_text())
 
     def run_script(self) -> str:
         buffer = io.StringIO()
@@ -130,10 +139,45 @@ class EndToEndTests(unittest.TestCase):
         self.assertIn("Unconditional publish", index)
         self.assertIn("3 entries", index)
 
+    def test_symlinked_memory_root_is_rejected(self):
+        outside = Path(self.tmp.name) / "outside-memory"
+        index_before = (self.memory / "index.md").read_bytes()
+        self.memory.rename(outside)
+        self.memory.symlink_to(outside, target_is_directory=True)
+        self.run_script()
+        self.assertEqual((outside / "index.md").read_bytes(), index_before)
+        self.assertFalse((outside / ".checksums").exists())
+
     def test_excluded_files_are_not_indexed(self):
         self.run_script()
         index = (self.memory / "index.md").read_text(encoding="utf-8")
         self.assertNotIn("session-context.md", index)
+        self.assertNotIn("doctrine-index.md", index)
+
+    def test_generated_destinations_never_follow_symlinks(self):
+        outside_index = Path(self.tmp.name) / "outside-index.md"
+        outside_checksums = Path(self.tmp.name) / "outside-checksums"
+        outside_index.write_text("INDEX OUTSIDE")
+        outside_checksums.write_text("CHECKSUMS OUTSIDE")
+        (self.memory / "index.md").unlink(missing_ok=True)
+        (self.memory / ".checksums").unlink(missing_ok=True)
+        (self.memory / "index.md").symlink_to(outside_index)
+        (self.memory / ".checksums").symlink_to(outside_checksums)
+        self.run_script()
+        self.assertEqual(outside_index.read_text(), "INDEX OUTSIDE")
+        self.assertEqual(outside_checksums.read_text(), "CHECKSUMS OUTSIDE")
+
+    def test_invalid_generated_index_is_rebuilt(self):
+        (self.memory / "index.md").write_bytes(b"\xff\xfe")
+        self.run_script()
+        self.assertIn("# Memory Index", (self.memory / "index.md").read_text(encoding="utf-8"))
+
+    def test_generated_index_preserves_restrictive_mode(self):
+        self.run_script()
+        index = self.memory / "index.md"
+        index.chmod(0o600)
+        self.run_script()
+        self.assertEqual(index.stat().st_mode & 0o777, 0o600)
 
     def test_hot_render_carries_hot_entries_and_anti_patterns_only(self):
         rendered = self.run_script()

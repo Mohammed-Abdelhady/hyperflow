@@ -25,10 +25,14 @@ Usage
 from __future__ import annotations
 
 import argparse
+import fcntl
 import importlib.util
 import json
+import os
 import re
+import stat
 import sys
+import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -45,7 +49,7 @@ DEFAULT_CATEGORY_FILES = (
 )
 # Always-hot / structural — not compacted unless --include-special
 SKIP_DEFAULT = frozenset({"anti-patterns.md", "project-decisions.md"})
-EXCLUDED = frozenset({"index.md", "session-context.md", "doctrine.md"})
+EXCLUDED = frozenset({"index.md", "session-context.md", "doctrine.md", "doctrine-index.md"})
 
 HEADING_RE = re.compile(r"^(#{2,3})\s+(.+)$")
 DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
@@ -162,8 +166,11 @@ def format_stub(level: str, day: str, title: str, tags: list[str], month: str) -
 
 def archive_header_keys(archive_text: str) -> set[str]:
     keys: set[str] = set()
-    for line in archive_text.splitlines():
-        m = HEADING_RE.match(line.strip())
+    for heading, body, full in split_entries(archive_text)[1]:
+        if not body.strip():
+            continue
+        rest = heading.strip()
+        m = HEADING_RE.match(rest)
         if not m:
             continue
         rest = m.group(2).strip()
@@ -175,21 +182,41 @@ def archive_header_keys(archive_text: str) -> set[str]:
         day = dm.group(1)
         tags = parse_tags(rest)
         title = strip_heading_meta(rest)
-        keys.add(header_key(day, title, tags))
+        canonical = full.rstrip() + "\n"
+        keys.add(f"{header_key(day, title, tags)}\0{canonical}")
     return keys
 
 
-def load_existing_archive_keys(archive_dir: Path) -> dict[str, set[str]]:
-    """month -> header keys already present."""
+def load_existing_archive_keys(
+    archive_dir: Path, *, dir_fd: int | None = None
+) -> dict[str, set[str]]:
+    """month -> header keys already present; never follow archive symlinks."""
     out: dict[str, set[str]] = {}
-    if not archive_dir.is_dir():
-        return out
-    for p in archive_dir.glob("????-??.md"):
+    owned_fd = dir_fd is None
+    if dir_fd is None:
+        if not archive_dir.is_dir() or archive_dir.is_symlink():
+            return out
         try:
-            text = p.read_text(encoding="utf-8", errors="replace")
+            dir_fd = _open_directory_path(archive_dir)
         except OSError:
-            continue
-        out[p.stem] = archive_header_keys(text)
+            return out
+    try:
+        for name in os.listdir(dir_fd):
+            if not re.fullmatch(r"\d{4}-\d{2}\.md", name):
+                continue
+            try:
+                fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd)
+                st = os.fstat(fd)
+                if not stat.S_ISREG(st.st_mode) or st.st_nlink > 1:
+                    os.close(fd)
+                    continue
+                with os.fdopen(fd, "r", encoding="utf-8", errors="replace") as fh:
+                    out[Path(name).stem] = archive_header_keys(fh.read())
+            except OSError:
+                continue
+    finally:
+        if owned_fd:
+            os.close(dir_fd)
     return out
 
 
@@ -212,6 +239,16 @@ def rebuild_index(hf_dir: Path) -> bool:
     return False
 
 
+def _read_regular_text(path: Path) -> str:
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    st = os.fstat(fd)
+    if not stat.S_ISREG(st.st_mode):
+        os.close(fd)
+        raise OSError(f"not a regular file: {path.name}")
+    with os.fdopen(fd, "r", encoding="utf-8", errors="replace") as stream:
+        return stream.read()
+
+
 def plan_file(
     path: Path,
     rel_name: str,
@@ -224,7 +261,7 @@ def plan_file(
 ) -> tuple[str, list[PlannedEntry], list[str]]:
     """Return (original_text, plans, new_source_lines_if_applied)."""
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        text = _read_regular_text(path)
     except OSError as exc:
         return "", [], [f"unreadable {rel_name}: {exc}"]
 
@@ -331,7 +368,8 @@ def plan_file(
         month = day.strftime("%Y-%m")
         hkey = header_key(day.isoformat(), title, tags)
         existing = archive_keys.setdefault(month, set())
-        if hkey in existing:
+        archive_identity = f"{hkey}\0{full.rstrip()}\n"
+        if archive_identity in existing:
             # Already in archive — still convert source to stub if body remains full
             stub = format_stub(level, day.isoformat(), title, tags, month)
             plans.append(
@@ -369,23 +407,188 @@ def plan_file(
             )
         )
         # Reserve key so same-run duplicates within one file don't double-append
-        existing.add(hkey)
+        existing.add(archive_identity)
         new_parts.append(stub)
 
     return text, plans, new_parts
 
 
+def _append_archive_fd(
+    archive_dir: Path, month: str, block: str, *, dir_fd: int | None = None
+) -> Path:
+    owned_fd = dir_fd is None
+    if dir_fd is None:
+        try:
+            dir_fd = _open_directory_path(archive_dir)
+        except FileNotFoundError:
+            parent_fd = _open_directory_path(archive_dir.parent)
+            try:
+                try:
+                    os.mkdir(archive_dir.name, dir_fd=parent_fd)
+                except FileExistsError:
+                    pass
+                os.fsync(parent_fd)
+                dir_fd = os.open(
+                    archive_dir.name,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=parent_fd,
+                )
+            finally:
+                os.close(parent_fd)
+    try:
+        block = block if block.endswith("\n") else block + "\n"
+        name = f"{month}.md"
+        try:
+            fd = os.open(
+                name,
+                os.O_RDWR | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW | os.O_NONBLOCK,
+                0o644,
+                dir_fd=dir_fd,
+            )
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX)
+            except BaseException:
+                os.close(fd)
+                raise
+            st = os.fstat(fd)
+            if not stat.S_ISREG(st.st_mode) or st.st_nlink > 1:
+                os.close(fd)
+                raise OSError("archive sidecar is not a private regular file")
+            existed = st.st_size > 0
+            if existed:
+                existing = os.pread(fd, st.st_size, 0).decode("utf-8", errors="replace")
+                if archive_header_keys(block) & archive_header_keys(existing):
+                    os.close(fd)
+                    return archive_dir / name
+        except FileNotFoundError:
+            raise
+        with os.fdopen(fd, "a", encoding="utf-8") as fh:
+            if existed:
+                fh.write("\n")
+            fh.write(block)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.fsync(dir_fd)
+        return archive_dir / name
+    finally:
+        if owned_fd and dir_fd is not None:
+            os.close(dir_fd)
+
+
+def _open_directory_path(path: Path) -> int:
+    absolute = path.absolute()
+    if not absolute.is_absolute() or any(part in ("", ".", "..") for part in absolute.parts):
+        raise OSError("directory path is not a safe absolute path")
+    expected = os.stat(absolute, follow_symlinks=False)
+    if not stat.S_ISDIR(expected.st_mode):
+        raise OSError("directory path is not a directory")
+    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for part in absolute.parts[1:]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        actual = os.fstat(fd)
+        if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
+            raise OSError("directory changed during secure open")
+        return fd
+    except Exception:
+        os.close(fd)
+        raise
+
+def _write_text_no_follow(
+    path: Path, content: str, *, expected: str | None = None
+) -> None:
+    try:
+        dir_fd = _open_directory_path(path.parent)
+    except OSError:
+        raise
+    temp_name = f".{path.name}.{uuid.uuid4().hex}.tmp"
+    try:
+        try:
+            old_st = os.stat(path.name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISLNK(old_st.st_mode):
+                raise OSError("source is a symlink")
+            mode = stat.S_IMODE(old_st.st_mode)
+        except FileNotFoundError:
+            mode = 0o644
+        fd = os.open(
+            temp_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o644,
+            dir_fd=dir_fd,
+        )
+        os.fchmod(fd, mode)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(content)
+            fh.flush()
+            os.fsync(fh.fileno())
+        try:
+            st = os.stat(path.name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISLNK(st.st_mode):
+                raise OSError("source is a symlink")
+        except FileNotFoundError:
+            pass
+        if expected is not None:
+            guard_name = f".{path.name}.{uuid.uuid4().hex}.guard"
+            os.rename(path.name, guard_name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+            try:
+                guard_fd = os.open(
+                    guard_name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd
+                )
+                guard_st = os.fstat(guard_fd)
+                if not stat.S_ISREG(guard_st.st_mode):
+                    os.close(guard_fd)
+                    raise OSError("guard source is not regular")
+                with os.fdopen(guard_fd, "r", encoding="utf-8", errors="replace") as guard:
+                    unchanged = guard.read() == expected
+                if not unchanged:
+                    raise OSError("source changed during replacement")
+                try:
+                    os.link(
+                        temp_name,
+                        path.name,
+                        src_dir_fd=dir_fd,
+                        dst_dir_fd=dir_fd,
+                        follow_symlinks=False,
+                    )
+                except FileExistsError as exc:
+                    raise OSError("source recreated during replacement") from exc
+                os.unlink(guard_name, dir_fd=dir_fd)
+                os.unlink(temp_name, dir_fd=dir_fd)
+            except Exception:
+                try:
+                    os.link(
+                        guard_name,
+                        path.name,
+                        src_dir_fd=dir_fd,
+                        dst_dir_fd=dir_fd,
+                        follow_symlinks=False,
+                    )
+                    os.unlink(guard_name, dir_fd=dir_fd)
+                except FileExistsError:
+                    pass
+                raise
+        else:
+            os.link(
+                temp_name,
+                path.name,
+                src_dir_fd=dir_fd,
+                dst_dir_fd=dir_fd,
+                follow_symlinks=False,
+            )
+            os.unlink(temp_name, dir_fd=dir_fd)
+        os.fsync(dir_fd)
+    finally:
+        try:
+            os.unlink(temp_name, dir_fd=dir_fd)
+        except FileNotFoundError:
+            pass
+        os.close(dir_fd)
+
+
 def append_archive(archive_dir: Path, month: str, block: str) -> Path:
-    archive_dir.mkdir(parents=True, exist_ok=True)
-    sidecar = archive_dir / f"{month}.md"
-    block = block if block.endswith("\n") else block + "\n"
-    existed = sidecar.is_file() and sidecar.stat().st_size > 0
-    with sidecar.open("a", encoding="utf-8") as fh:
-        if existed:
-            fh.write("\n")
-        # Prefer a clean header without stub suffix if someone passes a stub
-        fh.write(block)
-    return sidecar
+    return _append_archive_fd(archive_dir, month, block)
 
 
 def resolve_targets(
@@ -401,7 +604,7 @@ def resolve_targets(
             if not cand.is_file() and (mem / p.name).is_file():
                 cand = mem / p.name
             p = cand
-        if not p.is_file():
+        if not p.is_file() or p.is_symlink():
             raise FileNotFoundError(f"memory file not found: {file_arg}")
         # path safety: must live under mem
         try:
@@ -416,7 +619,7 @@ def resolve_targets(
     out: list[Path] = []
     for name in names:
         p = mem / name
-        if p.is_file():
+        if p.is_file() and not p.is_symlink() and p.resolve(strict=False).parent == mem.absolute():
             out.append(p)
     return out
 
@@ -445,12 +648,21 @@ def run_compact(
         report.ok = False
         report.errors.append(f"unknown mode: {mode}")
         return report
-    if not mem.is_dir():
+    mem_abs = mem.absolute()
+    if (
+        not mem.is_dir()
+        or mem.is_symlink()
+        or mem.resolve(strict=False) != mem_abs
+    ):
         report.ok = False
-        report.errors.append("memory dir missing")
+        report.errors.append("memory dir is symlinked or non-canonical")
         return report
 
     archive_dir = mem / "archive"
+    if archive_dir.is_symlink():
+        report.ok = False
+        report.errors.append("archive dir is symlinked")
+        return report
     archive_keys = load_existing_archive_keys(archive_dir)
 
     try:
@@ -463,7 +675,7 @@ def run_compact(
     # month -> list of full blocks to append
     to_archive: dict[str, list[str]] = {}
     # path -> new text
-    rewrites: dict[Path, str] = {}
+    rewrites: dict[Path, tuple[str, str]] = {}
 
     for path in targets:
         rel = path.name
@@ -497,7 +709,7 @@ def run_compact(
             new_text = "".join(new_parts)
             if not new_text.endswith("\n") and new_text:
                 new_text += "\n"
-            rewrites[path] = new_text
+            rewrites[path] = (new_text, _orig)
 
     if not apply:
         return report
@@ -511,8 +723,10 @@ def run_compact(
                 rel = str(sidecar.relative_to(mem)) if sidecar.is_relative_to(mem) else str(sidecar)
                 if rel not in written_archives:
                     written_archives.append(rel)
-        for path, new_text in rewrites.items():
-            path.write_text(new_text, encoding="utf-8")
+        for path, (new_text, expected_text) in rewrites.items():
+            if _read_regular_text(path) != expected_text:
+                raise OSError(f"source changed during compaction: {path.name}")
+            _write_text_no_follow(path, new_text, expected=expected_text)
             report.source_files.append(path.name)
     except OSError as exc:
         report.ok = False

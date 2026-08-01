@@ -593,6 +593,74 @@ class ReapLogTests(FixtureBase):
         pass
 
 
+class ArchivePathSafetyTests(FixtureBase):
+    def test_quarantine_does_not_dedupe_embedded_block(self) -> None:
+        memory = self.hf / "memory"
+        archive = memory / "archive"
+        archive.mkdir()
+        month = archive / "2026-01.md"
+        chunk = "### [2026-01-03] Orphan\n**Evidence:** src/missing.py:1\n"
+        month.write_text(
+            "### [2026-01-03] Existing\n" + chunk + "\n",
+            encoding="utf-8",
+        )
+        self.assertTrue(reap_mod._quarantine_entries(memory, [chunk]))
+        _pre, blocks = reap_mod._split_memory_entries(month.read_text(encoding="utf-8"))
+        self.assertEqual(sum(block.rstrip() == chunk.rstrip() for block in blocks), 1)
+
+    def test_quarantine_is_idempotent(self) -> None:
+        chunk = "### [2026-01-03] Orphan\n**Evidence:** src/missing.py:1\n"
+        self.assertTrue(reap_mod._quarantine_entries(self.hf / "memory", [chunk]))
+        self.assertTrue(reap_mod._quarantine_entries(self.hf / "memory", [chunk]))
+        archive = self.hf / "memory" / "archive" / "2026-01.md"
+        self.assertEqual(archive.read_text(encoding="utf-8").count("### [2026-01-03]"), 1)
+
+    def test_same_month_retry_deduplicates_canonical_blocks(self) -> None:
+        first = "### [2026-01-03] First\n**Evidence:** src/first.py:1\n"
+        second = "### [2026-01-04] Second\n**Evidence:** src/second.py:1\n"
+        memory = self.hf / "memory"
+        self.assertTrue(reap_mod._quarantine_entries(memory, [first, second]))
+        self.assertTrue(reap_mod._quarantine_entries(memory, [first]))
+        archive = memory / "archive" / "2026-01.md"
+        _pre, blocks = reap_mod._split_memory_entries(archive.read_text(encoding="utf-8"))
+        self.assertEqual(sum(block.rstrip() == first.rstrip() for block in blocks), 1)
+
+    def test_reap_preserves_restrictive_mode(self) -> None:
+        path = self.hf / "memory" / "learnings.md"
+        path.write_text("# Learnings\n\n", encoding="utf-8")
+        path.chmod(0o600)
+        reap_mod._write_memory_child_no_follow(self.hf / "memory", "learnings.md", "# Updated\n")
+        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(path.read_text(), "# Updated\n")
+
+    def test_internal_symlink_category_is_ignored(self) -> None:
+        profile = self.hf / "profile.md"
+        original = "### [2026-01-03] Orphan\n**Evidence:** src/missing.py:1\n"
+        profile.write_text(original, encoding="utf-8")
+        (self.hf / "memory" / "learnings.md").symlink_to(Path("..") / "profile.md")
+        dropped = reap_mod.drop_orphaned_memory_refs(
+            self.hf,
+            dry_run=False,
+            enabled=True,
+        )
+        self.assertEqual(dropped, 0)
+        self.assertEqual(profile.read_text(encoding="utf-8"), original)
+
+    def test_oversized_scan_ignores_internal_symlink_category(self) -> None:
+        profile = self.hf / "profile.md"
+        profile.write_text("line\n" * 100, encoding="utf-8")
+        (self.hf / "memory" / "learnings.md").symlink_to(Path("..") / "profile.md")
+        self.assertEqual(reap_mod.flag_oversized_memory(self.hf, 50), [])
+
+    def test_quarantine_rejects_symlinked_archive(self) -> None:
+        outside = self.root / "outside-reap-archive"
+        outside.mkdir()
+        (self.hf / "memory" / "archive").symlink_to(outside, target_is_directory=True)
+        chunk = "### [2026-01-03] Orphan\n**Evidence:** src/missing.py:1\n"
+        self.assertFalse(reap_mod._quarantine_entries(self.hf / "memory", [chunk]))
+        self.assertEqual(list(outside.iterdir()), [])
+
+
 class OrphanMemoryTests(FixtureBase):
     """Three durable entries: (1) `.hyperflow`-relative Evidence, (2) cites the
     slug's just-archived task file, (3) genuinely dead source. Default reap must

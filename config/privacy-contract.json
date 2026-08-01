@@ -226,6 +226,14 @@
       "category": "automatic"
     },
     {
+      "id": "memory-doctrine-index",
+      "path": ".hyperflow/memory/doctrine-index.md",
+      "when": "SessionStart migrate-cache.py when missing/stale, including current-version cache reconciliation",
+      "contents": "generated read-only doctrine reference index with local source-rooted file:// links",
+      "owner": "scripts/migrate-cache.py",
+      "category": "automatic"
+    },
+    {
       "id": "memory-index",
       "path": ".hyperflow/memory/index.md",
       "when": "SessionStart memory-index.py",

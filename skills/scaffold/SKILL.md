@@ -58,6 +58,7 @@ Create `.hyperflow/memory/` if absent:
 ```
 .hyperflow/memory/
 ├── doctrine.md          ← copied from skills/hyperflow/DOCTRINE.md
+├── doctrine-index.md    ← generated reference index with source-rooted links
 ├── index.md
 ├── learnings.md         ← empty stub (populated by /hyperflow:dispatch wrap-up)
 ├── decisions.md
@@ -84,6 +85,11 @@ staleness.
 - If `.hyperflow/memory/doctrine.md` is absent — copy it.
 - If it already exists — compare modification timestamps (or SHA256) against the source. If the source is newer, re-copy. If up-to-date, skip and print `doctrine.md — checksum match`.
 - This enables Pattern P5 (lean worker prompts): workers Read doctrine on demand instead of receiving it inlined in every prompt.
+
+**doctrine-index.md generation (idempotent):**
+- Source: `skills/hyperflow/doctrine-index.md` (canonical reference manifest)
+- Session-start migration copies it into `.hyperflow/memory/` and rewrites its relative links to source-rooted `file://` links, so cached doctrine navigation remains valid.
+- The migration reconciles this generated file even when `.hyperflow/.version` already equals the current plugin version. Unexpected existing content and symlink destinations are preserved.
 
 **learnings.md (idempotent):**
 - If absent — create as an empty stub with a single heading `# Learnings` and the line `<!-- populated by /hyperflow:dispatch wrap-up -->`.
