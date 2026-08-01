@@ -67,6 +67,7 @@ There is **no** other automatic outbound HTTP, WebSocket, analytics beacon, or D
 | `.hyperflow/.precompact.md` | Recovery snapshot (tasks, specs, decisions, local diff stats) | PreCompact hook (consumed on next session start) |
 | `.hyperflow/.version` | Plugin version last used to migrate the cache | `migrate-cache.py` |
 | `.hyperflow/memory/{anti-patterns,project-decisions,doctrine}.md` | Stubs or refreshed read-only doctrine copy | `migrate-cache.py` when missing/stale |
+| `.hyperflow/memory/doctrine-index.md` | Generated read-only doctrine reference index with local source-rooted `file://` links | `migrate-cache.py` when missing/stale |
 | `.hyperflow/memory/index.md`, `.hyperflow/memory/.checksums` | Derived memory index + SHA256/line counts | `memory-index.py` |
 | `.hyperflow/archive/**`, `.hyperflow/.last-cleanup` | Daily-gated archive of stale tasks/audits/specs/features; learnings promoted into memory | `archive-artefacts.py` |
 | `CLAUDE.md` / `AGENTS.md` (managed doctrine block only) | Portable doctrine markers; user content outside markers is preserved | `auto-bridge.py` when `.bridge-mode` is `auto` |

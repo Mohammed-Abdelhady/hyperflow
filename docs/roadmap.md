@@ -73,6 +73,12 @@ Stop adding surface area. Make the default path obvious, measurable, and reliabl
 - Deterministic helper remains the only writer; hot, undated, structural, and already-stubbed entries are preserved
 - Config/schema, privacy inventory, integration coverage, and mirrored memory protocol docs
 
+## Shipped in the 5.28 doctrine-reference train
+
+- Lazy doctrine reference index keeps startup doctrine compact while preserving navigable source links
+- Session-start cache migration refreshes generated doctrine and index artifacts without overwriting customized memory
+- Memory indexing, compaction, and reaping skip generated references and use atomic, no-follow writes for safer derived-state maintenance
+
 ## Next trains
 
 ### Reliability

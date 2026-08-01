@@ -131,6 +131,61 @@ class ContextBudgetTests(unittest.TestCase):
         self.assertIn("[runtime-contract.md](../../hyperflow/runtime-contract.md)", gates_text)
         self.assertLess(plan_path.stat().st_size, 42_000)
 
+    def test_doctrine_reference_index_is_lazy_and_resolves(self) -> None:
+        doctrine_path = ROOT / "skills" / "hyperflow" / "DOCTRINE.md"
+        doctrine = doctrine_path.read_text(encoding="utf-8")
+        index_match = re.search(r"\[doctrine-index\.md\]\(([^)]+)\)", doctrine)
+        self.assertIsNotNone(index_match)
+        assert index_match is not None
+        index_href = index_match.group(1)
+        index_path = (doctrine_path.parent / index_href).resolve()
+
+        self.assertEqual(index_href, "doctrine-index.md")
+        self.assertTrue(index_path.is_file())
+        self.assertLess(doctrine.index(index_match.group(0)), doctrine.index("## Layer 0: Project Analysis"))
+        index = index_path.read_text(encoding="utf-8")
+        self.assertIn("# Doctrine reference index", index)
+        self.assertIn("| [runtime-contract.md](runtime-contract.md) |", index)
+        self.assertIn("| [reviewer-prompt.md](reviewer-prompt.md) |", index)
+
+        expected_hrefs = (
+            "runtime-contract.md",
+            "chain-router.md",
+            "provider-claude.md",
+            "provider-codex.md",
+            "provider-opencode.md",
+            "doctrine-extensions.md",
+            "auto-routing.md",
+            "task-triage.md",
+            "flow-profiles.md",
+            "adaptive-brainstorming.md",
+            "escalation.md",
+            "personas-A.md",
+            "personas-B.md",
+            "../../agents/README.md",
+            "web-research.md",
+            "output-style.md",
+            "worker-prompt.md",
+            "worker-briefs.md",
+            "reviewer-prompt.md",
+            "review-levels.md",
+            "task-tracking.md",
+            "feature-phases.md",
+            "quality-gates.md",
+            "memory-system.md",
+            "task-templates.md",
+            "git-workflow.md",
+            "security.md",
+            "project-analysis.md",
+            "session-memory.md",
+            "brainstorming-advanced.md",
+        )
+        hrefs = re.findall(r"\[[^\]]+\]\(([^)]+)\)", index)
+        self.assertEqual(tuple(hrefs), expected_hrefs)
+        for href in hrefs:
+            self.assertTrue((index_path.parent / href).resolve().is_file(), href)
+        self.assertLess(doctrine_path.stat().st_size, 90_000)
+
     def test_duplicate_prompt_references_resolve_to_canonical_sources(self) -> None:
         self.assertEqual(references.check(ROOT), [])
         pointer = ROOT / "skills" / "dispatch" / "references" / "worker-prompt.md"

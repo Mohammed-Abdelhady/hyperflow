@@ -11,13 +11,16 @@ Usage
 """
 from __future__ import annotations
 
+import fcntl
 import importlib.util
 import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import uuid
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -851,6 +854,28 @@ def _entry_month(chunk: str) -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m")
 
 
+def _open_directory_path(path: Path) -> int:
+    absolute = path.absolute()
+    if not absolute.is_absolute() or any(part in ("", ".", "..") for part in absolute.parts):
+        raise OSError("directory path is not a safe absolute path")
+    expected = os.stat(absolute, follow_symlinks=False)
+    if not stat.S_ISDIR(expected.st_mode):
+        raise OSError("directory path is not a directory")
+    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for part in absolute.parts[1:]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        actual = os.fstat(fd)
+        if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
+            raise OSError("directory changed during secure open")
+        return fd
+    except Exception:
+        os.close(fd)
+        raise
+
+
 def _quarantine_entries(memory: Path, chunks: list[str]) -> bool:
     """Append dropped entries to memory/archive/YYYY-MM.md (shared monthly sidecar).
 
@@ -858,23 +883,192 @@ def _quarantine_entries(memory: Path, chunks: list[str]) -> bool:
     convention (skills/cache/references/compaction.md). Returns False on any I/O
     failure so the caller leaves the category file untouched (never lose the entry).
     """
-    archive_dir = memory / "archive"
-    try:
-        archive_dir.mkdir(parents=True, exist_ok=True)
-    except Exception:
+    memory_abs = memory.absolute()
+    if (
+        not memory.is_dir()
+        or memory.is_symlink()
+        or memory.resolve(strict=False) != memory_abs
+    ):
         return False
-    for chunk in chunks:
-        sidecar = archive_dir / f"{_entry_month(chunk)}.md"
-        block = chunk if chunk.endswith("\n") else chunk + "\n"
+    archive_dir = memory / "archive"
+    anchor_fd: int | None = None
+    memory_fd: int | None = None
+    try:
+        memory_fd = _open_directory_path(memory)
         try:
-            existed = sidecar.exists() and sidecar.stat().st_size > 0
-            with sidecar.open("a", encoding="utf-8") as fh:
+            dir_fd = os.open(
+                archive_dir.name,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                dir_fd=memory_fd,
+            )
+        except FileNotFoundError:
+            os.mkdir(archive_dir.name, dir_fd=memory_fd)
+            os.fsync(memory_fd)
+            dir_fd = os.open(
+                archive_dir.name,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                dir_fd=memory_fd,
+            )
+    except Exception:
+        if memory_fd is not None:
+            os.close(memory_fd)
+        if anchor_fd is not None:
+            os.close(anchor_fd)
+        return False
+    try:
+        for chunk in chunks:
+            name = f"{_entry_month(chunk)}.md"
+            block = chunk if chunk.endswith("\n") else chunk + "\n"
+            try:
+                fd = os.open(
+                    name,
+                    os.O_RDWR | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW | os.O_NONBLOCK,
+                    0o644,
+                    dir_fd=dir_fd,
+                )
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX)
+                except BaseException:
+                    os.close(fd)
+                    raise
+                st = os.fstat(fd)
+                if not stat.S_ISREG(st.st_mode) or st.st_nlink > 1:
+                    os.close(fd)
+                    return False
+                existed = st.st_size > 0
                 if existed:
-                    fh.write("\n")
-                fh.write(block)
-        except Exception:
-            return False
-    return True
+                    existing = os.pread(fd, st.st_size, 0).decode("utf-8", errors="replace")
+                    _preamble, existing_blocks = _split_memory_entries(existing)
+                    canonical_block = block.rstrip() + "\n"
+                    if any(existing_block.rstrip() + "\n" == canonical_block for existing_block in existing_blocks):
+                        os.close(fd)
+                        continue
+                with os.fdopen(fd, "a", encoding="utf-8") as fh:
+                    if existed:
+                        fh.write("\n")
+                    fh.write(block)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                os.fsync(dir_fd)
+            except Exception:
+                return False
+        return True
+    finally:
+        os.close(dir_fd)
+        if memory_fd is not None:
+            os.close(memory_fd)
+        if anchor_fd is not None:
+            os.close(anchor_fd)
+
+
+def _read_memory_child_no_follow(memory: Path, name: str) -> str:
+    if memory.resolve(strict=False) != memory.absolute():
+        raise OSError("memory directory is not canonical")
+    dir_fd = _open_directory_path(memory)
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            os.close(fd)
+            raise OSError(f"not a regular file: {name}")
+        with os.fdopen(fd, "r", encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    finally:
+        os.close(dir_fd)
+
+
+def _write_memory_child_no_follow(
+    memory: Path, name: str, content: str, *, expected: str | None = None
+) -> None:
+    if memory.resolve(strict=False) != memory.absolute():
+        raise OSError("memory directory is not canonical")
+    dir_fd = _open_directory_path(memory)
+    temp_name = f".{name}.{uuid.uuid4().hex}.tmp"
+    try:
+        try:
+            old_st = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISLNK(old_st.st_mode):
+                raise OSError("destination is a symlink")
+            mode = stat.S_IMODE(old_st.st_mode)
+        except FileNotFoundError:
+            mode = 0o644
+        fd = os.open(
+            temp_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o644,
+            dir_fd=dir_fd,
+        )
+        os.fchmod(fd, mode)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(content)
+            fh.flush()
+            os.fsync(fh.fileno())
+        try:
+            st = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISLNK(st.st_mode):
+                raise OSError("destination is a symlink")
+        except FileNotFoundError:
+            pass
+        if expected is not None:
+            guard_name = f".{name}.{uuid.uuid4().hex}.guard"
+            os.rename(name, guard_name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+            try:
+                guard_fd = os.open(
+                    guard_name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd
+                )
+                guard_st = os.fstat(guard_fd)
+                if not stat.S_ISREG(guard_st.st_mode):
+                    os.close(guard_fd)
+                    raise OSError("guard source is not regular")
+                with os.fdopen(guard_fd, "r", encoding="utf-8", errors="replace") as guard:
+                    unchanged = guard.read() == expected
+                if not unchanged:
+                    raise OSError("source changed during replacement")
+                try:
+                    os.link(
+                        temp_name,
+                        name,
+                        src_dir_fd=dir_fd,
+                        dst_dir_fd=dir_fd,
+                        follow_symlinks=False,
+                    )
+                except FileExistsError as exc:
+                    raise OSError("source recreated during replacement") from exc
+                os.unlink(guard_name, dir_fd=dir_fd)
+                os.unlink(temp_name, dir_fd=dir_fd)
+            except Exception:
+                try:
+                    os.link(
+                        guard_name,
+                        name,
+                        src_dir_fd=dir_fd,
+                        dst_dir_fd=dir_fd,
+                        follow_symlinks=False,
+                    )
+                    os.unlink(guard_name, dir_fd=dir_fd)
+                except FileExistsError:
+                    pass
+                raise
+        else:
+            try:
+                os.link(
+                    temp_name,
+                    name,
+                    src_dir_fd=dir_fd,
+                    dst_dir_fd=dir_fd,
+                    follow_symlinks=False,
+                )
+            except FileExistsError:
+                os.replace(temp_name, name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+            else:
+                os.unlink(temp_name, dir_fd=dir_fd)
+        os.fsync(dir_fd)
+    finally:
+        try:
+            os.unlink(temp_name, dir_fd=dir_fd)
+        except FileNotFoundError:
+            pass
+        os.close(dir_fd)
 
 
 def drop_orphaned_memory_refs(
@@ -898,7 +1092,13 @@ def drop_orphaned_memory_refs(
     if not enabled:
         return 0
     memory = hf / "memory"
-    if not memory.is_dir() or not is_under(hf, memory):
+    memory_abs = memory.absolute()
+    if (
+        not memory.is_dir()
+        or not is_under(hf, memory)
+        or memory.is_symlink()
+        or memory.resolve(strict=False) != memory_abs
+    ):
         return 0
     project_root = hf.parent
     excluded = archived_rels or frozenset()
@@ -906,13 +1106,15 @@ def drop_orphaned_memory_refs(
         p
         for p in memory.glob("*.md")
         if p.is_file()
-        and p.name not in ("index.md", "session-context.md", "doctrine.md")
+        and not p.is_symlink()
+        and p.resolve(strict=False).parent == memory_abs
+        and p.name not in ("index.md", "session-context.md", "doctrine.md", "doctrine-index.md")
         and is_under(hf, p)
     ]
     dropped = 0
     for path in durable:
         try:
-            text = path.read_text(encoding="utf-8", errors="replace")
+            text = _read_memory_child_no_follow(memory, path.name)
         except Exception:
             continue
         preamble, entries = _split_memory_entries(text)
@@ -953,11 +1155,16 @@ def drop_orphaned_memory_refs(
         # Archive-first: quarantine before rewriting so a failed write loses nothing.
         if not _quarantine_entries(memory, orphaned):
             continue
+        try:
+            if _read_memory_child_no_follow(memory, path.name) != text:
+                continue
+        except OSError:
+            continue
         new_text = preamble + "".join(kept)
         if not new_text.strip():
             new_text = f"# {path.stem.replace('-', ' ').title()}\n"
         try:
-            path.write_text(new_text, encoding="utf-8")
+            _write_memory_child_no_follow(memory, path.name, new_text, expected=text)
         except Exception:
             continue  # category untouched; quarantine already holds the copy
         dropped += len(orphaned)
@@ -967,18 +1174,28 @@ def drop_orphaned_memory_refs(
 def flag_oversized_memory(hf: Path, threshold: int) -> list[str]:
     """Return rel paths of durable memory files at/over compaction threshold."""
     memory = hf / "memory"
-    if not memory.is_dir() or not is_under(hf, memory):
+    memory_abs = memory.absolute()
+    if (
+        not memory.is_dir()
+        or not is_under(hf, memory)
+        or memory.is_symlink()
+        or memory.resolve(strict=False) != memory_abs
+    ):
         return []
     out: list[str] = []
     thr = max(50, int(threshold))
     for path in sorted(memory.glob("*.md")):
-        if path.name in ("index.md", "session-context.md", "doctrine.md"):
-            continue
-        if not path.is_file() or not is_under(hf, path):
+        if (
+            path.name in ("index.md", "session-context.md", "doctrine.md", "doctrine-index.md")
+            or path.is_symlink()
+            or not path.is_file()
+            or path.resolve(strict=False).parent != memory_abs
+            or not is_under(hf, path)
+        ):
             continue
         try:
-            with path.open("r", encoding="utf-8", errors="replace") as fh:
-                n = sum(1 for _ in fh)
+            text = _read_memory_child_no_follow(memory, path.name)
+            n = len(text.splitlines())
         except Exception:
             continue
         if n >= thr:

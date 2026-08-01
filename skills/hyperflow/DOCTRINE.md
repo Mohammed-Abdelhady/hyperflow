@@ -8,36 +8,7 @@ You operate as an orchestrator coordinating worker and reviewer agents. Every ag
 
 ## Reference files
 
-| File | Purpose |
-|------|---------|
-| [runtime-contract.md](runtime-contract.md) | Canonical ops, capability precedence, role separation, honest metrics, fallbacks |
-| [chain-router.md](chain-router.md) | Live skill transitions, args, structural gates, inline continuation (no retired `spec`/`scope`) |
-| [provider-claude.md](provider-claude.md) · [provider-codex.md](provider-codex.md) · [provider-opencode.md](provider-opencode.md) | Thin per-host mapping notes — do not fork skill bodies |
-| [doctrine-extensions.md](doctrine-extensions.md) | Full content for Layers 0, 0.5, 4, 5, 6, 7, 8 (this DOCTRINE keeps thin summaries + pointers — extensions hold the full flow/tables/rules) |
-| [auto-routing.md](auto-routing.md) | Layer 1 auto-routing/sticky — state machine, intent-verb taxonomy, bypass matrix, banned patterns |
-| [task-triage.md](task-triage.md) | Layer 0.5 — triage prompt, JSON schema, worked examples |
-| [flow-profiles.md](flow-profiles.md) | 6 flow profiles — pipelines, skip/upgrade conditions, examples |
-| [adaptive-brainstorming.md](adaptive-brainstorming.md) | Depth modes, question framework, section-approval protocol |
-| [escalation.md](escalation.md) | Mid-flight escalation paths, token accounting, usage summary format |
-| [personas-A.md](personas-A.md) | Personas 1–8 (security, scientific, architect, db, api, frontend, ui, creative) + canonical priority order |
-| [personas-B.md](personas-B.md) | Personas 9–15 (research, refactor, bugfix, performance, test, devops, docs) + priority extension |
-| [../../agents/README.md](../../agents/README.md) | Specialist agent registry — Brain router + domain reviewers + investigators, persona-binding rule, selection/dispatch |
-| [web-research.md](web-research.md) | Web-research-first protocol — flow-gating, source budget, citation format, caching (invoked by specialists) |
-| [output-style.md](output-style.md) | Terminal output visual language (symbols, banners, dispatch labels, usage summary) |
-| [worker-prompt.md](worker-prompt.md) | Worker dispatch template |
-| [worker-briefs.md](worker-briefs.md) | Layer 3 Team-Lead→Worker briefing — mandatory detail floor + oversize-task splitting |
-| [reviewer-prompt.md](reviewer-prompt.md) | Reviewer prompt template |
-| [review-levels.md](review-levels.md) | L1–L5 review checklists |
-| [task-tracking.md](task-tracking.md) | Task file format and lifecycle (single-phase flat model) |
-| [feature-phases.md](feature-phases.md) | Feature/phase folder structure for multi-phase work — encapsulated phase folders (tasks/, spec, research, decisions) |
-| [quality-gates.md](quality-gates.md) | Per-task and final-review gate specs |
-| [memory-system.md](memory-system.md) | Memory read/write/prune protocols |
-| [task-templates.md](task-templates.md) | Pre-built decomposition patterns |
-| [git-workflow.md](git-workflow.md) | Branching and auto-commit rules |
-| [security.md](security.md) | Worker blocklists and secret detection |
-| [project-analysis.md](project-analysis.md) | Session-start analysis spec |
-| [session-memory.md](session-memory.md) | Session-scoped memory |
-| [brainstorming-advanced.md](brainstorming-advanced.md) | Extended brainstorming question framework |
+Load [doctrine-index.md](doctrine-index.md) when selecting a downstream contract or reference. It owns the complete path-and-purpose table while this doctrine keeps the startup pointer compact. The listed paths remain relative to `skills/hyperflow/` and must resolve before a downstream layer is invoked.
 
 ## Layer 0: Project Analysis
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,10 @@ class SplitAndStubTests(unittest.TestCase):
         self.assertEqual(len(blocks), 2)
         self.assertIn("One", blocks[0][0])
         self.assertIn("body1", blocks[0][1])
+
+    def test_header_only_archive_entry_is_not_a_duplicate(self) -> None:
+        text = "### [2026-01-01] One `[api]`\n"
+        self.assertEqual(mc.archive_header_keys(text), set())
 
     def test_format_stub(self) -> None:
         stub = mc.format_stub("###", "2026-01-01", "One", ["api", "gotcha"], "2026-01")
@@ -107,6 +112,22 @@ class CompactApplyTests(unittest.TestCase):
         self.assertIn("**What:** old insight", archived)
         self.assertNotIn("Fresh tip", archived)
 
+    def test_truncated_archive_entry_does_not_suppress_rearchive(self) -> None:
+        self._write_learnings()
+        archive = self.mem / "archive"
+        archive.mkdir()
+        month = archive / f"{self.old[:7]}.md"
+        month.write_text(
+            f"### [{self.old}] Ancient gotcha `[api, gotcha]`\n**What:** truncated\n",
+            encoding="utf-8",
+        )
+        report = mc.run_compact(
+            self.mem, today=self.today, hot_days=7, warm_days=30, apply=True, rebuild=False
+        )
+        self.assertTrue(report.ok)
+        self.assertEqual(report.rejected_dup, 0)
+        self.assertIn("**What:** old insight", month.read_text(encoding="utf-8"))
+
     def test_idempotent_second_apply(self) -> None:
         self._write_learnings()
         mc.run_compact(
@@ -152,6 +173,82 @@ class CompactApplyTests(unittest.TestCase):
         )
         self.assertEqual(report.compacted, 0)
         self.assertIn("keep full", (self.mem / "anti-patterns.md").read_text())
+
+    def test_hardlinked_archive_sidecar_is_rejected(self) -> None:
+        self._write_learnings()
+        archive = self.mem / "archive"
+        archive.mkdir()
+        sidecar = archive / f"{self.old[:7]}.md"
+        outside = Path(self.tmp.name) / "outside-hardlink.md"
+        outside.write_text("external\n", encoding="utf-8")
+        os.link(outside, sidecar)
+        report = mc.run_compact(
+            self.mem, mode="compact", apply=True, today=self.today, rebuild=False
+        )
+        self.assertFalse(report.ok)
+        self.assertEqual(outside.read_text(), "external\n")
+
+    def test_compaction_preserves_restrictive_mode(self) -> None:
+        self._write_learnings()
+        source = self.mem / "learnings.md"
+        source.chmod(0o600)
+        report = mc.run_compact(
+            self.mem, mode="compact", apply=True, today=self.today, rebuild=False
+        )
+        self.assertTrue(report.ok, report.errors)
+        self.assertEqual(source.stat().st_mode & 0o777, 0o600)
+
+    def test_symlinked_memory_root_is_rejected(self) -> None:
+        self._write_learnings()
+        outside = Path(self.tmp.name) / "outside-memory"
+        self.mem.rename(outside)
+        self.mem.symlink_to(outside, target_is_directory=True)
+        report = mc.run_compact(self.mem, mode="archive", apply=True, today=self.today, rebuild=False)
+        self.assertFalse(report.ok)
+        self.assertFalse((outside / "archive").exists())
+
+    def test_archive_sidecar_symlink_cannot_suppress_archive(self) -> None:
+        self._write_learnings()
+        archive = self.mem / "archive"
+        archive.mkdir()
+        outside = Path(self.tmp.name) / "outside-sidecar.md"
+        outside.write_text(
+            f"### [{self.old}] Ancient gotcha `[api, gotcha]`\nexternal\n",
+            encoding="utf-8",
+        )
+        (archive / f"{self.old[:7]}.md").symlink_to(outside)
+        report = mc.run_compact(
+            self.mem, mode="compact", apply=True, today=self.today, rebuild=False
+        )
+        self.assertFalse(report.ok)
+        self.assertIn("old insight", (self.mem / "learnings.md").read_text())
+
+    def test_archive_symlink_is_rejected_without_external_write(self) -> None:
+        self._write_learnings()
+        outside = Path(self.tmp.name) / "outside-archive"
+        outside.mkdir()
+        (self.mem / "archive").symlink_to(outside, target_is_directory=True)
+        report = mc.run_compact(
+            self.mem, mode="archive", apply=True, today=self.today, rebuild=False
+        )
+        self.assertFalse(report.ok)
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_generated_doctrine_index_is_never_compacted(self) -> None:
+        path = self.mem / "doctrine-index.md"
+        original = f"### [{self.old}] Generated index `[generated, structure]`\nkeep full\n"
+        path.write_text(original, encoding="utf-8")
+        report = mc.run_compact(
+            self.mem,
+            mode="compact",
+            apply=True,
+            file_arg="doctrine-index.md",
+            today=self.today,
+            rebuild=False,
+        )
+        self.assertTrue(report.ok)
+        self.assertEqual(report.compacted, 0)
+        self.assertEqual(path.read_text(), original)
 
     def test_cli_json_and_help(self) -> None:
         help_r = _run("--help")

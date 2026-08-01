@@ -17,8 +17,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import stat
 import sys
+import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -26,7 +29,7 @@ HOT_DAYS = 7
 WARM_DAYS = 30
 
 # Written by the session-start hook and the bridge, not by the memory protocol.
-EXCLUDED = {"index.md", "session-context.md", "doctrine.md"}
+EXCLUDED = {"index.md", "session-context.md", "doctrine.md", "doctrine-index.md"}
 
 # Permanently hot regardless of entry age — every worker loads it (memory-system.md).
 ALWAYS_HOT = "anti-patterns.md"
@@ -107,10 +110,26 @@ def parse_heading(text: str) -> tuple[str, date | None, list[str]]:
     return re.sub(r"\s{2,}", " ", text).strip(" ,-—`"), day, tags
 
 
-def parse_file(path: Path) -> list[Entry]:
+def _read_regular(path: Path) -> bytes | None:
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            os.close(fd)
+            return None
+        with os.fdopen(fd, "rb") as stream:
+            return stream.read()
     except OSError:
+        return None
+
+
+def parse_file(path: Path) -> list[Entry]:
+    raw = _read_regular(path)
+    if raw is None:
+        return []
+    try:
+        text = raw.decode("utf-8", errors="replace")
+    except UnicodeError:
         return []
 
     entries: list[Entry] = []
@@ -202,25 +221,90 @@ def render_hot(entries: list[Entry]) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+def _open_directory_path(path: Path) -> int:
+    absolute = path.absolute()
+    if not absolute.is_absolute() or any(part in ("", ".", "..") for part in absolute.parts):
+        raise OSError("directory path is not a safe absolute path")
+    expected = os.stat(absolute, follow_symlinks=False)
+    if not stat.S_ISDIR(expected.st_mode):
+        raise OSError("directory path is not a directory")
+    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for part in absolute.parts[1:]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        actual = os.fstat(fd)
+        if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
+            raise OSError("directory changed during secure open")
+        return fd
+    except Exception:
+        os.close(fd)
+        raise
+
+
 def write_if_changed(path: Path, content: str) -> None:
     # Skipping the no-op write keeps mtime stable, so a same-minute rerun touches nothing.
     try:
-        if path.read_text(encoding="utf-8") == content:
-            return
-    except (OSError, ValueError):
-        pass  # absent, unreadable, or not valid UTF-8 (ValueError) — fall through and rewrite it
+        dir_fd = _open_directory_path(path.parent)
+    except OSError:
+        return
+    temp_name = f".{path.name}.{uuid.uuid4().hex}.tmp"
     try:
-        path.write_text(content, encoding="utf-8")
+        try:
+            st = os.stat(path.name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode):
+                return
+            fd = os.open(
+                path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd
+            )
+            current_st = os.fstat(fd)
+            if not stat.S_ISREG(current_st.st_mode):
+                os.close(fd)
+                return
+            with os.fdopen(fd, "r", encoding="utf-8", errors="replace") as stream:
+                if stream.read() == content:
+                    return
+        except (UnicodeError, ValueError):
+            mode = stat.S_IMODE(os.stat(path.name, dir_fd=dir_fd, follow_symlinks=False).st_mode)
+        except FileNotFoundError:
+            mode = 0o644
+        else:
+            mode = stat.S_IMODE(st.st_mode)
+        fd = os.open(
+            temp_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o644,
+            dir_fd=dir_fd,
+        )
+        os.fchmod(fd, mode)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            st = os.stat(path.name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode):
+                return
+        except FileNotFoundError:
+            pass
+        os.replace(temp_name, path.name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+        os.fsync(dir_fd)
     except OSError:
         pass
+    finally:
+        try:
+            os.unlink(temp_name, dir_fd=dir_fd)
+        except FileNotFoundError:
+            pass
+        os.close(dir_fd)
 
 
 def write_checksums(memory_dir: Path, files: list[Path]) -> None:
     checksums: dict[str, dict[str, object]] = {}
     for path in files:
-        try:
-            raw = path.read_bytes()
-        except OSError:
+        raw = _read_regular(path)
+        if raw is None:
             continue
         checksums[f".hyperflow/memory/{path.name}"] = {
             "sha256": hashlib.sha256(raw).hexdigest(),
@@ -235,10 +319,22 @@ def main(argv: list[str]) -> int:
         return 2
 
     memory_dir = Path(argv[1]) / "memory"
-    if not memory_dir.is_dir():
+    memory_abs = memory_dir.absolute()
+    if (
+        not memory_dir.is_dir()
+        or memory_dir.is_symlink()
+        or memory_dir.resolve(strict=False) != memory_abs
+    ):
         return 0
 
-    files = sorted(p for p in memory_dir.glob("*.md") if p.name not in EXCLUDED)
+    files = sorted(
+        p
+        for p in memory_dir.glob("*.md")
+        if p.name not in EXCLUDED
+        and not p.is_symlink()
+        and p.is_file()
+        and p.resolve(strict=False).parent == memory_abs
+    )
     entries: list[Entry] = []
     for path in files:
         entries += parse_file(path)
