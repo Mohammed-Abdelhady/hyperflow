@@ -58,7 +58,7 @@ Hyperflow is a **plugin + doctrine + project workspace** for AI coding CLIs. Sta
 |-------|------------|
 | **Doctrine / rules** | Portable behavioral floor: auto-routing by intent, clarification not confirmation, commit cadence, security blocklists, Worker vs Reviewer roles. Full doctrine in `skills/hyperflow/`; portable subset for Desktop/web via `/hyperflow:bridge`. |
 | **Multi-session memory** | Project-scoped learnings under `.hyperflow/memory/` (learnings, decisions, pitfalls, patterns, conventions, anti-patterns, project-decisions). Hot/warm/cold tiers, tags, derived index. Survives sessions on that machine; not mixed across repos. |
-| **Templates** | Pre-built task decompositions (CRUD, API, UI, migration, refactor, bugfix) plus host shims (`AGENTS.md`, `CLAUDE.md`, Antigravity skills/workflows, Grok rules). |
+| **Templates** | Pre-built task decompositions (CRUD, API, UI, migration, refactor, bugfix) plus host shims (`AGENTS.md`, `CLAUDE.md`, Antigravity skills/workflows, Grok rules). Monorepo installs also get a deterministic dirty-worktree guard. |
 | **Orchestrated chain** | `issue` / `plan` → `dispatch` (parallel workers under review) → optional `audit` / `deploy` / gated PR. Inline-fast for proven 1–2 file reversible edits. |
 | **Artefacts** | File-first plans/specs/tasks under `.hyperflow/` (never PLAN.md at repo root). Optional local visual viewer + usage/ROI on `127.0.0.1`. |
 | **Cross-session / cross-env handoff** | Two-session mode writes a **git-committed** `.hyperflow-handoff/<slug>/` package so plan in one environment and build in another without relying on gitignored memory alone. |
@@ -270,7 +270,7 @@ Every agent uses the **current session model** (no model tier config, no second 
 - [Getting started](docs/getting-started.md) · [Golden path](docs/golden-path.md) · [Proof pack](docs/proof.md) · [vs Superpowers](docs/vs-superpowers.md) · [Roadmap](docs/roadmap.md)
 - [Installation](docs/installation.md) · [Orchestration](docs/orchestration.md) · [Dispatch resume](docs/dispatch-resume.md) · [Codex support matrix](docs/codex.md) · [Landing](https://mohammed-abdelhady.github.io/hyperflow/)
 - [Memory system](skills/hyperflow/memory-system.md) · [Task templates](skills/hyperflow/task-templates.md) · [Session handoff](skills/hyperflow/session-handoff.md)
-- [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [Privacy one-pager](docs/privacy-one-pager.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
+- [Monorepo worktree isolation](docs/monorepo.md) · [Agents](agents/README.md) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) · [Privacy one-pager](docs/privacy-one-pager.md) · [CLAUDE.md](CLAUDE.md) (contributor guide)
 
 ---
 
