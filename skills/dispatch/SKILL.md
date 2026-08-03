@@ -206,6 +206,10 @@ Print the batch header: `Batch <n> — <one-line description>`.
 
 Before fan-out, capture `batch_base` as the immutable git object for the task-owned paths. After workers return, create `batch_head` as an ephemeral git commit/tree snapshot from an isolated temporary index containing **only** the batch allowlist (including created/deleted files); do not move the branch, alter the user's index, or include unrelated dirty files. Every batch review receives the exact range `batch_base..batch_head`. If an exact isolated snapshot cannot be produced, stop the review step—never substitute a pasted patch or transcript.
 
+For monorepo work, run the read-only dirty-worktree guard before the first worker:
+`python3 $PLUGIN_ROOT/scripts/worktree-guard.py check $PROJECT_ROOT --paths <task allowlist> --json`.
+If the report recommends `isolated-worktree` (especially on `main`, `master`, or `develop`), create a clean sibling checkout with the helper's `create` command rather than mixing the task with unrelated edits. The helper never resets or cleans the caller's checkout; full usage is in [`docs/monorepo.md`](../../docs/monorepo.md).
+
 **Mode resolution (one-time per chain, before Step 2a fires for the first batch):** run `python3 $PLUGIN_ROOT/scripts/resolve-mode.py $PROJECT_ROOT --from-args "$CHAIN_ARGS"` and cache the resulting word (`default` / `lean` / `thorough`). Subsequent batches use the cached value.
 
 Sub-phases 2a–2d run in order for every batch (P1 sequential — each depends on the prior sub-phase's output). Within each sub-phase, Workers are parallel.
