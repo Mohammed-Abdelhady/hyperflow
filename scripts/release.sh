@@ -89,7 +89,8 @@ Options:
 
 Environment:
   HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1  soft-fail uncertified Codex lanes (preview
-                                     only — never for a public stable release)
+                                     release only — notes must disclose the
+                                     uncertified preview; never claim support)
 
 Auto-detection rules (strict Conventional Commits):
   BREAKING CHANGE / type!:  → major
@@ -131,7 +132,7 @@ run_cert_precheck() {
     echo ""
     echo -e "${RED}${BOLD}Certification blocked release mutation.${RESET}"
     echo -e "  Working tree was not modified by the certifier."
-    echo -e "  Fix certificates or (preview only) set HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1."
+    echo -e "  Fix certificates or (for an explicitly disclosed preview release) set HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1."
     echo -e "  Details: ./scripts/certify-codex.sh --status"
     echo -e "  Protocol: RELEASING.md § Codex certification"
     return 1
