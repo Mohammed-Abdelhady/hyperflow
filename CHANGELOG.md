@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.29.1] — 2026-08-05
+
+### Fixed
+- Honor preview certification in release CI
+
+### Changed
+- Refresh AGENTS doctrine stamp for v5.29.0
+- Codex support remains preview and uncertified; release CI uses the explicit preview path without fabricating certificates.
+
+
 ## [5.29.0] — 2026-08-03
 
 ### Added
@@ -1602,7 +1612,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...HEAD
+[5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
 [5.28.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/preview/v5.27.1...v5.28.0
 [5.27.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.27.0...v5.27.1
