@@ -216,6 +216,22 @@ class TestReleasePrecheckIntegration(unittest.TestCase):
         self.assertIn("stable-tag", text)
         self.assertIn("fix-forward", text.lower())
 
+    def test_preview_release_jobs_pass_explicit_preview_flag(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        boundaries = {
+            "candidate:": "\n  stable-tag:",
+            "stable-tag:": "\n  dispatch-precheck:",
+        }
+        for job, boundary in boundaries.items():
+            start = text.index(f"  {job}")
+            end = text.find(boundary, start)
+            section = text[start:] if end == -1 else text[start:end]
+            self.assertIn(
+                'HYPERFLOW_CERTIFY_ALLOW_PREVIEW: "1"',
+                section,
+                msg=f"{job} must opt into the explicit preview release path",
+            )
+
     def test_compat_policy_still_uncertified_floor(self) -> None:
         import json
 

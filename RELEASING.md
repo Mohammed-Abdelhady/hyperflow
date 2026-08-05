@@ -42,7 +42,8 @@ after=$(git status --porcelain; git rev-parse HEAD; git tag -l)
 test "$before" = "$after" && echo "unchanged"
 ```
 
-Uncertified preview only (never for a public stable release):
+Uncertified preview release (the current package path; release notes must say
+Codex preview is uncertified and must never imply certificate-backed support):
 
 ```bash
 HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1 ./scripts/release.sh --dry-run
@@ -64,7 +65,7 @@ HYPERFLOW_CERTIFY_ALLOW_PREVIEW=1 ./scripts/release.sh --dry-run
 
 - [ ] `./scripts/release.sh --phase finalize --version X.Y.Z` — re-runs certificate precheck
 - [ ] `git push origin HEAD && git push origin vX.Y.Z`
-- [ ] `release-certification.yml` **stable-tag** job green (exact-tag read-only smoke)
+- [ ] `release-certification.yml` **stable-tag** job green (exact-tag read-only smoke; preview soft-fail is allowed only with the explicit workflow flag)
 - [ ] `plugin-validation` green on the release commit
 - [ ] Announce only after stable-tag smoke PASS
 
