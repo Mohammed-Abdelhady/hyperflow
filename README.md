@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v5.29.1-blueviolet?style=flat-square" alt="version v5.29.1" />
+  <img src="https://img.shields.io/badge/version-v5.30.0-blueviolet?style=flat-square" alt="version v5.30.0" />
   &nbsp;
   <img src="https://img.shields.io/github/actions/workflow/status/Mohammed-Abdelhady/hyperflow/plugin-validation.yml?style=flat-square&label=validation" alt="plugin validation status" />
   &nbsp;
