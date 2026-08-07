@@ -27,12 +27,26 @@ Use during plan/spec when multiple product/architecture options exist.
 
 ## Memory write
 
-After lock, append to `.hyperflow/memory/decisions.md`:
+After lock, use the deterministic writer (replace the placeholders with the
+user's actual answer; do not invent them):
+
+```bash
+python3 <plugin-root>/scripts/decision-card.py lock \
+  --memory-dir .hyperflow/memory \
+  --title "<short title>" --choice "<locked option>" \
+  --why "<why>" --revisit-if "<condition>"
+```
+
+It appends this canonical shape to `.hyperflow/memory/decisions.md`:
 
 ```markdown
-## <short title>
+### [YYYY-MM-DD] <short title>  `[decision]`
 - Choice: ...
 - Why: ...
-- Date: YYYY-MM-DD
+- Chooser: ...
 - Revisit if: ...
 ```
+
+The writer refuses duplicate titles and malformed fields. Run
+`python3 <plugin-root>/scripts/decision-card.py validate --memory-dir
+.hyperflow/memory` when checking an existing memory file.
