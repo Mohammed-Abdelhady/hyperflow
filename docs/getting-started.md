@@ -1,51 +1,55 @@
-# Getting started: default vs advanced
+# Getting started
 
-Hyperflow is deep on purpose. **Start thin.**
+Hyperflow routes an outcome through the smallest safe workflow. You do not need to choose a lane or command for ordinary requests.
 
-## One-line product
+## 1. Install
 
-**Project memory + reviewed multi-agent chain for AI coding CLIs.**
+Claude Code is the primary host:
 
-Issue→PR is a mode. The viewer is optional. Doctrine is the floor.
-
-## Default surface (learn these first)
-
-| Skill | When |
-|---|---|
-| `plan` | Design + decompose |
-| `dispatch` | Build under review |
-| `status` | What is in flight |
-| `cache` | Read/write project memory |
-| `trace` | Debug root cause |
-
-Daily habit:
-
-```text
-/hyperflow:plan → /hyperflow:dispatch → /hyperflow:status
+```bash
+claude plugin marketplace add Mohammed-Abdelhady/hyperflow
+claude plugin install hyperflow@hyperflow-marketplace
 ```
 
-## Advanced surface (after golden path)
+See [installation](installation.md) for upgrade and compatibility notes.
 
-| Skill | When |
-|---|---|
-| `issue` | GitHub issue → reviewed PR |
-| `pr` | Review an incoming PR |
-| `audit` | Explicit L1-L5 outside review |
-| `deploy` | Gates + push (always gated) |
-| `workflow` | Large migrations / system-wide work |
-| `handoff` | Plan on machine A, build on machine B |
-| `scaffold` | Force re-setup (usually automatic) |
-| `design` | Design-system / anti-slop research |
-| `background` / `sticky` / `bridge` / `flush` / `reap` | Ops and portability |
+## 2. State the outcome
 
-## Progressive disclosure rule (for agents)
+```text
+plan the billing migration
+implement the approved billing plan
+trace why checkout tests fail
+audit this diff
+deploy this release
+resume the billing handoff
+```
 
-1. Prefer default skills unless the user names an advanced skill or the task clearly needs it.  
-2. Do not dump the full doctrine in chat. Point to docs.  
-3. Auto-route to `plan`/`dispatch`/`trace` for ordinary build/debug language.
+Natural language routes to one of seven surfaces: `hyperflow`, `plan`, `dispatch`, `trace`, `audit`, `deploy`, or `handoff`.
 
-## Next
+## 3. Let scope select the lane
 
-1. [Golden path (5 minutes)](golden-path.md)  
-2. [Proof pack](proof.md)  
-3. [Orchestration](orchestration.md)
+- **Direct:** one clear, reversible subsystem; no child agents.
+- **Focused:** one compact task file, independent workers only, one batch reviewer.
+- **Deep:** high-risk or cross-boundary work, bounded investigation and specialist integration review.
+
+An explicit build or fix request continues after inspection. An explicit plan or design request writes `.hyperflow/tasks/<slug>.md` and stops.
+
+## Files you may see
+
+Current persistence is Markdown only:
+
+```text
+.hyperflow/tasks/<slug>.md
+.hyperflow/specs/<slug>.md
+.hyperflow/audits/<timestamp>-<scope>.md
+.hyperflow/memory/<category>.md
+.hyperflow-handoff/<slug>/{task.md,handoff.md}
+```
+
+Hyperflow performs no automatic startup work.
+
+## Safety boundaries
+
+Hyperflow preserves unrelated changes, blocks common secret files and destructive commands, keeps worker and reviewer judgment separate, verifies before release, and asks separately before push.
+
+Next: [orchestration](orchestration.md), [privacy](../PRIVACY.md), or [Codex preview](codex.md).

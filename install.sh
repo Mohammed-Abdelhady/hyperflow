@@ -1,831 +1,221 @@
 #!/usr/bin/env bash
-# Outer braces force bash to read the entire script before executing (required for curl|bash)
+# Lightweight installer for Hyperflow's seven Markdown skills.
 {
 set -euo pipefail
 
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
-CONFIG_FILE="$HOME/.hyperflow/config.json"
-SKILL_DIR="skills/hyperflow"
+CORE_SKILLS=(hyperflow plan dispatch trace audit deploy handoff)
+ACTION="install"
+ACCEPT_MAJOR_MIGRATION=0
+HOST_FAILURES=0
+HOST_SUCCESSES=0
 
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-DIM='\033[2m'
-BOLD='\033[1m'
-RESET='\033[0m'
+info() { printf '> %s\n' "$1"; }
+warn() { printf '! %s\n' "$1" >&2; }
 
-info()    { printf "${GREEN}%s${RESET} %s\n" ">" "$1"; }
-warn()    { printf "${YELLOW}%s${RESET} %s\n" "!" "$1"; }
-step()    { printf "${DIM}%s${RESET}\n" "$1"; }
-header()  { printf "\n${BOLD}%s${RESET}\n\n" "$1"; }
-option()  { printf "  ${CYAN}[%s]${RESET} %s" "$1" "$2"; [ -n "${3:-}" ] && printf " ${DIM}%s${RESET}" "$3"; echo; }
-
-PROVIDERS=()
-PROVIDER_PATHS=()
-PROVIDER_KEYS=()
-
-# Lifecycle outcome records: "Provider|outcome|detail"
-# Outcomes: installed | already_installed | command_unavailable |
-#           permission_denied | instruction_only | removed | not_installed | failed
-LIFECYCLE_RESULTS=()
-
-SECURITY_ENABLED="true"
-
-# Supported Codex marketplace lifecycle commands (must match config/providers.json).
-CODEX_MARKETPLACE_ADD="codex plugin marketplace add Mohammed-Abdelhady/hyperflow"
-CODEX_PLUGIN_ADD="codex plugin add hyperflow@hyperflow-marketplace"
-CODEX_PLUGIN_REMOVE="codex plugin remove hyperflow@hyperflow-marketplace"
-CODEX_MARKETPLACE_UPGRADE="codex plugin marketplace upgrade hyperflow-marketplace"
-FRESH_SESSION_NOTE="Verify in a fresh Codex session (restart Codex after install/update/remove)."
-
-# ─── Provider Detection ───
-
-detect_providers() {
-  local name path key
-  local -a names=("Claude Code" "OpenCode" "Codex" "Cursor")
-  local -a paths=("$HOME/.claude/skills" "$HOME/.opencode/skills" "$HOME/.codex/plugins" "$HOME/.cursor/skills")
-  local -a keys=("claude-code" "opencode" "codex" "cursor")
-
-  for i in "${!names[@]}"; do
-    name="${names[$i]}"
-    path="${paths[$i]}"
-    key="${keys[$i]}"
-    parent="$(dirname "$path")"
-    if [ -d "$parent" ]; then
-      PROVIDERS+=("$name")
-      PROVIDER_PATHS+=("$path")
-      PROVIDER_KEYS+=("$key")
-    fi
-  done
-
-  # Antigravity migrated its config from ~/.antigravity to ~/.gemini/config.
-  # Prefer the live (migrated) skills dir; fall back to the legacy one.
-  local ag_skills=""
-  if [ -d "$HOME/.gemini/config" ]; then
-    ag_skills="$HOME/.gemini/config/skills"
-  elif [ -d "$HOME/.antigravity" ]; then
-    ag_skills="$HOME/.antigravity/skills"
-  fi
-  if [ -n "$ag_skills" ]; then
-    PROVIDERS+=("Antigravity")
-    PROVIDER_PATHS+=("$ag_skills")
-    PROVIDER_KEYS+=("antigravity")
-  fi
-
-  # Grok CLI / Grok Build TUI — skills under ~/.grok/skills/
-  if [ -d "$HOME/.grok" ]; then
-    PROVIDERS+=("Grok")
-    PROVIDER_PATHS+=("$HOME/.grok/skills")
-    PROVIDER_KEYS+=("grok")
-  fi
+usage() {
+  printf '%s\n' \
+    "Usage: install.sh [--accept-major-migration | --link-only | --uninstall | --help]" \
+    "" \
+    "Installs the Hyperflow plugin for available native hosts and links all" \
+    "seven public skills into a detected OpenCode skill directory. Existing" \
+    "directories and project .hyperflow data are" \
+    "never overwritten or deleted."
 }
 
-# ─── Prompt Helpers ───
-
-pick_one() {
-  local prompt="$1"
-  shift
-  local options=("$@")
-  local count=${#options[@]}
-
-  printf "${BOLD}%s${RESET}\n" "$prompt"
-  echo ""
-
-  for i in "${!options[@]}"; do
-    local num=$((i + 1))
-    local entry="${options[$i]}"
-    local label="${entry%%|*}"
-    local desc="${entry#*|}"
-    if [ "$label" = "$desc" ]; then
-      option "$num" "$label"
-    else
-      option "$num" "$label" "$desc"
-    fi
-  done
-
-  echo ""
-  while true; do
-    printf "  Choice [1]: "
-    read -r choice </dev/tty
-    choice="${choice:-1}"
-    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
-      PICK_INDEX=$((choice - 1))
-      return
-    fi
-    printf "  ${YELLOW}Enter 1-%d${RESET}\n" "$count"
+validate_checkout() {
+  local remote skill
+  [ -d "$INSTALL_DIR/.git" ] || { warn "Not a Git checkout: $INSTALL_DIR"; exit 1; }
+  remote="$(git -C "$INSTALL_DIR" remote get-url origin 2>/dev/null || true)"
+  case "$remote" in
+    "$REPO_URL"|https://github.com/Mohammed-Abdelhady/hyperflow|git@github.com:Mohammed-Abdelhady/hyperflow.git) ;;
+    *) warn "Install path is not the Hyperflow repository: $INSTALL_DIR"; exit 1 ;;
+  esac
+  for skill in "${CORE_SKILLS[@]}"; do
+    [ -f "$INSTALL_DIR/skills/$skill/SKILL.md" ] || {
+      warn "Incomplete Hyperflow checkout: missing skills/$skill/SKILL.md"
+      exit 1
+    }
   done
 }
-
-pick_yes_no() {
-  local prompt="$1" default="${2:-y}"
-  local hint="Y/n"
-  [ "$default" = "n" ] && hint="y/N"
-
-  printf "${BOLD}%s${RESET} [%s]: " "$prompt" "$hint"
-  read -r answer </dev/tty
-  answer="${answer:-$default}"
-  [[ "$answer" =~ ^[Yy]$ ]]
-}
-
-# ─── Clone / Update ───
 
 clone_or_update() {
   if [ -d "$INSTALL_DIR/.git" ]; then
-    info "Updating existing installation..."
-    git -C "$INSTALL_DIR" pull --ff-only --quiet
-  else
-    info "Cloning Hyperflow..."
-    mkdir -p "$(dirname "$INSTALL_DIR")"
-    git clone --quiet "$REPO_URL" "$INSTALL_DIR"
-  fi
-}
-
-# ─── Lifecycle outcome helper ───
-
-record_lifecycle() {
-  local provider="$1" outcome="$2" detail="${3:-}"
-  LIFECYCLE_RESULTS+=("${provider}|${outcome}|${detail}")
-}
-
-# ─── Codex plugin lifecycle (install / already / unavailable / denied / instruction-only) ───
-
-# Returns 0 if hyperflow appears installed for Codex (list output or cache path).
-# Uses CODEX_HOME when set so tests can isolate without touching real ~/.codex.
-codex_plugin_is_installed() {
-  local home="${CODEX_HOME:-$HOME/.codex}"
-  if command -v codex >/dev/null 2>&1; then
-    local list_out=""
-    list_out="$(codex plugin list 2>/dev/null || true)"
-    if printf '%s' "$list_out" | grep -qiE 'hyperflow'; then
-      return 0
+    local current_version incoming_version current_major incoming_major
+    validate_checkout
+    info "Updating $INSTALL_DIR"
+    git -C "$INSTALL_DIR" fetch --quiet origin main
+    current_version="$(sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' "$INSTALL_DIR/package.json" | head -1)"
+    incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' | head -1)"
+    current_major="${current_version%%.*}"
+    incoming_major="${incoming_version%%.*}"
+    # hyperflow:legacy-migration:start
+    if [ -n "$current_major" ] && [ -n "$incoming_major" ] && [ "$incoming_major" -gt "$current_major" ] && [ "$ACCEPT_MAJOR_MIGRATION" != "1" ]; then
+      warn "Major update $current_version -> $incoming_version requires manual legacy-data review before checkout changes."
+      warn "Rehydrate JSON-only data under .hyperflow/artefacts, .hyperflow/archive, and .hyperflow-handoff into Markdown, then rerun with --accept-major-migration."
+      exit 2
     fi
-  fi
-  # Cache / plugins path markers (never invent state beyond presence).
-  if [ -d "$home/plugins" ] && find "$home/plugins" -maxdepth 4 -iname '*hyperflow*' 2>/dev/null | grep -q .; then
-    return 0
-  fi
-  return 1
-}
-
-# Attempt real Codex install commands; always record a truthful outcome.
-# HYPERFLOW_CODEX_INSTRUCTION_ONLY=1 forces instruction-only (used by tests).
-install_codex_plugin() {
-  local force_instruction="${HYPERFLOW_CODEX_INSTRUCTION_ONLY:-0}"
-
-  if [ "$force_instruction" = "1" ]; then
-    step "  Codex — instruction-only (HYPERFLOW_CODEX_INSTRUCTION_ONLY=1)"
-    step "    $CODEX_MARKETPLACE_ADD"
-    step "    $CODEX_PLUGIN_ADD"
-    step "    $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_ADD"
+    # hyperflow:legacy-migration:end
+    git -C "$INSTALL_DIR" merge --ff-only --quiet FETCH_HEAD
+    validate_checkout
     return
   fi
 
-  if ! command -v codex >/dev/null 2>&1; then
-    warn "Codex — command unavailable (codex not on PATH)"
-    step "  Install manually:"
-    step "    $CODEX_MARKETPLACE_ADD"
-    step "    $CODEX_PLUGIN_ADD"
-    step "    $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "command_unavailable" "$CODEX_PLUGIN_ADD"
-    return
-  fi
-
-  if codex_plugin_is_installed; then
-    step "  Codex — already installed"
-    step "  Update: $CODEX_MARKETPLACE_UPGRADE"
-    step "  $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "already_installed" "hyperflow@hyperflow-marketplace"
-    return
-  fi
-
-  info "Codex — installing via plugin marketplace…"
-  local add_rc=0 install_rc=0
-  local add_err="" install_err=""
-
-  set +e
-  add_err="$(codex plugin marketplace add Mohammed-Abdelhady/hyperflow 2>&1)"
-  add_rc=$?
-  install_err="$(codex plugin add hyperflow@hyperflow-marketplace 2>&1)"
-  install_rc=$?
-  set -e
-
-  if [ $install_rc -eq 0 ]; then
-    info "Codex — installed (hyperflow@hyperflow-marketplace)"
-    step "  $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "installed" "hyperflow@hyperflow-marketplace"
-    return
-  fi
-
-  # Permission / auth failures
-  if [ $add_rc -eq 126 ] || [ $install_rc -eq 126 ] \
-    || [ $add_rc -eq 13 ] || [ $install_rc -eq 13 ] \
-    || printf '%s\n%s' "$add_err" "$install_err" | grep -qiE 'permission denied|EACCES|not permitted|access denied'; then
-    warn "Codex — permission denied while running plugin commands"
-    step "  Retry with appropriate permissions, or install manually:"
-    step "    $CODEX_MARKETPLACE_ADD"
-    step "    $CODEX_PLUGIN_ADD"
-    step "    $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "permission_denied" "$CODEX_PLUGIN_ADD"
-    return
-  fi
-
-  # Already present according to CLI (race / partial state)
-  if printf '%s\n%s' "$add_err" "$install_err" | grep -qiE 'already|exists|is installed'; then
-    step "  Codex — already installed"
-    step "  Update: $CODEX_MARKETPLACE_UPGRADE"
-    step "  $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "already_installed" "hyperflow@hyperflow-marketplace"
-    return
-  fi
-
-  warn "Codex — install command failed (exit $install_rc); falling back to instructions"
-  step "  $CODEX_MARKETPLACE_ADD"
-  step "  $CODEX_PLUGIN_ADD"
-  step "  $FRESH_SESSION_NOTE"
-  if [ -n "$install_err" ]; then
-    step "  detail: $(printf '%s' "$install_err" | head -n 2 | tr '\n' ' ')"
-  fi
-  record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_ADD"
-}
-
-# Attempt real Codex remove; never runs destructive scope beyond the plugin entry.
-remove_codex_plugin() {
-  local force_instruction="${HYPERFLOW_CODEX_INSTRUCTION_ONLY:-0}"
-
-  if [ "$force_instruction" = "1" ]; then
-    step "  Codex — instruction-only removal"
-    step "    $CODEX_PLUGIN_REMOVE"
-    step "    $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_REMOVE"
-    return
-  fi
-
-  if ! command -v codex >/dev/null 2>&1; then
-    warn "Codex — command unavailable; cannot remove automatically"
-    step "  Remove manually: $CODEX_PLUGIN_REMOVE"
-    step "  $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "command_unavailable" "$CODEX_PLUGIN_REMOVE"
-    return
-  fi
-
-  if ! codex_plugin_is_installed; then
-    step "  Codex — not installed, skipping"
-    record_lifecycle "Codex" "not_installed" ""
-    return
-  fi
-
-  set +e
-  local rm_err rm_rc
-  rm_err="$(codex plugin remove hyperflow@hyperflow-marketplace 2>&1)"
-  rm_rc=$?
-  set -e
-
-  if [ $rm_rc -eq 0 ]; then
-    info "Codex — plugin removed (hyperflow@hyperflow-marketplace)"
-    step "  $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "removed" "hyperflow@hyperflow-marketplace"
-    return
-  fi
-
-  if [ $rm_rc -eq 126 ] || [ $rm_rc -eq 13 ] \
-    || printf '%s' "$rm_err" | grep -qiE 'permission denied|EACCES|not permitted|access denied'; then
-    warn "Codex — permission denied while removing plugin"
-    step "  Remove manually: $CODEX_PLUGIN_REMOVE"
-    step "  $FRESH_SESSION_NOTE"
-    record_lifecycle "Codex" "permission_denied" "$CODEX_PLUGIN_REMOVE"
-    return
-  fi
-
-  warn "Codex — remove failed (exit $rm_rc); use: $CODEX_PLUGIN_REMOVE"
-  step "  $FRESH_SESSION_NOTE"
-  record_lifecycle "Codex" "instruction_only" "$CODEX_PLUGIN_REMOVE"
-}
-
-# ─── Link Provider ───
-
-link_provider() {
-  local name="$1" skills_dir="$2"
-
-  if [ "$name" = "Claude Code" ]; then
-    if [ -d "$skills_dir/hyperflow" ] || [ -L "$skills_dir/hyperflow" ]; then
-      step "  Claude Code — skill already installed"
-      record_lifecycle "Claude Code" "already_installed" "hyperflow@hyperflow-marketplace"
-    else
-      step "  Claude Code — run 'claude plugin install hyperflow@hyperflow-marketplace' to install"
-      record_lifecycle "Claude Code" "instruction_only" "claude plugin install hyperflow@hyperflow-marketplace"
-    fi
-    return
-  fi
-
-  if [ "$name" = "Codex" ]; then
-    install_codex_plugin
-    return
-  fi
-
-  # Antigravity uses a flat skills dir (one dir per skill with SKILL.md) and cannot
-  # load the multi-agent Claude plugin tree. Link the single-agent-adapted skill set.
-  if [ "$name" = "Antigravity" ]; then
-    local ag_src="$INSTALL_DIR/templates/antigravity/skills"
-    if [ ! -d "$ag_src" ]; then
-      warn "Antigravity — adapted skills not found at $ag_src (update your clone)"
-      return
-    fi
-    mkdir -p "$skills_dir"
-    local linked=0 skill_path sname stgt
-    for skill_path in "$ag_src"/*/; do
-      [ -d "$skill_path" ] || continue
-      sname="$(basename "$skill_path")"
-      stgt="$skills_dir/$sname"
-      if [ -L "$stgt" ]; then
-        rm "$stgt"
-      elif [ -d "$stgt" ]; then
-        mv "$stgt" "${stgt}.bak"
-      fi
-      ln -s "${skill_path%/}" "$stgt"
-      linked=$((linked + 1))
-    done
-    info "Antigravity — linked $linked skills into $skills_dir"
-    step "  Slash commands: run scripts/setup-detection.sh --tools antigravity <project> to add .agent/workflows/hyperflow*"
-    return
-  fi
-
-  # Grok discovers each skill as ~/.grok/skills/<name>/SKILL.md. Link the full
-  # skills/* tree (not just hyperflow) so plan/dispatch/audit/… auto-invoke.
-  if [ "$name" = "Grok" ]; then
-    local skills_src="$INSTALL_DIR/skills"
-    if [ ! -d "$skills_src" ]; then
-      warn "Grok — skills not found at $skills_src (update your clone)"
-      return
-    fi
-    mkdir -p "$skills_dir"
-    local linked=0 skill_path sname stgt
-    for skill_path in "$skills_src"/*/; do
-      [ -d "$skill_path" ] || continue
-      [ -f "${skill_path}SKILL.md" ] || continue
-      sname="$(basename "$skill_path")"
-      stgt="$skills_dir/$sname"
-      if [ -L "$stgt" ]; then
-        rm "$stgt"
-      elif [ -d "$stgt" ]; then
-        warn "Grok — found existing directory at $stgt"
-        warn "  Backing up to ${stgt}.bak and replacing with symlink"
-        mv "$stgt" "${stgt}.bak"
-      fi
-      ln -s "${skill_path%/}" "$stgt"
-      linked=$((linked + 1))
-    done
-    info "Grok — linked $linked skills into $skills_dir"
-    step "  Project shims: run scripts/setup-detection.sh --tools grok <project> for AGENTS.md + .grok/rules/"
-    return
-  fi
-
-  local target="$skills_dir/hyperflow"
-  local source="$INSTALL_DIR/$SKILL_DIR"
-
-  mkdir -p "$skills_dir"
-
-  if [ -L "$target" ]; then
-    local current
-    current="$(readlink "$target")"
-    if [ "$current" = "$source" ]; then
-      step "  $name — already linked"
-      return
-    fi
-    rm "$target"
-  elif [ -d "$target" ]; then
-    warn "$name — found existing directory at $target"
-    warn "  Backing up to ${target}.bak and replacing with symlink"
-    mv "$target" "${target}.bak"
-  fi
-
-  ln -s "$source" "$target"
-  info "$name — linked"
-}
-
-# ─── Security ───
-
-configure_security() {
-  header "Security"
-
-  step "Hyperflow's security layer prevents workers from:"
-  step "  - Accessing sensitive files (.env, *.pem, ~/.ssh/*, ...)"
-  step "  - Running dangerous commands (rm -rf, sudo, force push, ...)"
-  step "  - Hardcoding secrets in source code"
-  echo ""
-
-  if pick_yes_no "Enable security layer?" "y"; then
-    SECURITY_ENABLED="true"
-    info "Security enabled"
-  else
-    SECURITY_ENABLED="false"
-    warn "Security disabled — workers have no containment"
-  fi
-}
-
-# ─── Write Config ───
-
-write_config() {
-  mkdir -p "$HOME/.hyperflow"
-
-  if [ -f "$CONFIG_FILE" ]; then
-    if ! pick_yes_no "Config already exists at $CONFIG_FILE. Overwrite?" "n"; then
-      step "Keeping existing config"
-      return
-    fi
-  fi
-
-  local providers_csv=""
-  if [ "${#PROVIDER_KEYS[@]}" -gt 0 ]; then
-    providers_csv="$(IFS=,; echo "${PROVIDER_KEYS[*]}")"
-  fi
-
-  # Every agent runs on the current session model — there is no model-tier routing
-  # and no per-provider model catalog. The config records detected providers + security only.
-  python3 - "$CONFIG_FILE" "$SECURITY_ENABLED" "$providers_csv" <<'PYEOF'
-import json, sys
-config_path, sec, prov_csv = sys.argv[1:4]
-keys = [k for k in prov_csv.split(",") if k]
-
-cfg = {}
-if keys:
-    cfg["providers"] = keys
-cfg["security"] = {"enabled": sec == "true"}
-cfg["memory"]   = {"compactionThreshold": 300}
-cfg["context"]  = {"windowTokens": 200000, "autoCompactMinPercent": 72, "autoCompactReadyTtlMinutes": 30}
-
-with open(config_path, "w") as f:
-    json.dump(cfg, f, indent=2)
-    f.write("\n")
-PYEOF
-
-  info "Config saved to $CONFIG_FILE"
-}
-
-# ─── Project Detection Setup ───
-
-setup_project_detection() {
-  # Skip if non-interactive
-  if [[ "${INSTALL_NONINTERACTIVE:-0}" == "1" ]] || [[ "$-" != *i* && ! -t 0 ]]; then
-    return
-  fi
-
-  echo ""
-  if ! pick_yes_no "Would you like to add hyperflow auto-detection to a project? This creates files like AGENTS.md and CLAUDE.md so Codex, Claude Code, OpenCode, Grok, and other tools auto-load hyperflow in that project." "n"; then
-    return
-  fi
-
-  printf "${BOLD}Project path${RESET} [%s]: " "$PWD"
-  read -r project_path </dev/tty
-  project_path="${project_path:-$PWD}"
-
-  local detection_script="$INSTALL_DIR/scripts/setup-detection.sh"
-
-  if [ ! -f "$detection_script" ]; then
-    warn "setup-detection.sh not found at $detection_script"
-    warn "Run manually: scripts/setup-detection.sh <project-path>"
-    return
-  fi
-
-  bash "$detection_script" "$project_path"
-}
-
-# ─── Auto-update on session start (opt-in) ───
-
-setup_auto_update() {
-  # Skip if non-interactive
-  if [[ "${INSTALL_NONINTERACTIVE:-0}" == "1" ]] || [[ "$-" != *i* && ! -t 0 ]]; then
-    return
-  fi
-
-  echo ""
-  if ! pick_yes_no "Auto-update hyperflow on every Claude Code session start? (marketplace autoUpdate + a background SessionStart hook that refreshes $INSTALL_DIR). Off by default." "n"; then
-    return
-  fi
-
-  local settings="$HOME/.claude/settings.json"
-  mkdir -p "$HOME/.claude" "$HOME/.hyperflow"
-
-  if ! command -v python3 &>/dev/null; then
-    warn "python3 not found — cannot edit $settings safely. Skipping auto-update setup."
-    return
-  fi
-
-  INSTALL_DIR="$INSTALL_DIR" python3 - "$settings" <<'PYEOF'
-import json, os, sys
-
-settings_path = sys.argv[1]
-install_dir = os.environ.get("INSTALL_DIR", os.path.expanduser("~/.hyperflow/repo"))
-mp_cache = os.path.expanduser("~/.claude/plugins/marketplaces/hyperflow-marketplace")
-log = os.path.expanduser("~/.hyperflow/auto-update.log")
-
-try:
-    with open(settings_path) as f:
-        cfg = json.load(f)
-    if not isinstance(cfg, dict):
-        cfg = {}
-except FileNotFoundError:
-    cfg = {}
-except Exception:
-    print("SKIP: existing settings.json is not valid JSON — not touching it")
-    sys.exit(0)
-
-# 1) Native marketplace auto-update for the Claude Code plugin.
-mkts = cfg.setdefault("extraKnownMarketplaces", {})
-entry = mkts.setdefault("hyperflow-marketplace", {
-    "source": {"source": "github", "repo": "Mohammed-Abdelhady/hyperflow"}
-})
-entry["autoUpdate"] = True
-
-# 2) Async, fail-silent SessionStart hook that refreshes the repo clone
-#    (symlink-based providers) + the marketplace cache. Idempotent.
-MARKER = "hyperflow auto-update"
-cmd = (
-    '{ echo "--- $(date) %s ---"; '
-    'git -C "%s" pull --ff-only; '
-    'git -C "%s" pull --ff-only; } '
-    '>> "%s" 2>&1 || true'
-) % (MARKER, install_dir, mp_cache, log)
-
-hooks = cfg.setdefault("hooks", {})
-sessions = hooks.setdefault("SessionStart", [])
-already = any(
-    MARKER in h.get("command", "")
-    for group in sessions if isinstance(group, dict)
-    for h in group.get("hooks", []) if isinstance(h, dict)
-)
-if not already:
-    sessions.append({
-        "hooks": [{
-            "type": "command",
-            "command": cmd,
-            "async": True,
-            "timeout": 60,
-            "statusMessage": "Updating hyperflow",
-        }]
-    })
-
-with open(settings_path, "w") as f:
-    json.dump(cfg, f, indent=2)
-    f.write("\n")
-print("OK: auto-update enabled" + (" (hook already present)" if already else ""))
-PYEOF
-
-  info "Auto-update enabled — takes effect from your next session (open /hooks or restart to register the hook)."
-}
-
-# ─── Summary ───
-
-print_summary() {
-  header "Hyperflow installed"
-
-  step "Config:    $CONFIG_FILE"
-
-  local has_non_cc=false
-  local has_codex=false
-  for i in "${!PROVIDERS[@]}"; do
-    if [ "${PROVIDERS[$i]}" != "Claude Code" ]; then
-      has_non_cc=true
-    fi
-    if [ "${PROVIDERS[$i]}" = "Codex" ]; then
-      has_codex=true
-    fi
-  done
-
-  if [ "$has_non_cc" = true ]; then
-    step "Location:  $INSTALL_DIR"
-    step "Update (source checkout):  git -C $INSTALL_DIR pull --ff-only"
-  fi
-  if [ "$has_codex" = true ]; then
-    step "Update (Codex marketplace): $CODEX_MARKETPLACE_UPGRADE"
-    step "  $FRESH_SESSION_NOTE"
-  fi
-  echo ""
-
-  if [ ${#LIFECYCLE_RESULTS[@]} -gt 0 ]; then
-    step "Provider lifecycle outcomes:"
-    local entry prov outcome detail rest
-    for entry in "${LIFECYCLE_RESULTS[@]}"; do
-      prov="${entry%%|*}"
-      rest="${entry#*|}"
-      outcome="${rest%%|*}"
-      detail="${rest#*|}"
-      case "$outcome" in
-        installed)          step "  $prov — installed${detail:+ ($detail)}" ;;
-        already_installed)  step "  $prov — already installed${detail:+ ($detail)}" ;;
-        command_unavailable) step "  $prov — command unavailable; manual: $detail" ;;
-        permission_denied)  step "  $prov — permission denied; manual: $detail" ;;
-        instruction_only)   step "  $prov — instruction-only; run: $detail" ;;
-        removed)            step "  $prov — removed${detail:+ ($detail)}" ;;
-        not_installed)      step "  $prov — not installed" ;;
-        failed)             step "  $prov — failed${detail:+ ($detail)}" ;;
-        *)                  step "  $prov — $outcome${detail:+ ($detail)}" ;;
-      esac
-    done
-    echo ""
-  elif [ ${#PROVIDERS[@]} -gt 0 ]; then
-    step "Providers:"
-    for i in "${!PROVIDERS[@]}"; do
-      if [ "${PROVIDERS[$i]}" = "Claude Code" ]; then
-        step "  Claude Code — plugin (claude plugin install hyperflow@hyperflow-marketplace)"
-      elif [ "${PROVIDERS[$i]}" = "Codex" ]; then
-        step "  Codex — plugin ($CODEX_PLUGIN_ADD)"
-      elif [ "${PROVIDERS[$i]}" = "Antigravity" ]; then
-        step "  Antigravity — hyperflow* skills → ${PROVIDER_PATHS[$i]}"
-      elif [ "${PROVIDERS[$i]}" = "Grok" ]; then
-        step "  Grok — skills/* → ${PROVIDER_PATHS[$i]}"
-      else
-        step "  ${PROVIDERS[$i]} → ${PROVIDER_PATHS[$i]}/hyperflow"
-      fi
-    done
-    echo ""
-  fi
-
-  step "Models:    every agent runs on the current session model (no tier config)"
-  step "Security:  $( [ "$SECURITY_ENABLED" = "true" ] && echo "enabled" || echo "disabled" )"
-  echo ""
-
-  step "Toggle security:            hyperflow: security off/on"
-  step "Re-run setup:               ~/.hyperflow/repo/install.sh"
-  echo ""
-}
-
-# ─── Uninstall ───
-
-uninstall() {
-  header "Hyperflow Uninstaller"
-
-  detect_providers
-
-  local removed=0
-
-  for i in "${!PROVIDERS[@]}"; do
-    local name="${PROVIDERS[$i]}"
-    local target="${PROVIDER_PATHS[$i]}/hyperflow"
-
-    if [ "$name" = "Claude Code" ]; then
-      step "  Claude Code — use 'claude plugin uninstall hyperflow@hyperflow-marketplace'"
-      step "  Verify removal in a fresh Claude Code session after uninstall."
-      record_lifecycle "Claude Code" "instruction_only" "claude plugin uninstall hyperflow@hyperflow-marketplace"
-      continue
-    fi
-
-    if [ "$name" = "Codex" ]; then
-      remove_codex_plugin
-      continue
-    fi
-
-    if [ "$name" = "Antigravity" ]; then
-      local ag_removed=0 skill_path sname stgt
-      for skill_path in "$INSTALL_DIR/templates/antigravity/skills"/*/; do
-        [ -d "$skill_path" ] || continue
-        sname="$(basename "$skill_path")"
-        stgt="${PROVIDER_PATHS[$i]}/$sname"
-        if [ -L "$stgt" ]; then rm "$stgt"; ag_removed=$((ag_removed + 1)); fi
-      done
-      if [ $ag_removed -gt 0 ]; then
-        info "Antigravity — removed $ag_removed skill symlinks"
-        removed=$((removed + 1))
-      else
-        step "  Antigravity — not installed, skipping"
-      fi
-      continue
-    fi
-
-    if [ "$name" = "Grok" ]; then
-      local grok_removed=0 skill_path sname stgt link_dest
-      for skill_path in "$INSTALL_DIR/skills"/*/; do
-        [ -d "$skill_path" ] || continue
-        [ -f "${skill_path}SKILL.md" ] || continue
-        sname="$(basename "$skill_path")"
-        stgt="${PROVIDER_PATHS[$i]}/$sname"
-        if [ -L "$stgt" ]; then
-          link_dest="$(readlink "$stgt")"
-          if [[ "$link_dest" == *"/skills/"* ]] || [[ "$link_dest" == *".hyperflow"* ]]; then
-            rm "$stgt"
-            grok_removed=$((grok_removed + 1))
-          fi
-        fi
-      done
-      if [ $grok_removed -gt 0 ]; then
-        info "Grok — removed $grok_removed skill symlinks"
-        removed=$((removed + 1))
-      else
-        step "  Grok — not installed, skipping"
-      fi
-      continue
-    fi
-
-    if [ -L "$target" ]; then
-      local link_dest
-      link_dest="$(readlink "$target")"
-      if [[ "$link_dest" == *"$SKILL_DIR"* ]] || [[ "$link_dest" == *".hyperflow"* ]]; then
-        rm "$target"
-        info "$name — symlink removed"
-        removed=$((removed + 1))
-      else
-        warn "$name — symlink points to $link_dest (not Hyperflow), skipping"
-      fi
-    elif [ -d "$target" ]; then
-      warn "$name — found directory at $target (not a Hyperflow symlink), skipping"
-    else
-      step "  $name — not installed, skipping"
-    fi
-  done
-
-  if [ -d "$INSTALL_DIR" ]; then
-    rm -rf "$INSTALL_DIR"
-    info "Removed $INSTALL_DIR"
-    removed=$((removed + 1))
-  fi
-
-  if [ -f "$CONFIG_FILE" ]; then
-    rm "$CONFIG_FILE"
-    info "Removed $CONFIG_FILE"
-    removed=$((removed + 1))
-  fi
-
-  if [ -d "$HOME/.hyperflow" ] && [ -z "$(ls -A "$HOME/.hyperflow")" ]; then
-    rmdir "$HOME/.hyperflow"
-    step "  Removed empty ~/.hyperflow/"
-  fi
-
-  echo ""
-  if [ $removed -eq 0 ]; then
-    step "Nothing to remove."
-  else
-    info "Hyperflow uninstalled"
-    step "Project memory at .hyperflow/memory/ (per-project) was kept."
-    step "Delete it manually if you want a clean slate."
-  fi
-  echo ""
-}
-
-# ─── Main ───
-
-main() {
-  case "${1:-}" in
-    --uninstall) uninstall; exit 0 ;;
-    --help|-h)
-      echo "Usage: install.sh [--uninstall | --help]"
-      echo ""
-      echo "  (no args)     Install Hyperflow and run setup wizard"
-      echo "  --uninstall   Remove Hyperflow from all providers"
-      echo "  --help        Show this message"
-      exit 0
-      ;;
-  esac
-
-  if ! command -v git &>/dev/null; then
-    warn "git is required but not installed."
+  if [ -e "$INSTALL_DIR" ]; then
+    warn "Install path exists and is not a Hyperflow checkout: $INSTALL_DIR"
     exit 1
   fi
 
-  header "Hyperflow Installer"
+  info "Installing to $INSTALL_DIR"
+  mkdir -p "$(dirname "$INSTALL_DIR")"
+  git clone --quiet --depth 1 "$REPO_URL" "$INSTALL_DIR"
+  validate_checkout
+}
 
-  detect_providers
+link_skill() {
+  local source="$1" target="$2" current=""
+  mkdir -p "$(dirname "$target")"
 
-  if [ ${#PROVIDERS[@]} -eq 0 ]; then
-    warn "No supported providers detected."
-    echo ""
-    if ! pick_yes_no "Run setup wizard anyway (config only)?" "n"; then
-      echo "Aborted."
-      exit 0
+  if [ -L "$target" ]; then
+    current="$(readlink "$target")"
+    if [ "$current" = "$source" ]; then
+      return
     fi
-  else
-    info "Detected: ${PROVIDERS[*]}"
+    case "$current" in
+      "$INSTALL_DIR"/skills/*) rm "$target" ;;
+      *) warn "Keeping foreign link: $target -> $current"; return 1 ;;
+    esac
+  elif [ -e "$target" ]; then
+    warn "Keeping existing path: $target"
+    return 1
   fi
 
-  local needs_clone=false
-  for i in "${!PROVIDERS[@]}"; do
-    if [ "${PROVIDERS[$i]}" != "Claude Code" ]; then
-      needs_clone=true
-      break
+  ln -s "$source" "$target"
+}
+
+link_provider() {
+  local label="$1" target_root="$2" skill linked=0 conflicts=0
+  for skill in "${CORE_SKILLS[@]}"; do
+    if link_skill "$INSTALL_DIR/skills/$skill" "$target_root/$skill"; then
+      linked=$((linked + 1))
+    else
+      conflicts=$((conflicts + 1))
     fi
   done
+  if [ "$conflicts" -gt 0 ]; then
+    warn "$label: $conflicts skill path conflict(s); host is not fully linked"
+    HOST_FAILURES=$((HOST_FAILURES + 1))
+    return
+  fi
+  HOST_SUCCESSES=$((HOST_SUCCESSES + 1))
+  info "$label: $linked skills ready"
+}
 
-  if [ "$needs_clone" = true ]; then
+install_native_plugins() {
+  if command -v claude >/dev/null 2>&1; then
+    claude plugin marketplace add Mohammed-Abdelhady/hyperflow >/dev/null 2>&1 || true
+    if claude plugin install hyperflow@hyperflow-marketplace >/dev/null 2>&1; then
+      HOST_SUCCESSES=$((HOST_SUCCESSES + 1))
+      info "Claude Code: plugin installed"
+    else
+      warn "Claude Code: run 'claude plugin install hyperflow@hyperflow-marketplace'"
+      HOST_FAILURES=$((HOST_FAILURES + 1))
+    fi
+  fi
+
+  if command -v codex >/dev/null 2>&1; then
+    codex plugin marketplace add Mohammed-Abdelhady/hyperflow >/dev/null 2>&1 || true
+    if codex plugin add hyperflow@hyperflow-marketplace >/dev/null 2>&1; then
+      HOST_SUCCESSES=$((HOST_SUCCESSES + 1))
+      info "Codex: plugin installed"
+    else
+      warn "Codex: run 'codex plugin add hyperflow@hyperflow-marketplace'"
+      HOST_FAILURES=$((HOST_FAILURES + 1))
+    fi
+  fi
+  return 0
+}
+
+link_detected_providers() {
+  [ -d "$HOME/.config/opencode" ] && link_provider "OpenCode" "$HOME/.config/opencode/skills"
+  return 0
+}
+
+remove_owned_links() {
+  local root skill target current removed=0
+  local roots=("$HOME/.opencode/skills")
+  roots+=("$HOME/.config/opencode/skills")
+
+  for root in "${roots[@]}"; do
+    for skill in "${CORE_SKILLS[@]}"; do
+      target="$root/$skill"
+      [ -L "$target" ] || continue
+      current="$(readlink "$target")"
+      case "$current" in
+        "$INSTALL_DIR"/skills/*)
+          rm "$target"
+          removed=$((removed + 1))
+          ;;
+      esac
+    done
+  done
+
+  if command -v claude >/dev/null 2>&1; then
+    if ! claude plugin uninstall hyperflow@hyperflow-marketplace >/dev/null 2>&1; then
+      warn "Claude Code: plugin uninstall failed"
+      HOST_FAILURES=$((HOST_FAILURES + 1))
+    fi
+  fi
+  if command -v codex >/dev/null 2>&1; then
+    if ! codex plugin remove hyperflow@hyperflow-marketplace >/dev/null 2>&1; then
+      warn "Codex: plugin removal failed"
+      HOST_FAILURES=$((HOST_FAILURES + 1))
+    fi
+  fi
+
+  info "Removed $removed owned skill links"
+  info "Kept $INSTALL_DIR and all project .hyperflow data"
+  if [ "$HOST_FAILURES" -gt 0 ]; then
+    warn "$HOST_FAILURES native host removal operation(s) failed"
+    return 1
+  fi
+}
+
+main() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --help|-h) usage; return ;;
+      --uninstall) ACTION="uninstall" ;;
+      --link-only) ACTION="link-only" ;;
+      --accept-major-migration) ACCEPT_MAJOR_MIGRATION=1 ;;
+      *) warn "Unknown option: $1"; usage; exit 1 ;;
+    esac
+    shift
+  done
+
+  if [ "$ACTION" = "uninstall" ]; then
+    remove_owned_links
+    return
+  fi
+
+  command -v git >/dev/null 2>&1 || { warn "git is required"; exit 1; }
+  if [ "$ACTION" = "link-only" ]; then
+    validate_checkout
+  else
     clone_or_update
   fi
-
-  for i in "${!PROVIDERS[@]}"; do
-    link_provider "${PROVIDERS[$i]}" "${PROVIDER_PATHS[$i]}"
-  done
-
-  # No model configuration — every agent runs on the current session model
-  # (no thinking/worker tier split, no per-provider model catalog).
-
-  configure_security
-
-  echo ""
-  write_config
-
-  setup_project_detection
-
-  setup_auto_update
-
-  print_summary
+  install_native_plugins
+  link_detected_providers
+  if [ "$HOST_FAILURES" -gt 0 ]; then
+    warn "Source checkout completed, but $HOST_FAILURES host installation operation(s) failed"
+    return 1
+  fi
+  if [ "$HOST_SUCCESSES" -eq 0 ]; then
+    warn "No supported host was detected; the checkout is ready but Hyperflow was not installed"
+    return 1
+  fi
+  info "Hyperflow installed. Start a fresh host session to load it."
 }
 
 main "$@"

@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "5.30.0",
-  "description": "Rules, multi-session project memory, templates, and reviewed multi-agent workflows for Codex CLI (preview; desktop App support pending certification). Issue to PR when you need it. Memory and doctrine stay in your project.",
+  "description": "Markdown-only Direct, Focused, and Deep workflows for safe planning, implementation, review, and Git handoff in Codex (preview).",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -13,21 +13,20 @@
     "codex",
     "codex-cli",
     "ai-coding",
-    "multi-agent",
+    "agent-orchestration",
     "orchestration",
     "project-memory",
     "multi-session",
-    "task-templates",
+    "markdown",
     "code-review",
     "skills",
     "preview"
   ],
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Hyperflow",
-    "shortDescription": "Memory, rules, templates, and reviewed multi-agent chains for Codex CLI (preview)",
-    "longDescription": "Hyperflow gives Codex CLI a full engineering system (preview until lanes are certificate-backed): intent routing, multi-session project memory under .hyperflow/memory/, task templates, portable doctrine/rules, Worker-to-Reviewer specialist checks via host orchestration with inline labelled fallbacks when subagents or parallel tool calls are unavailable, optional local visual artefacts, security guardrails, and gated release. Plan and build across two sessions via git handoff packages when needed. Desktop App support is pending certification and is not claimed from CLI install alone.",
+    "shortDescription": "Token-efficient Markdown workflows for Codex (preview)",
+    "longDescription": "Hyperflow routes work through Direct, Focused, or Deep lanes and exposes seven lazy-loaded surfaces: hyperflow, plan, dispatch, trace, audit, deploy, and handoff. It keeps project memory and plans in Markdown, uses child agents only for independent work or independent judgment, preserves security and Git gates, and performs no automatic startup work. Codex CLI, app-server, and desktop App compatibility are verified separately; this manifest does not claim certification for one surface from another.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [
@@ -39,9 +38,9 @@
     "privacyPolicyURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md",
     "termsOfServiceURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
     "defaultPrompt": [
-      "Use Hyperflow to plan this feature",
-      "Show what Hyperflow remembers about this repo",
-      "Audit this diff with Hyperflow"
+      "Hyperflow plan this feature",
+      "Hyperflow trace this failure",
+      "Hyperflow audit this diff"
     ],
     "brandColor": "#2EA39F",
     "screenshots": []

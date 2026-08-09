@@ -1,607 +1,70 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hyperflow — Project memory + reviewed multi-agent chain</title>
-  <meta name="description" content="Hyperflow: project memory across sessions, fixed doctrine, task templates, and Worker-to-Reviewer orchestration for AI coding CLIs. Start with the golden path. Claude Code, Codex CLI (preview), OpenCode, Grok, Antigravity, Cursor." />
-  <link rel="canonical" href="https://mohammed-abdelhady.github.io/hyperflow/" />
-  <meta name="theme-color" content="#0B0F1A" />
-
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Hyperflow" />
-  <meta property="og:title" content="Hyperflow — Rules, memory, templates, reviewed multi-agent chains" />
-  <meta property="og:description" content="Project learnings survive sessions. Doctrine auto-routes work. Templates decompose. Workers build; specialists review. Local only; your session model." />
-  <meta property="og:url" content="https://mohammed-abdelhady.github.io/hyperflow/" />
-  <meta property="og:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:alt" content="Hyperflow: multi-session memory, doctrine, templates, issue to PR" />
-
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Hyperflow — Rules, memory, templates, reviewed multi-agent chains" />
-  <meta name="twitter:description" content="Multi-session project memory, portable doctrine, task templates, and reviewed multi-agent orchestration for AI coding CLIs." />
-  <meta name="twitter:image" content="https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/hyperflow.css" />
-  <script>document.documentElement.classList.add('js');</script>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        "name": "Hyperflow",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "macOS, Linux",
-        "softwareVersion": "5.30.0",
-        "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex CLI (preview; App pending), OpenCode, Grok, Antigravity, Cursor.",
-        "url": "https://mohammed-abdelhady.github.io/hyperflow/",
-        "downloadUrl": "https://github.com/Mohammed-Abdelhady/hyperflow",
-        "license": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
-        "screenshot": "https://mohammed-abdelhady.github.io/hyperflow/assets/og-image.png",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-      },
-      {
-        "@type": "WebSite",
-        "name": "Hyperflow",
-        "url": "https://mohammed-abdelhady.github.io/hyperflow/"
-      }
-    ]
-  }
-  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Hyperflow is a lightweight Markdown-only orchestration kernel with Direct, Focused, and Deep lanes.">
+  <title>Hyperflow — less orchestration, better judgment</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <style>
+    :root { color-scheme: dark; --bg:#0b0e0d; --panel:#111614; --text:#f4f2e9; --muted:#a7b0aa; --line:#2b3430; --accent:#62d9b0; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 ui-sans-serif,system-ui,sans-serif; }
+    main { width:min(980px,calc(100% - 40px)); margin:auto; padding:72px 0 96px; }
+    nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:84px; }
+    nav a, a { color:var(--accent); }
+    .wordmark { color:var(--text); text-decoration:none; font-weight:750; letter-spacing:-.03em; }
+    h1 { max-width:850px; margin:0; font-size:clamp(3rem,9vw,7.5rem); line-height:.9; letter-spacing:-.065em; }
+    .lead { max-width:700px; margin:32px 0 48px; color:var(--muted); font-size:clamp(1.15rem,2vw,1.45rem); }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; }
+    .button { display:inline-block; padding:12px 18px; border:1px solid var(--line); border-radius:999px; text-decoration:none; }
+    .button.primary { background:var(--accent); color:#07110d; border-color:var(--accent); font-weight:700; }
+    section { margin-top:96px; }
+    h2 { font-size:clamp(1.8rem,4vw,3rem); letter-spacing:-.04em; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    article { padding:24px; border:1px solid var(--line); border-radius:18px; background:var(--panel); }
+    article p { color:var(--muted); margin-bottom:0; }
+    code { color:var(--accent); }
+    .surfaces { color:var(--muted); font-size:clamp(1.15rem,2.5vw,1.65rem); }
+    footer { margin-top:96px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); }
+    @media (max-width:700px) { main{padding-top:32px} nav{margin-bottom:56px}.grid{grid-template-columns:1fr} }
+  </style>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <main>
+    <nav>
+      <a class="wordmark" href="./">Hyperflow</a>
+      <a href="https://github.com/Mohammed-Abdelhady/hyperflow">GitHub</a>
+    </nav>
 
-  <!-- ── Nav ─────────────────────────────────────────────────────────── -->
-  <nav aria-label="Primary">
-    <div class="nav-inner">
-      <a class="nav-wordmark" href="#hero" aria-label="Hyperflow — back to top">
-        <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true">
-          <defs>
-            <linearGradient id="wm-flow" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#14B8A6"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="14" fill="#0E1422"/>
-          <line x1="20.5" y1="32" x2="43.5" y2="32" stroke="url(#wm-flow)" stroke-width="6.5" stroke-linecap="round"/>
-          <circle cx="20.5" cy="25.5" r="9" fill="#7C3AED"/>
-          <circle cx="43.5" cy="38.5" r="9" fill="#14B8A6"/>
-        </svg>
-        Hyperflow
-      </a>
-      <ul class="nav-links" role="list">
-        <li class="nav-anchor"><a href="#chain">Chain</a></li>
-        <li class="nav-anchor"><a href="#issue-to-pr">Issue → PR</a></li>
-        <li class="nav-anchor"><a href="#memory">Memory</a></li>
-        <li class="nav-anchor"><a href="#install">Install</a></li>
-        <li><a href="installation.html">Installation</a></li>
-        <li><a href="orchestration.html">Orchestration</a></li>
-        <li><a class="nav-cta" href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub →</a></li>
-      </ul>
+    <h1>Less orchestration. Better judgment.</h1>
+    <p class="lead">A Markdown-only kernel for coding agents. Hyperflow chooses the smallest safe lane, uses extra agents only when independence matters, and keeps release and push under your control.</p>
+    <div class="actions">
+      <a class="button primary" href="getting-started.md">Get started</a>
+      <a class="button" href="orchestration.md">Read the contract</a>
     </div>
-  </nav>
 
-  <main id="main">
-
-    <!-- ── Hero ──────────────────────────────────────────────────────── -->
-    <section class="hero" id="hero" aria-labelledby="hero-heading">
-      <div class="container">
-        <p class="hero-eyebrow">Codex CLI (preview) · Claude Code · OpenCode · Grok · Antigravity · Cursor</p>
-        <h1 id="hero-heading">Not just a chat.<br />An engineering system for agents.</h1>
-        <p class="hero-sub">
-          Hyperflow is doctrine, multi-session project memory, task templates, and a reviewed multi-agent chain.
-          Point it at a GitHub issue when you want a PR. Day to day it remembers what your repo taught it,
-          auto-routes intent, decomposes with templates, and keeps workers under specialist review.
-          Your session model. Local by default. Zero extra API keys.
-        </p>
-        <div class="hero-cta" role="group" aria-label="Install Hyperflow">
-          <span class="cmd"><span class="prompt">$</span> <span id="hero-cmd">curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash</span>
-            <button class="copy-btn" aria-label="Copy install command to clipboard" onclick="copyCmd('hero-cmd', this)">copy</button>
-          </span>
-          <a class="btn btn-ghost" href="https://github.com/Mohammed-Abdelhady/hyperflow" target="_blank" rel="noopener">GitHub →</a>
-        </div>
-        <p class="hero-chain-hint">
-          <a href="#chain">plan → dispatch → audit → deploy</a> · start anywhere, auto-advance forward
-        </p>
-        <div class="hero-demo terminal reveal">
-          <div class="terminal-bar" aria-hidden="true">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            <span class="terminal-title">~/project — /hyperflow:plan</span>
-          </div>
-          <div class="terminal-body">
-            <video id="hero-demo-video" autoplay muted loop playsinline
-                   poster="assets/demo-poster.png" width="808" height="538"
-                   aria-label="28-second demo: plan triages the request, an analyst writes the spec, three parallel workers build under a batch reviewer, and a final integration reviewer signs off">
-              <source src="assets/demo.mp4" type="video/mp4" />
-              <img src="assets/demo.gif" width="808" height="539" loading="lazy"
-                   alt="28-second demo: plan triages the request, an analyst writes the spec, three parallel workers build under a batch reviewer, and a final integration reviewer signs off" />
-            </video>
-          </div>
-        </div>
+    <section>
+      <h2>Three lanes, fixed ceilings.</h2>
+      <div class="grid">
+        <article><h3>Direct</h3><p>Clear, reversible, one subsystem. The coordinator executes with zero child agents.</p></article>
+        <article><h3>Focused</h3><p>One compact task file. Parallel workers only where work is independent, then one batch review.</p></article>
+        <article><h3>Deep</h3><p>Reserved for security, migrations, architecture, and research. Bounded investigation, specialist judgment.</p></article>
       </div>
     </section>
 
-    <!-- ── Chain ─────────────────────────────────────────────────────── -->
-    <section id="chain" aria-labelledby="chain-heading">
-      <div class="container">
-        <p class="section-label">The chain</p>
-        <h2 id="chain-heading">Start anywhere. Auto-advance forward.</h2>
-        <p class="section-intro">
-          Four stages, each one a coordinated multi-agent run. Enter at any stage —
-          from a GitHub issue, a rough idea, or a finished diff — and the chain
-          carries the work forward.
-        </p>
-        <ol class="chain reveal" aria-label="The Hyperflow chain: plan, dispatch, audit, deploy">
-          <li class="chain-node" data-role="plan">
-            <span class="chain-name">/plan</span>
-            <span class="chain-kind">Chain starter</span>
-            <span class="chain-cap">sharpen · design · decompose</span>
-          </li>
-          <li class="chain-node" data-role="dispatch">
-            <span class="chain-name">/dispatch</span>
-            <span class="chain-kind">Endpoint</span>
-            <span class="chain-cap">parallel build + review</span>
-          </li>
-          <li class="chain-node" data-role="audit">
-            <span class="chain-name">/audit</span>
-            <span class="chain-kind">Gate</span>
-            <span class="chain-cap">L1–L5 multi-level review</span>
-          </li>
-          <li class="chain-node" data-role="deploy">
-            <span class="chain-name">/deploy</span>
-            <span class="chain-kind">Gate</span>
-            <span class="chain-cap">pre-push gates, gated push</span>
-          </li>
-        </ol>
-        <p class="chain-ribbon">Normal-flow stages run Worker → Reviewer pairs; inline-fast reviews the allowlisted diff in the foreground.</p>
-      </div>
+    <section>
+      <h2>Seven surfaces. No ceremony layer.</h2>
+      <p class="surfaces"><code>hyperflow</code> · <code>plan</code> · <code>dispatch</code> · <code>trace</code> · <code>audit</code> · <code>deploy</code> · <code>handoff</code></p>
+      <p class="lead">Plans, audits, memory, and handoffs stay readable in Git-friendly Markdown. Startup stays inert.</p>
     </section>
 
-    <!-- ── Issue → PR ────────────────────────────────────────────────── -->
-    <section id="issue-to-pr" aria-labelledby="issue-heading">
-      <div class="container">
-        <p class="section-label">GitHub-native</p>
-        <h2 id="issue-heading">Point it at an issue.<br />Merge a reviewed pull request.</h2>
-        <div class="grid-2">
-          <ol class="step-rail reveal" aria-label="Issue to pull request walkthrough">
-            <li>
-              <h3><code>/hyperflow:issue #42</code></h3>
-              <p>Paste an issue URL or number. Works with any repo the <code>gh</code> CLI can reach.</p>
-            </li>
-            <li>
-              <h3>Triage classifies the thread</h3>
-              <p>Bug → root-cause discipline. Feature → the plan chain. Question → a drafted reply, never a code chain.</p>
-            </li>
-            <li>
-              <h3>Spec from the issue's own acceptance criteria</h3>
-              <p>Issue text is treated as data, never as instructions — a prompt-injection boundary, not a convention.</p>
-            </li>
-            <li>
-              <h3>Plan → dispatch under review</h3>
-              <p>Parallel workers build; per-batch reviewers check each diff; a final integration reviewer signs off on the whole.</p>
-            </li>
-            <li>
-              <h3>Gated PR exit</h3>
-              <p>The branch is pushed and a pull request opens with <code>Closes #42</code> — only after you approve the gate.</p>
-            </li>
-          </ol>
-          <div>
-            <div class="terminal reveal">
-              <div class="terminal-bar" aria-hidden="true">
-                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                <span class="terminal-title">~/app — /hyperflow:issue</span>
-              </div>
-              <div class="terminal-body">
-                <pre aria-label="Example issue-to-PR run"><span class="c-dim">$</span> <span class="c-hot">/hyperflow:issue https://github.com/you/app/issues/42</span>
-<span class="c-plan">▸ triage</span>      feature — routing to plan
-<span class="c-plan">▸ spec</span>        synthesized from acceptance criteria
-<span class="c-exec">▸ dispatch</span>    3 workers · per-batch reviewer
-<span class="c-exec">▸ review</span>      integration reviewer — APPROVED
-<span class="c-mem">▸ memory</span>      2 learnings persisted
-<span class="c-hot">✓ PR #43 opened — Closes #42</span></pre>
-              </div>
-            </div>
-            <p class="proof-note">
-              Transcript is illustrative.
-              <a href="https://github.com/Mohammed-Abdelhady/hyperflow/pulls?q=is%3Apr+is%3Amerged" target="_blank" rel="noopener">See real reviewed pull requests in the repo →</a>
-            </p>
-            <div class="card reveal" style="margin-top: 1.5rem;">
-              <span class="badge badge-plan">Maintainer side</span>
-              <h3><code>/hyperflow:pr #43</code></h3>
-              <p>
-                Reviews an incoming pull request against its <strong>real diff</strong> —
-                L1–L5 audit depth auto-selected, findings posted as one batched review
-                (inline, summary, or local-only), merge always gated. Contributor code
-                is analyzed statically, never executed.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <section>
+      <h2>Start with an outcome.</h2>
+      <article><code>plan the billing migration</code><br><code>fix the failing checkout test</code><br><code>audit this diff</code><br><code>deploy this release</code></article>
     </section>
 
-    <!-- ── Worker → Reviewer ─────────────────────────────────────────── -->
-    <section id="reviews" aria-labelledby="reviews-heading">
-      <div class="container">
-        <p class="section-label">Role separation</p>
-        <h2 id="reviews-heading">No output ships unreviewed.</h2>
-        <p class="section-intro">
-          One iron rule: workers never review, reviewers never coordinate. Every
-          normal-flow worker output passes a specialist reviewer before the chain advances;
-          inline-fast has no worker and reviews its allowlisted diff in the foreground.
-        </p>
-        <div class="grid-2">
-          <div class="card reveal">
-            <span class="badge badge-plan">Decision agents</span>
-            <h3>Plan, route, review</h3>
-            <p>
-              Planners, the triage Brain, and 17 specialist reviewers — frontend,
-              security, database, performance, accessibility, and more — routed per
-              task. Reviewers research current best practices and CVEs before judging.
-            </p>
-          </div>
-          <div class="card reveal">
-            <span class="badge badge-exec">Workers</span>
-            <h3>Execute in parallel</h3>
-            <p>
-              Implementers, searchers, and writers fan out per batch, each stitched
-              with the personas the task needs. On failure the chain retries, escalates,
-              or aborts — it never silently swallows an error.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Numbers ───────────────────────────────────────────────────── -->
-    <section id="by-the-numbers" aria-labelledby="numbers-heading">
-      <div class="container">
-        <p class="section-label">The system</p>
-        <h2 id="numbers-heading">The whole machine, in numbers.</h2>
-        <div class="bento reveal">
-          <a class="bento-tile" href="orchestration.html">
-            <span class="bento-num">18</span>
-            <span class="bento-label">Skills</span>
-            <span class="bento-sub">Auto-routing on by default — say "audit the diff" and the right skill fires.</span>
-          </a>
-          <a class="bento-tile" href="https://github.com/Mohammed-Abdelhady/hyperflow/tree/main/agents">
-            <span class="bento-num">22</span>
-            <span class="bento-label">Specialist agents</span>
-            <span class="bento-sub">Reviewers, investigators, and a Brain that picks the roster per task.</span>
-          </a>
-          <a class="bento-tile" href="orchestration.html">
-            <span class="bento-num">15</span>
-            <span class="bento-label">Composable personas</span>
-            <span class="bento-sub">Stitched onto workers so each batch gets the right expertise.</span>
-          </a>
-          <a class="bento-tile" href="#profiles">
-            <span class="bento-num">6</span>
-            <span class="bento-label">Flow profiles</span>
-            <span class="bento-sub">Triage sizes every run — fast, standard, deep, research, creative, scientific.</span>
-          </a>
-          <a class="bento-tile" href="#providers">
-            <span class="bento-num">6</span>
-            <span class="bento-label">AI coding tools</span>
-            <span class="bento-sub">Claude Code, OpenCode, Grok, Antigravity, Cursor, and Codex CLI (preview) — auto-detected.</span>
-          </a>
-          <a class="bento-tile" href="#install">
-            <span class="bento-num">1</span>
-            <span class="bento-label">curl command</span>
-            <span class="bento-sub">No API keys, no daemon, no config. Your session model does the work.</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Memory ────────────────────────────────────────────────────── -->
-    <section id="memory" aria-labelledby="memory-heading">
-      <div class="container">
-        <p class="section-label">Memory</p>
-        <h2 id="memory-heading">Learnings survive the session.</h2>
-        <div class="grid-2">
-          <div>
-            <p class="section-intro">
-              Agents forget. Hyperflow keeps project-scoped memory under
-              <code>.hyperflow/memory/</code>: learnings, decisions, pitfalls, patterns,
-              conventions, hot-tier anti-patterns, and structural project-decisions for future specs.
-            </p>
-            <p>
-              Entries are tagged and tiered (hot / warm / cold). Session start rebuilds a derived index
-              and injects what the next task needs. Audits write anti-patterns; plans memoize structural answers.
-              Manage with <code>/hyperflow:cache</code>. Default gitignore keeps memory on your machine;
-              use handoff packages when another environment must continue the work.
-            </p>
-            <p>
-              <strong>No cloud brain. No cross-repo mix.</strong> Optional local usage ledger is metadata-only
-              (no prompts or file contents) for ROI tiles in the viewer.
-            </p>
-          </div>
-          <div class="terminal reveal">
-            <div class="terminal-bar" aria-hidden="true">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="terminal-title">~/project/.hyperflow/memory</span>
-            </div>
-            <div class="terminal-body">
-              <pre class="filetree" aria-label="Example memory folder">.hyperflow/memory/
-├── <span class="c-mem">index.md</span>            <span class="c-dim"># derived index (auto)</span>
-├── <span class="c-mem">learnings.md</span>        <span class="c-dim"># patterns &amp; gotchas</span>
-├── <span class="c-mem">decisions.md</span>        <span class="c-dim"># why X over Y</span>
-├── <span class="c-mem">pitfalls.md</span>         <span class="c-dim"># failed approaches</span>
-├── <span class="c-mem">patterns.md</span>         <span class="c-dim"># reusable shapes</span>
-├── <span class="c-mem">conventions.md</span>      <span class="c-dim"># project rules learned</span>
-├── <span class="c-mem">anti-patterns.md</span>    <span class="c-dim"># hot: always injected</span>
-├── <span class="c-mem">project-decisions.md</span> <span class="c-dim"># memoized for specs</span>
-└── <span class="c-mem">archive/</span>            <span class="c-dim"># cold compacted months</span></pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Visual artefacts ──────────────────────────────────────────── -->
-    <section id="viewer" aria-labelledby="viewer-heading">
-      <div class="container">
-        <p class="section-label">Visual artefacts</p>
-        <h2 id="viewer-heading">See the plan, not a wall of markdown.</h2>
-        <p class="section-intro">
-          Plans, specs, task graphs, audits, and token/ROI telemetry render as interactive graphs in a
-          self-contained local viewer — <code>hyperflow view</code>, served on <code>127.0.0.1</code>. Agents emit
-          compact JSON instead of hand-writing verbose markdown, so it saves tokens; the renderer ships in the
-          plugin and binds loopback only, so <strong>nothing leaves your machine</strong>. Prefer classic markdown?
-          One config flag turns it off.
-        </p>
-        <figure class="viewer-shot reveal">
-          <img src="pr-media/visual-artefacts/feature-phase-graph.png" width="1512" height="806"
-               loading="lazy" decoding="async"
-               alt="The Hyperflow viewer rendering a feature as a phase dependency graph: P1 contract branching to P2 viewer and P3 integration, both converging on P4." />
-        </figure>
-      </div>
-    </section>
-
-    <!-- ── Adaptive depth ────────────────────────────────────────────── -->
-    <section id="profiles" aria-labelledby="profiles-heading">
-      <div class="container">
-        <p class="section-label">Adaptive depth</p>
-        <h2 id="profiles-heading">A 5-line fix never triggers a deep run.</h2>
-        <p class="section-intro">
-          Layer-0.5 triage reads the request and picks one of six flow profiles —
-          worker count, review depth, and token budget all size to the task.
-        </p>
-        <div class="skills-table-wrap reveal">
-          <table>
-            <thead>
-              <tr><th scope="col">Profile</th><th scope="col">Use when</th><th scope="col">Shape</th></tr>
-            </thead>
-            <tbody>
-              <tr><td><strong>fast</strong></td><td>Clear, reversible 1–2 ordinary-file fixes (inline-fast preflight)</td><td>0 dispatched workers; foreground edit + allowlisted diff review</td></tr>
-              <tr><td><strong>standard</strong></td><td>Typical features and refactors</td><td>1–2 workers; per-batch review</td></tr>
-              <tr><td><strong>deep</strong></td><td>Cross-cutting or risky surfaces</td><td>3+ workers; integration review</td></tr>
-              <tr><td><strong>research</strong></td><td>Unknowns needing external evidence</td><td>Web-research-first specialists</td></tr>
-              <tr><td><strong>creative</strong></td><td>Design systems, visual work</td><td>Designer + taste review</td></tr>
-              <tr><td><strong>scientific</strong></td><td>Numerical, data, ML correctness</td><td>Reproducibility discipline + TDD bias</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Providers + security ──────────────────────────────────────── -->
-    <section id="providers" aria-labelledby="providers-heading">
-      <div class="container">
-        <p class="section-label">Runs everywhere</p>
-        <h2 id="providers-heading">Your tools. Your model. Guarded by default.</h2>
-        <div class="grid-2">
-          <div class="card reveal">
-            <span class="badge badge-exec">Auto-detected</span>
-            <h3>Six AI coding tools</h3>
-            <p>
-              <code>Claude Code</code> · <code>OpenCode</code> ·
-              <code>Grok</code> · <code>Antigravity</code> · <code>Cursor</code> ·
-              <code>Codex CLI</code> (preview; App pending)
-            </p>
-            <p>
-              Every agent runs on your current session model — there is no model routing
-              to configure and no extra API bill. A portable doctrine skill carries the
-              full ruleset into single-agent surfaces. Codex CLI, app-server, and desktop App
-              are certified separately; App remains pending — see
-              <a href="codex.md">Codex support matrix</a>.
-            </p>
-          </div>
-          <div class="card reveal">
-            <span class="badge badge-security">Secure by default</span>
-            <h3>A blocklist ships in the box</h3>
-            <p>
-              <strong>25</strong> blocked file patterns (keys, secrets, cloud creds) ·
-              <strong>15</strong> blocked commands (<code>rm -rf</code>, force-push to main,
-              <code>sudo</code>) · <strong>11</strong> secret patterns scanned in diffs.
-            </p>
-            <p>
-              Push and merge are always gated behind your explicit confirmation —
-              never <code>--no-verify</code>, never a force-push to main.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Install ───────────────────────────────────────────────────── -->
-    <section id="install" aria-labelledby="install-heading">
-      <div class="container">
-        <p class="section-label">Install</p>
-        <h2 id="install-heading">Direct from GitHub — verified and live.</h2>
-        <p class="install-intro">
-          The GitHub marketplace path ships every fix the day it lands. Pick your tool:
-        </p>
-
-        <!-- Claude Code -->
-        <div class="install-block reveal">
-          <div class="install-block-header">
-            <span class="install-block-title">Claude Code (terminal)</span>
-            <button class="copy-btn" aria-label="Copy Claude Code install commands to clipboard" onclick="copyBlock('block-cc', this)">copy</button>
-          </div>
-          <div class="install-code" id="block-cc" aria-label="Claude Code install commands">
-            <span class="comment"># Step 1 — add the marketplace source</span><br />
-            claude plugin marketplace add Mohammed-Abdelhady/hyperflow<br />
-            <br />
-            <span class="comment"># Step 2 — install the plugin</span><br />
-            claude plugin install hyperflow@hyperflow-marketplace
-          </div>
-        </div>
-
-        <!-- Codex CLI (preview; App pending certification) -->
-        <div class="install-block reveal">
-          <div class="install-block-header">
-            <span class="install-block-title">Codex CLI · preview</span>
-            <button class="copy-btn" aria-label="Copy Codex CLI install commands to clipboard" onclick="copyBlock('block-codex', this)">copy</button>
-          </div>
-          <div class="install-code" id="block-codex" aria-label="Codex CLI install commands (preview)">
-            <span class="comment"># Step 1 — add the marketplace source (preview / not certificate-certified)</span><br />
-            codex plugin marketplace add Mohammed-Abdelhady/hyperflow<br />
-            <br />
-            <span class="comment"># Step 2 — install the plugin</span><br />
-            codex plugin add hyperflow@hyperflow-marketplace
-          </div>
-        </div>
-
-        <!-- OpenCode / Antigravity -->
-        <div class="install-block reveal">
-          <div class="install-block-header">
-            <span class="install-block-title">OpenCode · Antigravity · everything else</span>
-            <button class="copy-btn" aria-label="Copy universal install command to clipboard" onclick="copyBlock('block-oc', this)">copy</button>
-          </div>
-          <div class="install-code" id="block-oc" aria-label="Universal install command">
-            <span class="comment"># Auto-detects your tool and walks you through setup</span><br />
-            curl -fsSL https://raw.githubusercontent.com/Mohammed-Abdelhady/hyperflow/main/install.sh | bash
-          </div>
-        </div>
-
-        <!-- First run -->
-        <div class="install-block reveal">
-          <div class="install-block-header">
-            <span class="install-block-title">First run</span>
-          </div>
-          <div class="install-code">
-            <span class="comment"># Type a goal (first chain-starter auto-scaffolds .hyperflow/ if missing)</span><br />
-            /hyperflow:plan "add user auth with login page and middleware"<br />
-            <br />
-            <span class="comment"># Or start from a GitHub issue</span><br />
-            /hyperflow:issue https://github.com/you/app/issues/42<br />
-            <br />
-            <span class="comment"># Inspect multi-session memory</span><br />
-            /hyperflow:cache show<br />
-            <br />
-            <span class="comment"># Optional: local graphs + dashboard</span><br />
-            hyperflow view
-          </div>
-        </div>
-
-        <p class="install-note">
-          Hyperflow runs locally in Claude Code, OpenCode, Grok, Antigravity, Cursor, and
-          <strong>Codex CLI</strong> (marketplace install is <strong>preview / not certificate-certified</strong>
-          yet; desktop App is pending). On Codex, <code>/hyperflow:*</code> forms are
-          <strong>textual Hyperflow aliases</strong>, not native Codex slash commands
-          (<code>hyperflow &lt;verb&gt;</code> is the portable form). Claude Code Desktop and
-          claude.ai web still need the portable CLAUDE.md fallback because they do not load
-          terminal plugins — see <a href="installation.html">the full installation guide</a>
-          and the <a href="codex.md">Codex support matrix</a>.
-        </p>
-      </div>
-    </section>
+    <footer>Claude Code is primary. Codex and OpenCode are compatibility surfaces with explicit limitations. <a href="codex.md">Codex preview details</a>.</footer>
   </main>
-
-  <!-- ── Footer ──────────────────────────────────────────────────────── -->
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-left">
-        <a href="#hero" class="footer-wordmark">Hyperflow</a>
-        <span class="footer-meta"><span class="footer-version">v5.30.0</span> · MIT · © 2026 Mohammed Abdelhady</span>
-      </div>
-      <ul class="footer-links" role="list">
-        <li><a href="installation.html">Installation</a></li>
-        <li><a href="orchestration.html">Orchestration</a></li>
-        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/CHANGELOG.md">Changelog</a></li>
-        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md">Privacy</a></li>
-        <li><a href="https://github.com/Mohammed-Abdelhady/hyperflow">GitHub</a></li>
-      </ul>
-    </div>
-  </footer>
-
-  <script>
-    function copyCmd(id, btn) {
-      const text = document.getElementById(id).textContent.trim();
-      navigator.clipboard.writeText(text).then(function () {
-        btn.setAttribute('data-copied', 'true');
-        btn.textContent = 'copied';
-        setTimeout(function () {
-          btn.removeAttribute('data-copied');
-          btn.textContent = 'copy';
-        }, 2000);
-      }).catch(function () {
-        // silent — clipboard API unavailable
-      });
-    }
-
-    function copyBlock(id, btn) {
-      var el = document.getElementById(id);
-      // Extract text, stripping comment lines that start with #
-      var lines = el.innerText.split('\n');
-      var code = lines
-        .map(function (l) { return l.trimEnd(); })
-        .filter(function (l) { return l !== ''; })
-        .join('\n');
-      navigator.clipboard.writeText(code).then(function () {
-        btn.setAttribute('data-copied', 'true');
-        btn.textContent = 'copied';
-        setTimeout(function () {
-          btn.removeAttribute('data-copied');
-          btn.textContent = 'copy';
-        }, 2000);
-      }).catch(function () {
-        // silent
-      });
-    }
-
-    // Scroll reveal — elements are visible by default; the html.js gate opts in.
-    (function () {
-      if (!('IntersectionObserver' in window)) return;
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in-view');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { rootMargin: '0px 0px -8% 0px' });
-      var els = document.querySelectorAll('.reveal');
-      els.forEach(function (el) { io.observe(el); });
-      // Failsafe: nothing stays hidden for a non-scrolling reader (or crawler).
-      setTimeout(function () {
-        els.forEach(function (el) { el.classList.add('in-view'); io.unobserve(el); });
-      }, 3000);
-    })();
-
-    // Respect prefers-reduced-motion for the hero demo.
-    (function () {
-      var video = document.getElementById('hero-demo-video');
-      if (video && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        video.removeAttribute('autoplay');
-        video.pause();
-        video.controls = true;
-      }
-    })();
-  </script>
 </body>
 </html>

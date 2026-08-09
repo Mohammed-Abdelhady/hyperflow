@@ -1,5 +1,0 @@
-{
-  "id": "skill-count",
-  "title": "README skill count matches skills/*/SKILL.md",
-  "checks": ["skill_count_readme"]
-}

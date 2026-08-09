@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Replace the orchestration framework with Direct, Focused, and Deep lanes, bounded to 0, 4, and 8 full-chain child calls.
+- Keep plans, audits, memory, and handoffs in one human-readable Markdown persistence model.
+- Make session startup inert: zero Hyperflow subprocesses, network requests, or project writes.
+
+### Removed
+- Remove all Python runtime and test machinery, lifecycle hooks, local telemetry, generated assets, and obsolete command surfaces.
+- Remove the dashboard/viewer, JSON persistence twin, render/export stack, and unused specialist profiles.
+
+### Migration
+- This is a major-version boundary. Before upgrading, inspect legacy JSON under `.hyperflow/artefacts/`, `.hyperflow/archive/`, and `.hyperflow-handoff/`, then rehydrate JSON-only information into Markdown. Installation never deletes or rewrites project data.
+
 ## [5.30.0] — 2026-08-07
 
 ### Added

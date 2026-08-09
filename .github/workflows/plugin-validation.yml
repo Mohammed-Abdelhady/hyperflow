@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: "17 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -13,100 +11,35 @@ permissions:
 
 jobs:
   validate:
-    name: Validate plugin manifests, skills, hooks, README links
+    name: Validate lightweight core
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
+          node-version: "22"
 
-      # shellcheck and jq ship on ubuntu-latest today, but the lint and sweep steps
-      # below would error rather than fail loudly if a future runner image drops them.
-      - name: Ensure lint tooling
+      - name: Core contract
+        run: npm test
+
+      - name: Shell syntax
+        run: bash -n install.sh scripts/*.sh
+
+      - name: Patch hygiene
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
-          missing=()
-          command -v shellcheck >/dev/null 2>&1 || missing+=(shellcheck)
-          command -v jq >/dev/null 2>&1 || missing+=(jq)
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "installing: ${missing[*]}"
-            sudo apt-get update
-            sudo apt-get install -y "${missing[@]}"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git diff --check "$BASE_SHA...HEAD"
+          elif [ "$GITHUB_EVENT_NAME" = "push" ] && [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "$BEFORE_SHA...HEAD"
+          else
+            git show --check --format= HEAD
           fi
-          shellcheck --version | head -2
-          jq --version
-
-      - name: Run validate-plugin.py
-        run: ./scripts/validate-plugin.py
-
-      - name: Run unit tests
-        run: python3 -m unittest discover tests -v
-
-      - name: Eval harness + host parity
-        run: |
-          python3 scripts/run-evals.py
-          python3 scripts/check-host-parity.py
-
-      - name: Codex offline-static workflow canaries
-        run: python3 tests/codex/workflow_canaries.py --offline-static
-
-      - name: Codex lifecycle scripts (skip if no codex)
-        run: |
-          ./scripts/test-codex-plugin.sh
-          ./scripts/test-codex-hooks.sh
-
-      - name: Lint shell scripts
-        run: shellcheck -S warning hooks/session-start hooks/pre-compact scripts/*.sh
-
-      - name: jq schema sweep
-        run: |
-          jq empty .claude-plugin/plugin.json
-          jq empty .claude-plugin/marketplace.json
-          jq empty hooks/hooks.json
-          jq empty package.json
-          jq empty config/defaults.json
-          jq empty config/schema.json
-          jq empty config/features.json
-          jq empty config/features.schema.json
-          jq empty config/host-parity.json
-          jq empty config/specialist-priority.json
-          jq empty .codex-plugin/plugin.json
-          jq empty config/codex-plugin.schema.json
-          jq empty tests/fixtures/codex/marketplace-v1.json
-          jq empty tests/fixtures/codex/marketplace-v2.json
-          jq empty tests/fixtures/codex/hook-payloads.json
-          jq empty tests/fixtures/codex/workflow-project.json
-
-      - name: Every SKILL.md has an h1 in its body
-        run: |
-          fail=0
-          while IFS= read -r f; do
-            body=$(awk '/^---$/{c++; next} c>=2{print}' "$f")
-            if ! printf '%s' "$body" | grep -qE '^# '; then
-              echo "FAIL  $f has no h1 heading in body" >&2
-              fail=1
-            fi
-          done < <(find skills -name SKILL.md)
-          exit "$fail"
-
-      - name: Hook scripts are executable
-        run: |
-          fail=0
-          for script in hooks/*; do
-            case "$script" in
-              *.json|*.md) ;;
-              *)
-                if [[ -f "$script" && ! -x "$script" ]]; then
-                  echo "FAIL  hook script not executable: $script" >&2
-                  fail=1
-                fi
-                ;;
-            esac
-          done
-          exit "$fail"

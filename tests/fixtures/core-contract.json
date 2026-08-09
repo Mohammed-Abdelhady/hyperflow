@@ -1,0 +1,72 @@
+{
+  "skills": [
+    "hyperflow",
+    "plan",
+    "dispatch",
+    "trace",
+    "audit",
+    "deploy",
+    "handoff"
+  ],
+  "specialists": [
+    "systems-reviewer",
+    "experience-reviewer",
+    "data-reviewer",
+    "risk-reviewer",
+    "performance-reviewer",
+    "debugger",
+    "researcher"
+  ],
+  "lanes": {
+    "Direct": {
+      "signals": ["clear", "reversible", "one subsystem"],
+      "maxChildCalls": 0
+    },
+    "Focused": {
+      "signals": ["moderate", "related tasks"],
+      "maxPlanningChildCalls": 2,
+      "maxFullChainChildCalls": 4,
+      "maxPlanningTokens": 6000,
+      "maxFullChainTokens": 20000
+    },
+    "Deep": {
+      "signals": ["security", "migration", "cross-boundary", "research"],
+      "maxPlanningChildCalls": 5,
+      "maxFullChainChildCalls": 8,
+      "maxPlanningTokens": 18000,
+      "maxFullChainTokens": 60000
+    }
+  },
+  "budgets": {
+    "workerBriefWords": 350,
+    "reviewerBriefWords": 250,
+    "taskFileWords": 1200,
+    "skillEntrypointLines": 500,
+    "shippedFilesMax": 60,
+    "shippedBytesMax": 250000,
+    "portableDoctrineCharsMax": 5000,
+    "planCharsMax": 5000,
+    "dispatchCharsMax": 6000,
+    "hyperflowCharsMax": 5000,
+    "componentDescriptionsCharsMax": 3000
+  },
+  "blockedFiles": [
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.crt",
+    "~/.ssh/*",
+    "~/.aws/credentials",
+    "~/.config/gcloud/*",
+    "~/.kube/config"
+  ],
+  "blockedCommands": [
+    "rm -rf",
+    "git push --force",
+    "sudo",
+    "chmod 777",
+    "npm publish",
+    "cargo publish"
+  ]
+}

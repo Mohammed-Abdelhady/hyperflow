@@ -1,11 +1,12 @@
 {
   "name": "hyperflow",
   "version": "5.30.0",
-  "description": "Rules, multi-session project memory, task templates, and a reviewed multi-agent chain for AI coding CLIs. Issue to PR when you need it. Claude Code, Codex CLI (preview; desktop App pending certification), OpenCode, Grok, Antigravity, Cursor.",
+  "description": "A lightweight Markdown orchestration kernel with direct, focused, and deep lanes for coding agents.",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "test:js": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "validate": "node --test tests/core-contract.test.js"
   },
   "author": {
     "name": "Mohammed Abdelhady",
@@ -21,22 +22,18 @@
   },
   "keywords": [
     "ai-coding",
-    "multi-agent",
+    "agent-orchestration",
     "orchestration",
     "project-memory",
     "multi-session",
-    "task-templates",
+    "markdown-workflows",
     "doctrine",
     "claude-code",
     "claude-code-plugin",
     "codex",
     "codex-cli",
     "opencode",
-    "grok",
-    "cursor",
-    "antigravity",
     "code-review",
-    "visual-artefacts",
     "skills"
   ]
 }
