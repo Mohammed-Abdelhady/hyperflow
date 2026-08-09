@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -324,6 +324,9 @@ test("the pending migration boundary rejects patch releases", () => {
       mkdirSync(dirname(target), { recursive: true });
       cpSync(pathFromRoot(path), target);
     }
+    const changelogPath = join(copyRoot, "CHANGELOG.md");
+    const changelog = readFileSync(changelogPath, "utf8");
+    writeFileSync(changelogPath, changelog.replace("## [Unreleased]\n", "## [Unreleased]\n\n### Migration\n- Test major boundary.\n"));
     execFileSync("git", ["init", "-q", copyRoot]);
     execFileSync("git", ["-C", copyRoot, "config", "user.name", "Hyperflow Test"]);
     execFileSync("git", ["-C", copyRoot, "config", "user.email", "test@example.invalid"]);
