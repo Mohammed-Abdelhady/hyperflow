@@ -3,7 +3,7 @@ name: audit
 description: Use when reviewing code, a diff, branch, pull request, or system for correctness, risk, security, performance, or maintainability.
 allowed-tools: Read, Write, Glob, Grep, Agent, Skill, AskUserQuestion, WebSearch, WebFetch, Bash
 argument-hint: "[target] [--level 1-5] [and-fix]"
-version: 6.0.0
+version: 6.1.0
 license: MIT
 compatibility: Portable with read-only specialist reviewers
 tags: [review, audit, security, quality]

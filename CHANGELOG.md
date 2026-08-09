@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] — 2026-08-09
+
 ### Added
 - Add dependency-free `validate-plugin`, `unittest`, and golden `evals` maintainer gates for the portable core.
 - Track explicit Claude Code, Codex preview, and OpenCode compatibility claims in a local host-parity contract.
