@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0] — 2026-08-09
+
 ### Changed
 - Replace the orchestration framework with Direct, Focused, and Deep lanes, bounded to 0, 4, and 8 full-chain child calls.
 - Keep plans, audits, memory, and handoffs in one human-readable Markdown persistence model.

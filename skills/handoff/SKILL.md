@@ -3,7 +3,7 @@ name: handoff
 description: Use when transferring a planned task to another session or reviewing work returned from one, with Markdown and exact Git refs.
 allowed-tools: Read, Write, Edit, Glob, Grep, Skill, AskUserQuestion, Bash
 argument-hint: "<create|list|status|pickup|review|complete> [slug]"
-version: 5.30.0
+version: 6.0.0
 license: MIT
 compatibility: Git-backed and portable across sessions
 tags: [handoff, sessions, git, resumability]

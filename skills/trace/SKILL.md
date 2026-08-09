@@ -3,7 +3,7 @@ name: trace
 description: Use when diagnosing or fixing a bug, regression, failing test, or unexplained behavior by establishing root cause before editing.
 allowed-tools: Read, Write, Edit, Glob, Grep, Agent, Skill, AskUserQuestion, WebSearch, WebFetch, Bash
 argument-hint: "<symptom>"
-version: 5.30.0
+version: 6.0.0
 license: MIT
 compatibility: Portable; hypothesis fan-out is reserved for genuinely independent causes
 tags: [debugging, root-cause, regression]
