@@ -17,10 +17,12 @@ For the lightweight-core major release, include an explicit migration note: inst
 Run the repository's maintained checks from the repository root:
 
 ```bash
-npm test
+npm run validate-plugin
+npm run unittest
+npm run evals
 ```
 
-Also check shell syntax for shipped shell entry points and parse every JSON manifest/configuration file. Validation must prove:
+`npm run validate-plugin` checks manifests, skill/specialist registration, JSON parsing, current Markdown links, shell syntax, and the inert runtime boundary. `npm run unittest` runs the Node test suite. `npm run evals` runs static golden tasks for public-surface, host-claim, and persistence contracts.
 
 - exactly seven skill surfaces: `hyperflow`, `plan`, `dispatch`, `trace`, `audit`, `deploy`, and `handoff`;
 - Direct, Focused, and Deep routing limits;

@@ -304,7 +304,9 @@ test("installer exposes every public skill to OpenCode and uninstall removes own
 test("release path validates locally, stamps portable docs, and never pushes", () => {
   const release = read("scripts/release.sh");
   const bump = read("scripts/bump-version.sh");
-  assert.match(release, /npm test/);
+  assert.match(release, /npm run validate-plugin/);
+  assert.match(release, /npm run unittest/);
+  assert.match(release, /npm run evals/);
   assert.match(release, /bash -n install\.sh scripts\/\*\.sh/);
   assert.match(release, /bump-version\.sh/);
   assert.match(release, /git tag -a/);

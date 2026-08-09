@@ -25,8 +25,14 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Core contract
-        run: npm test
+      - name: Plugin validation
+        run: npm run validate-plugin
+
+      - name: Unit tests
+        run: npm run unittest
+
+      - name: Golden evals
+        run: npm run evals
 
       - name: Shell syntax
         run: bash -n install.sh scripts/*.sh

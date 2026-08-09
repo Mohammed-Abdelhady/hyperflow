@@ -109,7 +109,9 @@ else
   EMPTY_TREE="$(git hash-object -t tree /dev/null)"
   git diff --check "$EMPTY_TREE" HEAD
 fi
-npm test
+npm run validate-plugin
+npm run unittest
+npm run evals
 bash -n install.sh scripts/*.sh
 
 if [ "$DRY_RUN" = "1" ]; then
@@ -118,7 +120,9 @@ if [ "$DRY_RUN" = "1" ]; then
 fi
 
 HYPERFLOW_RELEASE_PREPARE=1 "$SCRIPT_DIR/bump-version.sh" "$VERSION"
-npm test
+npm run validate-plugin
+npm run unittest
+npm run evals
 bash -n install.sh scripts/*.sh
 git diff --check
 

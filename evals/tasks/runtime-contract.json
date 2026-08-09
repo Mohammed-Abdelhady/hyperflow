@@ -1,0 +1,26 @@
+{
+  "id": "runtime-contract",
+  "title": "The installed runtime stays inert and Markdown-first",
+  "checks": [
+    {
+      "type": "json_key_absent",
+      "path": ".codex-plugin/plugin.json",
+      "key": "hooks"
+    },
+    {
+      "type": "read_contains",
+      "path": "README.md",
+      "value": "Startup performs zero subprocesses, zero network requests, and zero project writes."
+    },
+    {
+      "type": "read_contains",
+      "path": "README.md",
+      "value": "memory/<category>.md"
+    },
+    {
+      "type": "read_not_contains",
+      "path": "README.md",
+      "value": "hyperflow view"
+    }
+  ]
+}
