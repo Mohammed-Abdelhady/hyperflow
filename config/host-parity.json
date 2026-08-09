@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "Explicit host claims and local evidence boundaries for the portable core.",
+  "hosts": [
+    {
+      "id": "claude-code",
+      "claim": "primary",
+      "status": "supported",
+      "evidence": "plugin-validation"
+    },
+    {
+      "id": "codex-cli",
+      "claim": "preview",
+      "status": "preview_uncertified",
+      "evidence": "plugin-validation"
+    },
+    {
+      "id": "opencode",
+      "claim": "compatibility shim",
+      "status": "supported_shim",
+      "evidence": "installer-contract"
+    }
+  ]
+}

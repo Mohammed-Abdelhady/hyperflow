@@ -1,0 +1,24 @@
+{
+  "id": "host-claims",
+  "title": "Host support claims stay explicit and uncertified Codex remains preview",
+  "checks": [
+    {
+      "type": "files_exist",
+      "paths": ["config/host-parity.json", "docs/codex.md"]
+    },
+    {
+      "type": "host_claims",
+      "path": "config/host-parity.json"
+    },
+    {
+      "type": "read_contains",
+      "path": "README.md",
+      "value": "Codex:** preview"
+    },
+    {
+      "type": "read_contains",
+      "path": "README.md",
+      "value": "OpenCode:** compatibility shim"
+    }
+  ]
+}

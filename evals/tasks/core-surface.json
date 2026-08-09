@@ -1,0 +1,36 @@
+{
+  "id": "core-surface",
+  "title": "The portable package exposes its seven Markdown surfaces",
+  "checks": [
+    {
+      "type": "files_exist",
+      "paths": [
+        "README.md",
+        "package.json",
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json",
+        "skills/hyperflow/SKILL.md",
+        "skills/plan/SKILL.md",
+        "skills/dispatch/SKILL.md",
+        "skills/trace/SKILL.md",
+        "skills/audit/SKILL.md",
+        "skills/deploy/SKILL.md",
+        "skills/handoff/SKILL.md"
+      ]
+    },
+    {
+      "type": "skill_set",
+      "expected": ["hyperflow", "plan", "dispatch", "trace", "audit", "deploy", "handoff"]
+    },
+    {
+      "type": "read_contains",
+      "path": "README.md",
+      "value": "Seven core surfaces"
+    },
+    {
+      "type": "read_contains",
+      "path": "README.md",
+      "value": "Markdown-only"
+    }
+  ]
+}

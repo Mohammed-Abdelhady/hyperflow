@@ -6,7 +6,10 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "validate": "node --test tests/core-contract.test.js"
+    "unittest": "node --test tests/*.test.js",
+    "validate": "node --test tests/core-contract.test.js",
+    "validate-plugin": "node scripts/validate-plugin.mjs",
+    "evals": "node scripts/run-evals.mjs"
   },
   "author": {
     "name": "Mohammed Abdelhady",
