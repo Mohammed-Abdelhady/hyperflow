@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -296,6 +296,31 @@ test("installer exposes every public skill to OpenCode and uninstall removes own
     });
     assert.notEqual(conflict.status, 0, "a partial OpenCode link set must not report success");
     assert.match(conflict.stderr, /skill path conflict/);
+    assert.equal(existsSync(join(conflictSkills, "plan")), false, "a conflict must not leave a partial link set");
+
+    const relativeHome = join(temp, "relative-home");
+    const relativeCheckout = join(relativeHome, "checkout");
+    mkdirSync(relativeHome, { recursive: true });
+    cpSync(pathFromRoot("skills"), join(relativeCheckout, "skills"), { recursive: true });
+    execFileSync("git", ["init", "-q", relativeCheckout]);
+    execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
+    mkdirSync(join(relativeHome, ".config", "opencode"), { recursive: true });
+    const relativeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+      cwd: relativeHome,
+      encoding: "utf8",
+      env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: "/usr/bin:/bin" },
+    });
+    assert.equal(relativeInstall.status, 0, relativeInstall.stderr);
+    assert.equal(
+      readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow")),
+      join(relativeHome, "checkout", "skills", "hyperflow"),
+      "relative HYPERFLOW_HOME must create an absolute skill link",
+    );
+    assert.equal(
+      readFileSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow", "SKILL.md"), "utf8"),
+      readFileSync(join(relativeCheckout, "skills", "hyperflow", "SKILL.md"), "utf8"),
+      "relative HYPERFLOW_HOME must create a working link",
+    );
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }

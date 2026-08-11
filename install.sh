@@ -5,6 +5,12 @@ set -euo pipefail
 
 REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
+# Symlink targets must be absolute: a relative HYPERFLOW_HOME would otherwise
+# be resolved relative to the host's skills directory instead of this checkout.
+case "$INSTALL_DIR" in
+  /*) ;;
+  *) INSTALL_DIR="$PWD/$INSTALL_DIR" ;;
+esac
 CORE_SKILLS=(hyperflow plan dispatch trace audit deploy handoff)
 ACTION="install"
 ACCEPT_MAJOR_MIGRATION=0
@@ -95,11 +101,24 @@ link_skill() {
 }
 
 link_provider() {
-  local label="$1" target_root="$2" skill linked=0 conflicts=0
+  local label="$1" target_root="$2" skill target current linked=0 conflicts=0
+
+  # Preflight every target before creating or replacing any link. A partial
+  # OpenCode link set is worse than a clear failure because it leaves a host
+  # looking installed while silently keeping some skills foreign or stale.
   for skill in "${CORE_SKILLS[@]}"; do
-    if link_skill "$INSTALL_DIR/skills/$skill" "$target_root/$skill"; then
-      linked=$((linked + 1))
-    else
+    target="$target_root/$skill"
+    if [ -L "$target" ]; then
+      current="$(readlink "$target")"
+      case "$current" in
+        "$INSTALL_DIR"/skills/*) ;;
+        *)
+          warn "Keeping foreign link: $target -> $current"
+          conflicts=$((conflicts + 1))
+          ;;
+      esac
+    elif [ -e "$target" ]; then
+      warn "Keeping existing path: $target"
       conflicts=$((conflicts + 1))
     fi
   done
@@ -108,6 +127,11 @@ link_provider() {
     HOST_FAILURES=$((HOST_FAILURES + 1))
     return
   fi
+
+  for skill in "${CORE_SKILLS[@]}"; do
+    link_skill "$INSTALL_DIR/skills/$skill" "$target_root/$skill"
+    linked=$((linked + 1))
+  done
   HOST_SUCCESSES=$((HOST_SUCCESSES + 1))
   info "$label: $linked skills ready"
 }
