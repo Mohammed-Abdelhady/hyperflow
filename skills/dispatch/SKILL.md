@@ -3,7 +3,7 @@ name: dispatch
 description: Use when implementing an explicit build, fix, refactor, or approved task file through the Direct, Focused, or Deep lane.
 allowed-tools: Read, Write, Edit, Glob, Grep, Agent, Skill, AskUserQuestion, WebSearch, WebFetch, Bash
 argument-hint: "[task-file-or-request]"
-version: 6.1.0
+version: 6.1.1
 license: MIT
 compatibility: Portable with coordinator-only Direct execution
 tags: [implementation, orchestration, verification]

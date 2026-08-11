@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "description": "Markdown-only Direct, Focused, and Deep workflows for safe planning, implementation, review, and Git handoff in Codex (preview).",
   "author": {
     "name": "Mohammed Abdelhady",
