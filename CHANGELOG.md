@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Detect Antigravity and link the seven core skills into `~/.gemini/config/skills`, with matching uninstall cleanup.
+- Record Antigravity as a compatibility shim in the host-parity contract, README, docs, and privacy scope.
+
+### Fixed
+- Compare resolved paths when checking installer skill links so the relative `HYPERFLOW_HOME` test passes on hosts that report a physical `$PWD`.
+
 ## [6.1.1] — 2026-08-11
 
 ### Fixed

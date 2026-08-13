@@ -172,7 +172,6 @@ remove_owned_links() {
   local roots=("$HOME/.opencode/skills")
   roots+=("$HOME/.config/opencode/skills")
   roots+=("$HOME/.gemini/config/skills")
-  roots+=("$HOME/.antigravity/skills")
 
   for root in "${roots[@]}"; do
     for skill in "${CORE_SKILLS[@]}"; do

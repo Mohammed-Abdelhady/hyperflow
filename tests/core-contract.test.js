@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, extname, join } from "node:path";
+import { basename, dirname, extname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
@@ -310,6 +310,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     execFileSync("git", ["init", "-q", relativeCheckout]);
     execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
     mkdirSync(join(relativeHome, ".config", "opencode"), { recursive: true });
+    mkdirSync(join(relativeHome, ".gemini", "config"), { recursive: true });
     const relativeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
       cwd: relativeHome,
       encoding: "utf8",
@@ -318,16 +319,30 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     assert.equal(relativeInstall.status, 0, relativeInstall.stderr);
     const linkTarget = readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow"));
     const expectedTarget = join(relativeHome, "checkout", "skills", "hyperflow");
+    // Compare resolved paths: a host that reports a physical $PWD (macOS /private/var)
+    // yields a different literal string for the same checkout. Absoluteness is the
+    // property under test, so assert it directly rather than inferring it from equality.
+    assert.equal(isAbsolute(linkTarget), true, "relative HYPERFLOW_HOME must create an absolute skill link");
     assert.equal(
       realpathSync(linkTarget),
       realpathSync(expectedTarget),
-      "relative HYPERFLOW_HOME must create an absolute skill link",
+      "relative HYPERFLOW_HOME must link to this checkout",
     );
     assert.equal(
       readFileSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow", "SKILL.md"), "utf8"),
       readFileSync(join(relativeCheckout, "skills", "hyperflow", "SKILL.md"), "utf8"),
       "relative HYPERFLOW_HOME must create a working link",
     );
+
+    for (const skill of CONTRACT.skills) {
+      const agyLink = join(relativeHome, ".gemini", "config", "skills", skill);
+      assert.equal(lstatSync(agyLink).isSymbolicLink(), true, `Antigravity must link ${skill}`);
+      assert.equal(
+        realpathSync(agyLink),
+        realpathSync(join(relativeCheckout, "skills", skill)),
+        `Antigravity link for ${skill} must resolve to this checkout`,
+      );
+    }
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
