@@ -3,7 +3,7 @@ name: deploy
 description: Use when committing, releasing, pushing, or deploying completed work after full verification and an explicit remote-action gate.
 allowed-tools: Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, WebSearch, WebFetch, Bash
 argument-hint: "[target]"
-version: 6.2.0
+version: 6.2.1
 license: MIT
 compatibility: Portable; project release instructions are authoritative
 tags: [release, deploy, push, verification]
