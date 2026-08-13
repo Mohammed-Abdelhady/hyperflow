@@ -20,6 +20,10 @@ HOST_SUCCESSES=0
 info() { printf '> %s\n' "$1"; }
 warn() { printf '! %s\n' "$1" >&2; }
 
+is_git_checkout() {
+  [ -d "$1/.git" ] || [ -f "$1/.git" ]
+}
+
 usage() {
   printf '%s\n' \
     "Usage: install.sh [--accept-major-migration | --link-only | --uninstall | --help]" \
@@ -32,7 +36,7 @@ usage() {
 
 validate_checkout() {
   local remote skill
-  [ -d "$INSTALL_DIR/.git" ] || { warn "Not a Git checkout: $INSTALL_DIR"; exit 1; }
+  is_git_checkout "$INSTALL_DIR" || { warn "Not a Git checkout: $INSTALL_DIR"; exit 1; }
   remote="$(git -C "$INSTALL_DIR" remote get-url origin 2>/dev/null || true)"
   case "$remote" in
     "$REPO_URL"|https://github.com/Mohammed-Abdelhady/hyperflow|git@github.com:Mohammed-Abdelhady/hyperflow.git) ;;
@@ -47,7 +51,7 @@ validate_checkout() {
 }
 
 clone_or_update() {
-  if [ -d "$INSTALL_DIR/.git" ]; then
+  if is_git_checkout "$INSTALL_DIR"; then
     local current_version incoming_version current_major incoming_major
     validate_checkout
     info "Updating $INSTALL_DIR"
