@@ -78,13 +78,14 @@ deploy this release
 
 See [installation](docs/installation.md) and [getting started](docs/getting-started.md) for host-specific setup.
 
-For a source-managed OpenCode compatibility install, use `./install.sh`; it validates the checkout and links only the seven core skills.
+For a source-managed OpenCode or Antigravity compatibility install, use `./install.sh`; it validates the checkout and links only the seven core skills.
 
 ## Host boundaries
 
 - **Claude Code:** primary plugin surface.
 - **Codex:** preview. CLI, app-server, and desktop App are separate compatibility surfaces; one working surface does not certify the others. Native collaboration, questions, and lifecycle events are used only when exposed by the current host.
 - **OpenCode:** compatibility shim. It provides the Markdown workflow but must not be assumed to provide Claude Code lifecycle or subagent behavior.
+- **Antigravity:** compatibility shim. It provides the Markdown workflow and links skills to `~/.gemini/config/skills` for the Antigravity agent CLI.
 When a host lacks child-agent support, Direct work continues locally and Focused/Deep work degrades explicitly; Hyperflow does not invent background work or certification evidence.
 
 ## Guardrails

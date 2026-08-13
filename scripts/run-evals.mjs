@@ -87,7 +87,8 @@ function check(spec) {
       const readme = read("README.md").toLowerCase();
       const codexHonest = hosts.find((host) => host.id === "codex-cli")?.status === "preview_uncertified" && readme.includes("preview");
       const opencodeHonest = hosts.find((host) => host.id === "opencode")?.claim === "compatibility shim" && readme.includes("compatibility shim");
-      const ok = hosts.length >= 3 && unique && complete && codexHonest && opencodeHonest;
+      const antigravityHonest = hosts.find((host) => host.id === "antigravity")?.claim === "compatibility shim" && readme.includes("antigravity");
+      const ok = hosts.length >= 4 && unique && complete && codexHonest && opencodeHonest && antigravityHonest;
       return { ok, detail: ok ? `${hosts.length} host claims are explicit` : "host claims are incomplete or overstate support" };
     }
     default:

@@ -19,6 +19,12 @@
       "claim": "compatibility shim",
       "status": "supported_shim",
       "evidence": "installer-contract"
+    },
+    {
+      "id": "antigravity",
+      "claim": "compatibility shim",
+      "status": "supported_shim",
+      "evidence": "installer-contract"
     }
   ]
 }
