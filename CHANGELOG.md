@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0] — 2026-08-13
+
 ### Added
 - Detect Antigravity and link the seven core skills into `~/.gemini/config/skills`, with matching uninstall cleanup.
 - Record Antigravity as a compatibility shim in the host-parity contract, README, docs, and privacy scope.

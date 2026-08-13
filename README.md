@@ -2,7 +2,7 @@
 
 **A lightweight orchestration kernel for coding agents.** Hyperflow keeps the useful parts—intent routing, durable project context, independent review, safe Git handoff, and release gates—without an always-on runtime or a second presentation layer.
 
-[![version v6.1.1](https://img.shields.io/badge/version-v6.1.1-blueviolet?style=flat-square)](CHANGELOG.md)
+[![version v6.2.0](https://img.shields.io/badge/version-v6.2.0-blueviolet?style=flat-square)](CHANGELOG.md)
 [![validation](https://img.shields.io/github/actions/workflow/status/Mohammed-Abdelhady/hyperflow/plugin-validation.yml?style=flat-square&label=validation)](https://github.com/Mohammed-Abdelhady/hyperflow/actions)
 [![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
