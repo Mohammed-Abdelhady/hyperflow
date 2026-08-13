@@ -343,6 +343,33 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
         `Antigravity link for ${skill} must resolve to this checkout`,
       );
     }
+
+    const worktreeHome = join(temp, "worktree-home");
+    const upstream = join(temp, "upstream");
+    mkdirSync(upstream, { recursive: true });
+    cpSync(pathFromRoot("skills"), join(upstream, "skills"), { recursive: true });
+    execFileSync("git", ["init", "-q", upstream]);
+    execFileSync("git", ["-C", upstream, "config", "user.name", "Hyperflow Test"]);
+    execFileSync("git", ["-C", upstream, "config", "user.email", "test@example.invalid"]);
+    execFileSync("git", ["-C", upstream, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
+    execFileSync("git", ["-C", upstream, "add", "skills"]);
+    execFileSync("git", ["-C", upstream, "commit", "-qm", "test: worktree fixture"]);
+    execFileSync("git", ["-C", upstream, "worktree", "add", "-q", "--detach", worktreeHome]);
+    mkdirSync(join(temp, "worktree-home-parent", ".config", "opencode"), { recursive: true });
+    const worktreeHomeParent = join(temp, "worktree-home-parent");
+    rmSync(worktreeHomeParent, { recursive: true, force: true });
+    mkdirSync(join(worktreeHomeParent, ".config", "opencode"), { recursive: true });
+    const worktreeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: worktreeHomeParent, HYPERFLOW_HOME: worktreeHome, PATH: "/usr/bin:/bin" },
+    });
+    assert.equal(worktreeInstall.status, 0, worktreeInstall.stderr);
+    assert.equal(statSync(join(worktreeHome, ".git")).isFile(), true, "fixture must use a worktree .git file");
+    assert.equal(
+      realpathSync(join(worktreeHomeParent, ".config", "opencode", "skills", "hyperflow")),
+      realpathSync(join(worktreeHome, "skills", "hyperflow")),
+      "Git worktree checkouts must be linkable",
+    );
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
