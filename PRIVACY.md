@@ -52,6 +52,6 @@ Hyperflow has no remote account and retains no plugin-owned server data. Local M
 
 ## Verification scope
 
-Claude Code is the primary plugin surface. Codex and OpenCode support are compatibility paths with separately verified capabilities. A successful install or one working host surface does not prove another surface, background execution, or lifecycle support.
+Claude Code is the primary plugin surface. Codex, OpenCode, and Antigravity support are compatibility paths with separately verified capabilities. A successful install or one working host surface does not prove another surface, background execution, or lifecycle support.
 
 Questions or reports: [GitHub issues](https://github.com/Mohammed-Abdelhady/hyperflow/issues).

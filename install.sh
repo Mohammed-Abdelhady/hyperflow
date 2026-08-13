@@ -25,8 +25,8 @@ usage() {
     "Usage: install.sh [--accept-major-migration | --link-only | --uninstall | --help]" \
     "" \
     "Installs the Hyperflow plugin for available native hosts and links all" \
-    "seven public skills into a detected OpenCode skill directory. Existing" \
-    "directories and project .hyperflow data are" \
+    "seven public skills into detected OpenCode or Antigravity skill directories." \
+    "Existing directories and project .hyperflow data are" \
     "never overwritten or deleted."
 }
 
@@ -163,6 +163,7 @@ install_native_plugins() {
 
 link_detected_providers() {
   [ -d "$HOME/.config/opencode" ] && link_provider "OpenCode" "$HOME/.config/opencode/skills"
+  [ -d "$HOME/.gemini/config" ] && link_provider "Antigravity" "$HOME/.gemini/config/skills"
   return 0
 }
 
@@ -170,6 +171,8 @@ remove_owned_links() {
   local root skill target current removed=0
   local roots=("$HOME/.opencode/skills")
   roots+=("$HOME/.config/opencode/skills")
+  roots+=("$HOME/.gemini/config/skills")
+  roots+=("$HOME/.antigravity/skills")
 
   for root in "${roots[@]}"; do
     for skill in "${CORE_SKILLS[@]}"; do

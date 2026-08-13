@@ -25,6 +25,10 @@ OpenCode is a compatibility shim for the same Markdown contract. It does not imp
 
 For a source-managed installation, run `./install.sh`. It validates the Hyperflow checkout before updating or linking the seven skills into an existing `~/.config/opencode/skills` directory. A detected major update stops before changing the checkout; complete the migration review below, then rerun with `--accept-major-migration`. Use `./install.sh --link-only` to validate and expose an existing checkout without a network update. `./install.sh --uninstall` removes only links owned by that checkout, including legacy `~/.opencode/skills` links, and keeps the checkout and all project data.
 
+## Antigravity
+
+Antigravity (AGY) is a compatibility shim for the Markdown skill contract. Running `./install.sh` detects `~/.gemini/config` and links all seven skills into `~/.gemini/config/skills` for the Antigravity agent environment.
+
 ## Major-version migration
 
 <!-- hyperflow:legacy-migration:start -->

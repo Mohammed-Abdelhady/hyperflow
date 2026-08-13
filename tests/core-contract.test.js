@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -231,11 +231,12 @@ test("installed runtime has no hooks, Python, dashboard, viewer, or legacy visua
   assert.doesNotMatch(shipped, /\.hyperflow\/artefacts|artefact\.schema|render-artefact|open-artefact/i);
 });
 
-test("installer exposes every public skill to OpenCode and uninstall removes owned links", () => {
+test("installer exposes every public skill to OpenCode and Antigravity and uninstall removes owned links", () => {
   const installer = read("install.sh");
   const declared = installer.match(/CORE_SKILLS=\(([^)]+)\)/)?.[1].trim().split(/\s+/).sort();
   assert.deepEqual(declared, [...CONTRACT.skills].sort());
   assert.match(installer, /\.opencode\/skills/);
+  assert.match(installer, /\.gemini\/config\/skills/);
   assert.match(installer, /remove_owned_links/);
   assert.match(installer, /readlink/);
   assert.match(installer, /validate_checkout/);
@@ -243,18 +244,21 @@ test("installer exposes every public skill to OpenCode and uninstall removes own
   assert.match(installer, /\.config\/opencode\/skills/);
   assert.match(installer, /accept-major-migration/);
   assert.match(installer, /link-only/);
-  assert.doesNotMatch(installer, /\.cursor\/skills|\.grok\/skills|\.gemini\/config\/skills/);
+  assert.doesNotMatch(installer, /\.cursor\/skills|\.grok\/skills/);
   assert.doesNotMatch(installer, /\bCODEX_[A-Z0-9_]+\b/);
 
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-install-test-"));
   try {
     const installRoot = join(temp, "checkout");
     const skillsRoot = join(temp, ".opencode", "skills");
+    const agySkillsRoot = join(temp, ".gemini", "config", "skills");
     const foreign = join(temp, "foreign-skill");
     mkdirSync(join(installRoot, "skills", "hyperflow"), { recursive: true });
     mkdirSync(skillsRoot, { recursive: true });
+    mkdirSync(agySkillsRoot, { recursive: true });
     mkdirSync(foreign, { recursive: true });
     symlinkSync(join(installRoot, "skills", "hyperflow"), join(skillsRoot, "hyperflow"));
+    symlinkSync(join(installRoot, "skills", "hyperflow"), join(agySkillsRoot, "hyperflow"));
     symlinkSync(foreign, join(skillsRoot, "plan"));
 
     const uninstall = spawnSync("bash", [pathFromRoot("install.sh"), "--uninstall"], {
@@ -262,7 +266,8 @@ test("installer exposes every public skill to OpenCode and uninstall removes own
       env: { ...process.env, HOME: temp, HYPERFLOW_HOME: installRoot, PATH: "/usr/bin:/bin" },
     });
     assert.equal(uninstall.status, 0, uninstall.stderr);
-    assert.equal(existsSync(join(skillsRoot, "hyperflow")), false, "owned link must be removed");
+    assert.equal(existsSync(join(skillsRoot, "hyperflow")), false, "owned link must be removed from OpenCode");
+    assert.equal(existsSync(join(agySkillsRoot, "hyperflow")), false, "owned link must be removed from Antigravity");
     assert.equal(lstatSync(join(skillsRoot, "plan")).isSymbolicLink(), true, "foreign link must remain");
     assert.equal(existsSync(installRoot), true, "checkout must remain");
 
@@ -311,9 +316,11 @@ test("installer exposes every public skill to OpenCode and uninstall removes own
       env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: "/usr/bin:/bin" },
     });
     assert.equal(relativeInstall.status, 0, relativeInstall.stderr);
+    const linkTarget = readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow"));
+    const expectedTarget = join(relativeHome, "checkout", "skills", "hyperflow");
     assert.equal(
-      readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow")),
-      join(relativeHome, "checkout", "skills", "hyperflow"),
+      realpathSync(linkTarget),
+      realpathSync(expectedTarget),
       "relative HYPERFLOW_HOME must create an absolute skill link",
     );
     assert.equal(

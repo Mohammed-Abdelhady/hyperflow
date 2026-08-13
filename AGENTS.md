@@ -67,7 +67,7 @@ Never write plans at the repository root or under `docs/`. Never delete existing
 
 ## Host boundary
 
-Claude Code is primary. Codex and OpenCode are compatibility surfaces: use only capabilities exposed by the active host. Do not infer child agents, background execution, lifecycle events, or one Codex surface from another. State degradations plainly; never simulate work or evidence.
+Claude Code is primary. Codex, OpenCode, and Antigravity are compatibility surfaces: use only capabilities exposed by the active host. Do not infer child agents, background execution, lifecycle events, or one Codex surface from another. State degradations plainly; never simulate work or evidence.
 
 Session start performs no Hyperflow subprocess, network request, or project write.
 <!-- hyperflow:doctrine:end -->
