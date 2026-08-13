@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Accept Git worktree checkouts in the source installer, whose `.git` metadata is a file rather than a directory.
+
 ## [6.2.0] — 2026-08-13
 
 ### Added
