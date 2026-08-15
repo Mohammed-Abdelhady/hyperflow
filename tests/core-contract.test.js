@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const PACKAGE_VERSION = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
 const CONTRACT = JSON.parse(read("tests/fixtures/core-contract.json"));
 
 function pathFromRoot(path) {
@@ -385,7 +386,13 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     execFileSync("git", ["-C", dirtyCheckout, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
     execFileSync("git", ["-C", dirtyCheckout, "add", "skills", "package.json"]);
     execFileSync("git", ["-C", dirtyCheckout, "commit", "-qm", "test: dirty update fixture"]);
-    writeFileSync(join(dirtyCheckout, "package.json"), readFileSync(join(dirtyCheckout, "package.json"), "utf8").replace('"version": "6.2.1"', '"version": "6.2.1-local"'));
+    writeFileSync(
+      join(dirtyCheckout, "package.json"),
+      readFileSync(join(dirtyCheckout, "package.json"), "utf8").replace(
+        `"version": "${PACKAGE_VERSION}"`,
+        `"version": "${PACKAGE_VERSION}-local"`,
+      ),
+    );
     mkdirSync(join(dirtyHome, ".config", "opencode"), { recursive: true });
     const dirtyUpdate = spawnSync("bash", [pathFromRoot("install.sh")], {
       encoding: "utf8",
