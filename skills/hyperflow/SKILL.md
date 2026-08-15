@@ -3,7 +3,7 @@ name: hyperflow
 description: Use when routing non-trivial engineering work through Hyperflow's compact, portable orchestration kernel.
 allowed-tools: Read, Write, Edit, Glob, Grep, Agent, Skill, AskUserQuestion, WebSearch, WebFetch, Bash
 argument-hint: "[task]"
-version: 6.2.1
+version: 6.2.2
 license: MIT
 compatibility: Portable across hosts with inline fallbacks when child agents are unavailable
 tags: [orchestration, planning, execution, review, release]

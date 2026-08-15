@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.2] — 2026-08-15
+
 ### Fixed
 - Refuse to update dirty or diverged source checkouts, and fail clearly when fetch, version inspection, or fast-forward validation cannot safely complete.
 
