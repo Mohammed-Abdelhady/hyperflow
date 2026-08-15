@@ -54,12 +54,24 @@ clone_or_update() {
   if is_git_checkout "$INSTALL_DIR"; then
     local current_version incoming_version current_major incoming_major
     validate_checkout
+    if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
+      warn "Refusing to update dirty checkout: $INSTALL_DIR"
+      warn "Commit or stash local changes before rerunning the installer."
+      exit 1
+    fi
     info "Updating $INSTALL_DIR"
-    git -C "$INSTALL_DIR" fetch --quiet origin main
+    if ! git -C "$INSTALL_DIR" fetch --quiet origin main; then
+      warn "Unable to fetch origin/main; leaving checkout unchanged."
+      exit 1
+    fi
     current_version="$(sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' "$INSTALL_DIR/package.json" | head -1)"
     incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' | head -1)"
     current_major="${current_version%%.*}"
     incoming_major="${incoming_version%%.*}"
+    if [ -z "$current_version" ] || [ -z "$incoming_version" ]; then
+      warn "Unable to determine package versions for the update; leaving checkout unchanged."
+      exit 1
+    fi
     # hyperflow:legacy-migration:start
     if [ -n "$current_major" ] && [ -n "$incoming_major" ] && [ "$incoming_major" -gt "$current_major" ] && [ "$ACCEPT_MAJOR_MIGRATION" != "1" ]; then
       warn "Major update $current_version -> $incoming_version requires manual legacy-data review before checkout changes."
@@ -67,7 +79,15 @@ clone_or_update() {
       exit 2
     fi
     # hyperflow:legacy-migration:end
-    git -C "$INSTALL_DIR" merge --ff-only --quiet FETCH_HEAD
+    if ! git -C "$INSTALL_DIR" merge-base --is-ancestor HEAD FETCH_HEAD; then
+      warn "Refusing non-fast-forward update: local checkout has diverged from origin/main."
+      warn "Re-clone or reconcile the checkout manually before rerunning the installer."
+      exit 1
+    fi
+    if ! git -C "$INSTALL_DIR" merge --ff-only --quiet FETCH_HEAD; then
+      warn "Unable to fast-forward origin/main; leaving checkout unchanged."
+      exit 1
+    fi
     validate_checkout
     return
   fi

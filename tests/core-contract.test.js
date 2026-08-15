@@ -244,6 +244,10 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /\.config\/opencode\/skills/);
   assert.match(installer, /accept-major-migration/);
   assert.match(installer, /link-only/);
+  assert.match(installer, /status --porcelain --untracked-files=all/);
+  assert.match(installer, /merge-base --is-ancestor HEAD FETCH_HEAD/);
+  assert.match(installer, /Unable to fetch origin\/main/);
+  assert.match(installer, /Unable to fast-forward origin\/main/);
   assert.doesNotMatch(installer, /\.cursor\/skills|\.grok\/skills/);
   assert.doesNotMatch(installer, /\bCODEX_[A-Z0-9_]+\b/);
 
@@ -370,6 +374,26 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       realpathSync(join(worktreeHome, "skills", "hyperflow")),
       "Git worktree checkouts must be linkable",
     );
+
+    const dirtyHome = join(temp, "dirty-home");
+    const dirtyCheckout = join(dirtyHome, "checkout");
+    cpSync(pathFromRoot("skills"), join(dirtyCheckout, "skills"), { recursive: true });
+    cpSync(pathFromRoot("package.json"), join(dirtyCheckout, "package.json"));
+    execFileSync("git", ["init", "-q", dirtyCheckout]);
+    execFileSync("git", ["-C", dirtyCheckout, "config", "user.name", "Hyperflow Test"]);
+    execFileSync("git", ["-C", dirtyCheckout, "config", "user.email", "test@example.invalid"]);
+    execFileSync("git", ["-C", dirtyCheckout, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
+    execFileSync("git", ["-C", dirtyCheckout, "add", "skills", "package.json"]);
+    execFileSync("git", ["-C", dirtyCheckout, "commit", "-qm", "test: dirty update fixture"]);
+    writeFileSync(join(dirtyCheckout, "package.json"), readFileSync(join(dirtyCheckout, "package.json"), "utf8").replace('"version": "6.2.1"', '"version": "6.2.1-local"'));
+    mkdirSync(join(dirtyHome, ".config", "opencode"), { recursive: true });
+    const dirtyUpdate = spawnSync("bash", [pathFromRoot("install.sh")], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: dirtyHome, HYPERFLOW_HOME: dirtyCheckout, PATH: "/usr/bin:/bin" },
+    });
+    assert.notEqual(dirtyUpdate.status, 0, "a dirty checkout must not be updated");
+    assert.match(dirtyUpdate.stderr, /Refusing to update dirty checkout/);
+    assert.equal(existsSync(join(dirtyCheckout, ".git", "FETCH_HEAD")), false, "dirty preflight must run before fetch");
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
