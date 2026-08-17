@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Preflight fetched source-managed checkout trees before fast-forwarding so incomplete updates leave the existing checkout intact.
+
 ## [6.2.2] — 2026-08-15
 
 ### Fixed

@@ -37,7 +37,7 @@ usage() {
 validate_checkout() {
   local remote skill
   is_git_checkout "$INSTALL_DIR" || { warn "Not a Git checkout: $INSTALL_DIR"; exit 1; }
-  remote="$(git -C "$INSTALL_DIR" remote get-url origin 2>/dev/null || true)"
+  remote="$(git -C "$INSTALL_DIR" config --get remote.origin.url 2>/dev/null || true)"
   case "$remote" in
     "$REPO_URL"|https://github.com/Mohammed-Abdelhady/hyperflow|git@github.com:Mohammed-Abdelhady/hyperflow.git) ;;
     *) warn "Install path is not the Hyperflow repository: $INSTALL_DIR"; exit 1 ;;
@@ -45,6 +45,20 @@ validate_checkout() {
   for skill in "${CORE_SKILLS[@]}"; do
     [ -f "$INSTALL_DIR/skills/$skill/SKILL.md" ] || {
       warn "Incomplete Hyperflow checkout: missing skills/$skill/SKILL.md"
+      exit 1
+    }
+  done
+}
+
+validate_fetched_checkout() {
+  local skill
+  git -C "$INSTALL_DIR" cat-file -e FETCH_HEAD:package.json 2>/dev/null || {
+    warn "Fetched origin/main is incomplete: missing package.json; leaving checkout unchanged."
+    exit 1
+  }
+  for skill in "${CORE_SKILLS[@]}"; do
+    git -C "$INSTALL_DIR" cat-file -e "FETCH_HEAD:skills/$skill/SKILL.md" 2>/dev/null || {
+      warn "Fetched origin/main is incomplete: missing skills/$skill/SKILL.md; leaving checkout unchanged."
       exit 1
     }
   done
@@ -72,6 +86,7 @@ clone_or_update() {
       warn "Unable to determine package versions for the update; leaving checkout unchanged."
       exit 1
     fi
+    validate_fetched_checkout
     # hyperflow:legacy-migration:start
     if [ -n "$current_major" ] && [ -n "$incoming_major" ] && [ "$incoming_major" -gt "$current_major" ] && [ "$ACCEPT_MAJOR_MIGRATION" != "1" ]; then
       warn "Major update $current_version -> $incoming_version requires manual legacy-data review before checkout changes."
