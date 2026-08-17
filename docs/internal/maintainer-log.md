@@ -1,5 +1,15 @@
 # Maintainer log
 
+## 2026-08-17 — v6.2.3
+
+- Version: v6.2.3
+- PR: #46 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/46
+- Shipped: source-managed installer updates now inspect the fetched package and all seven skill entrypoints before fast-forwarding, preserving the existing checkout when the remote tree is incomplete; raw origin URL validation remains compatible with local Git URL rewrites; local-remote coverage now exercises fetch failures, successful updates, and rejected incomplete trees.
+- Validation: `validate-plugin`, 17 Node tests, 3/3 evals, shell syntax, PR checks, main push validation, and release certification all passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.2.3
+- Compatibility note: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: refresh the GitHub Actions runtime targets to remove the Node.js 20 deprecation warning observed on the green validation and release runs.
+
 ## 2026-08-15 — v6.2.2
 
 - Version: v6.2.2
