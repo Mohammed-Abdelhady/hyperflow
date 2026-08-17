@@ -241,7 +241,9 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /remove_owned_links/);
   assert.match(installer, /readlink/);
   assert.match(installer, /validate_checkout/);
-  assert.match(installer, /remote get-url origin/);
+  assert.match(installer, /validate_fetched_checkout/);
+  assert.match(installer, /cat-file -e FETCH_HEAD:package\.json/);
+  assert.match(installer, /config --get remote\.origin\.url/);
   assert.match(installer, /\.config\/opencode\/skills/);
   assert.match(installer, /accept-major-migration/);
   assert.match(installer, /link-only/);
@@ -401,6 +403,76 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     assert.notEqual(dirtyUpdate.status, 0, "a dirty checkout must not be updated");
     assert.match(dirtyUpdate.stderr, /Refusing to update dirty checkout/);
     assert.equal(existsSync(join(dirtyCheckout, ".git", "FETCH_HEAD")), false, "dirty preflight must run before fetch");
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("source-managed updates preflight fetched trees and preserve the checkout on failure", () => {
+  const temp = mkdtempSync(join(tmpdir(), "hyperflow-installer-update-test-"));
+  const seed = join(temp, "seed");
+  const remote = join(temp, "remote.git");
+  const checkout = join(temp, "checkout");
+  const home = join(temp, "home");
+  const gitConfig = join(temp, "gitconfig");
+  const repoUrl = "https://github.com/Mohammed-Abdelhady/hyperflow.git";
+  try {
+    for (const path of shippedFiles()) {
+      const target = join(seed, path);
+      mkdirSync(dirname(target), { recursive: true });
+      cpSync(pathFromRoot(path), target);
+    }
+    execFileSync("git", ["init", "-q", seed]);
+    execFileSync("git", ["-C", seed, "config", "user.name", "Hyperflow Test"]);
+    execFileSync("git", ["-C", seed, "config", "user.email", "test@example.invalid"]);
+    execFileSync("git", ["-C", seed, "add", "-A"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: seed installer update fixture"]);
+    execFileSync("git", ["-C", seed, "branch", "-M", "main"]);
+    execFileSync("git", ["init", "--bare", "-q", remote]);
+    execFileSync("git", ["-C", seed, "remote", "add", "origin", `file://${remote}`]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
+    execFileSync("git", ["--git-dir", remote, "symbolic-ref", "HEAD", "refs/heads/main"]);
+    execFileSync("git", ["clone", "-q", `file://${remote}`, checkout]);
+    execFileSync("git", ["-C", checkout, "remote", "set-url", "origin", repoUrl]);
+    mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+
+    const env = {
+      ...process.env,
+      HOME: home,
+      HYPERFLOW_HOME: checkout,
+      PATH: "/usr/bin:/bin",
+      GIT_CONFIG_GLOBAL: gitConfig,
+      GIT_CONFIG_NOSYSTEM: "1",
+    };
+    const baseHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+
+    writeFileSync(gitConfig, `[url "file:///missing-hyperflow-remote"]\n\tinsteadOf = ${repoUrl}\n`);
+    const fetchFailure = spawnSync("bash", [pathFromRoot("install.sh")], { encoding: "utf8", env });
+    assert.notEqual(fetchFailure.status, 0, "a fetch failure must fail the update");
+    assert.match(fetchFailure.stderr, /Unable to fetch origin\/main/);
+    assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), baseHead);
+
+    writeFileSync(join(seed, "skills", "hyperflow", "SKILL.md"), `${readFileSync(join(seed, "skills", "hyperflow", "SKILL.md"), "utf8")}\n<!-- fast-forward fixture -->\n`);
+    execFileSync("git", ["-C", seed, "add", "skills/hyperflow/SKILL.md"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish installer update"]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
+    writeFileSync(gitConfig, `[url "file://${remote}"]\n\tinsteadOf = ${repoUrl}\n`);
+
+    const update = spawnSync("bash", [pathFromRoot("install.sh")], { encoding: "utf8", env });
+    assert.equal(update.status, 0, update.stderr);
+    const updatedHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    assert.notEqual(updatedHead, baseHead, "a reachable fast-forward must update the checkout");
+    assert.match(readFileSync(join(checkout, "skills", "hyperflow", "SKILL.md"), "utf8"), /fast-forward fixture/);
+
+    execFileSync("git", ["-C", seed, "rm", "-q", "skills/handoff/SKILL.md"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish incomplete installer update"]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
+
+    const incomplete = spawnSync("bash", [pathFromRoot("install.sh")], { encoding: "utf8", env });
+    assert.notEqual(incomplete.status, 0, "an incomplete fetched tree must fail before merge");
+    assert.ok(incomplete.stderr.includes("Fetched origin/main is incomplete: missing skills/handoff/SKILL.md"), incomplete.stderr);
+    assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
+    assert.equal(existsSync(join(checkout, "skills", "handoff", "SKILL.md")), true, "the checked-out skill must survive the rejected update");
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
