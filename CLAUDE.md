@@ -12,7 +12,7 @@ Hyperflow is a lightweight Markdown-only orchestration plugin. Skills live in `s
 - Never attribute a commit, document, comment, or generated file to an agent or model.
 - Before release, run the maintained checks, keep current docs aligned, then use `./scripts/release.sh`. Release and push remain separate; push requires explicit authorization.
 
-<!-- hyperflow:doctrine:start version=6.2.3 -->
+<!-- hyperflow:doctrine:start version=6.2.4 -->
 # Hyperflow portable core
 
 ## Operating rule

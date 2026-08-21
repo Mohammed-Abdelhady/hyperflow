@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.4] — 2026-08-21
+
 ### Fixed
 - Refresh GitHub Actions checkout and Node setup runtimes to Node 24-based action majors, removing the Node 20 deprecation warning from validation and release workflows.
 

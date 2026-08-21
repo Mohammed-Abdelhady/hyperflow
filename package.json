@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "6.2.3",
+  "version": "6.2.4",
   "description": "A lightweight Markdown orchestration kernel with direct, focused, and deep lanes for coding agents.",
   "type": "module",
   "license": "MIT",
