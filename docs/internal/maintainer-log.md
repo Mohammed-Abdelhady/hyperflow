@@ -5,7 +5,7 @@
 - Version: v6.2.4
 - PR: #47 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/47
 - Shipped: validation and release workflows now use the current Node 24-based checkout/setup-node action majors instead of Node 20-based majors; a unit regression guard prevents the deprecated action majors from returning.
-- Validation: local `validate-plugin`, 18 Node tests, 3/3 evals, shell syntax, PR checks, main push validation, Pages deployment, and release certification all passed.
+- Validation: local `validate-plugin`, 18 Node tests, 3/3 evals, shell syntax, PR checks, main push validation, Pages deployment, and release certification all passed. The repo-owned workflows are warning-free; GitHub's managed Pages workflow still reports `actions/upload-artifact@v4` being forced from Node 20 to Node 24.
 - Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.2.4
 - Compatibility note: Codex preview remains uncertified; no Codex certificate was claimed.
 - Next candidate: restore `docs/roadmap.md` as the durable source for future train selection; it is currently absent from the lightweight-core tree and must remain out of README marketing.
