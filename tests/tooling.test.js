@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -10,6 +10,12 @@ const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
 
 function run(script, args = []) {
   return execFileSync("node", [join(ROOT, "scripts", script), ...args], { cwd: ROOT, encoding: "utf8" });
+}
+
+function workflowFiles() {
+  return readdirSync(join(ROOT, ".github", "workflows"))
+    .filter((path) => /\.ya?ml$/.test(path))
+    .map((path) => join(ROOT, ".github", "workflows", path));
 }
 
 test("maintainer gates are wired and pass in the current checkout", () => {
@@ -25,4 +31,11 @@ test("eval harness supports listing and machine-readable output", () => {
   const output = JSON.parse(run("run-evals.mjs", ["--json"]));
   assert.equal(output.passed, output.total);
   assert.ok(output.total >= 3);
+});
+
+test("GitHub workflows use Node 24-based action majors", () => {
+  const workflows = workflowFiles().map((path) => readFileSync(path, "utf8")).join("\n");
+  assert.match(workflows, /actions\/checkout@v7\b/);
+  assert.match(workflows, /actions\/setup-node@v7\b/);
+  assert.doesNotMatch(workflows, /actions\/(?:checkout|setup-node)@v[1-6](?:\b|\.)/);
 });
