@@ -1,0 +1,28 @@
+{
+  "id": "roadmap-contract",
+  "title": "The roadmap describes the current lightweight core and keeps train selection bounded",
+  "checks": [
+    {
+      "type": "files_exist",
+      "paths": ["docs/roadmap.md"]
+    },
+    {
+      "type": "read_contains",
+      "path": "docs/roadmap.md",
+      "value": "## Next trains"
+    },
+    {
+      "type": "read_contains",
+      "path": "docs/roadmap.md",
+      "value": "## Selection rule for a train"
+    },
+    {
+      "type": "read_not_contains",
+      "path": "docs/roadmap.md",
+      "value": "scripts/run-evals.py"
+    },
+    {
+      "type": "docs_links_resolve"
+    }
+  ]
+}
