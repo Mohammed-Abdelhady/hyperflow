@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.5] — 2026-08-23
+
 ### Fixed
 - Restore `docs/roadmap.md` as the durable, current-core source for bounded train selection instead of leaving maintainers with stale pre-v6 references.
 
