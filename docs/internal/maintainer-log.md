@@ -1,5 +1,15 @@
 # Maintainer log
 
+## 2026-08-24 — v6.2.5
+
+- Version: v6.2.5
+- PR: #48 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/48
+- Shipped: restored `docs/roadmap.md` as the current lightweight-core source for bounded train selection, replaced stale pre-v6 references with the shipped v6.0-v6.2 trains and evidence-based next candidates, added a roadmap golden eval, and published the page in the sitemap.
+- Validation: PR validation, main push validation, Pages deployment, and release certification all passed; local `validate-plugin`, 18 Node tests, 4/4 evals, shell syntax, and patch hygiene passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.2.5
+- Compatibility note: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: add a bounded handoff round-trip eval for the Markdown task pointer and Git base/head refs.
+
 ## 2026-08-21 — v6.2.4
 
 - Version: v6.2.4
