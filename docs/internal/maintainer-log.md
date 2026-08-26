@@ -1,5 +1,15 @@
 # Maintainer log
 
+## 2026-08-26 — v6.3.0
+
+- Version: v6.3.0
+- PR: #50 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/50
+- Shipped: added `author: Mohammed Abdelhady` to all seven specialist agent frontmatter blocks for marketplace interoperability, with validator and unit-test coverage tied to `package.json` author metadata.
+- Validation: local `validate-plugin`, 19 Node tests, 4/4 evals, shell syntax, patch hygiene, PR checks, main push validation, and release certification all passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.3.0
+- Compatibility note: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: add a bounded handoff round-trip eval for the Markdown task pointer and Git base/head refs.
+
 ## 2026-08-24 — v6.2.5
 
 - Version: v6.2.5
