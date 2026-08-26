@@ -1,6 +1,7 @@
 ---
 name: data-reviewer
 description: Use when schemas, migrations, queries, pipelines, analytics, or numerical correctness needs independent analysis or review.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 

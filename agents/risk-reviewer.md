@@ -1,6 +1,7 @@
 ---
 name: risk-reviewer
 description: Use when security, privacy, compliance, secrets, authentication, authorization, or dependency exposure needs independent review.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 

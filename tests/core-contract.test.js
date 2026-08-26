@@ -116,6 +116,18 @@ test("only the seven public skills and seven specialist profiles ship", () => {
   assert.deepEqual(specialists, [...CONTRACT.specialists].sort());
 });
 
+test("specialist profiles identify the package author", () => {
+  const expectedAuthor = json("package.json").author.name;
+  for (const specialist of CONTRACT.specialists) {
+    const frontmatter = read(`agents/${specialist}.md`).match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+    assert.equal(
+      frontmatter.match(/^author:\s*(.+)$/m)?.[1].trim(),
+      expectedAuthor,
+      `${specialist} must declare package.json author.name`,
+    );
+  }
+});
+
 test("Direct, Focused, and Deep lanes retain their routing and call budgets", () => {
   const kernel = [
     "skills/hyperflow/SKILL.md",

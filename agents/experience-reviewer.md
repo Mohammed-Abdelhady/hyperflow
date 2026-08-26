@@ -1,6 +1,7 @@
 ---
 name: experience-reviewer
 description: Use when frontend, UI, accessibility, responsive/mobile behavior, or motion needs independent design and implementation judgment.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
