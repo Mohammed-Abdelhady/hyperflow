@@ -1,6 +1,7 @@
 ---
 name: systems-reviewer
 description: Use when architecture, APIs, services, infrastructure, or cross-boundary integration needs independent analysis or review.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 

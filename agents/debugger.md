@@ -1,6 +1,7 @@
 ---
 name: debugger
 description: Use when a bug, regression, failing test, or intermittent behavior needs systematic causal analysis.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 

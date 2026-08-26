@@ -70,6 +70,8 @@ function checkVersionParity() {
 }
 
 function checkSkillSurface() {
+  const packageJson = readJson("package.json");
+  const expectedAgentAuthor = packageJson.author?.name;
   const skills = readdirSync(pathFromRoot("skills"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(pathFromRoot(`skills/${entry.name}/SKILL.md`)))
     .map((entry) => entry.name)
@@ -93,6 +95,14 @@ function checkSkillSurface() {
     .map((path) => path.slice("agents/".length, -3))
     .sort();
   check(JSON.stringify(specialists) === JSON.stringify([...CONTRACT.specialists].sort()), `agents: expected ${CONTRACT.specialists.join(", ")}; found ${specialists.join(", ")}`);
+
+  for (const specialist of CONTRACT.specialists) {
+    const path = `agents/${specialist}.md`;
+    const source = read(path);
+    const frontmatter = source.match(/^---\n([\s\S]*?)\n---/);
+    const author = frontmatter?.[1].match(/^author:\s*(.+)$/m)?.[1].trim();
+    check(author === expectedAgentAuthor, `${path}: author must match package.json author.name`);
+  }
 }
 
 function checkJsonDocuments() {

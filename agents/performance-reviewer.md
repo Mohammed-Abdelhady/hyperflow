@@ -1,6 +1,7 @@
 ---
 name: performance-reviewer
 description: Use when latency, throughput, memory, algorithms, bundles, rendering, caching, or query cost needs independent analysis or review.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 

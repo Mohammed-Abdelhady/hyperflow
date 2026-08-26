@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add author metadata to all specialist agent frontmatter for marketplace interoperability.
+
 ## [6.2.5] — 2026-08-23
 
 ### Fixed

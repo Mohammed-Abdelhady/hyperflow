@@ -1,6 +1,7 @@
 ---
 name: researcher
 description: Use when local discovery or current external evidence is necessary to make a material engineering decision.
+author: Mohammed Abdelhady
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
