@@ -56,8 +56,28 @@ const fs = require("node:fs");
 const source = fs.readFileSync(path, "utf8");
 const marker = "## [Unreleased]\n";
 if (!source.includes(marker)) throw new Error("CHANGELOG.md is missing [Unreleased]");
+const releaseVersions = [...source.matchAll(/^## \[(\d+\.\d+\.\d+)\]/gm)].map((match) => match[1]);
+const previousVersion = releaseVersions[0];
+if (!previousVersion) throw new Error("CHANGELOG.md is missing a previous release heading");
+const olderVersion = releaseVersions[1];
 const date = new Date().toISOString().slice(0, 10);
-fs.writeFileSync(path, source.replace(marker, `${marker}\n## [${version}] — ${date}\n`));
+let updated = source.replace(marker, `${marker}\n## [${version}] — ${date}\n`);
+const compareBase = "https://github.com/Mohammed-Abdelhady/hyperflow/compare";
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function setReference(text, label, url) {
+  const entry = `[${label}]: ${url}`;
+  const pattern = new RegExp(`^\\[${escapeRegExp(label)}\\]:.*$`, "m");
+  return pattern.test(text) ? text.replace(pattern, entry) : `${text.trimEnd()}\n${entry}\n`;
+}
+
+updated = setReference(updated, "Unreleased", `${compareBase}/v${version}...HEAD`);
+updated = setReference(updated, version, `${compareBase}/v${previousVersion}...v${version}`);
+updated = setReference(
+  updated,
+  previousVersion,
+  olderVersion ? `${compareBase}/v${olderVersion}...v${previousVersion}` : `${compareBase}/v${previousVersion}`,
+);
+fs.writeFileSync(path, updated);
 NODE
 
 printf 'Stamped Hyperflow %s. No commit, tag, or push was created.\n' "$VERSION"
