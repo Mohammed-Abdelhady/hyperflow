@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.4.0] — 2026-08-28
+
 ### Added
 - Formalize case-sensitive handoff metadata and exact Markdown task-pointer requirements for cross-session round trips.
 - Add a dependency-free golden eval that checks reviewed handoffs retain their task pointer and resolvable Git base/head refs.
@@ -1692,7 +1694,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.30.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.4.0...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1833,3 +1835,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.2.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v1.0.0
+[6.4.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.3.0...v6.4.0
+[6.3.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.2.5...v6.3.0
