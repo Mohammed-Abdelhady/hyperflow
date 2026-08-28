@@ -35,6 +35,12 @@ The current priorities, in order, are:
 - Source-managed updates refuse dirty or diverged checkouts, preflight fetched trees, and leave the existing checkout intact on failed updates.
 - Validation and release workflows use current Node 24-based action majors.
 
+### v6.4 — durable handoff round trips
+
+- Case-sensitive handoff metadata keeps the copied Markdown task and exact Git base/head refs inspectable across sessions.
+- A golden eval exercises the reviewed package shape and rejects missing pointers or unresolved refs.
+- Release version stamping keeps the Changelog comparison links aligned with the new version.
+
 ## Next trains
 
 ### Durable memory and review
@@ -46,7 +52,6 @@ The current priorities, in order, are:
 ### Monorepo and handoff DX
 
 - Improve workspace-boundary guidance and verification for changes crossing apps, packages, and shared contracts.
-- Exercise handoff round trips against the Markdown task pointer and Git base/head refs.
 - Keep cross-session context compact instead of copying full investigation transcripts.
 
 ### Install and release reliability

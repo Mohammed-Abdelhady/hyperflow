@@ -539,6 +539,9 @@ test("the pending migration boundary rejects patch releases", () => {
 test("version stamping executes against an isolated release tree", () => {
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-release-test-"));
   const copyRoot = join(temp, "repo");
+  const releaseVersions = [...read("CHANGELOG.md").matchAll(/^## \[(\d+\.\d+\.\d+)\]/gm)].map((match) => match[1]);
+  const previousRelease = releaseVersions.find((version) => version !== PACKAGE_VERSION);
+  assert.ok(previousRelease, "the changelog must contain a release before the current package version");
   try {
     mkdirSync(join(copyRoot, "scripts"), { recursive: true });
     for (const path of ["package.json", ".claude-plugin", ".codex-plugin", "skills", "AGENTS.md", "CLAUDE.md", "README.md", "CHANGELOG.md"]) {
@@ -559,8 +562,10 @@ test("version stamping executes against an isolated release tree", () => {
     const changelog = readFileSync(join(copyRoot, "CHANGELOG.md"), "utf8");
     assert.match(changelog, /## \[9\.8\.7\] — \d{4}-\d{2}-\d{2}/);
     assert.match(changelog, /^\[Unreleased\]: https:\/\/github\.com\/Mohammed-Abdelhady\/hyperflow\/compare\/v9\.8\.7\.\.\.HEAD$/m);
-    assert.match(changelog, /^\[9\.8\.7\]: https:\/\/github\.com\/Mohammed-Abdelhady\/hyperflow\/compare\/v6\.3\.0\.\.\.v9\.8\.7$/m);
-    assert.match(changelog, /^\[6\.3\.0\]: https:\/\/github\.com\/Mohammed-Abdelhady\/hyperflow\/compare\/v6\.2\.5\.\.\.v6\.3\.0$/m);
+    const currentVersionPattern = PACKAGE_VERSION.replaceAll(".", "\\.");
+    const previousVersionPattern = previousRelease.replaceAll(".", "\\.");
+    assert.match(changelog, new RegExp(`^\\[9\\.8\\.7\\]: https://github\\.com/Mohammed-Abdelhady/hyperflow/compare/v${currentVersionPattern}\\.\\.\\.v9\\.8\\.7$`, "m"));
+    assert.match(changelog, new RegExp(`^\\[${currentVersionPattern}\\]: https://github\\.com/Mohammed-Abdelhady/hyperflow/compare/v${previousVersionPattern}\\.\\.\\.v${currentVersionPattern}$`, "m"));
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
