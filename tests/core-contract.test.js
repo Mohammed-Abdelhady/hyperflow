@@ -504,6 +504,7 @@ test("release path validates locally, stamps portable docs, and never pushes", (
   assert.match(bump, /AGENTS\.md/);
   assert.match(bump, /CLAUDE\.md/);
   assert.match(bump, /hyperflow:doctrine:start version=/);
+  assert.match(bump, /setReference\(updated, "Unreleased", `\$\{compareBase\}\/v\$\{version\}\.\.\.HEAD`\)/);
 });
 
 test("the pending migration boundary rejects patch releases", () => {
@@ -555,7 +556,11 @@ test("version stamping executes against an isolated release tree", () => {
     assert.match(readFileSync(join(copyRoot, "AGENTS.md"), "utf8"), /hyperflow:doctrine:start version=9\.8\.7/);
     assert.match(readFileSync(join(copyRoot, "README.md"), "utf8"), /\[!\[version v9\.8\.7\]/);
     assert.match(readFileSync(join(copyRoot, "README.md"), "utf8"), /version-v9\.8\.7/);
-    assert.match(readFileSync(join(copyRoot, "CHANGELOG.md"), "utf8"), /## \[9\.8\.7\] — \d{4}-\d{2}-\d{2}/);
+    const changelog = readFileSync(join(copyRoot, "CHANGELOG.md"), "utf8");
+    assert.match(changelog, /## \[9\.8\.7\] — \d{4}-\d{2}-\d{2}/);
+    assert.match(changelog, /^\[Unreleased\]: https:\/\/github\.com\/Mohammed-Abdelhady\/hyperflow\/compare\/v9\.8\.7\.\.\.HEAD$/m);
+    assert.match(changelog, /^\[9\.8\.7\]: https:\/\/github\.com\/Mohammed-Abdelhady\/hyperflow\/compare\/v6\.3\.0\.\.\.v9\.8\.7$/m);
+    assert.match(changelog, /^\[6\.3\.0\]: https:\/\/github\.com\/Mohammed-Abdelhady\/hyperflow\/compare\/v6\.2\.5\.\.\.v6\.3\.0$/m);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
