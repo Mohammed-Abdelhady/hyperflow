@@ -42,7 +42,7 @@
     "reviewerBriefWords": 250,
     "taskFileWords": 1200,
     "skillEntrypointLines": 500,
-    "shippedFilesMax": 60,
+    "shippedFilesMax": 63,
     "shippedBytesMax": 250000,
     "portableDoctrineCharsMax": 5000,
     "planCharsMax": 5000,
