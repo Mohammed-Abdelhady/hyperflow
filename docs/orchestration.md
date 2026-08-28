@@ -70,6 +70,10 @@ These are structural ceilings, not provider-exact accounting claims.
 
 Current workflow state is the Markdown listed above.
 
+### Handoff round trips
+
+The current handoff package is deliberately inspectable: `task.md` is the copied task, while `handoff.md` records the case-sensitive keys `status`, `task_pointer`, `source_branch`, `build_branch`, `base_ref`, `head_ref`, `created`, `updated`, `result`, `checks`, and `commits`. The pointer must target `.hyperflow-handoff/<slug>/task.md`. `planned` may use `pending` for `head_ref`; after build, both recorded refs must resolve before review uses the exact range.
+
 ## Completion and Git
 
 Each distinct task receives its own Conventional Commit. Verification is proportional to risk. A worker's output is not accepted as its own review. Release verification may prepare a local release, but pushing commits or tags is a separate user-authorized action.

@@ -1,0 +1,11 @@
+{
+  "id": "handoff-round-trip",
+  "title": "A reviewed handoff preserves its Markdown task pointer and exact Git refs",
+  "checks": [
+    {
+      "type": "handoff_round_trip",
+      "path": "evals/fixtures/handoff-round-trip/.hyperflow-handoff/billing-migration",
+      "slug": "billing-migration"
+    }
+  ]
+}

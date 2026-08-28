@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Static golden-task evaluations for portable Hyperflow contracts. */
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +20,25 @@ function read(path) {
 
 function json(path) {
   return JSON.parse(read(path));
+}
+
+function markdownTable(path) {
+  const fields = new Map();
+  for (const line of read(path).split(/\r?\n/)) {
+    const match = line.match(/^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/);
+    if (!match || /^-+$/.test(match[1].trim())) continue;
+    fields.set(match[1].trim(), match[2].trim());
+  }
+  return fields;
+}
+
+function gitRefResolves(ref) {
+  try {
+    execFileSync("git", ["rev-parse", "--verify", `${ref}^{commit}`], { cwd: ROOT, stdio: "pipe" });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function filesUnder(path) {
@@ -90,6 +110,30 @@ function check(spec) {
       const antigravityHonest = hosts.find((host) => host.id === "antigravity")?.claim === "compatibility shim" && readme.includes("antigravity");
       const ok = hosts.length >= 4 && unique && complete && codexHonest && opencodeHonest && antigravityHonest;
       return { ok, detail: ok ? `${hosts.length} host claims are explicit` : "host claims are incomplete or overstate support" };
+    }
+    case "handoff_round_trip": {
+      const taskPath = join(spec.path, "task.md");
+      const handoffPath = join(spec.path, "handoff.md");
+      const task = read(taskPath);
+      const fields = markdownTable(handoffPath);
+      const requiredFields = [
+        "status", "task_pointer", "source_branch", "build_branch", "base_ref", "head_ref",
+        "created", "updated", "result", "checks", "commits",
+      ];
+      const fieldsPresent = requiredFields.every((field) => fields.has(field) && fields.get(field) !== "");
+      const taskShape = ["^# .+", "^## Outcome$", "^## Tasks$", "^## Verification$"]
+        .every((pattern) => new RegExp(pattern, "m").test(task));
+      const pointer = fields.get("task_pointer");
+      const pointerExpected = `.hyperflow-handoff/${spec.slug}/task.md`;
+      const refsResolve = ["base_ref", "head_ref"].every((field) => gitRefResolves(fields.get(field)));
+      const statusOk = fields.get("status") === "reviewed";
+      const ok = fieldsPresent && taskShape && pointer === pointerExpected && refsResolve && statusOk;
+      return {
+        ok,
+        detail: ok
+          ? "reviewed handoff preserves the task pointer and resolvable base/head refs"
+          : "handoff package is missing its Markdown task shape, exact pointer, reviewed status, or resolvable refs",
+      };
     }
     default:
       return { ok: false, detail: `unknown check type ${spec.type}` };

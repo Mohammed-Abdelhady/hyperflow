@@ -25,6 +25,8 @@ A committed package contains:
 
 `task.md` is the complete single task artefact copied from `.hyperflow/tasks/<slug>.md`. `handoff.md` contains a small table: status (`planned`, `built`, `reviewed`), source branch, build branch, base ref, head ref, created/updated dates, result, checks, and commit list.
 
+Use these case-sensitive table keys so another session can round-trip the package without reconstructing hidden context: `status`, `task_pointer`, `source_branch`, `build_branch`, `base_ref`, `head_ref`, `created`, `updated`, `result`, `checks`, and `commits`. `task_pointer` must be `.hyperflow-handoff/<slug>/task.md`, pointing to the copied Markdown task. `base_ref` and `head_ref` must remain the exact recorded Git refs; after `pickup`, both must resolve before `review` can run. A `planned` package may use `pending` for `head_ref`, but `built` and `reviewed` packages may not.
+
 Legacy v5 packages using `HANDOFF.md`, `STATUS`, or nested `artefact/` directories are archive-only. `list` and `status` may report their paths, but `pickup` and `review` require the user to manually create the current `task.md` plus `handoff.md` layout with exact refs. Never delete, rewrite, or claim to resume legacy data automatically.
 
 ## Commands
