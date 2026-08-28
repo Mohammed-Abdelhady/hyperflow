@@ -1,5 +1,15 @@
 # Maintainer log
 
+## 2026-08-28 — v6.4.0
+
+- Version: v6.4.0
+- PR: #51 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/51; #52 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/52; #53 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/53
+- Shipped: formalized case-sensitive handoff metadata and the exact Markdown task pointer, added a reviewed handoff round-trip eval for resolvable Git base/head refs, and synchronized Changelog comparison links during version stamping.
+- Validation: local plugin validation, 20 Node tests, 5/5 evals, shell syntax, patch hygiene, all three PR checks, main push validation, and release certification passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.4.0
+- Compatibility note: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: carry accepted review outcomes into the next session through bounded Markdown memory without copying full investigation transcripts.
+
 ## 2026-08-26 — v6.3.0
 
 - Version: v6.3.0
