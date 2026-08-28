@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Formalize case-sensitive handoff metadata and exact Markdown task-pointer requirements for cross-session round trips.
+- Add a dependency-free golden eval that checks reviewed handoffs retain their task pointer and resolvable Git base/head refs.
+
+### Fixed
+- Keep changelog comparison references synchronized when version stamping a release, including the new release, Unreleased, and immediately previous release links.
+
 ## [6.3.0] — 2026-08-26
 
 ### Added
