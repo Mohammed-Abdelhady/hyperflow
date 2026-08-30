@@ -41,6 +41,31 @@ function gitRefResolves(ref) {
   }
 }
 
+function reviewMemory(path) {
+  const source = read(path).trim();
+  const entries = source.split(/^## /m).slice(1).map((entry) => `## ${entry}`);
+  const fields = ["Verdict", "Target", "Audit", "Decision", "Follow-up"];
+  const validEntries = entries.length > 0 && entries.length <= 20 && entries.every((entry) => {
+    const lines = entry.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const fieldLines = lines.slice(1);
+    const exactFields = fieldLines.length === fields.length
+      && fields.every((field, index) => fieldLines[index].startsWith(`- ${field}: `) && fieldLines[index].length > field.length + 4);
+    return lines.length === fields.length + 1
+      && /^## \d{4}-\d{2}-\d{2} — .+$/.test(lines[0])
+      && /^- Verdict: PASS$/.test(fieldLines[0] ?? "")
+      && /^- Target: `[^`]+`$/.test(fieldLines[1] ?? "")
+      && /^- Audit: `\.hyperflow\/audits\/[^`]+\.md`$/.test(fieldLines[2] ?? "")
+      && exactFields;
+  });
+  const ok = /^# Review outcomes$/m.test(source) && validEntries;
+  return {
+    ok,
+    detail: ok
+      ? `${entries.length} accepted review entr${entries.length === 1 ? "y" : "ies"} within the bounded pointer format`
+      : "review memory must contain only bounded PASS entries with exact target/audit pointers",
+  };
+}
+
 function filesUnder(path) {
   const absolute = repoPath(path);
   if (!existsSync(absolute)) return [];
@@ -135,6 +160,8 @@ function check(spec) {
           : "handoff package is missing its Markdown task shape, exact pointer, reviewed status, or resolvable refs",
       };
     }
+    case "review_memory":
+      return reviewMemory(spec.path);
     default:
       return { ok: false, detail: `unknown check type ${spec.type}` };
   }

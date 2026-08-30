@@ -66,6 +66,7 @@ These are structural ceilings, not provider-exact accounting claims.
 | `.hyperflow/specs/<slug>.md` | Design decisions needed beyond the task file |
 | `.hyperflow/audits/<timestamp>-<scope>.md` | Evidence-backed findings |
 | `.hyperflow/memory/<category>.md` | Durable project learning |
+| `.hyperflow/memory/review-outcomes.md` | Optional bounded pointers to accepted audits; the audit remains authoritative |
 | `.hyperflow-handoff/<slug>/{task.md,handoff.md}` | Task copy, base/head refs, status, continuation notes |
 
 Current workflow state is the Markdown listed above.

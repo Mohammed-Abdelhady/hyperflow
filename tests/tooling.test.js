@@ -41,6 +41,14 @@ test("handoff eval covers the Markdown task pointer and Git refs", () => {
   assert.ok(result.checks.some((check) => check.spec.type === "handoff_round_trip"));
 });
 
+test("review-memory eval enforces accepted-only bounded audit pointers", () => {
+  const output = JSON.parse(run("run-evals.mjs", ["--json"]));
+  const result = output.results.find((task) => task.id === "review-memory");
+  assert.ok(result, "review-memory eval must be registered");
+  assert.equal(result.ok, true);
+  assert.ok(result.checks.some((check) => check.spec.type === "review_memory"));
+});
+
 test("GitHub workflows use Node 24-based action majors", () => {
   const workflows = workflowFiles().map((path) => readFileSync(path, "utf8")).join("\n");
   assert.match(workflows, /actions\/checkout@v7\b/);

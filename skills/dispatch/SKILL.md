@@ -62,6 +62,6 @@ If Git operations are outside the granted scope, leave the verified changes unco
 
 ## 5. Finish
 
-Update the task file to `completed` or `blocked` with concise verification evidence and commit refs. Append only durable verified project learnings to the relevant `.hyperflow/memory/*.md` file.
+Update the task file to `completed` or `blocked` with concise verification evidence and commit refs. Append only durable verified project learnings to the relevant `.hyperflow/memory/*.md` file. Record an accepted review outcome only when the user explicitly requested `--remember`; the review audit remains the source of truth.
 
 Return a compact result: outcome, files, checks, commits, and any remaining risk. Stop locally. Invoke `deploy` only when the request also includes ship/release/deploy/push; remote actions keep their own gate.

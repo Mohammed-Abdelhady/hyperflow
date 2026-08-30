@@ -48,6 +48,8 @@ Current persistence is Markdown only:
 
 Hyperflow performs no automatic startup work.
 
+To carry an accepted review into a later session without copying its findings, use the explicit `--remember` option with `audit`; the bounded Markdown pointer remains separate from the audit evidence.
+
 ## Safety boundaries
 
 Hyperflow preserves unrelated changes, blocks common secret files and destructive commands, keeps worker and reviewer judgment separate, verifies before release, and asks separately before push.

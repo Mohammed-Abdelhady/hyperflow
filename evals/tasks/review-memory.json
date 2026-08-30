@@ -1,0 +1,25 @@
+{
+  "id": "review-memory",
+  "title": "Opt-in review memory is bounded, accepted-only, and points to authoritative audit evidence",
+  "checks": [
+    {
+      "type": "review_memory",
+      "path": "evals/fixtures/review-memory/review-outcomes.md"
+    },
+    {
+      "type": "read_contains",
+      "path": "skills/audit/SKILL.md",
+      "value": "--remember"
+    },
+    {
+      "type": "read_contains",
+      "path": "skills/audit/SKILL.md",
+      "value": ".hyperflow/memory/review-outcomes.md"
+    },
+    {
+      "type": "read_contains",
+      "path": "docs/review-memory.md",
+      "value": "The linked audit remains the authoritative evidence"
+    }
+  ]
+}
