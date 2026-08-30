@@ -2,7 +2,7 @@
 name: audit
 description: Use when reviewing code, a diff, branch, pull request, or system for correctness, risk, security, performance, or maintainability.
 allowed-tools: Read, Write, Glob, Grep, Agent, Skill, AskUserQuestion, WebSearch, WebFetch, Bash
-argument-hint: "[target] [--level 1-5] [and-fix]"
+argument-hint: "[target] [--level 1-5] [and-fix] [--remember]"
 version: 6.4.0
 license: MIT
 compatibility: Portable with read-only specialist reviewers
@@ -38,6 +38,10 @@ Default to level 2. Security-sensitive, migration, authentication, authorization
 Choose from `agents/systems-reviewer.md`, `experience-reviewer.md`, `data-reviewer.md`, `risk-reviewer.md`, or `performance-reviewer.md`. Use `debugger.md` for failure causality and `researcher.md` only when external current facts are material. Reviewers are read-only, never coordinate, never implement, and never review their own authored change.
 
 Every finding must include severity, `path:line`, observed evidence, impact, and the smallest viable correction. Exclude vague possibilities, praise padding, and style opinions unsupported by project rules. Confirm applicability before reporting a vulnerability. A confirmed secret or critical trust-boundary defect returns `SECURITY_VIOLATION:` and halts.
+
+## Optional review memory
+
+`--remember` is explicit opt-in to carry an accepted review outcome into a later session. After a final `PASS`—including a `NEEDS_FIX` result that was corrected and re-reviewed over the exact target—append one bounded entry to `.hyperflow/memory/review-outcomes.md` using [the review-memory contract](../../docs/review-memory.md). Never write an entry for `NEEDS_FIX` or `SECURITY_VIOLATION`, and never copy findings, transcripts, secrets, or implementation output into the ledger. The audit file remains the source of truth. If the ledger has reached its entry limit, report that it is full rather than pruning or rewriting prior entries.
 
 ## Artefact and continuation
 

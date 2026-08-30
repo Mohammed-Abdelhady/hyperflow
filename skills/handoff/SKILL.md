@@ -2,7 +2,7 @@
 name: handoff
 description: Use when transferring a planned task to another session or reviewing work returned from one, with Markdown and exact Git refs.
 allowed-tools: Read, Write, Edit, Glob, Grep, Skill, AskUserQuestion, Bash
-argument-hint: "<create|list|status|pickup|review|complete> [slug]"
+argument-hint: "<create|list|status|pickup|review|complete> [slug] [--remember]"
 version: 6.4.0
 license: MIT
 compatibility: Git-backed and portable across sessions
@@ -45,7 +45,7 @@ Require `planned`, verify the base ref exists, and preserve the package's scope.
 
 ### `review <slug>`
 
-Require `built` plus resolvable `base_ref` and `head_ref`. Invoke `audit` over exactly `<base_ref>..<head_ref>`. Never substitute the current worktree diff. On accepted PASS, set `reviewed` and commit the status update. On `NEEDS_FIX`, keep `built` until fixes are committed and the exact head ref is refreshed. On `SECURITY_VIOLATION`, halt.
+Require `built` plus resolvable `base_ref` and `head_ref`. Invoke `audit` over exactly `<base_ref>..<head_ref>`. Never substitute the current worktree diff. On accepted PASS, set `reviewed` and commit the status update. On `NEEDS_FIX`, keep `built` until fixes are committed and the exact head ref is refreshed. On `SECURITY_VIOLATION`, halt. An optional `--remember` forwards the explicit opt-in to the review-memory contract; only the final accepted PASS may be recorded.
 
 ### `complete <slug>`
 
