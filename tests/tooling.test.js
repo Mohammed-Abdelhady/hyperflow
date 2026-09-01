@@ -49,6 +49,14 @@ test("review-memory eval enforces accepted-only bounded audit pointers", () => {
   assert.ok(result.checks.some((check) => check.spec.type === "review_memory"));
 });
 
+test("decision-memory eval enforces approved-only bounded task pointers", () => {
+  const output = JSON.parse(run("run-evals.mjs", ["--json"]));
+  const result = output.results.find((task) => task.id === "decision-memory");
+  assert.ok(result, "decision-memory eval must be registered");
+  assert.equal(result.ok, true);
+  assert.ok(result.checks.some((check) => check.spec.type === "decision_memory"));
+});
+
 test("GitHub workflows use Node 24-based action majors", () => {
   const workflows = workflowFiles().map((path) => readFileSync(path, "utf8")).join("\n");
   assert.match(workflows, /actions\/checkout@v7\b/);

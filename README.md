@@ -50,7 +50,7 @@ Hyperflow writes only human-readable Markdown:
 └── handoff.md
 ```
 
-Plans stay concise, implementation briefs contain only the context a worker needs, and detailed exploration remains inside the session that performed it. Cross-session handoffs carry the task pointer plus base/head Git refs instead of copying the whole working context. An accepted audit can optionally carry a bounded pointer into the next session with `audit --remember`; the audit remains the source of review evidence.
+Plans stay concise, implementation briefs contain only the context a worker needs, and detailed exploration remains inside the session that performed it. Cross-session handoffs carry the task pointer plus base/head Git refs instead of copying the whole working context. An approved plan can optionally carry a bounded decision card with `plan <request> --remember`; an accepted audit can separately carry a bounded pointer with `audit --remember`. The task, spec, or audit remains the source of evidence.
 
 Existing user `.hyperflow` data is never deleted during installation or migration.
 
@@ -106,6 +106,7 @@ When a host lacks child-agent support, Direct work continues locally and Focused
 - [Codex preview boundary](docs/codex.md)
 - [Monorepo isolation](docs/monorepo.md)
 - [Review memory](docs/review-memory.md)
+- [Planning decision memory](docs/decision-memory.md)
 - [Privacy](PRIVACY.md)
 - [Releasing](RELEASING.md)
 - [Changelog](CHANGELOG.md)

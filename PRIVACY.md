@@ -31,7 +31,7 @@ Current Hyperflow persistence is human-readable Markdown:
 | `.hyperflow/tasks/*.md` | Compact work plans and progress |
 | `.hyperflow/specs/*.md` | Approved design or architecture decisions |
 | `.hyperflow/audits/*.md` | Review findings |
-| `.hyperflow/memory/*.md` | Project-scoped learnings and decisions, including optional accepted-review pointers |
+|| `.hyperflow/memory/*.md` | Project-scoped learnings and decisions, including optional approved decision cards and accepted-review pointers |
 | `.hyperflow-handoff/<slug>/` | Cross-session task pointer, status, and Git refs |
 
 Existing user `.hyperflow` data is never deleted or rewritten by installation.
