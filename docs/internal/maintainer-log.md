@@ -1,5 +1,15 @@
 # Maintainer log
 
+## 2026-09-01 — v6.5.0
+
+- Version: v6.5.0
+- PR: #55 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/55
+- Shipped: added explicit `plan <request> --remember` support for bounded, source-linked approved planning decision cards; kept decisions separate from task/spec detail and inert startup; added duplicate and 20-entry bound rules, documentation, roadmap alignment, and a decision-memory golden eval.
+- Validation: local plugin validation, 22 Node tests, 7/7 evals, shell syntax, patch hygiene, PR checks, main push validation, and release certification passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.5.0
+- Compatibility note: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: improve workspace-boundary guidance and verification for monorepo changes crossing apps, packages, and shared contracts.
+
 ## 2026-08-28 — v6.4.0
 
 - Version: v6.4.0
