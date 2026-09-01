@@ -41,18 +41,15 @@ The current priorities, in order, are:
 - A golden eval exercises the reviewed package shape and rejects missing pointers or unresolved refs.
 - Release version stamping keeps the Changelog comparison links aligned with the new version.
 
-### v6.5 — opt-in review memory
+### v6.5 — bounded cross-session memory
 
 - `audit --remember` carries only an accepted review outcome and exact audit pointer into a later session.
 - A bounded Markdown ledger keeps review memory separate from implementation output and authoritative audit findings.
 - Handoff review can forward the same explicit opt-in without changing the exact Git-range contract.
+- `plan --remember` carries approved planning decisions as bounded source-linked cards into a later session.
+- Decision memory stays separate from task/spec detail, rejects duplicate cards, and never copies investigation transcripts.
 
 ## Next trains
-
-### Durable decisions
-
-- Make approved planning decisions easier to carry into the next session without copying full investigation transcripts.
-- Keep decision memory bounded, inspectable, and opt-in where it can surprise an existing project.
 
 ### Monorepo and handoff DX
 

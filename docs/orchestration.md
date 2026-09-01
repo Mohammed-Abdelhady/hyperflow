@@ -66,10 +66,13 @@ These are structural ceilings, not provider-exact accounting claims.
 | `.hyperflow/specs/<slug>.md` | Design decisions needed beyond the task file |
 | `.hyperflow/audits/<timestamp>-<scope>.md` | Evidence-backed findings |
 | `.hyperflow/memory/<category>.md` | Durable project learning |
+| `.hyperflow/memory/decisions.md` | Optional bounded pointers to approved planning decisions; the task or spec remains authoritative |
 | `.hyperflow/memory/review-outcomes.md` | Optional bounded pointers to accepted audits; the audit remains authoritative |
 | `.hyperflow-handoff/<slug>/{task.md,handoff.md}` | Task copy, base/head refs, status, continuation notes |
 
 Current workflow state is the Markdown listed above.
+
+`plan <request> --remember` explicitly appends approved decision cards to `.hyperflow/memory/decisions.md`; it never copies investigation transcripts or activates session startup. Read only cards relevant to the current request. Review outcomes use the separate `audit --remember` contract.
 
 ### Handoff round trips
 

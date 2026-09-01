@@ -1,0 +1,25 @@
+{
+  "id": "decision-memory",
+  "title": "Opt-in planning decision memory is bounded, approved-only, and source-linked",
+  "checks": [
+    {
+      "type": "decision_memory",
+      "path": "evals/fixtures/decision-memory/decisions.md"
+    },
+    {
+      "type": "read_contains",
+      "path": "skills/plan/SKILL.md",
+      "value": "plan <request> --remember"
+    },
+    {
+      "type": "read_contains",
+      "path": "skills/plan/SKILL.md",
+      "value": ".hyperflow/memory/decisions.md"
+    },
+    {
+      "type": "read_contains",
+      "path": "docs/decision-memory.md",
+      "value": "Do not copy transcripts, alternatives, implementation output, secrets, or speculative concerns."
+    }
+  ]
+}

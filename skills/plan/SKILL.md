@@ -2,7 +2,7 @@
 name: plan
 description: Use when the user asks to plan, design, explore, scope, or decompose work before implementation.
 allowed-tools: Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, WebSearch, WebFetch, Bash
-argument-hint: "<request>"
+argument-hint: "<request> [--remember]"
 version: 6.4.0
 license: MIT
 compatibility: Portable; child agents are optional outside Deep work
@@ -69,6 +69,10 @@ Write only `.hyperflow/tasks/<slug>.md`. Keep a simple task file under 1,200 wor
 ```
 
 Tasks must be independently committable, ordered by dependency, and precise enough that `dispatch` does not need to redesign them. One user task may span files, but two distinct requests remain two tasks and two commits.
+
+## Optional decision memory
+
+`plan <request> --remember` is explicit opt-in to carry approved planning decisions into a later session. After the plan passes its lane review, append one entry per durable `Decision:` to `.hyperflow/memory/decisions.md` using [the decision-memory contract](../../docs/decision-memory.md). Include only the short decision, its evidence-backed reason, and any constraint; never copy investigation transcripts, alternatives, implementation output, secrets, or speculative concerns. Do not append an exact duplicate of an existing source-and-decision pair. If the ledger already has 20 entries, report that it needs explicit user-directed compaction instead of pruning it. For plan-and-build, record only decisions from the approved plan; the implementation remains in the task and commits.
 
 ## 4. Review and stop or continue
 

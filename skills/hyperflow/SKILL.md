@@ -40,13 +40,13 @@ A combined request such as “plan and build” includes build intent and contin
 
 ## Execution contract
 
-1. Inspect the relevant surface, repository state, local instructions, and only the memory entries directly relevant to the task, including review-outcome pointers when their target matches.
+1. Inspect the relevant surface, repository state, local instructions, and only the memory entries directly relevant to the task, including decision cards and review-outcome pointers when their target matches.
 2. Ask only for a material choice that cannot be resolved from evidence or a safe, reversible assumption. Ask after inspection.
 3. Keep plans and task state in one Markdown file. Keep child prompts in the two compact templates; do not add secondary persistence or formatting agents.
 4. Use child agents only for independent work or independent judgment. Load [worker-brief.md](worker-brief.md) for workers and [reviewer-brief.md](reviewer-brief.md) for reviewers. Workers never review their own changes; reviewers never implement or coordinate.
 5. The coordinator owns task status, integration, validation, and commits. Each distinct task receives its own conventional commit. Preserve unrelated and untracked user work.
 6. Run checks proportionate to risk. Never claim completion while required checks are red or unrun without saying so.
-7. Append a short project-memory entry only for a durable, verified learning. Accepted review outcomes use the explicit `audit --remember` contract; read and write Markdown directly and do not maintain derived indexes.
+7. Append a short project-memory entry only for a durable, verified learning. Approved planning decisions use the explicit `plan --remember` contract; accepted review outcomes use `audit --remember`. Read and write Markdown directly and do not maintain derived indexes.
 8. Keep chat to short status lines and a compact final result. Put durable detail in the task or audit file.
 
 ## Safety floor

@@ -66,6 +66,30 @@ function reviewMemory(path) {
   };
 }
 
+function decisionMemory(path) {
+  const source = read(path).trim();
+  const entries = source.split(/^## /m).slice(1).map((entry) => `## ${entry}`);
+  const fields = ["Status", "Decision", "Reason", "Constraint", "Source"];
+  const validEntries = entries.length > 0 && entries.length <= 20 && entries.every((entry) => {
+    const lines = entry.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const fieldLines = lines.slice(1);
+    const exactFields = fieldLines.length === fields.length
+      && fields.every((field, index) => fieldLines[index].startsWith(`- ${field}: `) && fieldLines[index].length > field.length + 4);
+    return lines.length === fields.length + 1
+      && /^## \d{4}-\d{2}-\d{2} — [a-z0-9][a-z0-9-]*$/.test(lines[0])
+      && /^- Status: APPROVED$/.test(fieldLines[0] ?? "")
+      && exactFields
+      && /^- Source: `\.hyperflow\/tasks\/[^`]+\.md`$/.test(fieldLines[4] ?? "");
+  });
+  const ok = /^# Planning decisions$/m.test(source) && validEntries;
+  return {
+    ok,
+    detail: ok
+      ? `${entries.length} approved decision entr${entries.length === 1 ? "y" : "ies"} within the bounded source-linked format`
+      : "decision memory must contain only bounded APPROVED entries with source task pointers",
+  };
+}
+
 function filesUnder(path) {
   const absolute = repoPath(path);
   if (!existsSync(absolute)) return [];
@@ -162,6 +186,8 @@ function check(spec) {
     }
     case "review_memory":
       return reviewMemory(spec.path);
+    case "decision_memory":
+      return decisionMemory(spec.path);
     default:
       return { ok: false, detail: `unknown check type ${spec.type}` };
   }
