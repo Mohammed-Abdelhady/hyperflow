@@ -22,14 +22,18 @@ function json(path) {
   return JSON.parse(read(path));
 }
 
-function markdownTable(path) {
+function normalizedTable(source) {
   const fields = new Map();
-  for (const line of read(path).split(/\r?\n/)) {
+  for (const line of source.split(/\r?\n/)) {
     const match = line.match(/^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/);
     if (!match || /^-+$/.test(match[1].trim())) continue;
-    fields.set(match[1].trim(), match[2].trim());
+    fields.set(match[1].trim().toLowerCase().replaceAll(/[^a-z0-9]+/g, "_"), match[2].trim());
   }
   return fields;
+}
+
+function markdownTable(path) {
+  return normalizedTable(read(path));
 }
 
 function gitRefResolves(ref) {
@@ -87,6 +91,25 @@ function decisionMemory(path) {
     detail: ok
       ? `${entries.length} approved decision entr${entries.length === 1 ? "y" : "ies"} within the bounded source-linked format`
       : "decision memory must contain only bounded APPROVED entries with source task pointers",
+  };
+}
+
+function workspaceBoundary(path) {
+  const source = read(path);
+  const start = source.indexOf("## Workspace boundary record\n");
+  const end = source.indexOf("\n## ", start + 1);
+  const section = start === -1 ? "" : source.slice(start + "## Workspace boundary record\n".length, end === -1 ? source.length : end);
+  const fields = normalizedTable(section);
+  const required = ["affected_roots", "shared_contracts", "package_local_gates", "root_gates", "out_of_scope"];
+  const present = required.every((field) => fields.has(field) && fields.get(field) !== "");
+  const roots = fields.get("affected_roots") ?? "";
+  const gates = [fields.get("package_local_gates"), fields.get("root_gates")].every((value) => value && /`[^`]+`/.test(value));
+  const ok = section !== "" && present && /(?:apps?|packages?)\//.test(roots) && gates;
+  return {
+    ok,
+    detail: ok
+      ? "boundary record names affected roots, shared contracts, package-local gates, root gates, and out-of-scope paths"
+      : "boundary record must be complete, repository-relative, and executable",
   };
 }
 
@@ -188,6 +211,8 @@ function check(spec) {
       return reviewMemory(spec.path);
     case "decision_memory":
       return decisionMemory(spec.path);
+    case "workspace_boundary":
+      return workspaceBoundary(spec.path);
     default:
       return { ok: false, detail: `unknown check type ${spec.type}` };
   }

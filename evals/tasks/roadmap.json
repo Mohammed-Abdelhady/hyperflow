@@ -1,6 +1,6 @@
 {
   "id": "roadmap-contract",
-  "title": "The roadmap describes the current lightweight core and keeps train selection bounded",
+  "title": "The roadmap and monorepo boundary contract keep train selection and scope bounded",
   "checks": [
     {
       "type": "files_exist",
@@ -23,6 +23,20 @@
     },
     {
       "type": "docs_links_resolve"
+    },
+    {
+      "type": "workspace_boundary",
+      "path": "docs/monorepo.md"
+    },
+    {
+      "type": "read_contains",
+      "path": "skills/plan/SKILL.md",
+      "value": "## Workspace boundary record"
+    },
+    {
+      "type": "read_contains",
+      "path": "skills/dispatch/SKILL.md",
+      "value": "git diff --name-only"
     }
   ]
 }

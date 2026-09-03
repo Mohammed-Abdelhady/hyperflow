@@ -57,6 +57,14 @@ test("decision-memory eval enforces approved-only bounded task pointers", () => 
   assert.ok(result.checks.some((check) => check.spec.type === "decision_memory"));
 });
 
+test("roadmap eval protects the monorepo workspace-boundary record", () => {
+  const output = JSON.parse(run("run-evals.mjs", ["--json"]));
+  const result = output.results.find((task) => task.id === "roadmap-contract");
+  assert.ok(result, "roadmap contract eval must be registered");
+  assert.equal(result.ok, true);
+  assert.ok(result.checks.some((check) => check.spec.type === "workspace_boundary"));
+});
+
 test("GitHub workflows use Node 24-based action majors", () => {
   const workflows = workflowFiles().map((path) => readFileSync(path, "utf8")).join("\n");
   assert.match(workflows, /actions\/checkout@v7\b/);
