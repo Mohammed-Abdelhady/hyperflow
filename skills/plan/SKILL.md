@@ -11,11 +11,11 @@ tags: [planning, design, decomposition]
 
 # Plan
 
-Turn the request into one build-ready Markdown task artefact. An explicit plan or design request stops after the file is reviewed. Do not ask where to build and do not implement. If the same request explicitly includes building, return control to `dispatch` after the file is ready without another confirmation.
+Turn the request into one build-ready Markdown task. Explicit plan/design stops after review; explicit plan-and-build continues to `dispatch`. Do not ask where to build; ask only for missing information that changes implementation.
 
 ## 1. Inspect and classify
 
-Read project instructions, repository state, relevant code, nearby tests, and only directly relevant project memory. Then choose:
+Read instructions, repository state, relevant code/tests, and relevant memory. For monorepos, inspect workspace manifests and root gates:
 
 - **Direct:** clear, reversible, one subsystem. Coordinator plans; zero child calls.
 - **Focused:** moderate scope or several related tasks. A plan-only request may use one investigator and one separate reviewer; maximum two planning child calls.
@@ -28,13 +28,13 @@ Read project instructions, repository state, relevant code, nearby tests, and on
 
 The call ceilings are hard. Token ceilings are host-reported budgets; never invent usage when the host does not expose it.
 
-Questions come after inspection and only when an answer changes the plan materially. Prefer a documented, reversible assumption. Ask no more than three concise questions in one turn.
+Questions come after inspection only when an answer changes the plan. Prefer a documented, reversible assumption; ask no more than three concise questions in one turn.
 
 ## 2. Investigate economically
 
-Give each child a distinct question and bounded file scope. Do not dispatch agents for routing, formatting, status, test execution, or writing individual sections. Parallelize only independent investigations. Keep detailed exploration in child context; carry forward conclusions, paths, constraints, and unresolved risks.
+Give each child a distinct question and bounded file scope. Do not dispatch agents for routing, formatting, status, tests, or individual sections. Parallelize only independent investigations; carry forward conclusions, paths, constraints, and unresolved risks.
 
-External research is reserved for current or uncertain facts that affect the decision. Prefer primary sources and record links compactly in the task file.
+Research only uncertain current facts; prefer primary sources and record links in the task.
 
 ## 3. Write one artefact
 
@@ -48,6 +48,15 @@ Write only `.hyperflow/tasks/<slug>.md`. Keep a simple task file under 1,200 wor
 | Status | planned |
 | Lane | Direct / Focused / Deep |
 | Scope | <bounded surface> |
+
+## Workspace boundary record
+| Field | Value |
+|---|---|
+| Affected roots | <repository-relative apps/packages> |
+| Shared contracts | <paths, or `not applicable`> |
+| Package-local gates | <commands, or `not applicable`> |
+| Root gates | <commands, or `not applicable`> |
+| Out of scope | <explicit roots and files> |
 
 ## Outcome
 <two or three sentences>
@@ -68,7 +77,7 @@ Write only `.hyperflow/tasks/<slug>.md`. Keep a simple task file under 1,200 wor
 - <risk, mitigation, and explicit non-goal>
 ```
 
-Tasks must be independently committable, ordered by dependency, and precise enough that `dispatch` does not need to redesign them. One user task may span files, but two distinct requests remain two tasks and two commits.
+Tasks must be independently committable, dependency-ordered, and precise enough for `dispatch`. Every cross-boundary task needs the workspace record; one request may span files, but distinct requests remain separate tasks and commits.
 
 ## Optional decision memory
 

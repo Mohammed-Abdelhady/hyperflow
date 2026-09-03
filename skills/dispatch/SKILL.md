@@ -15,7 +15,7 @@ Implement the requested outcome with the fewest useful handoffs. An explicit bui
 
 ## 1. Load and bound
 
-Read project instructions, repository status, the supplied `.hyperflow/tasks/<slug>.md` when present, and the relevant implementation/tests. Preserve dirty-worktree changes and identify overlap before editing. If there is no task file:
+Read project instructions, repository status, the supplied `.hyperflow/tasks/<slug>.md` when present, and the relevant implementation/tests. For monorepos, inspect workspace manifests and root gates. Preserve dirty-worktree changes and identify overlap before editing. If there is no task file:
 
 - Direct work executes from the inspected request.
 - Focused or Deep work first creates the single task file using the `plan` structure, then continues automatically because build intent is already explicit.
@@ -42,6 +42,8 @@ For each task:
 4. Workers edit only their scope, run affected checks, and return paths plus evidence. Workers do not review, spawn, change task files, or perform Git operations.
 5. The coordinator integrates results, resolves only in-scope conflicts, and updates checkboxes/status in the same task Markdown file. Do not create secondary state or duplicate briefs.
 
+For a task crossing apps, packages, or shared contracts, require `## Workspace boundary record` before editing. Treat its five fields as scope inputs. Before committing, check `git diff --name-only` against affected roots and explicit root configuration files; stop on out-of-bound paths. Run recorded package-local/root gates; record unavailable capabilities, never a pass.
+
 If a worker fails, inspect the failure and retry once only when that call remains inside the lane ceiling. Otherwise complete the bounded task in the coordinator or report the specific blocker. Do not repeat an unchanged prompt.
 
 ## 3. Review once at the right boundary
@@ -54,7 +56,7 @@ Workers never review their own output. Reviewers are read-only and never coordin
 
 ## 4. Verify and commit
 
-Run affected lint, type checks, and tests after each task when available. Run the full project-required suite once at chain end for multi-task, cross-boundary, security, release-sensitive, or project-mandated work; include a production build when the project defines one. Do not run full suites after every worker. Never bypass a red check.
+Run affected lint, type checks, and tests after each task when available. Cross-boundary work also runs its recorded gates. Run the full project suite once at chain end for multi-task, cross-boundary, security, release-sensitive, or mandated work; include a production build when defined. Do not run full suites after every worker. Never bypass a red check.
 
 After a task passes its required checks and review, the coordinator creates its own conventional commit. Keep distinct tasks in distinct commits; feature code and its directly required docs/tests may share the same task commit. Never amend unrelated history, stage unrelated files, or add model attribution.
 

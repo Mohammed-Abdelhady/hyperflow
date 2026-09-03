@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add a bounded monorepo workspace-boundary record for affected roots, shared contracts, package-local gates, root gates, and explicit out-of-scope paths; dispatch verifies the recorded scope before committing.
+
 ## [6.5.0] — 2026-09-01
 
 ### Added
