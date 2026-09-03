@@ -49,12 +49,13 @@ The current priorities, in order, are:
 - `plan --remember` carries approved planning decisions as bounded source-linked cards into a later session.
 - Decision memory stays separate from task/spec detail, rejects duplicate cards, and never copies investigation transcripts.
 
+### v6.6 — monorepo workspace-boundary verification
+
+- Cross-boundary plans record affected roots, shared contracts, package-local gates, root gates, and explicit out-of-scope paths.
+- Dispatch checks changed paths against that record before committing and runs the recorded gates.
+- A dependency-free boundary eval protects the contract.
+
 ## Next trains
-
-### Monorepo and handoff DX
-
-- Improve workspace-boundary guidance and verification for changes crossing apps, packages, and shared contracts.
-- Keep cross-session context compact instead of copying full investigation transcripts.
 
 ### Install and release reliability
 
