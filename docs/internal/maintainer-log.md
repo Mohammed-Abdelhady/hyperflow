@@ -1,5 +1,12 @@
 # Maintainer log
 
+## 2026-09-05 — v6.6.1
+
+- Version: v6.6.1
+- PR: #57 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/57
+- Shipped: source-managed installs now accept the standard exact `ssh://git@github.com/Mohammed-Abdelhady/hyperflow` origin form while continuing to reject unrelated repositories.
+- Next candidate: exercise more local-remote update failures and host capability gaps in the install/release reliability train.
+
 ## 2026-09-03 — v6.6.0
 
 - Version: v6.6.0
