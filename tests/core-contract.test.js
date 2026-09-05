@@ -327,7 +327,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     mkdirSync(relativeHome, { recursive: true });
     cpSync(pathFromRoot("skills"), join(relativeCheckout, "skills"), { recursive: true });
     execFileSync("git", ["init", "-q", relativeCheckout]);
-    execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
+    execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "ssh://git@github.com/Mohammed-Abdelhady/hyperflow.git"]);
     mkdirSync(join(relativeHome, ".config", "opencode"), { recursive: true });
     mkdirSync(join(relativeHome, ".gemini", "config"), { recursive: true });
     const relativeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {

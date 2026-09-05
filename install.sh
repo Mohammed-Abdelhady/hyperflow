@@ -34,14 +34,25 @@ usage() {
     "never overwritten or deleted."
 }
 
+is_hyperflow_remote() {
+  case "$1" in
+    "$REPO_URL"|https://github.com/Mohammed-Abdelhady/hyperflow|git@github.com:Mohammed-Abdelhady/hyperflow.git|git@github.com:Mohammed-Abdelhady/hyperflow|ssh://git@github.com/Mohammed-Abdelhady/hyperflow.git|ssh://git@github.com/Mohammed-Abdelhady/hyperflow)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 validate_checkout() {
   local remote skill
   is_git_checkout "$INSTALL_DIR" || { warn "Not a Git checkout: $INSTALL_DIR"; exit 1; }
   remote="$(git -C "$INSTALL_DIR" config --get remote.origin.url 2>/dev/null || true)"
-  case "$remote" in
-    "$REPO_URL"|https://github.com/Mohammed-Abdelhady/hyperflow|git@github.com:Mohammed-Abdelhady/hyperflow.git) ;;
-    *) warn "Install path is not the Hyperflow repository: $INSTALL_DIR"; exit 1 ;;
-  esac
+  is_hyperflow_remote "$remote" || {
+    warn "Install path is not the Hyperflow repository: $INSTALL_DIR"
+    exit 1
+  }
   for skill in "${CORE_SKILLS[@]}"; do
     [ -f "$INSTALL_DIR/skills/$skill/SKILL.md" ] || {
       warn "Incomplete Hyperflow checkout: missing skills/$skill/SKILL.md"
