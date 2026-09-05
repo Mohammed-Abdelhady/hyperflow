@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Accept standard `ssh://git@github.com/...` Hyperflow origins in source-managed installs while continuing to reject unrelated repositories.
+
 ## [6.6.0] — 2026-09-03
 
 ### Added
