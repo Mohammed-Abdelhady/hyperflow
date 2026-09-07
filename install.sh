@@ -281,7 +281,9 @@ main() {
   else
     clone_or_update
   fi
-  install_native_plugins
+  if [ "$ACTION" != "link-only" ]; then
+    install_native_plugins
+  fi
   link_detected_providers
   if [ "$HOST_FAILURES" -gt 0 ]; then
     warn "Source checkout completed, but $HOST_FAILURES host installation operation(s) failed"
