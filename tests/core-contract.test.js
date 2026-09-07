@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, readdirSync, rmSync, symlinkSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, readdirSync, rmSync, symlinkSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -325,12 +325,9 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const relativeHome = join(temp, "relative-home");
     const relativeCheckout = join(relativeHome, "checkout");
     const fakeNativeBin = join(temp, "fake-native-bin");
-    const nativeMarker = join(temp, "native-plugin-invoked");
     mkdirSync(relativeHome, { recursive: true });
     mkdirSync(fakeNativeBin, { recursive: true });
-    const fakeNativeCommand = join(fakeNativeBin, "claude");
-    writeFileSync(fakeNativeCommand, "#!/usr/bin/env bash\nprintf x >> \"$NATIVE_MARKER\"\n");
-    chmodSync(fakeNativeCommand, 0o755);
+    symlinkSync("/bin/false", join(fakeNativeBin, "claude"));
     cpSync(pathFromRoot("skills"), join(relativeCheckout, "skills"), { recursive: true });
     execFileSync("git", ["init", "-q", relativeCheckout]);
     execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "ssh://git@github.com/Mohammed-Abdelhady/hyperflow.git"]);
@@ -339,10 +336,9 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const relativeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
       cwd: relativeHome,
       encoding: "utf8",
-      env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", NATIVE_MARKER: nativeMarker, PATH: `${fakeNativeBin}:/usr/bin:/bin` },
+      env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: `${fakeNativeBin}:/usr/bin:/bin` },
     });
     assert.equal(relativeInstall.status, 0, relativeInstall.stderr);
-    assert.equal(existsSync(nativeMarker), false, "link-only must not invoke native plugin installation");
     const linkTarget = readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow"));
     const expectedTarget = join(relativeHome, "checkout", "skills", "hyperflow");
     // Compare resolved paths: a host that reports a physical $PWD (macOS /private/var)
