@@ -1,5 +1,11 @@
 # Maintainer log
 
+## 2026-09-07 — v6.6.2
+
+- Version: v6.6.2; PR: #58/#59.
+- Shipped: `--link-only` skips native installs.
+- Next: local-remote failure probes.
+
 ## 2026-09-05 — v6.6.1
 
 - Version: v6.6.1

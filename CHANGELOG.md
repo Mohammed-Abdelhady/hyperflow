@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.6.2] — 2026-09-07
 
+### Fixed
+- `install.sh --link-only` skips native plugin installation.
+
 ## [6.6.1] — 2026-09-05
 
 ### Fixed
