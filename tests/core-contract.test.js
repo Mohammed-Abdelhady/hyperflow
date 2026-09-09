@@ -333,6 +333,10 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "ssh://git@github.com/Mohammed-Abdelhady/hyperflow.git"]);
     mkdirSync(join(relativeHome, ".config", "opencode"), { recursive: true });
     mkdirSync(join(relativeHome, ".gemini", "config"), { recursive: true });
+    const incomplete = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], { cwd: relativeHome, encoding: "utf8", env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: `${fakeNativeBin}:/usr/bin:/bin` } });
+    assert.notEqual(incomplete.status, 0, "a partial checkout must not report a successful link-only install");
+    assert.match(incomplete.stderr, /Incomplete Hyperflow checkout: missing package\.json/);
+    cpSync(pathFromRoot("package.json"), join(relativeCheckout, "package.json"));
     const relativeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
       cwd: relativeHome,
       encoding: "utf8",
@@ -370,11 +374,12 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const upstream = join(temp, "upstream");
     mkdirSync(upstream, { recursive: true });
     cpSync(pathFromRoot("skills"), join(upstream, "skills"), { recursive: true });
+    cpSync(pathFromRoot("package.json"), join(upstream, "package.json"));
     execFileSync("git", ["init", "-q", upstream]);
     execFileSync("git", ["-C", upstream, "config", "user.name", "Hyperflow Test"]);
     execFileSync("git", ["-C", upstream, "config", "user.email", "test@example.invalid"]);
     execFileSync("git", ["-C", upstream, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
-    execFileSync("git", ["-C", upstream, "add", "skills"]);
+    execFileSync("git", ["-C", upstream, "add", "skills", "package.json"]);
     execFileSync("git", ["-C", upstream, "commit", "-qm", "test: worktree fixture"]);
     execFileSync("git", ["-C", upstream, "worktree", "add", "-q", "--detach", worktreeHome]);
     mkdirSync(join(temp, "worktree-home-parent", ".config", "opencode"), { recursive: true });

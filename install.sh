@@ -53,6 +53,10 @@ validate_checkout() {
     warn "Install path is not the Hyperflow repository: $INSTALL_DIR"
     exit 1
   }
+  [ -f "$INSTALL_DIR/package.json" ] || {
+    warn "Incomplete Hyperflow checkout: missing package.json"
+    exit 1
+  }
   for skill in "${CORE_SKILLS[@]}"; do
     [ -f "$INSTALL_DIR/skills/$skill/SKILL.md" ] || {
       warn "Incomplete Hyperflow checkout: missing skills/$skill/SKILL.md"
