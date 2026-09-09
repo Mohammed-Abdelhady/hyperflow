@@ -1,5 +1,9 @@
 # Maintainer log
 
+## 2026-09-09 — v6.6.3
+
+- v6.6.3; PR #60; shipped `--link-only` partial-checkout guard; next: local-remote failure probes.
+
 ## 2026-09-07 — v6.6.2
 
 - Version: v6.6.2; PR: #58/#59.
