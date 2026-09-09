@@ -3,7 +3,7 @@ name: plan
 description: Use when the user asks to plan, design, explore, scope, or decompose work before implementation.
 allowed-tools: Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, WebSearch, WebFetch, Bash
 argument-hint: "<request> [--remember]"
-version: 6.6.2
+version: 6.6.3
 license: MIT
 compatibility: Portable; child agents are optional outside Deep work
 tags: [planning, design, decomposition]
