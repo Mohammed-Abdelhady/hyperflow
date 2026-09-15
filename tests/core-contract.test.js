@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, readdirSync, rmSync, symlinkSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, readdirSync, rmSync, symlinkSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -493,6 +493,35 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.ok(incomplete.stderr.includes("Fetched origin/main is incomplete: missing skills/handoff/SKILL.md"), incomplete.stderr);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
     assert.equal(existsSync(join(checkout, "skills", "handoff", "SKILL.md")), true, "the checked-out skill must survive the rejected update");
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("installer rolls back provider links when a host link operation fails", () => {
+  const temp = mkdtempSync(join(tmpdir(), "hyperflow-installer-link-rollback-test-"));
+  const home = join(temp, "home");
+  const fakeBin = join(temp, "bin");
+  const fakeLn = join(fakeBin, "ln");
+  try {
+    mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+    mkdirSync(fakeBin, { recursive: true });
+    writeFileSync(fakeLn, "#!/usr/bin/env bash\nfor arg in \"$@\"; do case \"$arg\" in */skills/plan) exit 42;; esac; done\nexec /usr/bin/ln \"$@\"\n");
+    chmodSync(fakeLn, 0o755);
+
+    const result = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: home, HYPERFLOW_HOME: ROOT, PATH: `${fakeBin}:/usr/bin:/bin` },
+    });
+    assert.notEqual(result.status, 0, "a host link failure must fail the install");
+    assert.match(result.stderr, /failed to link skills; rolled back without a partial link set/);
+    for (const skill of CONTRACT.skills) {
+      assert.equal(
+        existsSync(join(home, ".config", "opencode", "skills", skill)),
+        false,
+        `failed provider linking must not leave a partial ${skill} link`,
+      );
+    }
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
