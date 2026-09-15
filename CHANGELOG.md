@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Roll back provider skill links when a host link operation fails, preventing partial installs.
+
 ## [6.6.3] — 2026-09-09
 
 ## [6.6.2] — 2026-09-07
