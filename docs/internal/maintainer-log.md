@@ -1,5 +1,12 @@
 # Maintainer log
 
+## 2026-09-15 — v6.6.4
+
+- Version: v6.6.4; PR: #61 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/61.
+- Shipped: provider-level rollback for failed seven-skill linking, with regression coverage and installation guidance.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.6.4
+- Next candidate: local-remote update failure probes and host capability gaps.
+
 ## 2026-09-09 — v6.6.3
 
 - v6.6.3; PR #60; shipped `--link-only` partial-checkout guard; next: local-remote failure probes.
