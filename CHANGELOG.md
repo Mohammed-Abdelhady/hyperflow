@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.6.4] — 2026-09-15
+
 ### Fixed
 - Roll back provider skill links when a host link operation fails, preventing partial installs.
 
@@ -1720,7 +1722,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.3...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.4...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1868,3 +1870,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.6.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.0...v6.6.1
 [6.6.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.1...v6.6.2
 [6.6.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.2...v6.6.3
+[6.6.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.3...v6.6.4
