@@ -135,7 +135,9 @@ clone_or_update() {
 
 link_skill() {
   local source="$1" target="$2" current=""
-  mkdir -p "$(dirname "$target")"
+  if ! mkdir -p "$(dirname "$target")"; then
+    return 1
+  fi
 
   if [ -L "$target" ]; then
     current="$(readlink "$target")"
@@ -143,7 +145,11 @@ link_skill() {
       return
     fi
     case "$current" in
-      "$INSTALL_DIR"/skills/*) rm "$target" ;;
+      "$INSTALL_DIR"/skills/*)
+        if ! rm "$target"; then
+          return 1
+        fi
+        ;;
       *) warn "Keeping foreign link: $target -> $current"; return 1 ;;
     esac
   elif [ -e "$target" ]; then
@@ -151,11 +157,15 @@ link_skill() {
     return 1
   fi
 
-  ln -s "$source" "$target"
+  if ! ln -s "$source" "$target"; then
+    return 1
+  fi
 }
 
 link_provider() {
   local label="$1" target_root="$2" skill target current linked=0 conflicts=0
+  local rollback_failed index
+  local -a attempted_targets=() prior_kinds=() prior_values=()
 
   # Preflight every target before creating or replacing any link. A partial
   # OpenCode link set is worse than a clear failure because it leaves a host
@@ -165,15 +175,25 @@ link_provider() {
     if [ -L "$target" ]; then
       current="$(readlink "$target")"
       case "$current" in
-        "$INSTALL_DIR"/skills/*) ;;
+        "$INSTALL_DIR"/skills/*)
+          prior_kinds+=(link)
+          prior_values+=("$current")
+          ;;
         *)
           warn "Keeping foreign link: $target -> $current"
           conflicts=$((conflicts + 1))
+          prior_kinds+=(conflict)
+          prior_values+=("")
           ;;
       esac
     elif [ -e "$target" ]; then
       warn "Keeping existing path: $target"
       conflicts=$((conflicts + 1))
+      prior_kinds+=(conflict)
+      prior_values+=("")
+    else
+      prior_kinds+=(absent)
+      prior_values+=("")
     fi
   done
   if [ "$conflicts" -gt 0 ]; then
@@ -183,7 +203,28 @@ link_provider() {
   fi
 
   for skill in "${CORE_SKILLS[@]}"; do
-    link_skill "$INSTALL_DIR/skills/$skill" "$target_root/$skill"
+    target="$target_root/$skill"
+    attempted_targets+=("$target")
+    if ! link_skill "$INSTALL_DIR/skills/$skill" "$target"; then
+      rollback_failed=0
+      for ((index=${#attempted_targets[@]} - 1; index >= 0; index--)); do
+        target="${attempted_targets[index]}"
+        if ! rm -f -- "$target"; then
+          rollback_failed=1
+          continue
+        fi
+        if [ "${prior_kinds[index]}" = "link" ] && ! ln -s -- "${prior_values[index]}" "$target"; then
+          rollback_failed=1
+        fi
+      done
+      if [ "$rollback_failed" -eq 0 ]; then
+        warn "$label: failed to link skills; rolled back without a partial link set"
+      else
+        warn "$label: failed to link skills; rollback was incomplete"
+      fi
+      HOST_FAILURES=$((HOST_FAILURES + 1))
+      return
+    fi
     linked=$((linked + 1))
   done
   HOST_SUCCESSES=$((HOST_SUCCESSES + 1))
