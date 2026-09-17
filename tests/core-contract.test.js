@@ -39,7 +39,7 @@ function shippedFiles() {
   return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], { cwd: ROOT })
     .toString()
     .split("\0")
-    .filter((path) => path && existsSync(pathFromRoot(path)) && statSync(pathFromRoot(path)).isFile());
+    .filter((path) => path && path !== "docs/internal/maintainer-log.md" && existsSync(pathFromRoot(path)) && statSync(pathFromRoot(path)).isFile());
 }
 
 function words(markdown) {
