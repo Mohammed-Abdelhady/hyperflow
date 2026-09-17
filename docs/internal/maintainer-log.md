@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-09-17 — v6.6.5
+
+- Version: v6.6.5; PR: #62 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/62.
+- Shipped: staged first-time source clones and cleanup of failed clone/validation trees, with regression coverage for retry-safe installs.
+- Validation: plugin validation, 25 Node tests, 7/7 evals, shell syntax, patch hygiene, main validation, Pages deployment, and release certification passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.6.5
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: host capability gaps and more source-managed update failure probes.
+
 ## 2026-09-15 — v6.6.4
 
 - Version: v6.6.4; PR: #61 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/61.
