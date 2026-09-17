@@ -46,21 +46,21 @@ is_hyperflow_remote() {
 }
 
 validate_checkout() {
-  local remote skill
-  is_git_checkout "$INSTALL_DIR" || { warn "Not a Git checkout: $INSTALL_DIR"; exit 1; }
-  remote="$(git -C "$INSTALL_DIR" config --get remote.origin.url 2>/dev/null || true)"
+  local checkout="${1:-$INSTALL_DIR}" remote skill
+  is_git_checkout "$checkout" || { warn "Not a Git checkout: $checkout"; return 1; }
+  remote="$(git -C "$checkout" config --get remote.origin.url 2>/dev/null || true)"
   is_hyperflow_remote "$remote" || {
-    warn "Install path is not the Hyperflow repository: $INSTALL_DIR"
-    exit 1
+    warn "Install path is not the Hyperflow repository: $checkout"
+    return 1
   }
-  [ -f "$INSTALL_DIR/package.json" ] || {
+  [ -f "$checkout/package.json" ] || {
     warn "Incomplete Hyperflow checkout: missing package.json"
-    exit 1
+    return 1
   }
   for skill in "${CORE_SKILLS[@]}"; do
-    [ -f "$INSTALL_DIR/skills/$skill/SKILL.md" ] || {
+    [ -f "$checkout/skills/$skill/SKILL.md" ] || {
       warn "Incomplete Hyperflow checkout: missing skills/$skill/SKILL.md"
-      exit 1
+      return 1
     }
   done
 }
@@ -82,7 +82,7 @@ validate_fetched_checkout() {
 clone_or_update() {
   if is_git_checkout "$INSTALL_DIR"; then
     local current_version incoming_version current_major incoming_major
-    validate_checkout
+    validate_checkout || exit 1
     if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
       warn "Refusing to update dirty checkout: $INSTALL_DIR"
       warn "Commit or stash local changes before rerunning the installer."
@@ -129,8 +129,21 @@ clone_or_update() {
 
   info "Installing to $INSTALL_DIR"
   mkdir -p "$(dirname "$INSTALL_DIR")"
-  git clone --quiet --depth 1 "$REPO_URL" "$INSTALL_DIR"
-  validate_checkout
+  local staging_root
+  staging_root="$(mktemp -d "${INSTALL_DIR}.tmp.XXXXXX")" || {
+    warn "Temp directory failed."
+    exit 1
+  }
+  if ! git clone --quiet --depth 1 "$REPO_URL" "$staging_root" || ! validate_checkout "$staging_root"; then
+    rm -rf -- "$staging_root"
+    warn "Clone failed."
+    exit 1
+  fi
+  if ! mv -- "$staging_root" "$INSTALL_DIR"; then
+    rm -rf -- "$staging_root"
+    warn "Activation failed."
+    exit 1
+  fi
 }
 
 link_skill() {
@@ -322,7 +335,7 @@ main() {
 
   command -v git >/dev/null 2>&1 || { warn "git is required"; exit 1; }
   if [ "$ACTION" = "link-only" ]; then
-    validate_checkout
+    validate_checkout || exit 1
   else
     clone_or_update
   fi

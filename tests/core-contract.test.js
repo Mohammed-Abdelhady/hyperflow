@@ -498,6 +498,26 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
   }
 });
 
+test("failed first-time clone cleans its install path", () => {
+  const temp = mkdtempSync(join(tmpdir(), "hyperflow-clone-test-"));
+  const checkout = join(temp, "checkout");
+  try {
+    const result = spawnSync("bash", [pathFromRoot("install.sh")], {
+      env: {
+        HOME: temp,
+        HYPERFLOW_HOME: checkout,
+        GIT_CONFIG_COUNT: "1",
+        GIT_CONFIG_KEY_0: "url.file:///x.insteadOf",
+        GIT_CONFIG_VALUE_0: "https://",
+      },
+    });
+    assert.notEqual(result.status, 0, "a failed clone must fail the install");
+    assert.equal(existsSync(checkout), false, "a failed clone must not leave a partial checkout");
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 test("installer rolls back provider links when a host link operation fails", () => {
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-installer-link-rollback-test-"));
   const home = join(temp, "home");
