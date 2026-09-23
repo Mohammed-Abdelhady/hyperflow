@@ -371,10 +371,10 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const customOpenCodeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], { encoding: "utf8", env: customOpenCodeEnv });
     assert.equal(customOpenCodeInstall.status, 0, customOpenCodeInstall.stderr);
     assert.equal(realpathSync(join(customOpenCodeRoot, "skills", "hyperflow")), realpathSync(join(ROOT, "skills", "hyperflow")));
-    assert.equal(existsSync(join(customOpenCodeHome, ".config", "opencode")), false, "custom OpenCode must not create the default root");
+    assert.equal(existsSync(join(customOpenCodeHome, ".config", "opencode")), false);
     const customOpenCodeUninstall = spawnSync("bash", [pathFromRoot("install.sh"), "--uninstall"], { encoding: "utf8", env: customOpenCodeEnv });
     assert.equal(customOpenCodeUninstall.status, 0, customOpenCodeUninstall.stderr);
-    assert.equal(existsSync(join(customOpenCodeRoot, "skills", "hyperflow")), false, "custom OpenCode uninstall must remove owned links");
+    assert.equal(existsSync(join(customOpenCodeRoot, "skills", "hyperflow")), false);
 
     for (const skill of CONTRACT.skills) {
       const agyLink = join(relativeHome, ".gemini", "config", "skills", skill);
