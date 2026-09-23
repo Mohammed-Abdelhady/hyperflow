@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Honor OpenCode's configured `OPENCODE_CONFIG_DIR` and XDG roots.
+
 ## [6.6.6] — 2026-09-21
 
 ### Fixed
