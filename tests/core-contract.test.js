@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+delete process.env.XDG_CONFIG_HOME;
+delete process.env.OPENCODE_CONFIG_DIR;
 const PACKAGE_VERSION = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
 const CONTRACT = JSON.parse(read("tests/fixtures/core-contract.json"));
 
@@ -254,6 +256,8 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /readlink/);
   assert.match(installer, /validate_checkout/);
   assert.match(installer, /validate_fetched_checkout/);
+  assert.match(installer, /OPENCODE_CONFIG_DIR/);
+  assert.match(installer, /OPENCODE_ROOT/);
   assert.match(installer, /cat-file -e FETCH_HEAD:package\.json/);
   assert.match(installer, /config --get remote\.origin\.url/);
   assert.match(installer, /\.config\/opencode\/skills/);
@@ -359,6 +363,18 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       readFileSync(join(relativeCheckout, "skills", "hyperflow", "SKILL.md"), "utf8"),
       "relative HYPERFLOW_HOME must create a working link",
     );
+
+    const customOpenCodeHome = join(temp, "custom-opencode-home");
+    const customOpenCodeRoot = join(temp, "custom-opencode-config");
+    mkdirSync(customOpenCodeRoot, { recursive: true });
+    const customOpenCodeEnv = { ...process.env, HOME: customOpenCodeHome, HYPERFLOW_HOME: ROOT, OPENCODE_CONFIG_DIR: customOpenCodeRoot, PATH: "/usr/bin:/bin" };
+    const customOpenCodeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], { encoding: "utf8", env: customOpenCodeEnv });
+    assert.equal(customOpenCodeInstall.status, 0, customOpenCodeInstall.stderr);
+    assert.equal(realpathSync(join(customOpenCodeRoot, "skills", "hyperflow")), realpathSync(join(ROOT, "skills", "hyperflow")));
+    assert.equal(existsSync(join(customOpenCodeHome, ".config", "opencode")), false, "custom OpenCode must not create the default root");
+    const customOpenCodeUninstall = spawnSync("bash", [pathFromRoot("install.sh"), "--uninstall"], { encoding: "utf8", env: customOpenCodeEnv });
+    assert.equal(customOpenCodeUninstall.status, 0, customOpenCodeUninstall.stderr);
+    assert.equal(existsSync(join(customOpenCodeRoot, "skills", "hyperflow")), false, "custom OpenCode uninstall must remove owned links");
 
     for (const skill of CONTRACT.skills) {
       const agyLink = join(relativeHome, ".gemini", "config", "skills", skill);

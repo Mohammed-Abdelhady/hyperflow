@@ -23,7 +23,7 @@ See [Codex compatibility](codex.md).
 
 OpenCode is a compatibility shim for the same Markdown contract. It does not imply Claude Code lifecycle events or equivalent child-agent/background behavior. Use only the capabilities exposed by the installed host version.
 
-For a source-managed installation, run `./install.sh`. It validates the Hyperflow checkout before updating or linking the seven skills into an existing `~/.config/opencode/skills` directory. Updates require a clean checkout and a fast-forwardable `origin/main`; dirty, diverged, fetch-failed, or otherwise unverifiable updates stop before changing checked-out files. A detected major update stops before changing the checkout; complete the migration review below, then rerun with `--accept-major-migration`. A failed skill-link operation rolls back that provider without leaving a partial set. Use `./install.sh --link-only` with no fetch to expose a checkout; it only links OpenCode/Antigravity skills and skips native plugins. `./install.sh --uninstall` removes only links owned by that checkout, including legacy `~/.opencode/skills` links, and keeps the checkout and all project data.
+For a source-managed installation, run `./install.sh`. It validates the checkout and links seven skills to `OPENCODE_CONFIG_DIR/skills` when set, otherwise `$XDG_CONFIG_HOME/opencode/skills` or `~/.config/opencode/skills`. Dirty, diverged, fetch-failed, incomplete, or major updates stop before checkout changes. Link failures roll back the provider. `--link-only` skips fetch and native plugins; `--uninstall` removes only links owned by that checkout. Run uninstall with the same `OPENCODE_CONFIG_DIR` override.
 
 ## Antigravity
 
