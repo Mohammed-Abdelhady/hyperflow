@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.6.7] — 2026-09-23
+
 ### Fixed
 - Honor OpenCode's configured `OPENCODE_CONFIG_DIR` and XDG roots.
 
@@ -1735,7 +1737,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.6...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.7...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1886,3 +1888,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.6.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.3...v6.6.4
 [6.6.5]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.4...v6.6.5
 [6.6.6]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.5...v6.6.6
+[6.6.7]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.6...v6.6.7
