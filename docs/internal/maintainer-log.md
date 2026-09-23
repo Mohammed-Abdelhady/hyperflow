@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-09-23 — v6.6.7
+
+- Version: v6.6.7; PRs: #64 and #65 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/64, https://github.com/Mohammed-Abdelhady/hyperflow/pull/65.
+- Shipped: source-managed installs now honor OpenCode's configured `OPENCODE_CONFIG_DIR` and XDG roots for linking and uninstall; added custom-root regression coverage without relaxing the shipped-footprint ceiling.
+- Validation: PR plugin validation, 25 Node tests, 7/7 evals, shell syntax, shellcheck, main plugin validation, Pages deployment, and release certification passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.6.7
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: more source-managed update failure probes and host capability gaps.
+
 ## 2026-09-21 — v6.6.6
 
 - Version: v6.6.6; PR: #63 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/63.
