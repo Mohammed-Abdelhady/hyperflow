@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-09-25 — v6.6.8
+
+- Version: v6.6.8; PR: #66 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/66.
+- Shipped: source-managed installs now detect an installed `opencode` executable even before its config root exists, allowing first-time OpenCode linking without a pre-created config directory.
+- Validation: PR plugin validation, 25 Node tests, 7/7 evals, shell syntax, ShellCheck, main plugin validation, and release certification passed; shipped footprint remained under the 257,000-byte ceiling.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.6.8
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-09-23 — v6.6.7
 
 - Version: v6.6.7; PRs: #64 and #65 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/64, https://github.com/Mohammed-Abdelhady/hyperflow/pull/65.
