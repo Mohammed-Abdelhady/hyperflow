@@ -276,7 +276,9 @@ install_native_plugins() {
 }
 
 link_detected_providers() {
-  [ -d "$OPENCODE_ROOT" ] && link_provider "OpenCode" "$OPENCODE_ROOT/skills"
+  if [ -d "$OPENCODE_ROOT" ] || command -v opencode >/dev/null 2>&1; then
+    link_provider "OpenCode" "$OPENCODE_ROOT/skills"
+  fi
   [ -d "$HOME/.gemini/config" ] && link_provider "Antigravity" "$HOME/.gemini/config/skills"
   return 0
 }

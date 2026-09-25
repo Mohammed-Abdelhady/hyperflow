@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Detect OpenCode from its executable before its config root exists.
+
 ## [6.6.7] — 2026-09-23
 
 ### Fixed
