@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const INSTALLER = join(ROOT, "install.sh");
 delete process.env.XDG_CONFIG_HOME;
 delete process.env.OPENCODE_CONFIG_DIR;
 const PACKAGE_VERSION = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
@@ -267,6 +268,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /merge-base --is-ancestor HEAD FETCH_HEAD/);
   assert.match(installer, /Unable to fetch origin\/main/);
   assert.match(installer, /Unable to fast-forward origin\/main/);
+  assert.match(installer, /command -v opencode/);
   assert.doesNotMatch(installer, /\.cursor\/skills|\.grok\/skills/);
   assert.doesNotMatch(installer, /\bCODEX_[A-Z0-9_]+\b/);
 
@@ -284,7 +286,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     symlinkSync(join(installRoot, "skills", "hyperflow"), join(agySkillsRoot, "hyperflow"));
     symlinkSync(foreign, join(skillsRoot, "plan"));
 
-    const uninstall = spawnSync("bash", [pathFromRoot("install.sh"), "--uninstall"], {
+    const uninstall = spawnSync("bash", [INSTALLER, "--uninstall"], {
       encoding: "utf8",
       env: { ...process.env, HOME: temp, HYPERFLOW_HOME: installRoot, PATH: "/usr/bin:/bin" },
     });
@@ -298,7 +300,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     mkdirSync(untrusted);
     execFileSync("git", ["init", "-q", untrusted]);
     execFileSync("git", ["-C", untrusted, "remote", "add", "origin", "https://example.com/not-hyperflow.git"]);
-    const rejected = spawnSync("bash", [pathFromRoot("install.sh")], {
+    const rejected = spawnSync("bash", [INSTALLER], {
       encoding: "utf8",
       env: { ...process.env, HOME: temp, HYPERFLOW_HOME: untrusted, PATH: "/usr/bin:/bin" },
     });
@@ -307,7 +309,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
 
     const noHostHome = join(temp, "no-host");
     mkdirSync(noHostHome);
-    const noHost = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+    const noHost = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: noHostHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" },
     });
@@ -318,7 +320,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const conflictSkills = join(conflictHome, ".config", "opencode", "skills");
     mkdirSync(conflictSkills, { recursive: true });
     symlinkSync(foreign, join(conflictSkills, "hyperflow"));
-    const conflict = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+    const conflict = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" },
     });
@@ -337,11 +339,11 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "ssh://git@github.com/Mohammed-Abdelhady/hyperflow.git"]);
     mkdirSync(join(relativeHome, ".config", "opencode"), { recursive: true });
     mkdirSync(join(relativeHome, ".gemini", "config"), { recursive: true });
-    const incomplete = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], { cwd: relativeHome, encoding: "utf8", env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: `${fakeNativeBin}:/usr/bin:/bin` } });
+    const incomplete = spawnSync("bash", [INSTALLER, "--link-only"], { cwd: relativeHome, encoding: "utf8", env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: `${fakeNativeBin}:/usr/bin:/bin` } });
     assert.notEqual(incomplete.status, 0, "a partial checkout must not report a successful link-only install");
     assert.match(incomplete.stderr, /Incomplete Hyperflow checkout: missing package\.json/);
     cpSync(pathFromRoot("package.json"), join(relativeCheckout, "package.json"));
-    const relativeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+    const relativeInstall = spawnSync("bash", [INSTALLER, "--link-only"], {
       cwd: relativeHome,
       encoding: "utf8",
       env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: `${fakeNativeBin}:/usr/bin:/bin` },
@@ -368,11 +370,11 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const customOpenCodeRoot = join(temp, "custom-opencode-config");
     mkdirSync(customOpenCodeRoot, { recursive: true });
     const customOpenCodeEnv = { ...process.env, HOME: customOpenCodeHome, HYPERFLOW_HOME: ROOT, OPENCODE_CONFIG_DIR: customOpenCodeRoot, PATH: "/usr/bin:/bin" };
-    const customOpenCodeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], { encoding: "utf8", env: customOpenCodeEnv });
+    const customOpenCodeInstall = spawnSync("bash", [INSTALLER, "--link-only"], { encoding: "utf8", env: customOpenCodeEnv });
     assert.equal(customOpenCodeInstall.status, 0, customOpenCodeInstall.stderr);
     assert.equal(realpathSync(join(customOpenCodeRoot, "skills", "hyperflow")), realpathSync(join(ROOT, "skills", "hyperflow")));
     assert.equal(existsSync(join(customOpenCodeHome, ".config", "opencode")), false);
-    const customOpenCodeUninstall = spawnSync("bash", [pathFromRoot("install.sh"), "--uninstall"], { encoding: "utf8", env: customOpenCodeEnv });
+    const customOpenCodeUninstall = spawnSync("bash", [INSTALLER, "--uninstall"], { encoding: "utf8", env: customOpenCodeEnv });
     assert.equal(customOpenCodeUninstall.status, 0, customOpenCodeUninstall.stderr);
     assert.equal(existsSync(join(customOpenCodeRoot, "skills", "hyperflow")), false);
 
@@ -402,7 +404,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const worktreeHomeParent = join(temp, "worktree-home-parent");
     rmSync(worktreeHomeParent, { recursive: true, force: true });
     mkdirSync(join(worktreeHomeParent, ".config", "opencode"), { recursive: true });
-    const worktreeInstall = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+    const worktreeInstall = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: worktreeHomeParent, HYPERFLOW_HOME: worktreeHome, PATH: "/usr/bin:/bin" },
     });
@@ -432,7 +434,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       ),
     );
     mkdirSync(join(dirtyHome, ".config", "opencode"), { recursive: true });
-    const dirtyUpdate = spawnSync("bash", [pathFromRoot("install.sh")], {
+    const dirtyUpdate = spawnSync("bash", [INSTALLER], {
       encoding: "utf8",
       env: { ...process.env, HOME: dirtyHome, HYPERFLOW_HOME: dirtyCheckout, PATH: "/usr/bin:/bin" },
     });
@@ -483,7 +485,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     const baseHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
     writeFileSync(gitConfig, `[url "file:///missing-hyperflow-remote"]\n\tinsteadOf = ${repoUrl}\n`);
-    const fetchFailure = spawnSync("bash", [pathFromRoot("install.sh")], { encoding: "utf8", env });
+    const fetchFailure = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.notEqual(fetchFailure.status, 0, "a fetch failure must fail the update");
     assert.match(fetchFailure.stderr, /Unable to fetch origin\/main/);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), baseHead);
@@ -494,7 +496,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
     writeFileSync(gitConfig, `[url "file://${remote}"]\n\tinsteadOf = ${repoUrl}\n`);
 
-    const update = spawnSync("bash", [pathFromRoot("install.sh")], { encoding: "utf8", env });
+    const update = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.equal(update.status, 0, update.stderr);
     const updatedHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
     assert.notEqual(updatedHead, baseHead, "a reachable fast-forward must update the checkout");
@@ -504,7 +506,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish incomplete installer update"]);
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
 
-    const incomplete = spawnSync("bash", [pathFromRoot("install.sh")], { encoding: "utf8", env });
+    const incomplete = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.notEqual(incomplete.status, 0, "an incomplete fetched tree must fail before merge");
     assert.ok(incomplete.stderr.includes("Fetched origin/main is incomplete: missing skills/handoff/SKILL.md"), incomplete.stderr);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
@@ -518,7 +520,7 @@ test("failed first-time clone cleans its install path", () => {
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-clone-test-"));
   const checkout = join(temp, "checkout");
   try {
-    const result = spawnSync("bash", [pathFromRoot("install.sh")], {
+    const result = spawnSync("bash", [INSTALLER], {
       env: {
         HOME: temp,
         HYPERFLOW_HOME: checkout,
@@ -545,7 +547,7 @@ test("installer rolls back provider links when a host link operation fails", () 
     writeFileSync(fakeLn, "#!/usr/bin/env bash\nfor arg in \"$@\"; do case \"$arg\" in */skills/plan) exit 42;; esac; done\nexec /usr/bin/ln \"$@\"\n");
     chmodSync(fakeLn, 0o755);
 
-    const result = spawnSync("bash", [pathFromRoot("install.sh"), "--link-only"], {
+    const result = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: home, HYPERFLOW_HOME: ROOT, PATH: `${fakeBin}:/usr/bin:/bin` },
     });
