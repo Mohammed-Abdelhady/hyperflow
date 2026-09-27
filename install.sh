@@ -7,6 +7,7 @@ REPO_URL="https://github.com/Mohammed-Abdelhady/hyperflow.git"
 INSTALL_DIR="${HYPERFLOW_HOME:-$HOME/.hyperflow/repo}"
 # OpenCode normally uses ~/.config/opencode; OPENCODE_CONFIG_DIR can override it.
 OPENCODE_ROOT="${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}"
+ANTIGRAVITY_SKILLS_ROOT="$HOME/.gemini/skills"
 # Symlink targets must be absolute: a relative HYPERFLOW_HOME would otherwise
 # be resolved relative to the host's skills directory instead of this checkout.
 case "$INSTALL_DIR" in
@@ -279,7 +280,9 @@ link_detected_providers() {
   if [ -d "$OPENCODE_ROOT" ] || command -v opencode >/dev/null 2>&1; then
     link_provider "OpenCode" "$OPENCODE_ROOT/skills"
   fi
-  [ -d "$HOME/.gemini/config" ] && link_provider "Antigravity" "$HOME/.gemini/config/skills"
+  if [ -d "$HOME/.gemini" ] || command -v agy >/dev/null 2>&1 || command -v gemini >/dev/null 2>&1; then
+    link_provider "Antigravity" "$ANTIGRAVITY_SKILLS_ROOT"
+  fi
   return 0
 }
 
@@ -290,6 +293,7 @@ remove_owned_links() {
   if [ "$OPENCODE_ROOT" != "$HOME/.config/opencode" ]; then
     roots+=("$OPENCODE_ROOT/skills")
   fi
+  roots+=("$ANTIGRAVITY_SKILLS_ROOT")
   roots+=("$HOME/.gemini/config/skills")
 
   for root in "${roots[@]}"; do

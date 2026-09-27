@@ -27,7 +27,7 @@ For a source-managed installation, run `./install.sh`. It validates the checkout
 
 ## Antigravity
 
-Antigravity (AGY) is a compatibility shim for the Markdown skill contract. Running `./install.sh` detects `~/.gemini/config` and links all seven skills into `~/.gemini/config/skills` for the Antigravity agent environment.
+Antigravity is a shim. `./install.sh` detects `agy`, `gemini`, or `~/.gemini` and links all seven to `~/.gemini/skills`; `--uninstall` removes links under `~/.gemini/config/skills`.
 
 ## Major-version migration
 
