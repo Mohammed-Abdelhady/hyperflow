@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-09-27 — v6.6.9
+
+- Version: v6.6.9; PRs: #67, #68, and #69 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/67, https://github.com/Mohammed-Abdelhady/hyperflow/pull/68, https://github.com/Mohammed-Abdelhady/hyperflow/pull/69.
+- Shipped: source-managed installs now link Antigravity skills to the current `~/.gemini/skills` discovery root, detect `agy`/`gemini` before the config directory exists, and remove owned links from the legacy root on uninstall.
+- Validation: 25 Node tests, 7/7 evals, plugin validation, shell syntax, ShellCheck, main CI, release certification, and Pages deployment passed; shipped footprint remained under the 257,000-byte ceiling.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.6.9
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-09-25 — v6.6.8
 
 - Version: v6.6.8; PR: #66 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/66.
