@@ -252,6 +252,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   const declared = installer.match(/CORE_SKILLS=\(([^)]+)\)/)?.[1].trim().split(/\s+/).sort();
   assert.deepEqual(declared, [...CONTRACT.skills].sort());
   assert.match(installer, /\.opencode\/skills/);
+  assert.match(installer, /\.gemini\/skills/);
   assert.match(installer, /\.gemini\/config\/skills/);
   assert.match(installer, /remove_owned_links/);
   assert.match(installer, /readlink/);
@@ -276,7 +277,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   try {
     const installRoot = join(temp, "checkout");
     const skillsRoot = join(temp, ".opencode", "skills");
-    const agySkillsRoot = join(temp, ".gemini", "config", "skills");
+    const agySkillsRoot = join(temp, ".gemini", "skills");
     const foreign = join(temp, "foreign-skill");
     mkdirSync(join(installRoot, "skills", "hyperflow"), { recursive: true });
     mkdirSync(skillsRoot, { recursive: true });
@@ -334,6 +335,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     mkdirSync(relativeHome, { recursive: true });
     mkdirSync(fakeNativeBin, { recursive: true });
     symlinkSync("/bin/false", join(fakeNativeBin, "claude"));
+    symlinkSync("/bin/true", join(fakeNativeBin, "agy"));
     cpSync(pathFromRoot("skills"), join(relativeCheckout, "skills"), { recursive: true });
     execFileSync("git", ["init", "-q", relativeCheckout]);
     execFileSync("git", ["-C", relativeCheckout, "remote", "add", "origin", "ssh://git@github.com/Mohammed-Abdelhady/hyperflow.git"]);
@@ -351,9 +353,6 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     assert.equal(relativeInstall.status, 0, relativeInstall.stderr);
     const linkTarget = readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow"));
     const expectedTarget = join(relativeHome, "checkout", "skills", "hyperflow");
-    // Compare resolved paths: a host that reports a physical $PWD (macOS /private/var)
-    // yields a different literal string for the same checkout. Absoluteness is the
-    // property under test, so assert it directly rather than inferring it from equality.
     assert.equal(isAbsolute(linkTarget), true, "relative HYPERFLOW_HOME must create an absolute skill link");
     assert.equal(
       realpathSync(linkTarget),
@@ -379,7 +378,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     assert.equal(existsSync(join(customOpenCodeRoot, "skills", "hyperflow")), false);
 
     for (const skill of CONTRACT.skills) {
-      const agyLink = join(relativeHome, ".gemini", "config", "skills", skill);
+      const agyLink = join(relativeHome, ".gemini", "skills", skill);
       assert.equal(lstatSync(agyLink).isSymbolicLink(), true, `Antigravity must link ${skill}`);
       assert.equal(
         realpathSync(agyLink),
