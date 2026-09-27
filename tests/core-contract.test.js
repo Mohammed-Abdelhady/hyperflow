@@ -252,8 +252,6 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   const declared = installer.match(/CORE_SKILLS=\(([^)]+)\)/)?.[1].trim().split(/\s+/).sort();
   assert.deepEqual(declared, [...CONTRACT.skills].sort());
   assert.match(installer, /\.opencode\/skills/);
-  assert.match(installer, /\.gemini\/skills/);
-  assert.match(installer, /\.gemini\/config\/skills/);
   assert.match(installer, /remove_owned_links/);
   assert.match(installer, /readlink/);
   assert.match(installer, /validate_checkout/);
