@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.6.9] — 2026-09-27
+
 ### Fixed
 - Use Antigravity's `~/.gemini/skills` and detect early.
 
@@ -1745,7 +1747,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.8...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.9...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1898,3 +1900,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.6.6]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.5...v6.6.6
 [6.6.7]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.6...v6.6.7
 [6.6.8]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.7...v6.6.8
+[6.6.9]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.8...v6.6.9
