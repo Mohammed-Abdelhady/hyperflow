@@ -55,6 +55,10 @@ The current priorities, in order, are:
 - Dispatch checks changed paths against that record before committing and runs the recorded gates.
 - A dependency-free boundary eval protects the contract.
 
+### v6.7 — installer capability observability
+
+- `install.sh --status` reports checkout validity, native host availability, and complete, partial, or conflicting skill-link state without fetching, creating directories, invoking plugins, or changing links.
+
 ## Next trains
 
 ### Install and release reliability

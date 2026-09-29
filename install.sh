@@ -33,12 +33,67 @@ is_git_checkout() {
 
 usage() {
   printf '%s\n' \
-    "Usage: install.sh [--accept-major-migration | --link-only | --uninstall | --help]" \
+    "Usage: install.sh [--accept-major-migration | --link-only | --status | --uninstall | --help]" \
     "" \
     "Installs the Hyperflow plugin for available native hosts and links all" \
     "seven public skills into detected OpenCode or Antigravity skill directories." \
     "Existing directories and project .hyperflow data are" \
     "never overwritten or deleted."
+}
+
+link_state() {
+  local root="$1" skill target current owned=0 conflicts=0
+  for skill in "${CORE_SKILLS[@]}"; do
+    target="$root/$skill"
+    if [ -L "$target" ]; then
+      current="$(readlink "$target")"
+      case "$current" in
+        "$INSTALL_DIR"/skills/*) owned=$((owned + 1)) ;;
+        *) conflicts=$((conflicts + 1)) ;;
+      esac
+    elif [ -e "$target" ]; then
+      conflicts=$((conflicts + 1))
+    fi
+  done
+  [ "$conflicts" -gt 0 ] && printf 'conflict' && return
+  [ "$owned" -eq "${#CORE_SKILLS[@]}" ] && printf 'complete' && return
+  [ "$owned" -eq 0 ] && printf 'none' || printf 'partial'
+}
+
+print_status() {
+  local checkout_state='missing'
+  printf 'Hyperflow installer status (read-only)\n'
+  printf 'Checkout: %s\n' "$INSTALL_DIR"
+
+  if [ -e "$INSTALL_DIR" ] && ! is_git_checkout "$INSTALL_DIR"; then
+    checkout_state='not a Git checkout'
+  elif [ -d "$INSTALL_DIR" ] || [ -f "$INSTALL_DIR" ]; then
+    if ! command -v git >/dev/null 2>&1; then
+      checkout_state='Git unavailable'
+    elif validate_checkout >/dev/null 2>&1; then
+      checkout_state='valid'
+    else
+      checkout_state='invalid'
+    fi
+  fi
+  printf 'Checkout state: %s\n' "$checkout_state"
+
+  printf 'Native hosts:\n'
+  if command -v claude >/dev/null 2>&1; then printf '  Claude Code: available\n'; else printf '  Claude Code: unavailable\n'; fi
+  if command -v codex >/dev/null 2>&1; then printf '  Codex: available\n'; else printf '  Codex: unavailable\n'; fi
+
+  printf 'Skill links:\n'
+  if [ -d "$OPENCODE_ROOT" ] || command -v opencode >/dev/null 2>&1; then
+    printf '  OpenCode: detected (root=%s; links=%s)\n' "$OPENCODE_ROOT" "$(link_state "$OPENCODE_ROOT/skills")"
+  else
+    printf '  OpenCode: not detected\n'
+  fi
+  if [ -d "$HOME/.gemini" ] || command -v agy >/dev/null 2>&1 || command -v gemini >/dev/null 2>&1; then
+    printf '  Antigravity: detected (root=%s; links=%s)\n' "$ANTIGRAVITY_SKILLS_ROOT" "$(link_state "$ANTIGRAVITY_SKILLS_ROOT")"
+  else
+    printf '  Antigravity: not detected\n'
+  fi
+  printf 'No fetch, plugin operation, directory creation, or link change was performed.\n'
 }
 
 is_hyperflow_remote() {
@@ -337,6 +392,7 @@ main() {
       --help|-h) usage; return ;;
       --uninstall) ACTION="uninstall" ;;
       --link-only) ACTION="link-only" ;;
+      --status) ACTION="status" ;;
       --accept-major-migration) ACCEPT_MAJOR_MIGRATION=1 ;;
       *) warn "Unknown option: $1"; usage; exit 1 ;;
     esac
@@ -345,6 +401,11 @@ main() {
 
   if [ "$ACTION" = "uninstall" ]; then
     remove_owned_links
+    return
+  fi
+
+  if [ "$ACTION" = "status" ]; then
+    print_status
     return
   fi
 

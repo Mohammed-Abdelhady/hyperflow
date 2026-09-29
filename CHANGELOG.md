@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add read-only `install.sh --status` diagnostics for checkout validity, native host availability, and provider skill-link state.
+
 ## [6.6.9] — 2026-09-27
 
 ### Fixed

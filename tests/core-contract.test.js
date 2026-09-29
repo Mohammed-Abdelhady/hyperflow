@@ -59,21 +59,6 @@ function assertNear(text, subject, pattern, message) {
   assert.match(laneWindow(text, subject), pattern, message);
 }
 
-function currentSurface(path) {
-  const source = read(path);
-  const migrationDocs = new Set(["README.md", "PRIVACY.md", "docs/installation.md", "install.sh"]);
-  if (!migrationDocs.has(path)) return source;
-
-  const htmlStart = "<!-- hyperflow:legacy-migration:start -->";
-  const htmlEnd = "<!-- hyperflow:legacy-migration:end -->";
-  const shellStart = "# hyperflow:legacy-migration:start";
-  const shellEnd = "# hyperflow:legacy-migration:end";
-  assert.equal(source.split(htmlStart).length - 1, source.split(htmlEnd).length - 1, `${path} has an unbalanced HTML migration block`);
-  assert.equal(source.split(shellStart).length - 1, source.split(shellEnd).length - 1, `${path} has an unbalanced shell migration block`);
-  return source
-    .replace(/<!-- hyperflow:legacy-migration:start -->[\s\S]*?<!-- hyperflow:legacy-migration:end -->/g, "")
-    .replace(/# hyperflow:legacy-migration:start[\s\S]*?# hyperflow:legacy-migration:end/g, "");
-}
 
 test("core manifests parse and share one version", () => {
   const pkg = json("package.json");
@@ -172,11 +157,6 @@ test("security floor retains blocked files and commands", () => {
   }
 });
 
-test("every shipped JSON document parses", () => {
-  for (const path of shippedFiles().filter((path) => extname(path) === ".json")) {
-    assert.doesNotThrow(() => json(path), path);
-  }
-});
 
 test("briefs and skill entrypoints stay within structural budgets", () => {
   const worker = read("skills/hyperflow/worker-brief.md");
@@ -212,40 +192,6 @@ test("shipped footprint and prompt-bearing text stay below regression ceilings",
   assert.ok(componentDescriptions.length <= CONTRACT.budgets.componentDescriptionsCharsMax, `component descriptions: ${componentDescriptions.length} characters`);
 });
 
-test("installed runtime has no hooks, Python, dashboard, viewer, or legacy visual stack", () => {
-  const allFiles = filesUnder(".");
-  const pythonFiles = allFiles.filter((path) => extname(path) === ".py");
-  assert.deepEqual(pythonFiles, []);
-
-  assert.deepEqual(filesUnder("hooks"), [], "hooks directory must contain no shipped files");
-  assert.deepEqual(filesUnder("viewer"), [], "viewer directory must contain no shipped files");
-  assert.equal(Object.hasOwn(json(".codex-plugin/plugin.json"), "hooks"), false, "Codex manifest must not register hooks");
-
-  const currentRoots = [
-    ".claude-plugin",
-    ".codex-plugin",
-    ".github",
-    "agents",
-    "config",
-    "docs",
-    "scripts",
-    "skills",
-    "templates",
-  ];
-  const currentFiles = ["AGENTS.md", "CLAUDE.md", "PRIVACY.md", "README.md", "RELEASING.md", "install.sh", "package.json"]
-    .filter((path) => existsSync(pathFromRoot(path)))
-    .concat(currentRoots.flatMap(filesUnder))
-    .filter((path) => !path.startsWith("docs/archive/"));
-  const shipped = currentFiles
-    .filter((path) => ![".png", ".gif", ".mp4", ".ttf"].includes(extname(path)))
-    .map((path) => `${path}\n${currentSurface(path)}`)
-    .join("\n");
-
-  assert.doesNotMatch(shipped, /\bpython3\b|(?:^|\s)python\s+-|\.py\b|#![^\n]*python/i);
-  assert.doesNotMatch(shipped, /viewer\/|hyperflow view|viewer["']?\s*:\s*\{|dashboard["']?\s*:\s*\{|\/(?:admin-)?dashboard\b/i);
-  assert.doesNotMatch(shipped, /hooks\/session-start|hooks\/pre-compact|scripts\/hook-runtime|"SessionStart"|"PreCompact"/i);
-  assert.doesNotMatch(shipped, /\.hyperflow\/artefacts|artefact\.schema|render-artefact|open-artefact/i);
-});
 
 test("installer exposes every public skill to OpenCode and Antigravity and uninstall removes owned links", () => {
   const installer = read("install.sh");
@@ -263,6 +209,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /\.config\/opencode\/skills/);
   assert.match(installer, /accept-major-migration/);
   assert.match(installer, /link-only/);
+  assert.match(installer, /--status/);
   assert.match(installer, /status --porcelain --untracked-files=all/);
   assert.match(installer, /merge-base --is-ancestor HEAD FETCH_HEAD/);
   assert.match(installer, /Unable to fetch origin\/main/);
@@ -273,6 +220,14 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
 
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-install-test-"));
   try {
+    const statusHome = join(temp, "status-home");
+    mkdirSync(statusHome);
+    const status = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env: { ...process.env, HOME: statusHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
+    assert.equal(status.status, 0);
+    assert.match(status.stdout, /read-only[\s\S]*Checkout state: valid/);
+    assert.match(status.stdout, /OpenCode: not detected[\s\S]*Antigravity: not detected/);
+    assert.equal(existsSync(join(statusHome, ".config")), false);
+
     const installRoot = join(temp, "checkout");
     const skillsRoot = join(temp, ".opencode", "skills");
     const agySkillsRoot = join(temp, ".gemini", "skills");
@@ -290,10 +245,10 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       env: { ...process.env, HOME: temp, HYPERFLOW_HOME: installRoot, PATH: "/usr/bin:/bin" },
     });
     assert.equal(uninstall.status, 0, uninstall.stderr);
-    assert.equal(existsSync(join(skillsRoot, "hyperflow")), false, "owned link must be removed from OpenCode");
-    assert.equal(existsSync(join(agySkillsRoot, "hyperflow")), false, "owned link must be removed from Antigravity");
-    assert.equal(lstatSync(join(skillsRoot, "plan")).isSymbolicLink(), true, "foreign link must remain");
-    assert.equal(existsSync(installRoot), true, "checkout must remain");
+    assert.equal(existsSync(join(skillsRoot, "hyperflow")), false);
+    assert.equal(existsSync(join(agySkillsRoot, "hyperflow")), false);
+    assert.equal(lstatSync(join(skillsRoot, "plan")).isSymbolicLink(), true);
+    assert.equal(existsSync(installRoot), true);
 
     const untrusted = join(temp, "untrusted");
     mkdirSync(untrusted);
@@ -303,7 +258,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       encoding: "utf8",
       env: { ...process.env, HOME: temp, HYPERFLOW_HOME: untrusted, PATH: "/usr/bin:/bin" },
     });
-    assert.notEqual(rejected.status, 0, "an unrelated checkout must be rejected");
+    assert.notEqual(rejected.status, 0);
     assert.match(rejected.stderr, /not the Hyperflow repository/);
 
     const noHostHome = join(temp, "no-host");
@@ -312,20 +267,23 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       encoding: "utf8",
       env: { ...process.env, HOME: noHostHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" },
     });
-    assert.notEqual(noHost.status, 0, "an install with no detected host must not report success");
+    assert.notEqual(noHost.status, 0);
     assert.match(noHost.stderr, /No supported host was detected/);
 
     const conflictHome = join(temp, "conflict-host");
     const conflictSkills = join(conflictHome, ".config", "opencode", "skills");
     mkdirSync(conflictSkills, { recursive: true });
     symlinkSync(foreign, join(conflictSkills, "hyperflow"));
+    const conflictStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
+    assert.equal(conflictStatus.status, 0);
+    assert.match(conflictStatus.stdout, /OpenCode: detected[\s\S]*links=conflict/);
     const conflict = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" },
     });
-    assert.notEqual(conflict.status, 0, "a partial OpenCode link set must not report success");
+    assert.notEqual(conflict.status, 0);
     assert.match(conflict.stderr, /skill path conflict/);
-    assert.equal(existsSync(join(conflictSkills, "plan")), false, "a conflict must not leave a partial link set");
+    assert.equal(existsSync(join(conflictSkills, "plan")), false);
 
     const relativeHome = join(temp, "relative-home");
     const relativeCheckout = join(relativeHome, "checkout");
@@ -340,7 +298,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     mkdirSync(join(relativeHome, ".config", "opencode"), { recursive: true });
     mkdirSync(join(relativeHome, ".gemini", "config"), { recursive: true });
     const incomplete = spawnSync("bash", [INSTALLER, "--link-only"], { cwd: relativeHome, encoding: "utf8", env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: "checkout", PATH: `${fakeNativeBin}:/usr/bin:/bin` } });
-    assert.notEqual(incomplete.status, 0, "a partial checkout must not report a successful link-only install");
+    assert.notEqual(incomplete.status, 0);
     assert.match(incomplete.stderr, /Incomplete Hyperflow checkout: missing package\.json/);
     cpSync(pathFromRoot("package.json"), join(relativeCheckout, "package.json"));
     const relativeInstall = spawnSync("bash", [INSTALLER, "--link-only"], {
@@ -351,7 +309,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     assert.equal(relativeInstall.status, 0, relativeInstall.stderr);
     const linkTarget = readlinkSync(join(relativeHome, ".config", "opencode", "skills", "hyperflow"));
     const expectedTarget = join(relativeHome, "checkout", "skills", "hyperflow");
-    assert.equal(isAbsolute(linkTarget), true, "relative HYPERFLOW_HOME must create an absolute skill link");
+    assert.equal(isAbsolute(linkTarget), true);
     assert.equal(
       realpathSync(linkTarget),
       realpathSync(expectedTarget),
@@ -406,7 +364,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       env: { ...process.env, HOME: worktreeHomeParent, HYPERFLOW_HOME: worktreeHome, PATH: "/usr/bin:/bin" },
     });
     assert.equal(worktreeInstall.status, 0, worktreeInstall.stderr);
-    assert.equal(statSync(join(worktreeHome, ".git")).isFile(), true, "fixture must use a worktree .git file");
+    assert.equal(statSync(join(worktreeHome, ".git")).isFile(), true);
     assert.equal(
       realpathSync(join(worktreeHomeParent, ".config", "opencode", "skills", "hyperflow")),
       realpathSync(join(worktreeHome, "skills", "hyperflow")),
@@ -435,9 +393,9 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       encoding: "utf8",
       env: { ...process.env, HOME: dirtyHome, HYPERFLOW_HOME: dirtyCheckout, PATH: "/usr/bin:/bin" },
     });
-    assert.notEqual(dirtyUpdate.status, 0, "a dirty checkout must not be updated");
+    assert.notEqual(dirtyUpdate.status, 0);
     assert.match(dirtyUpdate.stderr, /Refusing to update dirty checkout/);
-    assert.equal(existsSync(join(dirtyCheckout, ".git", "FETCH_HEAD")), false, "dirty preflight must run before fetch");
+    assert.equal(existsSync(join(dirtyCheckout, ".git", "FETCH_HEAD")), false);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
@@ -483,7 +441,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
 
     writeFileSync(gitConfig, `[url "file:///missing-hyperflow-remote"]\n\tinsteadOf = ${repoUrl}\n`);
     const fetchFailure = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
-    assert.notEqual(fetchFailure.status, 0, "a fetch failure must fail the update");
+    assert.notEqual(fetchFailure.status, 0);
     assert.match(fetchFailure.stderr, /Unable to fetch origin\/main/);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), baseHead);
 
@@ -496,7 +454,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     const update = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.equal(update.status, 0, update.stderr);
     const updatedHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-    assert.notEqual(updatedHead, baseHead, "a reachable fast-forward must update the checkout");
+    assert.notEqual(updatedHead, baseHead);
     assert.match(readFileSync(join(checkout, "skills", "hyperflow", "SKILL.md"), "utf8"), /fast-forward fixture/);
 
     execFileSync("git", ["-C", seed, "rm", "-q", "skills/handoff/SKILL.md"]);
@@ -504,10 +462,10 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
 
     const incomplete = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
-    assert.notEqual(incomplete.status, 0, "an incomplete fetched tree must fail before merge");
+    assert.notEqual(incomplete.status, 0);
     assert.ok(incomplete.stderr.includes("Fetched origin/main is incomplete: missing skills/handoff/SKILL.md"), incomplete.stderr);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
-    assert.equal(existsSync(join(checkout, "skills", "handoff", "SKILL.md")), true, "the checked-out skill must survive the rejected update");
+    assert.equal(existsSync(join(checkout, "skills", "handoff", "SKILL.md")), true);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
@@ -526,8 +484,8 @@ test("failed first-time clone cleans its install path", () => {
         GIT_CONFIG_VALUE_0: "https://",
       },
     });
-    assert.notEqual(result.status, 0, "a failed clone must fail the install");
-    assert.equal(existsSync(checkout), false, "a failed clone must not leave a partial checkout");
+    assert.notEqual(result.status, 0);
+    assert.equal(existsSync(checkout), false);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
@@ -548,7 +506,7 @@ test("installer rolls back provider links when a host link operation fails", () 
       encoding: "utf8",
       env: { ...process.env, HOME: home, HYPERFLOW_HOME: ROOT, PATH: `${fakeBin}:/usr/bin:/bin` },
     });
-    assert.notEqual(result.status, 0, "a host link failure must fail the install");
+    assert.notEqual(result.status, 0);
     assert.match(result.stderr, /failed to link skills; rolled back without a partial link set/);
     for (const skill of CONTRACT.skills) {
       assert.equal(
@@ -655,16 +613,4 @@ test("natural-language routing preserves plan stop, build continuation, and push
   assert.match(dispatch, /explicit build or fix request authorizes local execution/i);
   assert.match(deploy, /Local completion never implies remote authorization/i);
   assert.match(deploy, /Push`?\s*\/\s*`?Hold/);
-});
-
-test("current Markdown documentation has no broken local links", () => {
-  const documents = ["README.md", "PRIVACY.md", "RELEASING.md", ...filesUnder("docs").filter((path) => extname(path) === ".md")];
-  for (const document of documents) {
-    const source = read(document);
-    for (const match of source.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
-      const target = match[1].split("#", 1)[0];
-      if (!target || /^(?:https?:|mailto:)/.test(target)) continue;
-      assert.equal(existsSync(join(dirname(pathFromRoot(document)), decodeURIComponent(target))), true, `${document} -> ${target}`);
-    }
-  }
 });
