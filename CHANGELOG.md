@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.7.0] — 2026-09-29
+
 ### Added
 - Add read-only `install.sh --status` diagnostics for checkout validity, native host availability, and provider skill-link state.
 
@@ -1750,7 +1752,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.9...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.0...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1904,3 +1906,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.6.7]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.6...v6.6.7
 [6.6.8]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.7...v6.6.8
 [6.6.9]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.8...v6.6.9
+[6.7.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.6.9...v6.7.0
