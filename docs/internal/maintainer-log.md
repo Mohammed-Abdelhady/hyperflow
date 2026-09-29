@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-09-29 — v6.7.0
+
+- Version: v6.7.0; PR: #70 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/70.
+- Shipped: source-managed installs now expose read-only `./install.sh --status` diagnostics for checkout validity, native host availability, and complete/partial/conflicting OpenCode and Antigravity skill-link state without fetches or mutations.
+- Validation: PR plugin validation, 22 Node tests, 7/7 evals, shell syntax, ShellCheck, main plugin validation, release certification, and Pages deployment passed; shipped footprint remained under the 257,000-byte ceiling.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.0
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes.
+
 ## 2026-09-27 — v6.6.9
 
 - Version: v6.6.9; PRs: #67, #68, and #69 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/67, https://github.com/Mohammed-Abdelhady/hyperflow/pull/68, https://github.com/Mohammed-Abdelhady/hyperflow/pull/69.
