@@ -343,6 +343,12 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
       );
     }
 
+    const links = join(relativeHome, ".config/opencode/skills");
+    rmSync(join(links, "hyperflow"));
+    symlinkSync(join(relativeCheckout, "skills", "plan"), join(links, "hyperflow"));
+    const linkStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env: { ...process.env, HOME: relativeHome, HYPERFLOW_HOME: relativeCheckout, PATH: "/usr/bin:/bin" } });
+    assert.match(linkStatus.stdout, /OpenCode: detected[\s\S]*links=partial/);
+
     const worktreeHome = join(temp, "worktree-home");
     const upstream = join(temp, "upstream");
     mkdirSync(upstream, { recursive: true });
