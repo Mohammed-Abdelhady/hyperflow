@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Report owned skill links that point at the wrong checkout skill as partial in `install.sh --status`.
+
 ## [6.7.0] — 2026-09-29
 
 ### Added
