@@ -42,22 +42,26 @@ usage() {
 }
 
 link_state() {
-  local root="$1" skill target current owned=0 conflicts=0
+  local root="$1" skill target current owned=0 conflicts=0 bad=0
   for skill in "${CORE_SKILLS[@]}"; do
     target="$root/$skill"
     if [ -L "$target" ]; then
       current="$(readlink "$target")"
-      case "$current" in
-        "$INSTALL_DIR"/skills/*) owned=$((owned + 1)) ;;
-        *) conflicts=$((conflicts + 1)) ;;
-      esac
+      if [ "$current" = "$INSTALL_DIR/skills/$skill" ]; then
+        owned=$((owned + 1))
+      else
+        case "$current" in
+          "$INSTALL_DIR"/skills/*) bad=$((bad+1)) ;;
+          *) conflicts=$((conflicts + 1)) ;;
+        esac
+      fi
     elif [ -e "$target" ]; then
       conflicts=$((conflicts + 1))
     fi
   done
   [ "$conflicts" -gt 0 ] && printf 'conflict' && return
   [ "$owned" -eq "${#CORE_SKILLS[@]}" ] && printf 'complete' && return
-  [ "$owned" -eq 0 ] && printf 'none' || printf 'partial'
+  [ "$owned" -eq 0 ] && [ "$bad" -eq 0 ] && printf 'none' || printf 'partial'
 }
 
 print_status() {
