@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-01 — v6.7.1
+
+- Version: v6.7.1; PRs: #71 and #72 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/71, https://github.com/Mohammed-Abdelhady/hyperflow/pull/72.
+- Shipped: `install.sh --status` now verifies each skill link against its matching checkout path and reports mislinked owned links as partial instead of falsely reporting complete; the shipped-footprint gate now leaves bounded room for required changelog growth during releases.
+- Validation: 22 Node tests, 7/7 evals, plugin validation, shell syntax, ShellCheck, main plugin validation, release certification, and Pages deployment passed; shipped footprint was 257,107 bytes under the 257,500-byte ceiling.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.1
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-09-29 — v6.7.0
 
 - Version: v6.7.0; PR: #70 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/70.
