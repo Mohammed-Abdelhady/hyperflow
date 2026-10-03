@@ -47,7 +47,7 @@ link_state() {
     target="$root/$skill"
     if [ -L "$target" ]; then
       current="$(readlink "$target")"
-      if [ "$current" = "$INSTALL_DIR/skills/$skill" ]; then
+      if [ "$current" = "$INSTALL_DIR/skills/$skill" ] && [ -f "$current/SKILL.md" ]; then
         owned=$((owned + 1))
       else
         case "$current" in
