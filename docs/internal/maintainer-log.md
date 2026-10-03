@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-03 — v6.7.2
+
+- Version: v6.7.2; PRs: #73 and #74 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/73, https://github.com/Mohammed-Abdelhady/hyperflow/pull/74.
+- Shipped: `install.sh --status` now reports dangling owned skill links as partial instead of complete; the shipped-footprint gate now leaves bounded room for required release changelog/reference growth.
+- Validation: PR and main plugin validation, 22 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed; Codex preview certification remained explicitly allowed and uncertified.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.2
+- Compatibility: Codex preview remains uncertified; no Codex certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-01 — v6.7.1
 
 - Version: v6.7.1; PRs: #71 and #72 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/71, https://github.com/Mohammed-Abdelhady/hyperflow/pull/72.
