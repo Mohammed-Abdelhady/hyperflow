@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Fix stale links in `--status`.
+- Leave room for required release changelog growth in the footprint gate.
 
 ## [6.7.1] — 2026-10-01
 - Fix false complete state for mislinked links.
