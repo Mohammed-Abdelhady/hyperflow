@@ -27,7 +27,7 @@ For a source-managed installation, run `./install.sh`. It validates the checkout
 
 ## Antigravity
 
-Antigravity is a shim. `./install.sh` detects `agy`, `gemini`, or `~/.gemini` and links all seven to `~/.gemini/skills`; `--uninstall` removes links under `~/.gemini/config/skills`.
+Antigravity is a shim. `./install.sh` detects `agy`, `gemini`, or `~/.gemini` and links all seven to `~/.gemini/skills`; `--uninstall` removes owned links from `~/.gemini/skills` and the legacy `~/.gemini/config/skills` root.
 
 ## Major-version migration
 

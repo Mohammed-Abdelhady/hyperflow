@@ -195,6 +195,7 @@ test("shipped footprint and prompt-bearing text stay below regression ceilings",
 
 test("installer exposes every public skill to OpenCode and Antigravity and uninstall removes owned links", () => {
   const installer = read("install.sh");
+  const installationDocs = read("docs/installation.md");
   const declared = installer.match(/CORE_SKILLS=\(([^)]+)\)/)?.[1].trim().split(/\s+/).sort();
   assert.deepEqual(declared, [...CONTRACT.skills].sort());
   assert.match(installer, /\.opencode\/skills/);
@@ -217,6 +218,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /command -v opencode/);
   assert.doesNotMatch(installer, /\.cursor\/skills|\.grok\/skills/);
   assert.doesNotMatch(installer, /\bCODEX_[A-Z0-9_]+\b/);
+  assert.match(installationDocs, /~\/\.gemini\/skills[\s\S]*~\/\.gemini\/config\/skills/);
 
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-install-test-"));
   try {
