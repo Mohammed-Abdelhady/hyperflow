@@ -1,5 +1,11 @@
 # Maintainer log
 
+## 2026-10-05 — v6.7.3
+
+- Version: v6.7.3; PRs #75, #76, and #77 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/75, https://github.com/Mohammed-Abdelhady/hyperflow/pull/76, https://github.com/Mohammed-Abdelhady/hyperflow/pull/77.
+- Shipped: corrected Antigravity uninstall documentation for current `~/.gemini/skills` links and legacy `~/.gemini/config/skills` cleanup; kept the installer documentation contract and release footprint bounded.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-03 — v6.7.2
 
 - Version: v6.7.2; PRs: #73 and #74 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/73, https://github.com/Mohammed-Abdelhady/hyperflow/pull/74.
