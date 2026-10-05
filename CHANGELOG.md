@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Correct Antigravity uninstall path documentation for current and legacy roots.
+
 ## [6.7.2] — 2026-10-03
 - Fix stale links in `--status`.
 - Leave room for required release changelog growth in the footprint gate.
