@@ -111,8 +111,12 @@ is_hyperflow_remote() {
   esac
 }
 
+package_version() {
+  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)"[[:space:]]*[,}].*/\1/p' "$1" | head -n 1
+}
+
 validate_checkout() {
-  local checkout="${1:-$INSTALL_DIR}" remote skill
+  local checkout="${1:-$INSTALL_DIR}" remote skill version
   is_git_checkout "$checkout" || { warn "Not a Git checkout: $checkout"; return 1; }
   remote="$(git -C "$checkout" config --get remote.origin.url 2>/dev/null || true)"
   is_hyperflow_remote "$remote" || {
@@ -121,6 +125,11 @@ validate_checkout() {
   }
   [ -f "$checkout/package.json" ] || {
     warn "Incomplete Hyperflow checkout: missing package.json"
+    return 1
+  }
+  version="$(package_version "$checkout/package.json")"
+  [ -n "$version" ] || {
+    warn "Invalid Hyperflow checkout: package.json must declare a semver version"
     return 1
   }
   for skill in "${CORE_SKILLS[@]}"; do
@@ -132,9 +141,14 @@ validate_checkout() {
 }
 
 validate_fetched_checkout() {
-  local skill
+  local skill incoming_version
   git -C "$INSTALL_DIR" cat-file -e FETCH_HEAD:package.json 2>/dev/null || {
     warn "Fetched origin/main is incomplete: missing package.json; leaving checkout unchanged."
+    exit 1
+  }
+  incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)"[[:space:]]*[,}].*/\1/p' | head -n 1)"
+  [ -n "$incoming_version" ] || {
+    warn "Fetched origin/main is invalid: package.json must declare a semver version; leaving checkout unchanged."
     exit 1
   }
   for skill in "${CORE_SKILLS[@]}"; do
@@ -159,15 +173,15 @@ clone_or_update() {
       warn "Unable to fetch origin/main; leaving checkout unchanged."
       exit 1
     fi
-    current_version="$(sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' "$INSTALL_DIR/package.json" | head -1)"
-    incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' | head -1)"
+    validate_fetched_checkout
+    current_version="$(package_version "$INSTALL_DIR/package.json")"
+    incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)"[[:space:]]*[,}].*/\1/p' | head -n 1)"
     current_major="${current_version%%.*}"
     incoming_major="${incoming_version%%.*}"
     if [ -z "$current_version" ] || [ -z "$incoming_version" ]; then
-      warn "Unable to determine package versions for the update; leaving checkout unchanged."
+      warn "Unable to determine valid package versions for the update; leaving checkout unchanged."
       exit 1
     fi
-    validate_fetched_checkout
     # hyperflow:legacy-migration:start
     if [ -n "$current_major" ] && [ -n "$incoming_major" ] && [ "$incoming_major" -gt "$current_major" ] && [ "$ACCEPT_MAJOR_MIGRATION" != "1" ]; then
       warn "Major update $current_version -> $incoming_version requires manual legacy-data review before checkout changes."

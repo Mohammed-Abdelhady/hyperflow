@@ -394,8 +394,8 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     writeFileSync(
       join(dirtyCheckout, "package.json"),
       readFileSync(join(dirtyCheckout, "package.json"), "utf8").replace(
-        `"version": "${PACKAGE_VERSION}"`,
-        `"version": "${PACKAGE_VERSION}-local"`,
+        '"description": "A lightweight Markdown orchestration kernel with direct, focused, and deep lanes for coding agents."',
+        '"description": "dirty local fixture"',
       ),
     );
     mkdirSync(join(dirtyHome, ".config", "opencode"), { recursive: true });
@@ -449,6 +449,25 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     };
     const baseHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
+    writeFileSync(
+      join(checkout, "package.json"),
+      readFileSync(join(checkout, "package.json"), "utf8").replace(
+        `"version": "${PACKAGE_VERSION}"`,
+        `"version": "not-semver"`,
+      ),
+    );
+    const invalidCurrent = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
+    assert.notEqual(invalidCurrent.status, 0);
+    assert.match(invalidCurrent.stderr, /Invalid Hyperflow checkout: package\.json must declare a semver version/);
+    assert.equal(existsSync(join(checkout, ".git", "FETCH_HEAD")), false);
+    writeFileSync(
+      join(checkout, "package.json"),
+      readFileSync(join(checkout, "package.json"), "utf8").replace(
+        '"version": "not-semver"',
+        `"version": "${PACKAGE_VERSION}"`,
+      ),
+    );
+
     writeFileSync(gitConfig, `[url "file:///missing-hyperflow-remote"]\n\tinsteadOf = ${repoUrl}\n`);
     const fetchFailure = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.notEqual(fetchFailure.status, 0);
@@ -467,6 +486,27 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.notEqual(updatedHead, baseHead);
     assert.match(readFileSync(join(checkout, "skills", "hyperflow", "SKILL.md"), "utf8"), /fast-forward fixture/);
 
+    writeFileSync(
+      join(seed, "package.json"),
+      readFileSync(join(seed, "package.json"), "utf8").replace(
+        `"version": "${PACKAGE_VERSION}"`,
+        `"version": "not-semver"`,
+      ),
+    );
+    execFileSync("git", ["-C", seed, "add", "package.json"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish invalid installer version"]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
+
+    const invalidVersion = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
+    assert.notEqual(invalidVersion.status, 0);
+    assert.match(invalidVersion.stderr, /Fetched origin\/main is invalid: package\.json must declare a semver version/);
+    assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
+    assert.equal(JSON.parse(readFileSync(join(checkout, "package.json"), "utf8")).version, PACKAGE_VERSION);
+
+    writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace("not-semver", PACKAGE_VERSION));
+    execFileSync("git", ["-C", seed, "add", "package.json"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: restore installer version"]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
     execFileSync("git", ["-C", seed, "rm", "-q", "skills/handoff/SKILL.md"]);
     execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish incomplete installer update"]);
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);

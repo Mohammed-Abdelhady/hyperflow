@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Refuse source-managed installs when the current or fetched `package.json` lacks a strict semver version, preserving the existing checkout.
+
 ## [6.7.3] — 2026-10-05
 
 ### Fixed
