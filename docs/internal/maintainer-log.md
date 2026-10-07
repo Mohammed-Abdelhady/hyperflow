@@ -1,5 +1,11 @@
 # Maintainer log
 
+## 2026-10-07 — v6.7.4
+
+- Version: v6.7.4; PR #78 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/78.
+- Shipped: source-managed installs now reject invalid `package.json` versions in both current and fetched checkouts before linking or fast-forwarding; release notes preserve the explicit Codex preview boundary.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-05 — v6.7.3
 
 - Version: v6.7.3; PRs #75, #76, and #77 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/75, https://github.com/Mohammed-Abdelhady/hyperflow/pull/76, https://github.com/Mohammed-Abdelhady/hyperflow/pull/77.
