@@ -112,7 +112,11 @@ is_hyperflow_remote() {
 }
 
 package_version() {
-  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)"[[:space:]]*[,}].*/\1/p' "$1" | head -n 1
+  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"[[:space:]]*[,}].*/\1.\2.\3/p' "$1" | head -n 1
+}
+
+package_version_from_stdin() {
+  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"[[:space:]]*[,}].*/\1.\2.\3/p' | head -n 1
 }
 
 validate_checkout() {
@@ -146,7 +150,7 @@ validate_fetched_checkout() {
     warn "Fetched origin/main is incomplete: missing package.json; leaving checkout unchanged."
     exit 1
   }
-  incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)"[[:space:]]*[,}].*/\1/p' | head -n 1)"
+  incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | package_version_from_stdin)"
   [ -n "$incoming_version" ] || {
     warn "Fetched origin/main is invalid: package.json must declare a semver version; leaving checkout unchanged."
     exit 1
@@ -175,7 +179,7 @@ clone_or_update() {
     fi
     validate_fetched_checkout
     current_version="$(package_version "$INSTALL_DIR/package.json")"
-    incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)"[[:space:]]*[,}].*/\1/p' | head -n 1)"
+    incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | package_version_from_stdin)"
     current_major="${current_version%%.*}"
     incoming_major="${incoming_version%%.*}"
     if [ -z "$current_version" ] || [ -z "$incoming_version" ]; then

@@ -453,7 +453,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
       join(checkout, "package.json"),
       readFileSync(join(checkout, "package.json"), "utf8").replace(
         `"version": "${PACKAGE_VERSION}"`,
-        `"version": "not-semver"`,
+        `"version": "01.2.3"`,
       ),
     );
     const invalidCurrent = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
@@ -463,7 +463,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     writeFileSync(
       join(checkout, "package.json"),
       readFileSync(join(checkout, "package.json"), "utf8").replace(
-        '"version": "not-semver"',
+        '"version": "01.2.3"',
         `"version": "${PACKAGE_VERSION}"`,
       ),
     );
@@ -490,7 +490,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
       join(seed, "package.json"),
       readFileSync(join(seed, "package.json"), "utf8").replace(
         `"version": "${PACKAGE_VERSION}"`,
-        `"version": "not-semver"`,
+        `"version": "01.2.3"`,
       ),
     );
     execFileSync("git", ["-C", seed, "add", "package.json"]);
@@ -503,7 +503,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
     assert.equal(JSON.parse(readFileSync(join(checkout, "package.json"), "utf8")).version, PACKAGE_VERSION);
 
-    writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace("not-semver", PACKAGE_VERSION));
+    writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace("01.2.3", PACKAGE_VERSION));
     execFileSync("git", ["-C", seed, "add", "package.json"]);
     execFileSync("git", ["-C", seed, "commit", "-qm", "test: restore installer version"]);
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
