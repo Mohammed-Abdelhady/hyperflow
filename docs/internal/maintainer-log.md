@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-09 — v6.7.5
+
+- Version: v6.7.5; PR #79 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/79.
+- Shipped: source-managed installs now reject leading-zero package versions in both current and fetched checkouts before linking or fast-forwarding; regression coverage protects both paths.
+- Validation: PR plugin validation, 22 Node tests, 7/7 evals, shell syntax, main validation, and release certification passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.5
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-07 — v6.7.4
 
 - Version: v6.7.4; PR #78 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/78.
