@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.7.5] — 2026-10-09
+
+### Fixed
+- Reject leading-zero package versions during install.
+
+### Compatibility
+- Codex preview remains uncertified.
+
 ## [6.7.4] — 2026-10-07
 
 ### Fixed
@@ -1769,7 +1777,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.4...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.5...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1928,3 +1936,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.7.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.1...v6.7.2
 [6.7.3]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.2...v6.7.3
 [6.7.4]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.3...v6.7.4
+[6.7.5]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.4...v6.7.5
