@@ -11,7 +11,8 @@ if [ "${HYPERFLOW_RELEASE_PREPARE:-0}" != "1" ]; then
 fi
 
 VERSION="${1:-}"
-if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+SEMVER_RE='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+if [[ ! "$VERSION" =~ $SEMVER_RE ]]; then
   printf 'Usage: scripts/bump-version.sh X.Y.Z\n' >&2
   exit 1
 fi
