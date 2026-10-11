@@ -54,7 +54,7 @@ function checkVersionParity() {
   const marketplace = readJson(".claude-plugin/marketplace.json");
   const version = pkg.version;
 
-  check(typeof version === "string" && /^\d+\.\d+\.\d+$/.test(version), "package.json: version is not semver");
+  check(typeof version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version), "package.json: version is not strict semver");
   for (const [label, manifest] of [["Claude manifest", claude], ["Codex manifest", codex]]) {
     check(manifest.version === version, `${label}: version does not match package.json`);
   }

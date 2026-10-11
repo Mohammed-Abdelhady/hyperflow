@@ -68,7 +68,7 @@ test("core manifests parse and share one version", () => {
   const version = pkg.version;
 
   assert.equal(pkg.name, "hyperflow");
-  assert.match(version, /^\d+\.\d+\.\d+$/);
+  assert.match(version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
   assert.equal(claude.version, version);
   assert.equal(codex.version, version);
   assert.equal(marketplace.metadata.version, version);
@@ -573,6 +573,8 @@ test("installer rolls back provider links when a host link operation fails", () 
 test("release path validates locally, stamps portable docs, and never pushes", () => {
   const release = read("scripts/release.sh");
   const bump = read("scripts/bump-version.sh");
+  assert.match(release, /SEMVER_RE=.*\(0\|\[1-9\]\[0-9\]\*\)/);
+  assert.match(bump, /SEMVER_RE=.*\(0\|\[1-9\]\[0-9\]\*\)/);
   assert.match(release, /npm run validate-plugin/);
   assert.match(release, /npm run unittest/);
   assert.match(release, /npm run evals/);
@@ -628,7 +630,15 @@ test("version stamping executes against an isolated release tree", () => {
       cpSync(pathFromRoot(path), join(copyRoot, path), { recursive: true });
     }
     cpSync(pathFromRoot("scripts/bump-version.sh"), join(copyRoot, "scripts", "bump-version.sh"));
-    execFileSync("bash", [join(copyRoot, "scripts", "bump-version.sh"), "9.8.7"], {
+    const invalidBump = spawnSync("bash", [join(copyRoot, "scripts/bump-version.sh"), "9.8.07"], {
+      cwd: copyRoot,
+      encoding: "utf8",
+      env: { ...process.env, HYPERFLOW_RELEASE_PREPARE: "1" },
+    });
+    assert.notEqual(invalidBump.status, 0);
+    assert.match(invalidBump.stderr, /Usage: scripts\/bump-version\.sh/);
+    assert.equal(JSON.parse(readFileSync(join(copyRoot, "package.json"), "utf8")).version, PACKAGE_VERSION);
+    execFileSync("bash", [join(copyRoot, "scripts/bump-version.sh"), "9.8.7"], {
       env: { ...process.env, HYPERFLOW_RELEASE_PREPARE: "1" },
       stdio: "pipe",
     });

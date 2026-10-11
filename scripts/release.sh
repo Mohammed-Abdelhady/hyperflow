@@ -8,6 +8,7 @@ cd "$ROOT"
 
 DRY_RUN=0
 REQUESTED=""
+SEMVER_RE='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
 usage() {
   printf '%s\n' \
@@ -42,7 +43,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 CURRENT="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")"
-[[ "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'Error: package version is not semver: %s\n' "$CURRENT" >&2; exit 1; }
+[[ "$CURRENT" =~ $SEMVER_RE ]] || { printf 'Error: package version is not strict semver: %s\n' "$CURRENT" >&2; exit 1; }
 
 CURRENT_TAG="v$CURRENT"
 LAST_TAG=""
@@ -84,7 +85,7 @@ case "$REQUESTED" in
   *) VERSION="$REQUESTED" ;;
 esac
 
-[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'Error: invalid release version: %s\n' "$VERSION" >&2; exit 1; }
+[[ "$VERSION" =~ $SEMVER_RE ]] || { printf 'Error: release version is not strict semver: %s\n' "$VERSION" >&2; exit 1; }
 IFS=. read -r NEXT_MAJOR NEXT_MINOR NEXT_PATCH <<< "$VERSION"
 if sed -n '/^## \[Unreleased\]/,/^## \[[0-9]/p' CHANGELOG.md | grep -q '^### Migration$' && (( NEXT_MAJOR <= MAJOR )); then
   printf 'Error: the Unreleased migration boundary requires a major version greater than %s.\n' "$CURRENT" >&2

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Reject non-canonical leading-zero versions before release stamping or tagging.
+
 ## [6.7.5] — 2026-10-09
 
 ### Fixed
