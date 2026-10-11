@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-11 — v6.7.6
+
+- Version: v6.7.6; PR #80 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/80.
+- Shipped: release planning and version stamping now reject non-canonical leading-zero semver components; plugin validation and installer acceptance use the same strict component contract.
+- Validation: PR plugin validation, 22 Node tests, 7/7 evals, shell syntax, main plugin validation, and release certification passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.6
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-09 — v6.7.5
 
 - Version: v6.7.5; PR #79 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/79.
