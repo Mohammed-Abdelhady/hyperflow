@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-13 — v6.7.7
+
+- Version: v6.7.7; PR #81 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/81.
+- Shipped: source-managed installs now validate the top-level `package.json` version, so a nested dependency version cannot make an incomplete checkout look installable; added regression coverage and raised the bounded shipped-footprint ceiling to 266,000 bytes.
+- Validation: PR plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, main plugin validation, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.7
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-11 — v6.7.6
 
 - Version: v6.7.6; PR #80 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/80.
