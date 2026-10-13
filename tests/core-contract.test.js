@@ -521,6 +521,37 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
   }
 });
 
+test("installer ignores nested dependency versions when validating package metadata", () => {
+  const temp = mkdtempSync(join(tmpdir(), "hyperflow-installer-version-scope-test-"));
+  const checkout = join(temp, "checkout");
+  const home = join(temp, "home");
+  try {
+    for (const path of shippedFiles()) {
+      const target = join(checkout, path);
+      mkdirSync(dirname(target), { recursive: true });
+      cpSync(pathFromRoot(path), target);
+    }
+    const packagePath = join(checkout, "package.json");
+    const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
+    delete packageJson.version;
+    packageJson.dependencies = { "fixture-package": { version: "1.2.3", other: true } };
+    writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+    execFileSync("git", ["init", "-q", checkout]);
+    execFileSync("git", ["-C", checkout, "remote", "add", "origin", "https://github.com/Mohammed-Abdelhady/hyperflow.git"]);
+    mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+
+    const result = spawnSync("bash", [INSTALLER, "--link-only"], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: home, HYPERFLOW_HOME: checkout, PATH: "/usr/bin:/bin" },
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Invalid Hyperflow checkout: package\.json must declare a semver version/);
+    assert.equal(existsSync(join(home, ".config", "opencode", "skills", "hyperflow")), false);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 test("failed first-time clone cleans its install path", () => {
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-clone-test-"));
   const checkout = join(temp, "checkout");
