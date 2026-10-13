@@ -111,12 +111,63 @@ is_hyperflow_remote() {
   esac
 }
 
-package_version() {
-  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"[[:space:]]*[,}].*/\1.\2.\3/p' "$1" | head -n 1
+package_version_from_stdin() {
+  # Inspect only the package object's direct version key. A line-oriented
+  # regex can mistake a dependency's nested version for package metadata.
+  awk '
+    function finish_string() {
+      if (capture_version) {
+        if (token ~ /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/) {
+          print token
+          exit
+        }
+        capture_version = 0
+      } else if (depth == 1) {
+        candidate = token
+      }
+      token = ""
+    }
+    {
+      for (position = 1; position <= length($0); position++) {
+        character = substr($0, position, 1)
+        if (in_string) {
+          if (escaped) { escaped = 0; token = token character; continue }
+          if (character == "\\") { escaped = 1; token = token character; continue }
+          if (character == "\"") { in_string = 0; finish_string(); continue }
+          token = token character
+          continue
+        }
+        if (expect_version) {
+          if (character ~ /[[:space:]]/) continue
+          if (character == "\"") {
+            in_string = 1
+            token = ""
+            capture_version = 1
+            expect_version = 0
+            continue
+          }
+          expect_version = 0
+          candidate = ""
+        }
+        if (candidate != "") {
+          if (character ~ /[[:space:]]/) continue
+          if (character == ":") {
+            if (candidate == "version") expect_version = 1
+            else candidate = ""
+            continue
+          }
+          candidate = ""
+        }
+        if (character == "\"") { in_string = 1; token = ""; continue }
+        if (character == "{" || character == "[") depth++
+        else if (character == "}" || character == "]") depth--
+      }
+    }
+  '
 }
 
-package_version_from_stdin() {
-  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"[[:space:]]*[,}].*/\1.\2.\3/p' | head -n 1
+package_version() {
+  package_version_from_stdin < "$1"
 }
 
 validate_checkout() {

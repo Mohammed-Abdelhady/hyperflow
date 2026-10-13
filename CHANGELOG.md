@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Validate the top-level package version during source-managed installs instead of accepting a nested dependency version.
+
 ## [6.7.6] — 2026-10-11
 
 ### Fixed
