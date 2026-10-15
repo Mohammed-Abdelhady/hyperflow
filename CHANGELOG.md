@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Refuse source-managed updates that would move a valid checkout to an older package version, preserving the current checkout for manual recovery.
+
 ## [6.7.7] — 2026-10-13
 
 ### Fixed

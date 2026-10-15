@@ -63,7 +63,7 @@ The current priorities, in order, are:
 
 ### Install and release reliability
 
-- Continue testing source-managed updates against local-remote failure modes and partial trees.
+- Continue testing source-managed updates against local-remote failure modes, version regressions, and partial trees.
 - Keep host installation honest when native commands, collaboration, or lifecycle capabilities are absent.
 - Preserve the release contract: validate locally, keep release and push separate, and never fabricate compatibility evidence.
 
