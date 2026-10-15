@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-15 — v6.7.8
+
+- Version: v6.7.8; PR #82 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/82.
+- Shipped: source-managed installs now reject valid remote package versions older than the current checkout, preserving the checkout for manual recovery; added local-remote regression coverage and raised the bounded shipped-footprint ceiling to 268,000 bytes.
+- Validation: PR plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, main plugin validation, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.8
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-13 — v6.7.7
 
 - Version: v6.7.7; PR #81 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/81.
