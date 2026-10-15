@@ -170,6 +170,22 @@ package_version() {
   package_version_from_stdin < "$1"
 }
 
+version_is_less() {
+  local left="$1" right="$2" left_major left_minor left_patch right_major right_minor right_patch pair x y
+  IFS=. read -r left_major left_minor left_patch <<< "$left"
+  IFS=. read -r right_major right_minor right_patch <<< "$right"
+  for pair in "$left_major $right_major" "$left_minor $right_minor" "$left_patch $right_patch"; do
+    read -r x y <<< "$pair"
+    if [ "${#x}" -lt "${#y}" ]; then return 0; fi
+    if [ "${#x}" -gt "${#y}" ]; then return 1; fi
+    if [ "$x" != "$y" ]; then
+      if [[ "$x" < "$y" ]]; then return 0; fi
+      return 1
+    fi
+  done
+  return 1
+}
+
 validate_checkout() {
   local checkout="${1:-$INSTALL_DIR}" remote skill version
   is_git_checkout "$checkout" || { warn "Not a Git checkout: $checkout"; return 1; }
@@ -216,7 +232,7 @@ validate_fetched_checkout() {
 
 clone_or_update() {
   if is_git_checkout "$INSTALL_DIR"; then
-    local current_version incoming_version current_major incoming_major
+    local current_version incoming_version
     validate_checkout || exit 1
     if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
       warn "Refusing to update dirty checkout: $INSTALL_DIR"
@@ -231,14 +247,16 @@ clone_or_update() {
     validate_fetched_checkout
     current_version="$(package_version "$INSTALL_DIR/package.json")"
     incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | package_version_from_stdin)"
-    current_major="${current_version%%.*}"
-    incoming_major="${incoming_version%%.*}"
     if [ -z "$current_version" ] || [ -z "$incoming_version" ]; then
       warn "Unable to determine valid package versions for the update; leaving checkout unchanged."
       exit 1
     fi
+    if version_is_less "$incoming_version" "$current_version"; then
+      warn "Refusing version-regressing update $current_version -> $incoming_version; leaving checkout unchanged."
+      exit 1
+    fi
     # hyperflow:legacy-migration:start
-    if [ -n "$current_major" ] && [ -n "$incoming_major" ] && [ "$incoming_major" -gt "$current_major" ] && [ "$ACCEPT_MAJOR_MIGRATION" != "1" ]; then
+    if [ "${incoming_version%%.*}" -gt "${current_version%%.*}" ] && [ "$ACCEPT_MAJOR_MIGRATION" != "1" ]; then
       warn "Major update $current_version -> $incoming_version requires manual legacy-data review before checkout changes."
       warn "Rehydrate JSON-only data under .hyperflow/artefacts, .hyperflow/archive, and .hyperflow-handoff into Markdown, then rerun with --accept-major-migration."
       exit 2
