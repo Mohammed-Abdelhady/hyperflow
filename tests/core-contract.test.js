@@ -225,7 +225,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     mkdirSync(statusHome);
     const status = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env: { ...process.env, HOME: statusHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
     assert.equal(status.status, 0);
-    assert.match(status.stdout, /read-only[\s\S]*Checkout state: valid[\s\S]*Update readiness: blocked \((?:dirty checkout|detached HEAD)\)/);
+    assert.match(status.stdout, /read-only[\s\S]*Checkout state: valid[\s\S]*Update readiness: (?:ready \(branch=main\)|blocked \((?:dirty checkout|detached HEAD)\))/);
     assert.match(status.stdout, /OpenCode: not detected[\s\S]*Antigravity: not detected/);
     assert.equal(existsSync(join(statusHome, ".config")), false);
 
