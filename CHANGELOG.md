@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Prevent source-managed updates from silently moving detached or non-`main` checkouts, and expose update readiness in `install.sh --status` before any fetch.
+
 ## [6.7.8] — 2026-10-15
 
 ### Fixed
