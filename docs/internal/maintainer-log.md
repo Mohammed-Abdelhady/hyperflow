@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-17 — v6.7.9
+
+- Version: v6.7.9; PRs #83 and #84 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/83, https://github.com/Mohammed-Abdelhady/hyperflow/pull/84.
+- Shipped: source-managed updates now refuse detached or non-`main` checkouts before fetching; `install.sh --status` reports dirty, detached, non-`main`, missing-origin, diverged, and clean-main readiness without network access; added regression coverage and raised the bounded shipped-footprint ceiling to 272,000 bytes.
+- Validation: PR #84, main plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed; the Codex preview boundary remains explicit.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.9
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-15 — v6.7.8
 
 - Version: v6.7.8; PR #82 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/82.
