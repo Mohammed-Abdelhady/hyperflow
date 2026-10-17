@@ -225,7 +225,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     mkdirSync(statusHome);
     const status = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env: { ...process.env, HOME: statusHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
     assert.equal(status.status, 0);
-    assert.match(status.stdout, /read-only[\s\S]*Checkout state: valid/);
+    assert.match(status.stdout, /read-only[\s\S]*Checkout state: valid[\s\S]*Update readiness: blocked \((?:dirty checkout|detached HEAD)\)/);
     assert.match(status.stdout, /OpenCode: not detected[\s\S]*Antigravity: not detected/);
     assert.equal(existsSync(join(statusHome, ".config")), false);
 
@@ -448,6 +448,29 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
       GIT_CONFIG_NOSYSTEM: "1",
     };
     const baseHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const baseStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
+    assert.equal(baseStatus.status, 0);
+    assert.match(baseStatus.stdout, /Checkout state: valid[\s\S]*Update readiness: ready \(branch=main\)/);
+
+    execFileSync("git", ["-C", checkout, "checkout", "-qb", "feature/installer-fixture"]);
+    const featureStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
+    assert.equal(featureStatus.status, 0);
+    assert.match(featureStatus.stdout, /Update readiness: blocked \(branch=feature\/installer-fixture; expected main\)/);
+    const featureUpdate = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
+    assert.notEqual(featureUpdate.status, 0);
+    assert.match(featureUpdate.stderr, /source-managed updates require the main branch/);
+    assert.equal(existsSync(join(checkout, ".git", "FETCH_HEAD")), false);
+    execFileSync("git", ["-C", checkout, "checkout", "-q", "main"]);
+
+    execFileSync("git", ["-C", checkout, "checkout", "-q", "--detach", "HEAD"]);
+    const detachedStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
+    assert.equal(detachedStatus.status, 0);
+    assert.match(detachedStatus.stdout, /Update readiness: blocked \(detached HEAD\)/);
+    const detachedUpdate = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
+    assert.notEqual(detachedUpdate.status, 0);
+    assert.match(detachedUpdate.stderr, /detached HEAD; source-managed updates require the main branch/);
+    assert.equal(existsSync(join(checkout, ".git", "FETCH_HEAD")), false);
+    execFileSync("git", ["-C", checkout, "checkout", "-q", "main"]);
 
     writeFileSync(
       join(checkout, "package.json"),

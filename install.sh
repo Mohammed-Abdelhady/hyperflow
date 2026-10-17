@@ -31,6 +31,10 @@ is_git_checkout() {
   [ -d "$1/.git" ] || [ -f "$1/.git" ]
 }
 
+current_branch() {
+  git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null || true
+}
+
 usage() {
   printf '%s\n' \
     "Usage: install.sh [--accept-major-migration | --link-only | --status | --uninstall | --help]" \
@@ -65,7 +69,7 @@ link_state() {
 }
 
 print_status() {
-  local checkout_state='missing'
+  local checkout_state='missing' readiness='unavailable'
   printf 'Hyperflow installer status (read-only)\n'
   printf 'Checkout: %s\n' "$INSTALL_DIR"
 
@@ -81,6 +85,28 @@ print_status() {
     fi
   fi
   printf 'Checkout state: %s\n' "$checkout_state"
+  if [ "$checkout_state" = 'valid' ]; then
+    if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
+      readiness='blocked (dirty checkout)'
+    else
+      local branch
+      branch="$(current_branch "$INSTALL_DIR")"
+      if [ -z "$branch" ]; then
+        readiness='blocked (detached HEAD)'
+      elif [ "$branch" != 'main' ]; then
+        readiness="blocked (branch=$branch; expected main)"
+      elif ! git -C "$INSTALL_DIR" rev-parse --verify refs/remotes/origin/main >/dev/null 2>&1; then
+        readiness='unknown (origin/main is not available locally)'
+      elif ! git -C "$INSTALL_DIR" merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+        readiness='blocked (diverged from origin/main)'
+      else
+        readiness='ready (branch=main)'
+      fi
+    fi
+  else
+    readiness="unavailable (checkout $checkout_state)"
+  fi
+  printf 'Update readiness: %s\n' "$readiness"
 
   printf 'Native hosts:\n'
   if command -v claude >/dev/null 2>&1; then printf '  Claude Code: available\n'; else printf '  Claude Code: unavailable\n'; fi
@@ -232,11 +258,17 @@ validate_fetched_checkout() {
 
 clone_or_update() {
   if is_git_checkout "$INSTALL_DIR"; then
-    local current_version incoming_version
+    local current_version incoming_version branch
     validate_checkout || exit 1
     if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
       warn "Refusing to update dirty checkout: $INSTALL_DIR"
       warn "Commit or stash local changes before rerunning the installer."
+      exit 1
+    fi
+    branch="$(current_branch "$INSTALL_DIR")"
+    if [ "$branch" != 'main' ]; then
+      warn "Refusing to update checkout on ${branch:-detached HEAD}; source-managed updates require the main branch."
+      warn "Switch the checkout to main before rerunning the installer."
       exit 1
     fi
     info "Updating $INSTALL_DIR"
