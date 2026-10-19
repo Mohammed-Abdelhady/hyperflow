@@ -538,10 +538,14 @@ main() {
   else
     clone_or_update
   fi
-  if [ "$ACTION" != "link-only" ]; then
-    install_native_plugins
-  fi
   link_detected_providers
+  if [ "$ACTION" != "link-only" ]; then
+    if [ "$HOST_FAILURES" -gt 0 ]; then
+      warn "Skipping native plugin installation because skill linking failed"
+    else
+      install_native_plugins
+    fi
+  fi
   if [ "$HOST_FAILURES" -gt 0 ]; then
     warn "Source checkout completed, but $HOST_FAILURES host installation operation(s) failed"
     return 1
