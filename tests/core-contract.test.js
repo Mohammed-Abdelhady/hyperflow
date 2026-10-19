@@ -217,6 +217,8 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /command -v opencode/);
   assert.doesNotMatch(installer, /\.cursor\/skills|\.grok\/skills/);
   assert.doesNotMatch(installer, /\bCODEX_[A-Z0-9_]+\b/);
+  assert.ok(installer.lastIndexOf("  link_detected_providers\n") < installer.lastIndexOf("      install_native_plugins\n"), "provider link checks must precede native plugin installation");
+  assert.match(installer, /Skipping native plugin installation because skill linking failed/);
   assert.match(read("docs/installation.md"), /\.gemini\/skills[\s\S]*config\/skills/);
 
   const temp = mkdtempSync(join(tmpdir(), "hyperflow-install-test-"));
