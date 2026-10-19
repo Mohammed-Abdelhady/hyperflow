@@ -1,5 +1,11 @@
 # Maintainer log
 
+## 2026-10-19 — v6.7.10
+
+- Version: v6.7.10; PR #85 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/85.
+- Shipped: provider skill-linking now runs before native plugin installation; known link conflicts skip native plugin commands instead of leaving a partial second-host install. Added regression coverage and kept the Codex preview boundary explicit.
+- Next candidate: more source-managed local-remote update failure probes and host capability gaps.
+
 ## 2026-10-17 — v6.7.9
 
 - Version: v6.7.9; PRs #83 and #84 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/83, https://github.com/Mohammed-Abdelhady/hyperflow/pull/84.
