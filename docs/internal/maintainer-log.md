@@ -1,5 +1,11 @@
 # Maintainer log
 
+## 2026-10-21 — v6.7.11
+
+- Version: v6.7.11; PR #86 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/86.
+- Shipped: `install.sh --status` now validates the cached `origin/main` tree and reports incomplete/invalid or version-regressing updates as blocked before an update attempt; added local-remote regression coverage and raised the bounded shipped-footprint ceiling to 275,000 bytes. Codex preview remains uncertified.
+- Next candidate: host capability gaps and source-managed update failure probes.
+
 ## 2026-10-19 — v6.7.10
 
 - Version: v6.7.10; PR #85 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/85.
