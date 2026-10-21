@@ -89,7 +89,7 @@ print_status() {
     if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
       readiness='blocked (dirty checkout)'
     else
-      local branch
+      local branch current_version tracking_version
       branch="$(current_branch "$INSTALL_DIR")"
       if [ -z "$branch" ]; then
         readiness='blocked (detached HEAD)'
@@ -97,10 +97,18 @@ print_status() {
         readiness="blocked (branch=$branch; expected main)"
       elif ! git -C "$INSTALL_DIR" rev-parse --verify refs/remotes/origin/main >/dev/null 2>&1; then
         readiness='unknown (origin/main is not available locally)'
+      elif ! validate_tracking_checkout refs/remotes/origin/main; then
+        readiness='blocked (origin/main is incomplete or invalid)'
       elif ! git -C "$INSTALL_DIR" merge-base --is-ancestor HEAD refs/remotes/origin/main; then
         readiness='blocked (diverged from origin/main)'
       else
-        readiness='ready (branch=main)'
+        current_version="$(package_version "$INSTALL_DIR/package.json")"
+        tracking_version="$(git -C "$INSTALL_DIR" show refs/remotes/origin/main:package.json | package_version_from_stdin)"
+        if version_is_less "$tracking_version" "$current_version"; then
+          readiness="blocked (origin/main version regresses $current_version -> $tracking_version)"
+        else
+          readiness='ready (branch=main)'
+        fi
       fi
     fi
   else
@@ -253,6 +261,17 @@ validate_fetched_checkout() {
       warn "Fetched origin/main is incomplete: missing skills/$skill/SKILL.md; leaving checkout unchanged."
       exit 1
     }
+  done
+}
+
+validate_tracking_checkout() {
+  local ref="$1" skill tracking_version
+  git -C "$INSTALL_DIR" rev-parse --verify "$ref^{commit}" >/dev/null 2>&1 || return 1
+  git -C "$INSTALL_DIR" cat-file -e "$ref:package.json" 2>/dev/null || return 1
+  tracking_version="$(git -C "$INSTALL_DIR" show "$ref:package.json" | package_version_from_stdin)" || return 1
+  [ -n "$tracking_version" ] || return 1
+  for skill in "${CORE_SKILLS[@]}"; do
+    git -C "$INSTALL_DIR" cat-file -e "$ref:skills/$skill/SKILL.md" 2>/dev/null || return 1
   done
 }
 

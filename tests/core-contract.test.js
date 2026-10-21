@@ -518,6 +518,9 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.ok(regressedVersion.stderr.includes(`Refusing version-regressing update ${PACKAGE_VERSION} -> 1.0.0; leaving checkout unchanged`), regressedVersion.stderr);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
     assert.equal(JSON.parse(readFileSync(join(checkout, "package.json"), "utf8")).version, PACKAGE_VERSION);
+    const regressedStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
+    assert.equal(regressedStatus.status, 0);
+    assert.match(regressedStatus.stdout, new RegExp(`Update readiness: blocked \\(origin/main version regresses ${PACKAGE_VERSION.replaceAll(".", "\\.")} -> 1\\.0\\.0\\)`));
 
     writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace('"version": "1.0.0"', '"version": "01.2.3"'));
     execFileSync("git", ["-C", seed, "add", "package.json"]);
@@ -529,6 +532,9 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.match(invalidVersion.stderr, /Fetched origin\/main is invalid: package\.json must declare a semver version/);
     assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
     assert.equal(JSON.parse(readFileSync(join(checkout, "package.json"), "utf8")).version, PACKAGE_VERSION);
+    const invalidStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
+    assert.equal(invalidStatus.status, 0);
+    assert.match(invalidStatus.stdout, /Update readiness: blocked \(origin\/main is incomplete or invalid\)/);
 
     writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace("01.2.3", PACKAGE_VERSION));
     execFileSync("git", ["-C", seed, "add", "package.json"]);
