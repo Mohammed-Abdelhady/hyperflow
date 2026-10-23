@@ -204,6 +204,110 @@ package_version() {
   package_version_from_stdin < "$1"
 }
 
+package_json_is_valid_from_stdin() {
+  awk '
+    function skip_whitespace(   character) {
+      while (position <= document_length) {
+        character = substr(document, position, 1)
+        if (character !~ /[[:space:]]/) break
+        position++
+      }
+    }
+    function parse_string(   character, escaped, offset) {
+      if (substr(document, position, 1) != "\"") return 0
+      position++
+      while (position <= document_length) {
+        character = substr(document, position, 1)
+        if (character == "\"") { position++; return 1 }
+        if (character ~ /[[:cntrl:]]/) return 0
+        if (character == "\\") {
+          position++
+          if (position > document_length) return 0
+          escaped = substr(document, position, 1)
+          if (escaped == "u") {
+            for (offset = 1; offset <= 4; offset++) {
+              position++
+              character = substr(document, position, 1)
+              if (character !~ /[0-9A-Fa-f]/) return 0
+            }
+          } else if (escaped != "\"" && escaped != "\\" && escaped != "/" && escaped != "b" && escaped != "f" && escaped != "n" && escaped != "r" && escaped != "t") {
+            return 0
+          }
+        }
+        position++
+      }
+      return 0
+    }
+    function parse_number(   remaining) {
+      remaining = substr(document, position)
+      if (!match(remaining, /^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/)) return 0
+      position += RLENGTH
+      return 1
+    }
+    function parse_literal(literal) {
+      if (substr(document, position, length(literal)) != literal) return 0
+      position += length(literal)
+      return 1
+    }
+    function parse_value(   character) {
+      skip_whitespace()
+      character = substr(document, position, 1)
+      if (character == "{") return parse_object()
+      if (character == "[") return parse_array()
+      if (character == "\"") return parse_string()
+      if (character == "-" || character ~ /[0-9]/) return parse_number()
+      if (character == "t") return parse_literal("true")
+      if (character == "f") return parse_literal("false")
+      if (character == "n") return parse_literal("null")
+      return 0
+    }
+    function parse_object(   character) {
+      position++
+      skip_whitespace()
+      if (substr(document, position, 1) == "}") { position++; return 1 }
+      while (1) {
+        if (!parse_string()) return 0
+        skip_whitespace()
+        if (substr(document, position, 1) != ":") return 0
+        position++
+        if (!parse_value()) return 0
+        skip_whitespace()
+        character = substr(document, position, 1)
+        if (character == "}") { position++; return 1 }
+        if (character != ",") return 0
+        position++
+        skip_whitespace()
+      }
+    }
+    function parse_array(   character) {
+      position++
+      skip_whitespace()
+      if (substr(document, position, 1) == "]") { position++; return 1 }
+      while (1) {
+        if (!parse_value()) return 0
+        skip_whitespace()
+        character = substr(document, position, 1)
+        if (character == "]") { position++; return 1 }
+        if (character != ",") return 0
+        position++
+        skip_whitespace()
+      }
+    }
+    { document = document $0 "\n" }
+    END {
+      document_length = length(document)
+      position = 1
+      if (!parse_value()) exit 1
+      skip_whitespace()
+      if (position <= document_length) exit 1
+    }
+  '
+}
+
+package_json_is_valid() {
+  package_json_is_valid_from_stdin < "$1"
+}
+
 version_is_less() {
   local left="$1" right="$2" left_major left_minor left_patch right_major right_minor right_patch pair x y
   IFS=. read -r left_major left_minor left_patch <<< "$left"
@@ -232,6 +336,10 @@ validate_checkout() {
     warn "Incomplete Hyperflow checkout: missing package.json"
     return 1
   }
+  package_json_is_valid "$checkout/package.json" || {
+    warn "Invalid Hyperflow checkout: package.json must be valid JSON"
+    return 1
+  }
   version="$(package_version "$checkout/package.json")"
   [ -n "$version" ] || {
     warn "Invalid Hyperflow checkout: package.json must declare a semver version"
@@ -251,6 +359,10 @@ validate_fetched_checkout() {
     warn "Fetched origin/main is incomplete: missing package.json; leaving checkout unchanged."
     exit 1
   }
+  if ! git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | package_json_is_valid_from_stdin; then
+    warn "Fetched origin/main is invalid: package.json must be valid JSON; leaving checkout unchanged."
+    exit 1
+  fi
   incoming_version="$(git -C "$INSTALL_DIR" show FETCH_HEAD:package.json | package_version_from_stdin)"
   [ -n "$incoming_version" ] || {
     warn "Fetched origin/main is invalid: package.json must declare a semver version; leaving checkout unchanged."
@@ -268,6 +380,7 @@ validate_tracking_checkout() {
   local ref="$1" skill tracking_version
   git -C "$INSTALL_DIR" rev-parse --verify "$ref^{commit}" >/dev/null 2>&1 || return 1
   git -C "$INSTALL_DIR" cat-file -e "$ref:package.json" 2>/dev/null || return 1
+  git -C "$INSTALL_DIR" show "$ref:package.json" | package_json_is_valid_from_stdin || return 1
   tracking_version="$(git -C "$INSTALL_DIR" show "$ref:package.json" | package_version_from_stdin)" || return 1
   [ -n "$tracking_version" ] || return 1
   for skill in "${CORE_SKILLS[@]}"; do

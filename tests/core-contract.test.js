@@ -493,6 +493,14 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
       ),
     );
 
+    const validPackage = readFileSync(join(checkout, "package.json"), "utf8");
+    writeFileSync(join(checkout, "package.json"), validPackage.replace(/\n}\n$/, "\n"));
+    const malformedCurrent = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
+    assert.notEqual(malformedCurrent.status, 0);
+    assert.match(malformedCurrent.stderr, /Invalid Hyperflow checkout: package\.json must be valid JSON/);
+    assert.equal(existsSync(join(checkout, ".git", "FETCH_HEAD")), false);
+    writeFileSync(join(checkout, "package.json"), validPackage);
+
     writeFileSync(gitConfig, `[url "file:///missing-hyperflow-remote"]\n\tinsteadOf = ${repoUrl}\n`);
     const fetchFailure = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.notEqual(fetchFailure.status, 0);
@@ -539,6 +547,21 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace("01.2.3", PACKAGE_VERSION));
     execFileSync("git", ["-C", seed, "add", "package.json"]);
     execFileSync("git", ["-C", seed, "commit", "-qm", "test: restore installer version"]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
+
+    writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace(/\n}\n$/, "\n"));
+    execFileSync("git", ["-C", seed, "add", "package.json"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish malformed installer manifest"]);
+    execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
+    const malformedVersion = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
+    assert.notEqual(malformedVersion.status, 0);
+    assert.match(malformedVersion.stderr, /Fetched origin\/main is invalid: package\.json must be valid JSON/);
+    assert.equal(execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), updatedHead);
+    assert.equal(JSON.parse(readFileSync(join(checkout, "package.json"), "utf8")).version, PACKAGE_VERSION);
+
+    writeFileSync(join(seed, "package.json"), readFileSync(pathFromRoot("package.json"), "utf8"));
+    execFileSync("git", ["-C", seed, "add", "package.json"]);
+    execFileSync("git", ["-C", seed, "commit", "-qm", "test: restore valid installer manifest"]);
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
     execFileSync("git", ["-C", seed, "rm", "-q", "skills/handoff/SKILL.md"]);
     execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish incomplete installer update"]);

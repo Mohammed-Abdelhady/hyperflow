@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Reject malformed `package.json` files in current and fetched source-managed checkouts before linking or fast-forwarding.
+
 ## [6.7.11] — 2026-10-21
 
 ### Fixed
