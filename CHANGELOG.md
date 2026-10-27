@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Align source-managed package version extraction with JSON's effective last top-level `version` value so duplicate keys cannot bypass update safety checks.
+
 ## [6.7.12] — 2026-10-23
 
 ### Fixed
