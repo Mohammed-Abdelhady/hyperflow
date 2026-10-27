@@ -519,7 +519,13 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.notEqual(updatedHead, baseHead);
     assert.match(readFileSync(join(checkout, "skills", "hyperflow", "SKILL.md"), "utf8"), /fast-forward fixture/);
 
-    writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace(`"version": "${PACKAGE_VERSION}"`, `"version": "1.0.0"`));
+    writeFileSync(
+      join(seed, "package.json"),
+      readFileSync(join(seed, "package.json"), "utf8").replace(
+        `"version": "${PACKAGE_VERSION}"`,
+        `"version": "${PACKAGE_VERSION}",\n  "version": "1.0.0"`,
+      ),
+    );
     execFileSync("git", ["-C", seed, "add", "package.json"]); execFileSync("git", ["-C", seed, "commit", "-qm", "test: publish version-regressing installer update"]); execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);
     const regressedVersion = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.notEqual(regressedVersion.status, 0);
@@ -544,7 +550,7 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.equal(invalidStatus.status, 0);
     assert.match(invalidStatus.stdout, /Update readiness: blocked \(origin\/main is incomplete or invalid\)/);
 
-    writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace("01.2.3", PACKAGE_VERSION));
+    writeFileSync(join(seed, "package.json"), readFileSync(pathFromRoot("package.json"), "utf8"));
     execFileSync("git", ["-C", seed, "add", "package.json"]);
     execFileSync("git", ["-C", seed, "commit", "-qm", "test: restore installer version"]);
     execFileSync("git", ["-C", seed, "push", "-q", "origin", "main"]);

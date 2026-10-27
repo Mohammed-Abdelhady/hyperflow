@@ -151,10 +151,7 @@ package_version_from_stdin() {
   awk '
     function finish_string() {
       if (capture_version) {
-        if (token ~ /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/) {
-          print token
-          exit
-        }
+        version_token = token
         capture_version = 0
       } else if (depth == 1) {
         candidate = token
@@ -186,7 +183,11 @@ package_version_from_stdin() {
         if (candidate != "") {
           if (character ~ /[[:space:]]/) continue
           if (character == ":") {
-            if (candidate == "version") expect_version = 1
+            if (candidate == "version") {
+              expect_version = 1
+              version_seen = 1
+              version_token = ""
+            }
             else candidate = ""
             continue
           }
@@ -196,6 +197,9 @@ package_version_from_stdin() {
         if (character == "{" || character == "[") depth++
         else if (character == "}" || character == "]") depth--
       }
+    }
+    END {
+      if (version_seen && version_token ~ /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/) print version_token
     }
   '
 }
