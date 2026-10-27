@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.7.13] — 2026-10-27
+
 ### Fixed
 - Align source-managed package version extraction with JSON's effective last top-level `version` value so duplicate keys cannot bypass update safety checks.
 
@@ -1812,7 +1814,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.12...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.13...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1979,3 +1981,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.7.10]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.9...v6.7.10
 [6.7.11]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.10...v6.7.11
 [6.7.12]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.11...v6.7.12
+[6.7.13]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.12...v6.7.13
