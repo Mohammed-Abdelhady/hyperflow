@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-27 — v6.7.13
+
+- Version: v6.7.13; PR #88 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/88.
+- Shipped: source-managed package version extraction now follows JSON's effective last top-level `version` value, so duplicate package keys cannot bypass version-regression protection; added fetched-checkout regression coverage. Codex preview remains uncertified.
+- Validation: PR and main plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.7.13
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: host capability gaps and source-managed update failure probes.
+
 ## 2026-10-23 — v6.7.12
 
 - Version: v6.7.12; PR #87 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/87.
