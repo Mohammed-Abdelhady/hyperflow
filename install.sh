@@ -20,6 +20,7 @@ case "$OPENCODE_ROOT" in
 esac
 CORE_SKILLS=(hyperflow plan dispatch trace audit deploy handoff)
 ACTION="install"
+STATUS_CHECK=0
 ACCEPT_MAJOR_MIGRATION=0
 HOST_FAILURES=0
 HOST_SUCCESSES=0
@@ -37,7 +38,7 @@ current_branch() {
 
 usage() {
   printf '%s\n' \
-    "Usage: install.sh [--accept-major-migration | --link-only | --status | --uninstall | --help]" \
+    "Usage: install.sh [--accept-major-migration | --link-only | --status [--check] | --uninstall | --help]" \
     "" \
     "Installs the Hyperflow plugin for available native hosts and links all" \
     "seven public skills into detected OpenCode or Antigravity skill directories." \
@@ -132,6 +133,9 @@ print_status() {
     printf '  Antigravity: not detected\n'
   fi
   printf 'No fetch, plugin operation, directory creation, or link change was performed.\n'
+  if [ "$STATUS_CHECK" = "1" ]; then
+    [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ]
+  fi
 }
 
 is_hyperflow_remote() {
@@ -652,11 +656,18 @@ main() {
       --uninstall) ACTION="uninstall" ;;
       --link-only) ACTION="link-only" ;;
       --status) ACTION="status" ;;
+      --check) STATUS_CHECK=1 ;;
       --accept-major-migration) ACCEPT_MAJOR_MIGRATION=1 ;;
       *) warn "Unknown option: $1"; usage; exit 1 ;;
     esac
     shift
   done
+
+  if [ "$STATUS_CHECK" = "1" ] && [ "$ACTION" != "status" ]; then
+    warn "--check requires --status"
+    usage
+    exit 1
+  fi
 
   if [ "$ACTION" = "uninstall" ]; then
     remove_owned_links
@@ -664,8 +675,11 @@ main() {
   fi
 
   if [ "$ACTION" = "status" ]; then
-    print_status
-    return
+    if print_status; then
+      return
+    else
+      return $?
+    fi
   fi
 
   command -v git >/dev/null 2>&1 || { warn "git is required"; exit 1; }
