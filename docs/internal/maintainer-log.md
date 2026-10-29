@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-29 — v6.8.0
+
+- Version: v6.8.0; PR #89 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/89.
+- Shipped: `install.sh --status --check` provides a read-only automation health check that fails when the source checkout or cached `origin/main` update path is not ready; documentation and clean/blocked local-remote regression coverage were added. Codex preview remains uncertified.
+- Validation: PR plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.8.0
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: source-managed update failure probes and host capability gaps.
+
 ## 2026-10-27 — v6.7.13
 
 - Version: v6.7.13; PR #88 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/88.
