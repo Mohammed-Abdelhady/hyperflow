@@ -210,6 +210,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /accept-major-migration/);
   assert.match(installer, /link-only/);
   assert.match(installer, /--status/);
+  assert.match(installer, /--check/);
   assert.match(installer, /status --porcelain --untracked-files=all/);
   assert.match(installer, /merge-base --is-ancestor HEAD FETCH_HEAD/);
   assert.match(installer, /Unable to fetch origin\/main/);
@@ -453,11 +454,17 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     const baseStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
     assert.equal(baseStatus.status, 0);
     assert.match(baseStatus.stdout, /Checkout state: valid[\s\S]*Update readiness: ready \(branch=main\)/);
+    const baseCheck = spawnSync("bash", [INSTALLER, "--status", "--check"], { encoding: "utf8", env });
+    assert.equal(baseCheck.status, 0, baseCheck.stderr);
 
     execFileSync("git", ["-C", checkout, "checkout", "-qb", "feature/installer-fixture"]);
     const featureStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
     assert.equal(featureStatus.status, 0);
     assert.match(featureStatus.stdout, /Update readiness: blocked \(branch=feature\/installer-fixture; expected main\)/);
+    const featureCheck = spawnSync("bash", [INSTALLER, "--status", "--check"], { encoding: "utf8", env });
+    assert.notEqual(featureCheck.status, 0);
+    assert.match(featureCheck.stdout, /Update readiness: blocked \(branch=feature\/installer-fixture; expected main\)/);
+    assert.equal(existsSync(join(checkout, ".git", "FETCH_HEAD")), false);
     const featureUpdate = spawnSync("bash", [INSTALLER], { encoding: "utf8", env });
     assert.notEqual(featureUpdate.status, 0);
     assert.match(featureUpdate.stderr, /source-managed updates require the main branch/);

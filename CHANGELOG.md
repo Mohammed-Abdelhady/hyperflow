@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `install.sh --status --check`, a read-only health check that exits nonzero when the source checkout or cached update path is not ready.
+
 ## [6.7.13] — 2026-10-27
 
 ### Fixed
