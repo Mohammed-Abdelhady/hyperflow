@@ -59,6 +59,14 @@ The current priorities, in order, are:
 
 - `install.sh --status` reports checkout validity, native host availability, and complete, partial, or conflicting skill-link state without fetching, creating directories, invoking plugins, or changing links.
 
+### v6.8 — installer health checks
+
+- `install.sh --status --check` provides a read-only exit status for a valid, clean `main` checkout with a usable cached update path.
+
+### v6.9 — automation-friendly installer diagnostics
+
+- `install.sh --status --json` exposes the read-only checkout, update, host, link, and health state as one machine-readable object.
+
 ## Next trains
 
 ### Install and release reliability

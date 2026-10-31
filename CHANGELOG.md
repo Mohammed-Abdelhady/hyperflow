@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `install.sh --status --json`, a read-only machine-readable status object for checkout, update, host, link, and health state; it composes with `--check` without changing the health exit contract.
+
 ## [6.8.0] — 2026-10-29
 
 ### Added

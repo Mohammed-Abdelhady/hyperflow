@@ -21,6 +21,7 @@ esac
 CORE_SKILLS=(hyperflow plan dispatch trace audit deploy handoff)
 ACTION="install"
 STATUS_CHECK=0
+STATUS_JSON=0
 ACCEPT_MAJOR_MIGRATION=0
 HOST_FAILURES=0
 HOST_SUCCESSES=0
@@ -38,7 +39,7 @@ current_branch() {
 
 usage() {
   printf '%s\n' \
-    "Usage: install.sh [--accept-major-migration | --link-only | --status [--check] | --uninstall | --help]" \
+    "Usage: install.sh [--accept-major-migration | --link-only | --status [--check] [--json] | --uninstall | --help]" \
     "" \
     "Installs the Hyperflow plugin for available native hosts and links all" \
     "seven public skills into detected OpenCode or Antigravity skill directories." \
@@ -69,10 +70,32 @@ link_state() {
   [ "$owned" -eq 0 ] && [ "$bad" -eq 0 ] && printf 'none' || printf 'partial'
 }
 
+json_string() {
+  local value="$1" escaped="" character
+  while [ -n "$value" ]; do
+    character="${value%"${value#?}"}"
+    value="${value#?}"
+    case "$character" in
+      \\) escaped+='\\\\' ;;
+      '"') escaped+='\"' ;;
+      $'\b') escaped+='\b' ;;
+      $'\f') escaped+='\f' ;;
+      $'\n') escaped+='\n' ;;
+      $'\r') escaped+='\r' ;;
+      $'\t') escaped+='\t' ;;
+      *) escaped+="$character" ;;
+    esac
+  done
+  printf '"%s"' "$escaped"
+}
+
 print_status() {
   local checkout_state='missing' readiness='unavailable'
-  printf 'Hyperflow installer status (read-only)\n'
-  printf 'Checkout: %s\n' "$INSTALL_DIR"
+  local claude_state='unavailable' codex_state='unavailable'
+  local opencode_detected=false antigravity_detected=false
+  local opencode_links='not detected' antigravity_links='not detected'
+  local opencode_state='not detected' antigravity_state='not detected'
+  local healthy=false
 
   if [ -e "$INSTALL_DIR" ] && ! is_git_checkout "$INSTALL_DIR"; then
     checkout_state='not a Git checkout'
@@ -85,7 +108,6 @@ print_status() {
       checkout_state='invalid'
     fi
   fi
-  printf 'Checkout state: %s\n' "$checkout_state"
   if [ "$checkout_state" = 'valid' ]; then
     if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
       readiness='blocked (dirty checkout)'
@@ -115,26 +137,54 @@ print_status() {
   else
     readiness="unavailable (checkout $checkout_state)"
   fi
-  printf 'Update readiness: %s\n' "$readiness"
 
-  printf 'Native hosts:\n'
-  if command -v claude >/dev/null 2>&1; then printf '  Claude Code: available\n'; else printf '  Claude Code: unavailable\n'; fi
-  if command -v codex >/dev/null 2>&1; then printf '  Codex: available\n'; else printf '  Codex: unavailable\n'; fi
-
-  printf 'Skill links:\n'
+  if [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ]; then
+    healthy=true
+  fi
+  if command -v claude >/dev/null 2>&1; then claude_state='available'; fi
+  if command -v codex >/dev/null 2>&1; then codex_state='available'; fi
   if [ -d "$OPENCODE_ROOT" ] || command -v opencode >/dev/null 2>&1; then
-    printf '  OpenCode: detected (root=%s; links=%s)\n' "$OPENCODE_ROOT" "$(link_state "$OPENCODE_ROOT/skills")"
-  else
-    printf '  OpenCode: not detected\n'
+    opencode_detected=true
+    opencode_links="$(link_state "$OPENCODE_ROOT/skills")"
+    opencode_state="detected (root=$OPENCODE_ROOT; links=$opencode_links)"
   fi
   if [ -d "$HOME/.gemini" ] || command -v agy >/dev/null 2>&1 || command -v gemini >/dev/null 2>&1; then
-    printf '  Antigravity: detected (root=%s; links=%s)\n' "$ANTIGRAVITY_SKILLS_ROOT" "$(link_state "$ANTIGRAVITY_SKILLS_ROOT")"
-  else
-    printf '  Antigravity: not detected\n'
+    antigravity_detected=true
+    antigravity_links="$(link_state "$ANTIGRAVITY_SKILLS_ROOT")"
+    antigravity_state="detected (root=$ANTIGRAVITY_SKILLS_ROOT; links=$antigravity_links)"
   fi
-  printf 'No fetch, plugin operation, directory creation, or link change was performed.\n'
+
+  if [ "$STATUS_JSON" = "1" ]; then
+    printf '{'
+    printf '"checkout_path":'; json_string "$INSTALL_DIR"
+    printf ',"checkout_state":'; json_string "$checkout_state"
+    printf ',"update_readiness":'; json_string "$readiness"
+    printf ',"healthy":%s' "$healthy"
+    printf ',"native_hosts":{"claude_code":'; json_string "$claude_state"
+    printf ',"codex":'; json_string "$codex_state"
+    printf '},"skill_links":{"opencode":{"detected":%s,"root":' "$opencode_detected"
+    if [ "$opencode_detected" = true ]; then json_string "$OPENCODE_ROOT"; else printf 'null'; fi
+    printf ',"state":'; json_string "$opencode_links"
+    printf '},"antigravity":{"detected":%s,"root":' "$antigravity_detected"
+    if [ "$antigravity_detected" = true ]; then json_string "$ANTIGRAVITY_SKILLS_ROOT"; else printf 'null'; fi
+    printf ',"state":'; json_string "$antigravity_links"
+    printf '}'
+    printf '},"read_only":true}\n'
+  else
+    printf 'Hyperflow installer status (read-only)\n'
+    printf 'Checkout: %s\n' "$INSTALL_DIR"
+    printf 'Checkout state: %s\n' "$checkout_state"
+    printf 'Update readiness: %s\n' "$readiness"
+    printf 'Native hosts:\n'
+    printf '  Claude Code: %s\n' "$claude_state"
+    printf '  Codex: %s\n' "$codex_state"
+    printf 'Skill links:\n'
+    printf '  OpenCode: %s\n' "$opencode_state"
+    printf '  Antigravity: %s\n' "$antigravity_state"
+    printf 'No fetch, plugin operation, directory creation, or link change was performed.\n'
+  fi
   if [ "$STATUS_CHECK" = "1" ]; then
-    [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ]
+    [ "$healthy" = true ]
   fi
 }
 
@@ -657,6 +707,7 @@ main() {
       --link-only) ACTION="link-only" ;;
       --status) ACTION="status" ;;
       --check) STATUS_CHECK=1 ;;
+      --json) STATUS_JSON=1 ;;
       --accept-major-migration) ACCEPT_MAJOR_MIGRATION=1 ;;
       *) warn "Unknown option: $1"; usage; exit 1 ;;
     esac
@@ -665,6 +716,11 @@ main() {
 
   if [ "$STATUS_CHECK" = "1" ] && [ "$ACTION" != "status" ]; then
     warn "--check requires --status"
+    usage
+    exit 1
+  fi
+  if [ "$STATUS_JSON" = "1" ] && [ "$ACTION" != "status" ]; then
+    warn "--json requires --status"
     usage
     exit 1
   fi

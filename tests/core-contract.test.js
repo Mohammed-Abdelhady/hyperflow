@@ -211,6 +211,7 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
   assert.match(installer, /link-only/);
   assert.match(installer, /--status/);
   assert.match(installer, /--check/);
+  assert.match(installer, /--json/);
   assert.match(installer, /status --porcelain --untracked-files=all/);
   assert.match(installer, /merge-base --is-ancestor HEAD FETCH_HEAD/);
   assert.match(installer, /Unable to fetch origin\/main/);
@@ -231,6 +232,16 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     assert.match(status.stdout, /read-only[\s\S]*Checkout state: valid[\s\S]*Update readiness: (?:ready \(branch=main\)|blocked \((?:dirty checkout|detached HEAD)\))/);
     assert.match(status.stdout, /OpenCode: not detected[\s\S]*Antigravity: not detected/);
     assert.equal(existsSync(join(statusHome, ".config")), false);
+    const statusJson = spawnSync("bash", [INSTALLER, "--status", "--json"], { encoding: "utf8", env: { ...process.env, HOME: statusHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
+    assert.equal(statusJson.status, 0);
+    const parsedStatus = JSON.parse(statusJson.stdout);
+    assert.equal(parsedStatus.checkout_state, "valid");
+    assert.equal(parsedStatus.healthy, parsedStatus.update_readiness === "ready (branch=main)");
+    assert.equal(parsedStatus.native_hosts.claude_code, "unavailable");
+    assert.equal(parsedStatus.skill_links.opencode.detected, false);
+    assert.equal(parsedStatus.skill_links.opencode.root, null);
+    assert.equal(parsedStatus.skill_links.opencode.state, "not detected");
+    assert.equal(parsedStatus.read_only, true);
 
     const installRoot = join(temp, "checkout");
     const skillsRoot = join(temp, ".opencode", "skills");
@@ -281,6 +292,11 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const conflictStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
     assert.equal(conflictStatus.status, 0);
     assert.match(conflictStatus.stdout, /OpenCode: detected[\s\S]*links=conflict/);
+    const conflictJson = spawnSync("bash", [INSTALLER, "--status", "--json"], { encoding: "utf8", env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
+    assert.equal(conflictJson.status, 0);
+    const parsedConflict = JSON.parse(conflictJson.stdout);
+    assert.equal(parsedConflict.skill_links.opencode.detected, true);
+    assert.equal(parsedConflict.skill_links.opencode.state, "conflict");
     const conflict = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" },
@@ -456,6 +472,9 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.match(baseStatus.stdout, /Checkout state: valid[\s\S]*Update readiness: ready \(branch=main\)/);
     const baseCheck = spawnSync("bash", [INSTALLER, "--status", "--check"], { encoding: "utf8", env });
     assert.equal(baseCheck.status, 0, baseCheck.stderr);
+    const baseJsonCheck = spawnSync("bash", [INSTALLER, "--status", "--json", "--check"], { encoding: "utf8", env });
+    assert.equal(baseJsonCheck.status, 0, baseJsonCheck.stderr);
+    assert.equal(JSON.parse(baseJsonCheck.stdout).healthy, true);
 
     execFileSync("git", ["-C", checkout, "checkout", "-qb", "feature/installer-fixture"]);
     const featureStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
