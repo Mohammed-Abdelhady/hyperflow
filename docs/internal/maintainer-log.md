@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-10-31 — v6.9.0
+
+- Version: v6.9.0; PR #90 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/90.
+- Shipped: `install.sh --status --json` now exposes structured read-only checkout, update-readiness, native-host, provider-link, and health fields; `--json --check` preserves the shell health exit contract. The shipped-footprint ceiling is 286,000 bytes. Codex preview remains uncertified.
+- Validation: PR and main plugin validation, 23 Node tests, 7/7 evals, shell syntax, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.9.0
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: source-managed update failure probes and host capability gaps.
+
 ## 2026-10-29 — v6.8.0
 
 - Version: v6.8.0; PR #89 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/89.
