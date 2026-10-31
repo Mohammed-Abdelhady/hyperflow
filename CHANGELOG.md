@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.9.0] — 2026-10-31
+
 ### Added
 - Add `install.sh --status --json`, a read-only machine-readable status object for checkout, update, host, link, and health state; it composes with `--check` without changing the health exit contract.
 
@@ -1822,7 +1824,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.8.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.0...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -1991,3 +1993,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.7.12]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.11...v6.7.12
 [6.7.13]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.12...v6.7.13
 [6.8.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.7.13...v6.8.0
+[6.9.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.8.0...v6.9.0
