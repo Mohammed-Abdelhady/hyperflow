@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Preserve literal backslashes in `install.sh --status --json` paths instead of emitting over-escaped checkout values.
+
 ## [6.9.0] — 2026-10-31
 
 ### Added

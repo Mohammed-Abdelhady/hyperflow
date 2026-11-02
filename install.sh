@@ -76,7 +76,7 @@ json_string() {
     character="${value%"${value#?}"}"
     value="${value#?}"
     case "$character" in
-      \\) escaped+='\\\\' ;;
+      \\) escaped+="\\\\" ;;
       '"') escaped+='\"' ;;
       $'\b') escaped+='\b' ;;
       $'\f') escaped+='\f' ;;
