@@ -83,7 +83,16 @@ json_string() {
       $'\n') escaped+='\n' ;;
       $'\r') escaped+='\r' ;;
       $'\t') escaped+='\t' ;;
-      *) escaped+="$character" ;;
+      *)
+        local code escaped_character
+        printf -v code '%d' "'$character"
+        if [ "$code" -lt 32 ]; then
+          printf -v escaped_character '\\u%04x' "$code"
+          escaped+="$escaped_character"
+        else
+          escaped+="$character"
+        fi
+        ;;
     esac
   done
   printf '"%s"' "$escaped"
