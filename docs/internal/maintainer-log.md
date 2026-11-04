@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-11-04 — v6.9.2
+
+- Version: v6.9.2; PR #92 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/92.
+- Shipped: `install.sh --status --json` now escapes every JSON control character in checkout paths, keeping machine-readable status valid for unusual but valid filesystem names; added regression coverage and raised the shipped-footprint ceiling to 289,000 bytes.
+- Validation: PR and main plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.9.2
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: source-managed update failure probes and host capability gaps.
+
 ## 2026-11-02 — v6.9.1
 
 - Version: v6.9.1; PR #91 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/91.
