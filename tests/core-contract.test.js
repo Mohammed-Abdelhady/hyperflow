@@ -247,6 +247,14 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     });
     assert.equal(escapedStatusJson.status, 0, escapedStatusJson.stderr);
     assert.equal(JSON.parse(escapedStatusJson.stdout).checkout_path, escapedCheckout, "JSON status must preserve a literal backslash in paths");
+    const controlCheckout = join(temp, `status${String.fromCharCode(1)}checkout`);
+    symlinkSync(ROOT, controlCheckout);
+    const controlStatusJson = spawnSync("bash", [INSTALLER, "--status", "--json"], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: statusHome, HYPERFLOW_HOME: controlCheckout, PATH: "/usr/bin:/bin" },
+    });
+    assert.equal(controlStatusJson.status, 0, controlStatusJson.stderr);
+    assert.equal(JSON.parse(controlStatusJson.stdout).checkout_path, controlCheckout, "JSON status must escape control characters in paths");
     assert.equal(parsedStatus.skill_links.opencode.detected, false);
     assert.equal(parsedStatus.skill_links.opencode.root, null);
     assert.equal(parsedStatus.skill_links.opencode.state, "not detected");
