@@ -67,6 +67,10 @@ The current priorities, in order, are:
 
 - `install.sh --status --json` exposes the read-only checkout, update, host, link, and health state as one machine-readable object.
 
+### v6.10 — actionable installer status metadata
+
+- `install.sh --status --json` exposes current/tracking package versions and whether a valid cached `origin/main` commit differs, so automation need not infer update state from prose.
+
 ## Next trains
 
 ### Install and release reliability

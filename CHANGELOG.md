@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add current/tracking version and cached-commit update metadata to `install.sh --status --json`, including blocked version-regressing updates; raise the shipped-footprint ceiling to 291,000 bytes for the bounded regression and release metadata.
+
 ## [6.9.2] — 2026-11-04
 
 ### Fixed
