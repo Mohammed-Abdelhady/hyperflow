@@ -491,7 +491,10 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.equal(baseCheck.status, 0, baseCheck.stderr);
     const baseJsonCheck = spawnSync("bash", [INSTALLER, "--status", "--json", "--check"], { encoding: "utf8", env });
     assert.equal(baseJsonCheck.status, 0, baseJsonCheck.stderr);
-    assert.equal(JSON.parse(baseJsonCheck.stdout).healthy, true);
+    const baseStatusJson = JSON.parse(baseJsonCheck.stdout);
+    assert.equal(baseStatusJson.healthy, true);
+    assert.deepEqual(baseStatusJson.versions, { current: PACKAGE_VERSION, tracking: PACKAGE_VERSION });
+    assert.equal(baseStatusJson.update_available, false);
 
     execFileSync("git", ["-C", checkout, "checkout", "-qb", "feature/installer-fixture"]);
     const featureStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
@@ -516,6 +519,18 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     assert.match(detachedUpdate.stderr, /detached HEAD; source-managed updates require the main branch/);
     assert.equal(existsSync(join(checkout, ".git", "FETCH_HEAD")), false);
     execFileSync("git", ["-C", checkout, "checkout", "-q", "main"]);
+
+    const divergedBaseHead = execFileSync("git", ["-C", checkout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    writeFileSync(join(checkout, "local-divergence.txt"), "local-only\n");
+    execFileSync("git", ["-C", checkout, "add", "local-divergence.txt"]);
+    execFileSync("git", ["-C", checkout, "-c", "user.name=Hyperflow Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "test: local divergence"]);
+    const divergedStatus = spawnSync("bash", [INSTALLER, "--status", "--json"], { encoding: "utf8", env });
+    assert.equal(divergedStatus.status, 0);
+    const divergedStatusJson = JSON.parse(divergedStatus.stdout);
+    assert.equal(divergedStatusJson.update_readiness, "blocked (diverged from origin/main)");
+    assert.deepEqual(divergedStatusJson.versions, { current: PACKAGE_VERSION, tracking: PACKAGE_VERSION });
+    assert.equal(divergedStatusJson.update_available, true);
+    execFileSync("git", ["-C", checkout, "reset", "--hard", "-q", divergedBaseHead]);
 
     writeFileSync(
       join(checkout, "package.json"),
@@ -578,6 +593,9 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     const regressedStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
     assert.equal(regressedStatus.status, 0);
     assert.match(regressedStatus.stdout, new RegExp(`Update readiness: blocked \\(origin/main version regresses ${PACKAGE_VERSION.replaceAll(".", "\\.")} -> 1\\.0\\.0\\)`));
+    const regressedStatusJson = JSON.parse(spawnSync("bash", [INSTALLER, "--status", "--json"], { encoding: "utf8", env }).stdout);
+    assert.deepEqual(regressedStatusJson.versions, { current: PACKAGE_VERSION, tracking: "1.0.0" });
+    assert.equal(regressedStatusJson.update_available, true);
 
     writeFileSync(join(seed, "package.json"), readFileSync(join(seed, "package.json"), "utf8").replace('"version": "1.0.0"', '"version": "01.2.3"'));
     execFileSync("git", ["-C", seed, "add", "package.json"]);

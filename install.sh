@@ -100,6 +100,7 @@ json_string() {
 
 print_status() {
   local checkout_state='missing' readiness='unavailable'
+  local current_version='' tracking_version='' update_available='null'
   local claude_state='unavailable' codex_state='unavailable'
   local opencode_detected=false antigravity_detected=false
   local opencode_links='not detected' antigravity_links='not detected'
@@ -118,10 +119,11 @@ print_status() {
     fi
   fi
   if [ "$checkout_state" = 'valid' ]; then
+    current_version="$(package_version "$INSTALL_DIR/package.json")"
     if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]; then
       readiness='blocked (dirty checkout)'
     else
-      local branch current_version tracking_version
+      local branch
       branch="$(current_branch "$INSTALL_DIR")"
       if [ -z "$branch" ]; then
         readiness='blocked (detached HEAD)'
@@ -131,12 +133,16 @@ print_status() {
         readiness='unknown (origin/main is not available locally)'
       elif ! validate_tracking_checkout refs/remotes/origin/main; then
         readiness='blocked (origin/main is incomplete or invalid)'
-      elif ! git -C "$INSTALL_DIR" merge-base --is-ancestor HEAD refs/remotes/origin/main; then
-        readiness='blocked (diverged from origin/main)'
       else
-        current_version="$(package_version "$INSTALL_DIR/package.json")"
         tracking_version="$(git -C "$INSTALL_DIR" show refs/remotes/origin/main:package.json | package_version_from_stdin)"
-        if version_is_less "$tracking_version" "$current_version"; then
+        if [ "$(git -C "$INSTALL_DIR" rev-parse HEAD)" = "$(git -C "$INSTALL_DIR" rev-parse refs/remotes/origin/main)" ]; then
+          update_available=false
+        else
+          update_available=true
+        fi
+        if ! git -C "$INSTALL_DIR" merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+          readiness='blocked (diverged from origin/main)'
+        elif version_is_less "$tracking_version" "$current_version"; then
           readiness="blocked (origin/main version regresses $current_version -> $tracking_version)"
         else
           readiness='ready (branch=main)'
@@ -168,6 +174,11 @@ print_status() {
     printf '"checkout_path":'; json_string "$INSTALL_DIR"
     printf ',"checkout_state":'; json_string "$checkout_state"
     printf ',"update_readiness":'; json_string "$readiness"
+    printf ',"versions":{"current":'
+    if [ -n "$current_version" ]; then json_string "$current_version"; else printf 'null'; fi
+    printf ',"tracking":'
+    if [ -n "$tracking_version" ]; then json_string "$tracking_version"; else printf 'null'; fi
+    printf '},"update_available":%s' "$update_available"
     printf ',"healthy":%s' "$healthy"
     printf ',"native_hosts":{"claude_code":'; json_string "$claude_state"
     printf ',"codex":'; json_string "$codex_state"
@@ -184,6 +195,13 @@ print_status() {
     printf 'Checkout: %s\n' "$INSTALL_DIR"
     printf 'Checkout state: %s\n' "$checkout_state"
     printf 'Update readiness: %s\n' "$readiness"
+    printf 'Current version: %s\n' "${current_version:-unavailable}"
+    printf 'Cached origin/main version: %s\n' "${tracking_version:-unavailable}"
+    if [ "$update_available" = 'null' ]; then
+      printf 'Update available: unknown\n'
+    else
+      printf 'Update available: %s\n' "$update_available"
+    fi
     printf 'Native hosts:\n'
     printf '  Claude Code: %s\n' "$claude_state"
     printf '  Codex: %s\n' "$codex_state"
