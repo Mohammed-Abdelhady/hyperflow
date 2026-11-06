@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-11-06 — v6.10.0
+
+- Version: v6.10.0; PRs #93 and #94 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/93, https://github.com/Mohammed-Abdelhady/hyperflow/pull/94.
+- Shipped: `install.sh --status --json` now reports current/tracking package versions and an explicit `update_available` flag for valid cached commit differences, including diverged and version-regressing states; release-footprint headroom was raised to 293,000 bytes.
+- Validation: PR and main plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.10.0
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: source-managed update failure probes and host capability gaps.
+
 ## 2026-11-04 — v6.9.2
 
 - Version: v6.9.2; PR #92 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/92.
