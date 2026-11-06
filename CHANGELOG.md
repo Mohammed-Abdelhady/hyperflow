@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.10.0] — 2026-11-06
+
 ### Added
 - Add current/tracking version and cached-commit update metadata to `install.sh --status --json`, including blocked version-regressing updates; raise the shipped-footprint ceiling to 293,000 bytes for the bounded regression and release metadata.
 
@@ -1837,7 +1839,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.2...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.10.0...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -2009,3 +2011,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.9.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.8.0...v6.9.0
 [6.9.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.0...v6.9.1
 [6.9.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.1...v6.9.2
+[6.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.2...v6.10.0
