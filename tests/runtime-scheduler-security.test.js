@@ -121,7 +121,9 @@ test('a blocked consolidated security review never applies changes', async () =>
     capacity: TEST_CAPACITY });
   assert.equal(result.status, 'failed');
   assert.match(result.error, /blocked|security/i);
-  assert.equal(result.finalEvidence?.security, undefined);
+  assert.equal(result.finalEvidence.security.verdict, 'blocked');
+  assert.equal(result.finalEvidence.security.reviews.at(-1).verdict, 'blocked');
+  assert.equal(result.finalEvidence.security.reviews.at(-1).reason, 'candidate too large to review');
   assert.equal(await readFile(path.join(root, 'tracked.txt'), 'utf8'), 'baseline\n');
   await assert.rejects(readFile(path.join(root, 't1.txt')));
 }));

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
+import { RunStore } from '../runtime/store.mjs';
 import { executeWorkflow } from '../runtime/scheduler.mjs';
 import { repoFixture } from './runtime-fixtures.mjs';
 
@@ -181,3 +182,27 @@ for (const rejectedBy of ['correctness', 'check']) {
     assert.equal(await readFile(join(root, 'a.txt'), 'utf8'), 'safe');
   }));
 }
+
+
+test('an active run retains approved delegates when persisted session roles change', async () => repoFixture(async ({ root, statePath, baseSha }) => {
+  const result = await executeWorkflow({ workflow: workflow(root, baseSha, [item('a'), item('b', ['a'])]),
+    digest: 'approved', repoRoot: root, statePath, roles: ROLES, checks: CHECKS, capacity: CAPACITY,
+    adapter: async ({ task, cwd, model }) => {
+      assert.equal(model.model, 'lightweight-model');
+      if (task.id === 'a') {
+        const store = new RunStore(statePath);
+        try {
+          const [run] = store.listRuns();
+          store.setRoles(run.runId ?? run.id, { revision: 'changed', roles: Object.fromEntries(
+            Object.entries(ROLES.roles).map(([role, binding]) => [role, { ...binding, model: 'unapproved' }])) });
+        } finally { store.close(); }
+      }
+      await writeFile(join(cwd, task.writeScope[0]), task.id);
+      return { status: 'completed' };
+    },
+    review: async ({ phase, model }) => {
+      assert.equal(model.model, phase === 'security-review' ? 'general-model' : 'primary-model');
+      return pass();
+    } });
+  assert.equal(result.status, 'completed', result.error);
+}));
