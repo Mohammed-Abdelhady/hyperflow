@@ -38,8 +38,7 @@ for file in \
   replace 's/"version": "[0-9][0-9.]*"/"version": "'"$VERSION"'"/g' "$file"
 done
 
-printf '%s\n' "$VERSION" > "$ROOT/skills/hyperflow/VERSION"
-for skill in hyperflow plan dispatch trace audit deploy handoff; do
+for skill in hyperflow-plan hyperflow-smash hyperflow-crash hyperflow-agents-skill; do
   replace 's/^version: [0-9][0-9.]*/version: '"$VERSION"'/' "$ROOT/skills/$skill/SKILL.md"
 done
 

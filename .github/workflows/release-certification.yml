@@ -22,7 +22,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
 
       - name: Plugin validation
         run: npm run validate-plugin
@@ -34,7 +34,10 @@ jobs:
         run: npm run evals
 
       - name: Shell syntax
-        run: bash -n install.sh scripts/*.sh
+        run: |
+          for script in install.sh scripts/*.sh scripts/install/*.sh; do
+            bash -n "$script"
+          done
 
       - name: Tag matches package version
         if: github.ref_type == 'tag'

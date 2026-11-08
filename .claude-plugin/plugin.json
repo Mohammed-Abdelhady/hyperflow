@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
   "version": "6.10.0",
-  "description": "Lightweight Markdown-only orchestration for Claude Code: hyperflow, plan, dispatch, trace, audit, deploy, and handoff across Direct/Focused/Deep lanes, with inert startup, durable context, independent review, and gated Git handoff.",
+  "description": "Four Hyperflow workflows for planning, delegation, review and delegate configuration, with inert startup.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
