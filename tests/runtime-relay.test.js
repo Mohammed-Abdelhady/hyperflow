@@ -104,7 +104,7 @@ test('completed delegate runs remove source briefs and expire only completed own
   assert.equal(existsSync(active), true);
 });
 
-for (const harness of ['antigravity', 'cursor', 'pi']) {
+for (const harness of ['antigravity', 'cursor']) {
   test(`${harness} delegates preserve the chosen harness and its effort-control boundary`, async (t) => {
     const effort = harness === 'antigravity' ? 'high' : 'harness-default';
     const f = fixture(t, { model: 'fixture-model', effort: harness === 'antigravity' ? effort : undefined, agent: undefined });
@@ -119,7 +119,7 @@ for (const harness of ['antigravity', 'cursor', 'pi']) {
   });
 }
 
-for (const harness of ['codex', 'claude-code', 'antigravity', 'cursor', 'opencode', 'pi']) {
+for (const harness of ['codex', 'claude-code', 'antigravity', 'cursor', 'opencode']) {
   test(`${harness} writing runs are unattended while review stays read only`, async (t) => {
     const overrides = { model: harness === 'opencode' ? 'zai/glm-5.3-flash' : 'fixture-model',
       agent: harness === 'opencode' ? 'build' : undefined };

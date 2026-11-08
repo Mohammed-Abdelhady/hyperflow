@@ -31,3 +31,11 @@ test('a missing executable stays distinct from a failed execution', async () => 
   const result = await runProcess(process.execPath, ['-e', 'process.exit(7)']);
   assert.equal(result.code, 7);
 });
+
+test('delegate instructions cross stdin without shell or argument interpolation', async () => {
+  const input = 'Scoped instructions with $variables, `commands`, and Unicode \u0633\u0644\u0627\u0645.';
+  const result = await runProcess(process.execPath, ['-e',
+    'process.stdin.setEncoding("utf8");process.stdin.on("data",chunk=>process.stdout.write(chunk))'], { input });
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout, input);
+});
