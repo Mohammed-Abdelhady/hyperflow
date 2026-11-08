@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 /** Static golden-task evaluations for portable Hyperflow contracts. */
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,29 +19,6 @@ function read(path) {
 
 function json(path) {
   return JSON.parse(read(path));
-}
-
-function normalizedTable(source) {
-  const fields = new Map();
-  for (const line of source.split(/\r?\n/)) {
-    const match = line.match(/^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/);
-    if (!match || /^-+$/.test(match[1].trim())) continue;
-    fields.set(match[1].trim().toLowerCase().replaceAll(/[^a-z0-9]+/g, "_"), match[2].trim());
-  }
-  return fields;
-}
-
-function markdownTable(path) {
-  return normalizedTable(read(path));
-}
-
-function gitRefResolves(ref) {
-  try {
-    execFileSync("git", ["rev-parse", "--verify", `${ref}^{commit}`], { cwd: ROOT, stdio: "pipe" });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function reviewMemory(path) {
@@ -94,25 +70,6 @@ function decisionMemory(path) {
   };
 }
 
-function workspaceBoundary(path) {
-  const source = read(path);
-  const start = source.indexOf("## Workspace boundary record\n");
-  const end = source.indexOf("\n## ", start + 1);
-  const section = start === -1 ? "" : source.slice(start + "## Workspace boundary record\n".length, end === -1 ? source.length : end);
-  const fields = normalizedTable(section);
-  const required = ["affected_roots", "shared_contracts", "package_local_gates", "root_gates", "out_of_scope"];
-  const present = required.every((field) => fields.has(field) && fields.get(field) !== "");
-  const roots = fields.get("affected_roots") ?? "";
-  const gates = [fields.get("package_local_gates"), fields.get("root_gates")].every((value) => value && /`[^`]+`/.test(value));
-  const ok = section !== "" && present && /(?:apps?|packages?)\//.test(roots) && gates;
-  return {
-    ok,
-    detail: ok
-      ? "boundary record names affected roots, shared contracts, package-local gates, root gates, and out-of-scope paths"
-      : "boundary record must be complete, repository-relative, and executable",
-  };
-}
-
 function filesUnder(path) {
   const absolute = repoPath(path);
   if (!existsSync(absolute)) return [];
@@ -126,7 +83,10 @@ function filesUnder(path) {
 }
 
 function localMarkdownLinksResolve() {
-  const documents = ["README.md", "PRIVACY.md", "RELEASING.md", ...filesUnder("docs").filter((path) => extname(path) === ".md")];
+  const documents = [
+    "README.md", "PRIVACY.md", "RELEASING.md",
+    ...["docs", "skills", "commands"].flatMap((root) => filesUnder(root).filter((path) => extname(path) === ".md")),
+  ];
   for (const document of documents) {
     const source = read(document);
     for (const match of source.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
@@ -177,52 +137,24 @@ function check(spec) {
       const unique = new Set(ids).size === ids.length;
       const complete = hosts.every((host) => ["id", "claim", "status", "evidence"].every((key) => typeof host[key] === "string"));
       const readme = read("README.md").toLowerCase();
-      const codexHonest = hosts.find((host) => host.id === "codex-cli")?.status === "preview_uncertified" && readme.includes("preview");
-      const opencodeHonest = hosts.find((host) => host.id === "opencode")?.claim === "compatibility shim" && readme.includes("compatibility shim");
-      const antigravityHonest = hosts.find((host) => host.id === "antigravity")?.claim === "compatibility shim" && readme.includes("antigravity");
-      const ok = hosts.length >= 4 && unique && complete && codexHonest && opencodeHonest && antigravityHonest;
+      const docs = read("docs/installation.md").toLowerCase();
+      const evidenceBound = readme.includes("does not treat a manifest")
+        && docs.includes("does not run a real provider")
+        && hosts.every((host) => host.evidence.trim().length > 0);
+      const ok = hosts.length >= 4 && unique && complete && evidenceBound;
       return { ok, detail: ok ? `${hosts.length} host claims are explicit` : "host claims are incomplete or overstate support" };
-    }
-    case "handoff_round_trip": {
-      const taskPath = join(spec.path, "task.md");
-      const handoffPath = join(spec.path, "handoff.md");
-      const task = read(taskPath);
-      const fields = markdownTable(handoffPath);
-      const requiredFields = [
-        "status", "task_pointer", "source_branch", "build_branch", "base_ref", "head_ref",
-        "created", "updated", "result", "checks", "commits",
-      ];
-      const fieldsPresent = requiredFields.every((field) => fields.has(field) && fields.get(field) !== "");
-      const taskShape = ["^# .+", "^## Outcome$", "^## Tasks$", "^## Verification$"]
-        .every((pattern) => new RegExp(pattern, "m").test(task));
-      const pointer = fields.get("task_pointer");
-      const pointerExpected = `.hyperflow-handoff/${spec.slug}/task.md`;
-      const refsResolve = ["base_ref", "head_ref"].every((field) => gitRefResolves(fields.get(field)));
-      const statusOk = fields.get("status") === "reviewed";
-      const ok = fieldsPresent && taskShape && pointer === pointerExpected && refsResolve && statusOk;
-      return {
-        ok,
-        detail: ok
-          ? "reviewed handoff preserves the task pointer and resolvable base/head refs"
-          : "handoff package is missing its Markdown task shape, exact pointer, reviewed status, or resolvable refs",
-      };
     }
     case "review_memory":
       return reviewMemory(spec.path);
     case "decision_memory":
       return decisionMemory(spec.path);
-    case "workspace_boundary":
-      return workspaceBoundary(spec.path);
     default:
       return { ok: false, detail: `unknown check type ${spec.type}` };
   }
 }
 
 function loadTasks() {
-  const tasks = filesUnder("evals/tasks")
-    .filter((path) => extname(path) === ".json")
-    .sort()
-    .map((path) => json(path));
+  const tasks = json("evals/tasks.json");
   const ids = new Set();
   for (const task of tasks) {
     if (typeof task.id !== "string" || ids.has(task.id)) throw new Error(`invalid or duplicate eval id: ${task.id}`);

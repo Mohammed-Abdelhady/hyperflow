@@ -1,72 +1,19 @@
 {
   "skills": [
-    "hyperflow",
-    "plan",
-    "dispatch",
-    "trace",
-    "audit",
-    "deploy",
-    "handoff"
+    "hyperflow-plan",
+    "hyperflow-smash",
+    "hyperflow-crash",
+    "hyperflow-agents-skill"
   ],
-  "specialists": [
-    "systems-reviewer",
-    "experience-reviewer",
-    "data-reviewer",
-    "risk-reviewer",
-    "performance-reviewer",
-    "debugger",
-    "researcher"
+  "runtimeCommands": [
+    "plan", "answer", "compile", "smash", "status", "graph", "stop", "resume",
+    "sessions", "rename", "messages", "crash", "agents-config", "setup-delegates"
   ],
-  "lanes": {
-    "Direct": {
-      "signals": ["clear", "reversible", "one subsystem"],
-      "maxChildCalls": 0
-    },
-    "Focused": {
-      "signals": ["moderate", "related tasks"],
-      "maxPlanningChildCalls": 2,
-      "maxFullChainChildCalls": 4,
-      "maxPlanningTokens": 6000,
-      "maxFullChainTokens": 20000
-    },
-    "Deep": {
-      "signals": ["security", "migration", "cross-boundary", "research"],
-      "maxPlanningChildCalls": 5,
-      "maxFullChainChildCalls": 8,
-      "maxPlanningTokens": 18000,
-      "maxFullChainTokens": 60000
-    }
-  },
+  "roles": ["primary", "general", "lightweight"],
   "budgets": {
-    "workerBriefWords": 350,
-    "reviewerBriefWords": 250,
-    "taskFileWords": 1200,
-    "skillEntrypointLines": 500,
     "shippedFilesMax": 69,
     "shippedBytesMax": 293000,
-    "portableDoctrineCharsMax": 5000,
-    "planCharsMax": 5000,
-    "dispatchCharsMax": 6000,
-    "hyperflowCharsMax": 5000,
-    "componentDescriptionsCharsMax": 3000
-  },
-  "blockedFiles": [
-    ".env",
-    ".env.*",
-    "*.pem",
-    "*.key",
-    "*.crt",
-    "~/.ssh/*",
-    "~/.aws/credentials",
-    "~/.config/gcloud/*",
-    "~/.kube/config"
-  ],
-  "blockedCommands": [
-    "rm -rf",
-    "git push --force",
-    "sudo",
-    "chmod 777",
-    "npm publish",
-    "cargo publish"
-  ]
+    "maintainedFileLinesMax": 350,
+    "skillEntrypointLinesMax": 350
+  }
 }
