@@ -1,6 +1,7 @@
 import { runProcess } from './process.mjs';
+import { EFFORT_LEVELS } from './task-contract.mjs';
 
-const EFFORTS = new Set(['low', 'medium', 'high']);
+const EFFORTS = new Set(EFFORT_LEVELS);
 const READ_TOOLS = new Set(['read', 'grep', 'find', 'ls']);
 const WRITE_TOOLS = 'read,bash,edit,write,grep,find,ls';
 
