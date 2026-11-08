@@ -1,6 +1,7 @@
 import { validateWorkflow } from './workflow.mjs';
 
 function copyWorkflowFields(input, stripAnswers = false) {
+  if (input.schemaVersion === 1) throw new TypeError('Schema 1 plans are historical; re-plan on schema 2 to compile and execute.');
   const questions = Array.isArray(input.questions) ? input.questions.map((question) => {
     if (!stripAnswers || !question || typeof question !== 'object' || Array.isArray(question)) return question;
     const draft = { ...question };
@@ -8,8 +9,9 @@ function copyWorkflowFields(input, stripAnswers = false) {
     return draft;
   }) : input.questions ?? [];
   return validateWorkflow({
-    schemaVersion: 1, id: input.id, goal: input.goal, repository: input.repository,
+    schemaVersion: 2, id: input.id, goal: input.goal, repository: input.repository,
     tasks: input.tasks, questions, decisions: input.decisions ?? [],
+    securityReviewEffort: input.securityReviewEffort, securityFixEffort: input.securityFixEffort,
   });
 }
 

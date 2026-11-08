@@ -101,6 +101,7 @@ export async function assembleContext({ repoRoot, task, workflow, dependencyResu
     `Goal: ${boundedText(workflow.goal ?? '', 'Goal')}`,
     `Workflow: ${boundedText(workflow.id ?? '', 'Workflow ID')} @ ${boundedText(workflow.repository?.baseSha ?? '', 'Base revision')}`,
     `Task: ${boundedText(task.id ?? '', 'Task ID')} — ${boundedText(task.title ?? '', 'Task title')}`,
+    `Details: ${boundedText(task.details ?? '', 'Task details')}`,
     `Acceptance: ${(task.acceptance ?? []).map((item) => boundedText(item, 'Acceptance criterion')).join('; ')}`,
     `Decisions: ${(workflow.decisions ?? []).map((item) => `${item.id}: ${boundedText(item.text, 'Decision')}`).join('\n') || '(none)'}`,
     `Dependencies: ${dependencies.map((item) => `${item.taskId}@${item.headSha}: ${item.summary}`).join('\n') || '(none)'}`,

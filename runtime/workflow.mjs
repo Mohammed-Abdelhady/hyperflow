@@ -1,40 +1,54 @@
 import { open } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { isAbsolute, posix } from 'node:path';
+import { CHECK_ID, EFFORT_ID, PROFILE_ID, exactKeys, list, normalizeSchema2Task, optionalResources,
+  requireString, schema2WorkflowKeys, scopeList, securityEffortFields } from './task-contract.mjs';
 
-const SECRET_PATH = /(^|\/)(?:\.env(?:\..*)?|[^/]+\.(?:pem|key|crt)|credentials?(?:\..*)?|secrets?(?:\..*)?|\.ssh|\.aws|\.kube)(\/|$)|(^|\/)\.config\/(?:gcloud|aws)(\/|$)/i;
 const MAX_WORKFLOW_BYTES = 1048576;
-const RESERVED_WRITE_PATH = /(^|\/)(?:\.git|\.hyperflow)(\/|$)/i;
-const CHECK_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-const PROFILE_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-const EFFORT_ID = /^[a-z0-9][a-z0-9._+-]*$/i;
 
-function exactKeys(value, allowed, label) {
-  for (const key of Object.keys(value)) if (!allowed.includes(key)) throw new TypeError(`Unknown ${label} field: ${key}`);
+function validateQuestion(question) {
+  if (!question || typeof question !== 'object' || Array.isArray(question)) throw new TypeError('Question must be an object');
+  exactKeys(question, ['id', 'prompt', 'blocking', 'answer', 'recommendation', 'options', 'why', 'dependsOn'], 'question');
+  if (typeof question.blocking !== 'boolean') throw new TypeError('question.blocking must be boolean');
+  const result = { id: requireString(question.id, 'question.id'), prompt: requireString(question.prompt, 'question.prompt'), blocking: question.blocking === true };
+  if (question.answer !== undefined) result.answer = requireString(question.answer, 'question.answer');
+  if (question.recommendation !== undefined) result.recommendation = requireString(question.recommendation, 'question.recommendation');
+  if (question.why !== undefined) result.why = requireString(question.why, 'question.why');
+  if (question.options !== undefined) result.options = list(question.options, 'question.options', (option) => requireString(option, 'question option'));
+  if (question.dependsOn !== undefined) result.dependsOn = list(question.dependsOn, 'question.dependsOn', (dependency) => requireString(dependency, 'question dependency'));
+  return result;
 }
 
-function requireString(value, label) {
-  if (typeof value !== 'string' || value.trim() === '') throw new TypeError(`${label} must be a nonempty string`);
-  return value;
-}
-
-function scopeList(value, label, write = false) {
-  if (!Array.isArray(value)) throw new TypeError(`${label} must be an array`);
-  return value.map((entry) => {
-    requireString(entry, label);
-    if (entry.includes('\\') || isAbsolute(entry) || /^[A-Za-z]:/.test(entry)) throw new TypeError(`Unsafe ${label}: ${entry}`);
-    if (entry.split('/').some((part) => part === '..' || part === '.')) throw new TypeError(`Unsafe ${label}: ${entry}`);
-    const normalized = posix.normalize(entry);
-    if (normalized === '..' || normalized.startsWith('../') || normalized === '.') throw new TypeError(`Unsafe ${label}: ${entry}`);
-    if (SECRET_PATH.test(normalized)) throw new TypeError(`Secret path is not allowed in ${label}: ${entry}`);
-    if (write && RESERVED_WRITE_PATH.test(normalized)) throw new TypeError(`Runtime metadata cannot be written by a task: ${entry}`);
-    return normalized;
-  });
-}
-
-function list(value, label, mapper) {
-  if (!Array.isArray(value)) throw new TypeError(`${label} must be an array`);
-  return value.map(mapper);
+function validateSchema1Task(task) {
+  if (!task || typeof task !== 'object' || Array.isArray(task)) throw new TypeError('Task must be an object');
+  exactKeys(task, ['id', 'title', 'agentRole', 'effort', 'reviewRole', 'reviewEffort', 'dependsOn', 'readScope', 'writeScope', 'acceptance', 'checks', 'resources'], 'task');
+  const agentRole = requireString(task.agentRole, 'task.agentRole');
+  if (!PROFILE_ID.test(agentRole)) throw new TypeError(`Invalid agent profile ID: ${agentRole}`);
+  const effort = requireString(task.effort, 'task.effort');
+  if (!EFFORT_ID.test(effort)) throw new TypeError(`Invalid task effort: ${effort}`);
+  const result = {
+    id: requireString(task.id, 'task.id'), title: requireString(task.title, 'task.title'), agentRole, effort,
+    dependsOn: list(task.dependsOn, 'task.dependsOn', (item) => requireString(item, 'dependency')),
+    readScope: scopeList(task.readScope, 'readScope'), writeScope: scopeList(task.writeScope, 'writeScope', true),
+    acceptance: list(task.acceptance, 'task.acceptance', (item) => requireString(item, 'acceptance criterion')),
+    checks: list(task.checks, 'task.checks', (item) => {
+      requireString(item, 'check ID');
+      if (!CHECK_ID.test(item)) throw new TypeError(`Invalid check ID: ${item}`);
+      return item;
+    }),
+  };
+  if (task.reviewRole !== undefined) {
+    result.reviewRole = requireString(task.reviewRole, 'task.reviewRole');
+    if (!PROFILE_ID.test(result.reviewRole)) throw new TypeError(`Invalid review profile ID: ${result.reviewRole}`);
+  }
+  if (task.reviewEffort !== undefined) {
+    if (task.reviewRole === undefined) throw new TypeError('task.reviewEffort requires task.reviewRole');
+    result.reviewEffort = requireString(task.reviewEffort, 'task.reviewEffort');
+    if (!EFFORT_ID.test(result.reviewEffort)) throw new TypeError(`Invalid review effort: ${result.reviewEffort}`);
+  }
+  if (!result.acceptance.length) throw new TypeError('Each task needs an acceptance criterion');
+  const resources = optionalResources(task);
+  if (resources) result.resources = resources;
+  return result;
 }
 
 function rejectPrototypeKeys(value) {
@@ -76,74 +90,21 @@ export function parseWorkflow(source) {
   return validateWorkflow(value);
 }
 
-function validateQuestion(question) {
-  if (!question || typeof question !== 'object' || Array.isArray(question)) throw new TypeError('Question must be an object');
-  exactKeys(question, ['id', 'prompt', 'blocking', 'answer', 'recommendation', 'options', 'why', 'dependsOn'], 'question');
-  if (typeof question.blocking !== 'boolean') throw new TypeError('question.blocking must be boolean');
-  const result = { id: requireString(question.id, 'question.id'), prompt: requireString(question.prompt, 'question.prompt'), blocking: question.blocking === true };
-  if (question.answer !== undefined) result.answer = requireString(question.answer, 'question.answer');
-  if (question.recommendation !== undefined) result.recommendation = requireString(question.recommendation, 'question.recommendation');
-  if (question.why !== undefined) result.why = requireString(question.why, 'question.why');
-  if (question.options !== undefined) result.options = list(question.options, 'question.options', (option) => requireString(option, 'question option'));
-  if (question.dependsOn !== undefined) result.dependsOn = list(question.dependsOn, 'question.dependsOn', (dependency) => requireString(dependency, 'question dependency'));
-  return result;
-}
-
-function validateTask(task) {
-  if (!task || typeof task !== 'object' || Array.isArray(task)) throw new TypeError('Task must be an object');
-  exactKeys(task, ['id', 'title', 'agentRole', 'effort', 'reviewRole', 'reviewEffort', 'dependsOn', 'readScope', 'writeScope', 'acceptance', 'checks', 'resources'], 'task');
-  const agentRole = requireString(task.agentRole, 'task.agentRole');
-  if (!PROFILE_ID.test(agentRole)) throw new TypeError(`Invalid agent profile ID: ${agentRole}`);
-  const effort = requireString(task.effort, 'task.effort');
-  if (!EFFORT_ID.test(effort)) throw new TypeError(`Invalid task effort: ${effort}`);
-  const result = {
-    id: requireString(task.id, 'task.id'), title: requireString(task.title, 'task.title'), agentRole, effort,
-    dependsOn: list(task.dependsOn, 'task.dependsOn', (item) => requireString(item, 'dependency')),
-    readScope: scopeList(task.readScope, 'readScope'), writeScope: scopeList(task.writeScope, 'writeScope', true),
-    acceptance: list(task.acceptance, 'task.acceptance', (item) => requireString(item, 'acceptance criterion')),
-    checks: list(task.checks, 'task.checks', (item) => {
-      requireString(item, 'check ID');
-      if (!CHECK_ID.test(item)) throw new TypeError(`Invalid check ID: ${item}`);
-      return item;
-    }),
-  };
-  if (task.reviewRole !== undefined) {
-    result.reviewRole = requireString(task.reviewRole, 'task.reviewRole');
-    if (!PROFILE_ID.test(result.reviewRole)) throw new TypeError(`Invalid review profile ID: ${result.reviewRole}`);
-  }
-  if (task.reviewEffort !== undefined) {
-    if (task.reviewRole === undefined) throw new TypeError('task.reviewEffort requires task.reviewRole');
-    result.reviewEffort = requireString(task.reviewEffort, 'task.reviewEffort');
-    if (!EFFORT_ID.test(result.reviewEffort)) throw new TypeError(`Invalid review effort: ${result.reviewEffort}`);
-  }
-  if (!result.acceptance.length) throw new TypeError('Each task needs an acceptance criterion');
-  if (task.resources !== undefined) {
-    if (!task.resources || typeof task.resources !== 'object' || Array.isArray(task.resources)) throw new TypeError('task.resources must be an object');
-    exactKeys(task.resources, ['heavy', 'browserSpaces', 'simulators'], 'resource');
-    const { heavy = false, browserSpaces = 0, simulators = 0 } = task.resources;
-    if (typeof heavy !== 'boolean' || !Number.isInteger(browserSpaces) || browserSpaces < 0 || browserSpaces > 5 || !Number.isInteger(simulators) || simulators < 0 || simulators > 3) throw new TypeError('Invalid task resource requirements');
-    result.resources = { heavy, browserSpaces, simulators };
-  }
-  return result;
-}
-
-export function validateWorkflow(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError('Workflow must be an object');
-  if (value.schemaVersion !== 1) throw new TypeError('Unsupported workflow schemaVersion');
-  exactKeys(value, ['schemaVersion', 'id', 'goal', 'repository', 'tasks', 'questions', 'decisions'], 'workflow');
+function finishWorkflow(schemaVersion, value, tasks, extra = {}) {
   const repository = value.repository;
   if (!repository || typeof repository !== 'object' || Array.isArray(repository)) throw new TypeError('Workflow repository identity is required');
   exactKeys(repository, ['root', 'baseSha'], 'repository');
   const workflow = {
-    schemaVersion: 1, id: requireString(value.id, 'workflow.id'), goal: requireString(value.goal, 'workflow.goal'),
+    schemaVersion, id: requireString(value.id, 'workflow.id'), goal: requireString(value.goal, 'workflow.goal'),
     repository: { root: requireString(repository.root, 'repository.root'), baseSha: requireString(repository.baseSha, 'repository.baseSha') },
-    tasks: list(value.tasks, 'workflow.tasks', validateTask),
+    tasks,
     questions: list(value.questions ?? [], 'workflow.questions', validateQuestion),
     decisions: list(value.decisions ?? [], 'workflow.decisions', (entry) => {
       if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new TypeError('Decision must be an object');
       exactKeys(entry, ['id', 'text', 'source'], 'decision');
       return { id: requireString(entry.id, 'decision.id'), text: requireString(entry.text, 'decision.text'), ...(entry.source ? { source: requireString(entry.source, 'decision.source') } : {}) };
     }),
+    ...extra,
   };
   if (!workflow.tasks.length) throw new TypeError('Workflow must contain at least one task');
   const questionIds = new Set(workflow.questions.map((question) => question.id));
@@ -186,6 +147,19 @@ export function validateWorkflow(value) {
   }
   for (const task of workflow.tasks) visit(task.id);
   return workflow;
+}
+
+export function validateWorkflow(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError('Workflow must be an object');
+  if (value.schemaVersion === 1) {
+    exactKeys(value, ['schemaVersion', 'id', 'goal', 'repository', 'tasks', 'questions', 'decisions'], 'workflow');
+    return finishWorkflow(1, value, list(value.tasks, 'workflow.tasks', validateSchema1Task));
+  }
+  if (value.schemaVersion === 2) {
+    exactKeys(value, schema2WorkflowKeys(), 'workflow');
+    return finishWorkflow(2, value, list(value.tasks, 'workflow.tasks', normalizeSchema2Task), securityEffortFields(value));
+  }
+  throw new TypeError('Unsupported workflow schemaVersion');
 }
 
 export async function loadWorkflow(path) {

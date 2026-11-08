@@ -9,6 +9,8 @@ import { createPlan, answerQuestions, compilePlan, pendingQuestions } from './pl
 import { loadWorkflow, serializeWorkflow } from './workflow.mjs';
 import { artifactPath, readJson, SLUG, writeAtomic, writeJson } from './files.mjs';
 import { loadChecks, validateChecks } from './checks.mjs';
+import { SECURITY_LANE_ROLE, TASK_ID } from './task-contract.mjs';
+import { generatePlanArtifacts, verifyPlanArtifacts } from './plan-artifacts.mjs';
 
 export function repositoryRoot(cwd = process.cwd()) {
   return realpathSync(execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' }).trim());
@@ -17,6 +19,44 @@ export function repositoryRoot(cwd = process.cwd()) {
 function planPath(root, id) {
   if (!SLUG.test(id ?? '')) throw new Error('A workflow slug is required');
   return artifactPath(root, 'workflows', id, 'plan.json');
+}
+
+function indexPath(root, id) {
+  if (!SLUG.test(id ?? '')) throw new Error('A workflow slug is required');
+  return artifactPath(root, 'tasks', `${id}.md`);
+}
+
+function renderIndex(workflow, status, phaseLinks = false) {
+  const pending = pendingQuestions(workflow);
+  const tasks = workflow.tasks.map((task) => `- [ ] ${task.id}: ${task.title}; ${task.difficulty} → ${task.agentRole}; effort ${task.effort}; review ${task.reviewRole} (${task.reviewEffort}); depends ${task.dependsOn.join(', ') || 'none'}\n  ${task.details}`);
+  const questions = workflow.questions.map((question) => `- ${question.id}: ${question.prompt}${question.answer ? ` — answered: ${question.answer}` : ' — unanswered'}`);
+  const links = phaseLinks ? ['', 'Phase files:', ...workflow.tasks.map((task) => {
+    if (!TASK_ID.test(task.id)) throw new Error(`Task ID is not a safe phase directory: ${task.id}`);
+    return `- ${task.id}: .hyperflow/workflows/${workflow.id}/tasks/${task.id}/task.md`;
+  }), `- security review: .hyperflow/workflows/${workflow.id}/security-review.md`] : [];
+  return [`# ${workflow.goal}`, '', `Status: ${status}`, '', ...tasks, '', ...questions, ...links, ''].join('\n');
+}
+
+function assertEffortSupported(effort, binding, catalog, label) {
+  const descriptor = catalog.find((entry) => entry.adapter === binding.adapter && entry.id === binding.model);
+  if (!descriptor) throw new Error(`No ${binding.adapter}/${binding.model} model is available for the ${label}`);
+  const supported = descriptor.effortSupport === 'unknown' ? descriptor.acceptedEffortTokens : descriptor.variants;
+  if (!supported?.includes(effort)) throw new Error(`${label} effort ${effort} is unsupported for ${binding.adapter}/${binding.model}`);
+}
+
+function bindingsDigest(configuration) {
+  const roles = configuration.roles ?? configuration;
+  const bindings = Object.fromEntries(Object.keys(roles).sort().map(role => {
+    const { adapter, model, variant } = roles[role];
+    return [role, { adapter, model, ...(variant === undefined ? {} : { variant }) }];
+  }));
+  return createHash('sha256').update(JSON.stringify(bindings)).digest('hex');
+}
+
+export function validateApprovedRoles(receipt, configuration) {
+  if (receipt.rolesDigest !== bindingsDigest(configuration)) {
+    throw new Error('Model role bindings changed after approval. Compile the reviewed plan again.');
+  }
 }
 
 export async function planCommand(command, args, root) {
@@ -28,10 +68,9 @@ export async function planCommand(command, args, root) {
     const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
     if (plan.repository.baseSha !== head) throw new Error('Plan baseline does not match repository HEAD');
     writeJson(planPath(root, plan.id), plan);
-    const taskPath = artifactPath(root, 'tasks', `${plan.id}.md`);
-    writeAtomic(taskPath, [`# ${plan.goal}`, '', 'Status: awaiting user input', '',
-      ...plan.tasks.map((task) => `- [ ] ${task.id}: ${task.title}; role ${task.agentRole}; depends ${task.dependsOn.join(', ') || 'none'}`),
-      '', ...plan.questions.map((question) => `- ${question.id}: ${question.prompt}`), ''].join('\n'));
+    generatePlanArtifacts({ root, workflow: plan });
+    const taskPath = indexPath(root, plan.id);
+    writeAtomic(taskPath, renderIndex(plan, `awaiting answers (${pendingQuestions(plan).length} pending questions)`));
     return { id: plan.id, status: 'awaiting_answers', questions: pendingQuestions(plan), planPath: planPath(root, plan.id), taskPath };
   }
   if (command === 'answer') {
@@ -39,7 +78,10 @@ export async function planCommand(command, args, root) {
     const path = planPath(root, args[0]);
     const answered = answerQuestions(readJson(path), readJson(args[1]));
     writeJson(path, answered);
-    return { id: answered.id, questions: pendingQuestions(answered), userParticipation: answered.explicitUserParticipation };
+    generatePlanArtifacts({ root, workflow: answered });
+    const pending = pendingQuestions(answered);
+    writeAtomic(indexPath(root, answered.id), renderIndex(answered, pending.length ? `awaiting answers (${pending.length} pending questions)` : 'ready to compile'));
+    return { id: answered.id, questions: pending, userParticipation: answered.explicitUserParticipation };
   }
   if (args.length !== 1) throw new Error('Usage: compile <workflow-id>');
   const plan = readJson(planPath(root, args[0]));
@@ -48,22 +90,43 @@ export async function planCommand(command, args, root) {
   const catalog = await discoverCatalog({ cwd: root, configured: configuredProfiles(root) });
   const profiles = effectiveRoles({ repoRoot: root, catalog });
   validateAssignments(workflow, profiles, catalog);
+  const general = profiles.roles[SECURITY_LANE_ROLE];
+  if (!general) throw new Error(`A configured ${SECURITY_LANE_ROLE} role model is required for the consolidated security review`);
+  assertEffortSupported(workflow.securityReviewEffort, general, catalog, 'security review');
+  assertEffortSupported(workflow.securityFixEffort, general, catalog, 'security fix');
   const path = artifactPath(root, 'workflows', workflow.id, 'workflow.mjs');
   writeAtomic(path, serializeWorkflow(workflow));
   const { digest } = await loadWorkflow(path);
-  const approvalPath = artifactPath(root, 'workflows', workflow.id, 'approval.json');
-  writeJson(approvalPath, { schemaVersion: 1, digest, repository: root, explicitUserParticipation: true,
-    checksDigest: createHash('sha256').update(JSON.stringify(loadChecks(root))).digest('hex') });
-  return { id: workflow.id, workflowPath: path, digest, status: 'ready', assignments: workflow.tasks.map((task) => ({
-    taskId: task.id, profile: task.agentRole, ...profiles.roles[task.agentRole], effort: task.effort, effortSupport: catalog.find((entry) => entry.id === profiles.roles[task.agentRole].model &&
-      entry.adapter === profiles.roles[task.agentRole].adapter)?.effortSupport ?? 'advertised' })) };
+  const artifacts = generatePlanArtifacts({ root, workflow, roles: profiles.roles, catalog });
+  writeJson(artifactPath(root, 'workflows', workflow.id, 'approval.json'), {
+    schemaVersion: 2, digest, repository: root, explicitUserParticipation: true,
+    checksDigest: createHash('sha256').update(JSON.stringify(loadChecks(root))).digest('hex'),
+    rolesRevision: profiles.revision, rolesDigest: bindingsDigest(profiles), artifacts,
+  });
+  writeAtomic(indexPath(root, workflow.id), renderIndex(workflow, 'compiled; execution requires smash', true));
+  const assignment = (task) => {
+    const profile = profiles.roles[task.agentRole];
+    return { taskId: task.id, profile: task.agentRole, ...profile, effort: task.effort, effortSupport: catalog.find((entry) => entry.id === profile.model &&
+      entry.adapter === profile.adapter)?.effortSupport ?? 'advertised' };
+  };
+  return { id: workflow.id, workflowPath: path, digest, status: 'ready', assignments: workflow.tasks.map(assignment),
+    securityReview: { role: SECURITY_LANE_ROLE, ...general, effort: workflow.securityReviewEffort },
+    securityFix: { role: SECURITY_LANE_ROLE, ...general, effort: workflow.securityFixEffort },
+    artifacts: Object.keys(artifacts) };
 }
 
-export function validateApproval(root, workflow, digest) {
+export function validateApproval(root, workflow, digest, configuration) {
+  if (workflow.schemaVersion !== 2) {
+    throw new Error('Schema 1 workflows are read-only history and cannot execute. Re-plan on schema 2, answer, compile, and smash the new workflow.');
+  }
   const receipt = readJson(artifactPath(root, 'workflows', workflow.id, 'approval.json'));
-  if (receipt.digest !== digest || receipt.repository !== root || receipt.explicitUserParticipation !== true ||
+  if (receipt.schemaVersion !== 2 || receipt.digest !== digest || receipt.repository !== root ||
+      receipt.explicitUserParticipation !== true ||
       receipt.checksDigest !== createHash('sha256').update(JSON.stringify(loadChecks(root))).digest('hex')) {
     throw new Error('Workflow or verification contract changed after user input. Compile the reviewed plan again.');
   }
+  if (configuration !== undefined) validateApprovedRoles(receipt, configuration);
+  verifyPlanArtifacts(root, workflow, receipt.artifacts);
   if (workflow.questions.some((question) => question.blocking && !question.answer)) throw new Error('Blocking answers are missing');
+  return receipt;
 }
