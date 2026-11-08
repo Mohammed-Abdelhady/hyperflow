@@ -4,7 +4,7 @@ import path from 'node:path';
 import { RunStore } from './store.mjs';
 import { validateWorkflow } from './workflow.mjs';
 import { runChecks } from './command.mjs';
-import { effortLevel, MAX_REPAIR_ROUNDS, runSecurityGate, validateFindings } from './review-policy.mjs';
+import { effortLevel, isCheckFailureEvidence, MAX_REPAIR_ROUNDS, runSecurityGate, validateFindings } from './review-policy.mjs';
 import {
   applyIntegratedChanges, assertChangesScoped, assertCommitScoped, commitTaskChanges,
   acquireRepositoryLock, assertNoScopeSymlinks, assertValidScopes, changedPaths, createExecutionWorktree, git, integrateTaskChanges, scopesOverlap
@@ -22,7 +22,7 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
   const tasks = workflow.tasks;
   assertValidScopes(tasks);
   const store = new RunStore(statePath);
-  const roleSet = normalizeRoles(roles);
+  const roleSet = structuredClone(normalizeRoles(roles));
   let releaseLock;
   let run;
   try {
@@ -75,10 +75,9 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
         const lease = store.claimTask(run.runId, task.id, `runner-${randomUUID()}`);
         if (!lease) continue;
         const currentRun = store.getRun(run.runId);
-        const currentRoles = { revision: currentRun.roleRevision, roles: currentRun.roles };
         const dependencyResults = Object.fromEntries(task.dependsOn.map(id => [id, currentRun.tasks[id].result]));
         const integrate = operation => { const next = integrationQueue.then(operation); integrationQueue = next.catch(() => {}); return next; };
-        const taskPromise = executeTask({ task, lease, integration: integration.path, repoRoot, roles: currentRoles, adapter, checks, review,
+        const taskPromise = executeTask({ task, lease, integration: integration.path, repoRoot, roles: roleSet, adapter, checks, review,
           signal: controller.signal, context, dependencyResults, integrate, evidenceDirectory: path.join(`${statePath}.evidence`, run.runId, task.id.replace(/[^A-Za-z0-9._-]/g, '_')) }).then(async result => {
             if (store.completeTask(run.runId, task.id, lease.token, result)) {
               await git(repoRoot, ['update-ref', integrationRef, result.integrationHead]);
@@ -117,17 +116,21 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
       return resultFor(store, run.runId);
     }
     const finalChecks = [];
+    const preSecurityHead = await git(integration.path, ['rev-parse', 'HEAD']);
     for (const task of tasks) finalChecks.push({ taskId: task.id, receipts: await runChecks(task, checks, integration.path, controller.signal, path.join(`${statePath}.evidence`, run.runId, 'final', task.id.replace(/[^A-Za-z0-9._-]/g, '_'))) });
     if (controller.signal.aborted) throw controller.signal.reason ?? new Error('Workflow stopped');
-    const gateRun = store.getRun(run.runId);
     const gate = await runSecurityGate({ workflow, tasks, repoRoot, integrationPath: integration.path,
-      roles: { revision: gateRun.roleRevision, roles: gateRun.roles }, adapter, checks, review,
-      signal: controller.signal, evidenceDirectory: path.join(`${statePath}.evidence`, run.runId, 'gate') });
+      roles: roleSet, adapter, checks, review,
+      signal: controller.signal, evidenceDirectory: path.join(`${statePath}.evidence`, run.runId, 'gate'),
+      checkpoint: async integrationHead => {
+        store.setIntegrationHead(run.runId, integrationHead);
+        await git(repoRoot, ['update-ref', integrationRef, integrationHead]);
+      } });
     await git(repoRoot, ['update-ref', integrationRef, gate.integrationHead]);
     store.setIntegrationHead(run.runId, gate.integrationHead);
     if (gate.taskChange) taskChanges.push(gate.taskChange);
-    store.setFinalEvidence(run.runId, { checks: finalChecks, integrationHead: gate.integrationHead,
-      security: { verdict: gate.verdict, baseSha: gate.baseSha, integrationHead: gate.integrationHead, reviews: gate.reviews, fixes: gate.fixes } });
+    store.setFinalEvidence(run.runId, { checks: finalCheckEvidence(finalChecks, gate, preSecurityHead), integrationHead: gate.integrationHead,
+      security: { verdict: gate.verdict, baseSha: gate.baseSha, integrationHead: gate.integrationHead, reviews: gate.reviews, fixes: gate.fixes, attempts: gate.attempts } });
     if (controller.signal.aborted) throw controller.signal.reason ?? new Error('Workflow stopped');
     await applyIntegratedChanges(integration.path, repoRoot, baseSha, taskChanges, controller.signal);
     await git(repoRoot, ['update-ref', '-d', integrationRef]);
@@ -135,7 +138,9 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
     return resultFor(store, run.runId);
   } catch (error) {
     if (store.getRun(run.runId)?.status !== 'stopped') store.setRunStatus(run.runId, 'failed', error);
-    if (error?.evidence) store.setFinalEvidence(run.runId, { checkFailure: error.evidence, error: String(error.message ?? error) });
+    if (error?.evidence || error?.security) store.setFinalEvidence(run.runId, {
+      ...(error.evidence ? { checkFailure: error.evidence } : {}), ...(error.security ? { security: error.security } : {}),
+      error: String(error.message ?? error) });
     return resultFor(store, run.runId);
   } finally {
     clearInterval(stopMonitor);
@@ -276,10 +281,15 @@ function normalizeRoles(input) {
   return { revision, roles: bindings };
 }
 
-function isCheckFailureEvidence(error) {
-  const receipt = error?.evidence;
-  return Boolean(receipt && typeof receipt.command === 'string' && Array.isArray(receipt.args) &&
-    Number.isInteger(receipt.exitCode) && receipt.exitCode !== 0 && typeof receipt.stdoutRef === 'string' && typeof receipt.stderrRef === 'string');
+function finalCheckEvidence(finalChecks, gate, preSecurityHead) {
+  const fix = gate.fixes?.[gate.fixes.length - 1];
+  if (!fix) return finalChecks.map(entry => ({ ...entry, coversHead: preSecurityHead, phase: 'pre-security' }));
+  const byCheck = new Map(fix.checks.map(receipt => [receipt.checkId, receipt]));
+  return finalChecks.map(entry => {
+    const receipts = entry.receipts.map(receipt => byCheck.get(receipt.checkId) ?? receipt);
+    const reused = receipts.every((receipt, index) => receipt !== entry.receipts[index]);
+    return { taskId: entry.taskId, receipts, coversHead: reused ? fix.headSha : preSecurityHead, phase: reused ? 'security-fix' : 'mixed' };
+  });
 }
 
 async function runIntegratedChecks(task, checks, cwd, signal, evidenceDirectory) {

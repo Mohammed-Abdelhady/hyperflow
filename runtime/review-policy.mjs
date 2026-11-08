@@ -98,15 +98,22 @@ async function reviewLane({ task, phase, repoRoot, pin, baseSha, model, effort, 
   } finally { await lane.cleanup(); }
 }
 
-async function securityFixRound({ workflow, tasks, findings, round, repoRoot, integrationPath, profiles, adapter, checks, review, signal, baseSha, head, evidenceDirectory }) {
+export function isCheckFailureEvidence(error) {
+  const receipt = error?.evidence;
+  return Boolean(receipt && typeof receipt.command === 'string' && Array.isArray(receipt.args) &&
+    Number.isInteger(receipt.exitCode) && receipt.exitCode !== 0 && typeof receipt.stdoutRef === 'string' && typeof receipt.stderrRef === 'string');
+}
+
+async function securityFixRound({ workflow, tasks, findings, verificationFailure, attempt, repoRoot, integrationPath, profiles, adapter, checks, review, signal, baseSha, head, evidenceDirectory }) {
   const task = securityFixTask(workflow, tasks);
   const model = profiles.general;
   const lane = await createExecutionWorktree(repoRoot, head);
   try {
     assertLive(signal);
     await assertNoScopeSymlinks(lane.path, task);
-    const context = JSON.stringify({ phase: 'security-fix', workflowGoal: workflow.goal, securityFindings: findings });
-    const output = await adapter({ task, context, cwd: lane.path, model, effort: task.effort, signal, attempt: round + 1 });
+    const context = JSON.stringify({ phase: 'security-fix', workflowGoal: workflow.goal, securityFindings: findings,
+      ...(verificationFailure ? { verificationFailure } : {}) });
+    const output = await adapter({ task, context, cwd: lane.path, model, effort: task.effort, signal, attempt });
     assertLive(signal);
     if (output?.status !== 'completed') throw new Error(`The security repair lane did not complete: ${output?.status ?? 'unknown status'}`);
     await assertNoScopeSymlinks(lane.path, task);
@@ -114,41 +121,76 @@ async function securityFixRound({ workflow, tasks, findings, round, repoRoot, in
     const fixHead = await commitTaskChanges(lane.path, task);
     const paths = await assertCommitScoped(lane.path, task, head, fixHead);
     if (!paths.length) throw new Error('The security repair produced no scoped change');
-    const receipts = await runChecks(task, checks, lane.path, signal, path.join(evidenceDirectory, 'fix', `round-${round}`));
+    const evidence = { task: task.id, attempt, phase: 'security-fix', role: 'general', model: model.model, adapter: model.adapter,
+      effort: task.effort, lane: { id: randomUUID(), path: lane.path }, baseSha: head, headSha: fixHead, paths };
+    let receipts;
+    try { receipts = await runChecks(task, checks, lane.path, signal, path.join(evidenceDirectory, 'fix', `round-${attempt - 1}`)); }
+    catch (error) {
+      if (!isCheckFailureEvidence(error)) throw error;
+      if ((await changedPaths(lane.path)).length) throw new Error('Checks modified the security repair candidate tree');
+      return { status: 'check-failed', evidence: { ...evidence, checks: [error.evidence], verificationFailure: error.evidence } };
+    }
     if ((await changedPaths(lane.path)).length) throw new Error('Checks modified the security repair candidate tree');
-    const merged = await integrateTaskChanges(lane.path, integrationPath, task, head);
-    const primaryReview = await reviewLane({ task, phase: 'correctness-review', repoRoot, pin: merged.headSha, baseSha,
-      model: profiles.primary, effort: task.reviewEffort, review, signal });
-    if (primaryReview.verdict !== 'pass') throw new Error(`The primary correctness review rejected the security repair with ${primaryReview.verdict}`);
-    return { task, paths, integrationHead: merged.headSha, evidence: { task: task.id, attempt: round + 1, phase: 'security-fix',
-      role: 'general', model: model.model, adapter: model.adapter, effort: task.effort, lane: { id: randomUUID(), path: lane.path },
-      baseSha: head, headSha: fixHead, paths, checks: receipts, review: primaryReview } };
+    const reviewTree = await createExecutionWorktree(repoRoot, head);
+    let primaryReview;
+    try {
+      const merged = await integrateTaskChanges(lane.path, reviewTree.path, task, head);
+      primaryReview = await reviewLane({ task, phase: 'correctness-review', repoRoot, pin: merged.headSha, baseSha,
+        model: profiles.primary, effort: task.reviewEffort, review, signal });
+      if (primaryReview.verdict === 'pass') {
+        assertLive(signal);
+        await git(integrationPath, ['reset', '--hard', merged.headSha]);
+        return { status: 'verified', task, paths, integrationHead: merged.headSha, evidence: { ...evidence, checks: receipts, review: primaryReview } };
+      }
+    } finally { await reviewTree.cleanup(); }
+    if (primaryReview.verdict === 'blocked') throw new Error(`The primary correctness review blocked the security repair: ${primaryReview.reason ?? 'reviewer blocked'}`);
+    return { status: 'needs-fix', findings: validateFindings(primaryReview.findings, paths), evidence: { ...evidence, checks: receipts, review: primaryReview } };
   } finally { await lane.cleanup(); }
 }
 
-export async function runSecurityGate({ workflow, tasks, repoRoot, integrationPath, roles, adapter, checks, review, signal, evidenceDirectory }) {
+export async function runSecurityGate({ workflow, tasks, repoRoot, integrationPath, roles, adapter, checks, review, signal, evidenceDirectory, checkpoint }) {
   const profiles = roles?.roles ?? roles;
   if (!profiles?.primary || !profiles?.general) throw new Error('The final security gate requires the primary and general profiles');
   const baseSha = workflow.repository.baseSha;
   const securityTask = securityReviewTask(workflow);
   const reviews = [];
   const fixes = [];
+  const attempts = [];
   let head = await git(integrationPath, ['rev-parse', 'HEAD']);
   let taskChange = null;
-  for (let round = 0; round <= MAX_REPAIR_ROUNDS; round += 1) {
-    const security = await reviewLane({ task: securityTask, phase: 'security-review', repoRoot, pin: head, baseSha,
-      model: profiles.general, effort: securityTask.effort, review, signal });
-    reviews.push(security);
-    if (security.verdict === 'pass') return { verdict: 'pass', baseSha, integrationHead: head, reviews, fixes, taskChange };
-    if (security.verdict === 'blocked') throw new Error(`The consolidated security review blocked the workflow: ${security.reason ?? 'reviewer blocked'}`);
-    const findings = validateFindings(security.findings, await changedFiles(integrationPath, baseSha, head));
-    if (round === MAX_REPAIR_ROUNDS) throw new Error('Security repair limit reached before a passing consolidated review');
-    const fix = await securityFixRound({ workflow, tasks, findings, round, repoRoot, integrationPath, profiles, adapter, checks, review, signal, baseSha, head, evidenceDirectory });
-    head = fix.integrationHead;
-    fixes.push(fix.evidence);
-    taskChange = { task: fix.task, paths: fix.paths };
+  let pending = null;
+  const fail = (message, verdict) => Object.assign(new Error(message), { security: { verdict, baseSha, integrationHead: head, reviews, fixes, attempts } });
+  try {
+    for (;;) {
+      if (!pending) {
+        const security = await reviewLane({ task: securityTask, phase: 'security-review', repoRoot, pin: head, baseSha,
+          model: profiles.general, effort: securityTask.effort, review, signal });
+        reviews.push(security);
+        if (security.verdict === 'pass') return { verdict: 'pass', baseSha, integrationHead: head, reviews, fixes, attempts, taskChange };
+        if (security.verdict === 'blocked') throw fail(`The consolidated security review blocked the workflow: ${security.reason ?? 'reviewer blocked'}`, 'blocked');
+        pending = { findings: validateFindings(security.findings, await changedFiles(integrationPath, baseSha, head)) };
+      }
+      const used = fixes.length + attempts.length;
+      if (used >= MAX_REPAIR_ROUNDS) throw fail('Security repair limit reached before a passing consolidated review', 'failed');
+      const round = await securityFixRound({ workflow, tasks, findings: pending.findings, verificationFailure: pending.verificationFailure,
+        attempt: used + 1, repoRoot, integrationPath, profiles, adapter, checks, review, signal, baseSha, head, evidenceDirectory });
+      if (round.status === 'verified') {
+        head = round.integrationHead;
+        fixes.push(round.evidence);
+        taskChange = { task: round.task, paths: round.paths };
+        pending = null;
+        if (checkpoint) await checkpoint(head);
+      } else {
+        attempts.push(round.evidence);
+        pending = round.status === 'check-failed'
+          ? { findings: pending.findings, verificationFailure: round.evidence.verificationFailure }
+          : { findings: round.findings };
+      }
+    }
+  } catch (error) {
+    if (error && typeof error === 'object' && !error.security) error.security = { verdict: 'failed', baseSha, integrationHead: head, reviews, fixes, attempts };
+    throw error;
   }
-  throw new Error('Security repair limit reached before a passing consolidated review');
 }
 
 async function changedFiles(cwd, baseSha, headSha) {
