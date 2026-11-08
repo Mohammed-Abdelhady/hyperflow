@@ -1,5 +1,14 @@
 # Maintainer log
 
+## 2026-11-08 — v6.10.1
+
+- Version: v6.10.1; PR #96 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/96.
+- Shipped: `install.sh --status --check` now fails closed when a detected OpenCode or Antigravity provider has incomplete or conflicting skill links; machine-readable `healthy` state now matches provider-link readiness.
+- Validation: PR and main plugin validation, 23 Node tests, 7/7 evals, shell syntax, ShellCheck, release certification, and Pages deployment passed.
+- Release: https://github.com/Mohammed-Abdelhady/hyperflow/releases/tag/v6.10.1
+- Compatibility: Codex preview remains uncertified; no certificate was claimed.
+- Next candidate: source-managed update failure probes and host capability gaps.
+
 ## 2026-11-06 — v6.10.0
 
 - Version: v6.10.0; PRs #93 and #94 — https://github.com/Mohammed-Abdelhady/hyperflow/pull/93, https://github.com/Mohammed-Abdelhady/hyperflow/pull/94.
