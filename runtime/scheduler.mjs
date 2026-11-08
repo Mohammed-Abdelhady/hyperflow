@@ -141,7 +141,7 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
     return resultFor(store, run.runId);
   } catch (error) {
     if (store.getRun(run.runId)?.status !== 'stopped') store.setRunStatus(run.runId, 'failed', error);
-    const securityEvidence = error?.security ?? previousSecurity;
+    const securityEvidence = error?.security ?? store.getRun(run.runId)?.finalEvidence?.security;
     if (error?.evidence || securityEvidence) store.setFinalEvidence(run.runId, {
       ...(error.evidence ? { checkFailure: error.evidence } : {}), ...(securityEvidence ? { security: securityEvidence } : {}),
       error: String(error.message ?? error) });
