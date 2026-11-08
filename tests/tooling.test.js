@@ -51,7 +51,7 @@ function runInstaller(root, home, options = [], extraEnv = {}, cwd = undefined) 
   return spawnSync("bash", [join(ROOT, "install.sh"), ...options], {
     encoding: "utf8",
     cwd,
-    env: { ...process.env, HOME: home, HYPERFLOW_HOME: root, OPENCODE_CONFIG_DIR: join(home, ".config", "opencode"), PATH: "/usr/bin:/bin", ...extraEnv },
+    env: { ...process.env, HOME: home, HYPERFLOW_HOME: root, OPENCODE_CONFIG_DIR: join(home, ".config", "opencode"), PATH: [dirname(process.execPath), "/usr/bin", "/bin"].join(":"), ...extraEnv },
   });
 }
 
@@ -82,7 +82,7 @@ test("OpenCode setup links four skills and four owned commands without executing
   }
 });
 
-test("Codex-only installation links four skills and does not create command files", () => {
+test("Codex-only installation copies four skills and does not create command files", () => {
   const temp = tempRoot("codex-only");
   try {
     const checkout = join(temp, "checkout");
@@ -97,7 +97,12 @@ test("Codex-only installation links four skills and does not create command file
     const result = runInstaller(checkout, home, ["--link-only"]);
 
     assert.equal(result.status, 0, result.stderr);
-    for (const skill of SKILLS) assert.equal(readlinkSync(join(skillsRoot, skill)), join(checkout, "skills", skill));
+    for (const skill of SKILLS) {
+      const copy = join(skillsRoot, skill);
+      assert.equal(lstatSync(copy).isDirectory(), true);
+      assert.equal(lstatSync(copy).isSymbolicLink(), false);
+      assert.equal(readFileSync(join(copy, ".hyperflow-source.json"), "utf8").includes(realpathSync(checkout)), true);
+    }
     assert.equal(readFileSync(join(preserved, "SKILL.md"), "utf8"), "shared skill\n");
     assert.equal(existsSync(join(home, ".config", "opencode", "commands")), false);
   } finally {
