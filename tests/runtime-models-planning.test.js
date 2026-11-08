@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { selectReviewAssignment, selectReviewAssignments } from '../runtime/assignments.mjs';
+import { selectReviewAssignment, selectReviewAssignments, validateAssignments } from '../runtime/assignments.mjs';
 import { resolveRoles, validateTaskBinding } from '../runtime/models.mjs';
 import { createPlan, answerQuestions, compilePlan, pendingQuestions } from '../runtime/planning.mjs';
 
@@ -175,4 +175,15 @@ test('standalone reviews require primary correctness and general security review
   assert.throws(() => selectReviewAssignment({ roles: { general } }, catalog), /correctness-review/);
   assert.throws(() => selectReviewAssignments({ roles: { primary } }, catalog), /security-review/);
   assert.throws(() => selectReviewAssignments({ roles: {} }, []), /correctness-review/);
+});
+
+
+test('conditional security repair requires primary high effort before work starts', () => {
+  const workflow = compilePlan(answerQuestions(createPlan({ ...planInput(), questions: [],
+    tasks: [{ ...planInput().tasks[0], effort: 'low', reviewEffort: 'medium' }] }), { confirmed: true, answers: {} }));
+  const roles = { primary: { adapter: 'fixture', model: 'primary' }, general: { adapter: 'fixture', model: 'general' },
+    lightweight: { adapter: 'fixture', model: 'lightweight' } };
+  const catalog = Object.entries(roles).map(([role, profile]) => ({ id: profile.model, adapter: profile.adapter,
+    variants: role === 'primary' ? ['medium'] : ['low', 'medium', 'high'] }));
+  assert.throws(() => validateAssignments(workflow, { roles }, catalog), /security.*repair.*high|primary.*high/i);
 });
