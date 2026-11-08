@@ -10,11 +10,11 @@ export function childEnvironment() {
   return { ...process.env, PATH: [...new Set([...entries, dirname(process.execPath)])].join(delimiter) };
 }
 
-export function runProcess(command, args, { cwd, signal, timeoutMs = DEFAULT_TIMEOUT_MS, env } = {}) {
+export function runProcess(command, args, { cwd, signal, timeoutMs = DEFAULT_TIMEOUT_MS, env, input } = {}) {
   signal?.throwIfAborted();
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, env: env ?? childEnvironment(), detached: process.platform !== 'win32',
-      stdio: ['ignore', 'pipe', 'pipe'] });
+      stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     let reason;
@@ -51,6 +51,10 @@ export function runProcess(command, args, { cwd, signal, timeoutMs = DEFAULT_TIM
       if (reason) reject(reason);
       else resolve({ code, signal: terminationSignal, stdout, stderr });
     });
+    if (input !== undefined) {
+      child.stdin.on('error', (error) => { reason ??= error; terminate(); });
+      child.stdin.end(input);
+    }
     if (signal?.aborted) abort();
   });
 }

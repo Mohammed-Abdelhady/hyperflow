@@ -3,6 +3,7 @@ import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readJson } from './files.mjs';
 import { runProcess } from './process.mjs';
+import { runPiTask } from './pi-adapter.mjs';
 
 const TIMEOUT_MS = 600_000;
 const MAX_RETAINED_RUNS = 100;
@@ -62,21 +63,23 @@ export function pruneRelayArtifacts(root, now = Date.now()) {
   if (retained >= MAX_RETAINED_RUNS) throw new Error('Relay evidence capacity reached; archive old owned run directories before continuing.');
 }
 
-export function createAdapter({ relayPath, outRoot = join(tmpdir(), 'hyperflow-runs'), readOnly = false,
+export function createAdapter({ relayPath, piCommand = 'pi', outRoot = join(tmpdir(), 'hyperflow-runs'), readOnly = false,
   timeoutMs = TIMEOUT_MS } = {}) {
   return async ({ task, cwd, model, signal, context, attempt = 1 }) => {
     const selected = modelBinding(model);
     const effort = task.effort;
     if (effort !== undefined && (typeof effort !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(effort))) throw new Error('Invalid planned effort');
-    if (['cursor', 'pi'].includes(selected.adapter) && effort !== 'harness-default') throw new Error('This relay does not expose a separate effort control; plan harness-default explicitly.');
-    const relay = relayPath ?? installedRelay(selected.adapter);
+    if (selected.adapter === 'cursor' && effort !== 'harness-default') throw new Error('This relay does not expose a separate effort control; plan harness-default explicitly.');
+    const relay = selected.adapter === 'pi' ? null : relayPath ?? installedRelay(selected.adapter);
     const brief = [
       `Task ${task.id}: ${task.title}`, `Attempt: ${attempt}`,
+      `Details: ${task.details ?? task.title}`,
       `Allowed writes: ${JSON.stringify(readOnly ? [] : task.writeScope ?? [])}`,
       `Acceptance: ${JSON.stringify(task.acceptance ?? [])}`,
       readOnly ? 'Read only. Do not edit files, commit, install packages or execute unapproved commands.' :
         'Implement only the assigned scope. Do not commit, push, modify secrets or change workflow state.',
       'Work unattended. Resolve routine decisions from the approved plan and repository. Do not ask questions or wait for input. Report blockers with evidence if completion is impossible.',
+      'Never read environment files, private keys, certificates, SSH material, cloud credentials, or Kubernetes configuration.',
       context ?? '',
     ].join('\n');
     if (Buffer.byteLength(brief) > MAX_BRIEF_BYTES) throw new Error('Delegate brief exceeds the context bound');
@@ -97,7 +100,13 @@ export function createAdapter({ relayPath, outRoot = join(tmpdir(), 'hyperflow-r
       args.push(selected.adapter === 'opencode' ? '--variant' : '--effort', effort);
     }
     try {
-    const execution = await runProcess(process.execPath, args, { cwd, signal, timeoutMs });
+    let execution;
+    if (selected.adapter === 'pi') {
+      const native = await runPiTask({ command: piCommand, cwd, model: selected.model, effort,
+        brief, readOnly, signal, timeoutMs });
+      writeFileSync(join(output, 'result.json'), JSON.stringify(native), { mode: 0o600 });
+      execution = { code: native.exitCode, stderr: '' };
+    } else execution = await runProcess(process.execPath, args, { cwd, signal, timeoutMs });
     const resultPath = join(output, 'result.json');
     if (!existsSync(resultPath)) throw new Error(`Delegate exited ${execution.code} without a result. ${execution.stderr.slice(-1000)}`);
     const result = boundedResult(resultPath);
@@ -113,7 +122,7 @@ export function createAdapter({ relayPath, outRoot = join(tmpdir(), 'hyperflow-r
     return { status: completed ? 'completed' : 'failed', sessionId: result.sessionId ?? result.threadId ?? result.conversationId,
       summary: result.finalMessage, touchedFiles: result.touchedFiles, artifacts: [resultPath],
       model: selected.model, actualModel, adapter: selected.adapter, requestedEffort: effort ?? null,
-      appliedEffort: null, failure: completed ? null : result.status, retentionDays: 7 };
+      appliedEffort: result.appliedEffort ?? null, failure: completed ? null : result.status, retentionDays: 7 };
     } finally {
       rmSync(briefPath, { force: true });
       writeFileSync(join(output, 'retention.json'), JSON.stringify({ completed: true, expiresAt: Date.now() + RETENTION_MS }), { mode: 0o600 });

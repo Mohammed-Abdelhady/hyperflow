@@ -98,9 +98,9 @@ export async function configuredHarnessModels(harness, configured, { cwd, signal
   }
   return preferences.map((item) => ({
     id: item.model, adapter: harness, source: 'user-configured', availability: 'validated-on-dispatch',
-    effortSupport: harness === 'antigravity' ? 'unknown' : 'unsupported',
-    acceptedEffortTokens: harness === 'antigravity' ? ['low', 'medium', 'high'] : ['harness-default'],
-    variants: harness === 'antigravity' ? undefined : ['harness-default'],
+    effortSupport: harness === 'antigravity' ? 'unknown' : harness === 'pi' ? 'native' : 'unsupported',
+    acceptedEffortTokens: ['antigravity', 'pi'].includes(harness) ? ['low', 'medium', 'high'] : ['harness-default'],
+    variants: harness === 'antigravity' ? undefined : harness === 'pi' ? ['low', 'medium', 'high'] : ['harness-default'],
     cliVersion: version.stdout.trim(), capabilities: ['implementation', 'review'],
   }));
 }
