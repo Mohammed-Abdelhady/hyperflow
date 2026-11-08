@@ -1,7 +1,7 @@
 ---
 name: hyperflow-plan
 description: Inspect a repository, resolve consequential decisions with the user, and save an approved Hyperflow workflow without executing it.
-version: 7.0.0
+version: 8.0.0
 ---
 # Hyperflow Plan
 

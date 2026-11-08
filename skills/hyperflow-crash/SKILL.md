@@ -1,7 +1,7 @@
 ---
 name: hyperflow-crash
 description: Review a pinned pull-request or Git diff in fresh read-only sessions and report only validated evidence-backed findings.
-version: 7.0.0
+version: 8.0.0
 ---
 # Hyperflow Crash
 

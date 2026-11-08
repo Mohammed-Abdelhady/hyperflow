@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.0] — 2026-11-08
+
 ### Added
 - Route routine implementation to lightweight GLM Flash and complex or security implementation to general GLM.
 - Require primary correctness review for implementation tasks and one consolidated general security review after all ordinary phases finish.
@@ -1871,7 +1873,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v7.0.0...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v8.0.0...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -2046,3 +2048,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.2...v6.10.0
 [6.10.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.10.0...v6.10.1
 [7.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.10.1...v7.0.0
+[8.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v7.0.0...v8.0.0

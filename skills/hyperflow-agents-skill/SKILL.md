@@ -1,7 +1,7 @@
 ---
 name: hyperflow-agents-skill
 description: Inspect or update validated Hyperflow primary, general, and lightweight model-role preferences at global, project, or session scope.
-version: 7.0.0
+version: 8.0.0
 ---
 # Hyperflow Agents Skill
 

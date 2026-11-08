@@ -1,4 +1,4 @@
-<!-- hyperflow:doctrine:start version=7.0.0 -->
+<!-- hyperflow:doctrine:start version=8.0.0 -->
 # Hyperflow host instructions
 
 Use the four public skills: `hyperflow-plan`, `hyperflow-smash`, `hyperflow-crash`, and `hyperflow-agents-skill`. Route planning, execution, review, and model-role configuration to their matching skills. Keep status, graph, stop, resume, sessions, rename, and messages under smash. The active host remains coordinator; role profiles select delegate harnesses only. Use only capabilities exposed by the active host, including Claude Code, Codex, Antigravity, Cursor, OpenCode, or Pi.

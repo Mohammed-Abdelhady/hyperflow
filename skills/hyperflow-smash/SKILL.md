@@ -1,7 +1,7 @@
 ---
 name: hyperflow-smash
 description: Execute a selected, reviewed Hyperflow workflow through isolated tasks, independent review, scoped repair, and real verification.
-version: 7.0.0
+version: 8.0.0
 ---
 # Hyperflow Smash
 
