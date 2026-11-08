@@ -261,3 +261,32 @@ test('primary findings on an unrepaired workflow path return to general within t
   assert.equal(repairs, 2);
   assert.equal(await readFile(join(root, 'b.txt'), 'utf8'), 'safe');
 }));
+
+test('failed application after resume keeps the newest security evidence and local work', async () => repoFixture(async ({ root, statePath, baseSha }) => {
+  const spec = workflow(root, baseSha, [item('a')]);
+  let reviews = 0;
+  const failed = await executeWorkflow({ workflow: spec, digest: 'approved', repoRoot: root, statePath, roles: ROLES,
+    checks: CHECKS, capacity: CAPACITY,
+    adapter: async ({ cwd, model }) => {
+      await writeFile(join(cwd, 'a.txt'), model.model === 'general-model' ? 'safe' : 'unsafe');
+      return { status: 'completed' };
+    },
+    review: async ({ phase }) => {
+      if (phase !== 'security-review') return pass();
+      reviews += 1;
+      return reviews === 1 ? { verdict: 'needs_fix', findings: [finding] } : { verdict: 'blocked', findings: [] };
+    } });
+  const resumed = await executeWorkflow({ workflow: spec, digest: 'approved', repoRoot: root, statePath, roles: ROLES,
+    runId: failed.runId, checks: CHECKS, capacity: CAPACITY,
+    adapter: async () => { throw new Error('Verified work must not rerun'); },
+    review: async () => {
+      await writeFile(join(root, 'a.txt'), 'local work');
+      return pass();
+    } });
+  assert.equal(resumed.status, 'failed');
+  assert.match(resumed.error, /overlap/);
+  assert.equal(await readFile(join(root, 'a.txt'), 'utf8'), 'local work');
+  assert.equal(resumed.finalEvidence.security.reviews.at(-1).verdict, 'pass');
+  assert.equal(resumed.finalEvidence.security.reviews.length, failed.finalEvidence.security.reviews.length + 1);
+  assert.deepEqual(resumed.finalEvidence.security.fixes, failed.finalEvidence.security.fixes);
+}));
