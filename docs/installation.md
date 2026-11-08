@@ -6,12 +6,12 @@ Install Hyperflow through the native plugin workflow for the host you use. This 
 
 ## Source install
 
-`./install.sh` validates the local Hyperflow source checkout and links the four skills into detected global directories for the six listed hosts. It creates four native `/hyperflow-*` command files for OpenCode only. The source installer prepares skill discovery; it does not certify invocation, workflow execution, or delegate support.
+`./install.sh` validates the local Hyperflow source checkout and registers four skills in detected global directories for the six listed hosts. For Codex, it makes owned copies because Codex discovery does not include the source installer's symlinked skill directories. Codex copy registration requires Node.js 24 or newer before it can change registrations. It creates four native `/hyperflow-*` command files for OpenCode only. The source installer prepares skill discovery; it does not certify invocation, workflow execution, or delegate support.
 
 | Host | Global skill directory | Discovery source |
 |---|---|---|
 | Claude Code | `~/.claude/skills` | [Claude Code skills](https://code.claude.com/docs/en/skills) |
-| Codex | `${CODEX_HOME:-~/.codex}/skills` | [Codex skills](https://developers.openai.com/blog/eval-skills) |
+| Codex | `${CODEX_HOME:-~/.codex}/skills` (owned copies) | [Codex skills](https://developers.openai.com/blog/eval-skills) |
 | Antigravity | `~/.gemini/config/skills` | [Antigravity skills](https://antigravity.google/docs/skills?app=antigravity-ide) |
 | Cursor | `~/.cursor/skills` | [Cursor skills](https://cursor.com/docs/skills) |
 | OpenCode | `${XDG_CONFIG_HOME:-~/.config}/opencode/skills` | [OpenCode skills](https://opencode.ai/docs/skills/) |
@@ -19,7 +19,7 @@ Install Hyperflow through the native plugin workflow for the host you use. This 
 
 `OPENCODE_CONFIG_DIR` can override the OpenCode root. A shared `~/.agents/skills` directory is supported by several hosts but is not linked automatically, which avoids duplicate same-named skills when a user has multiple hosts installed.
 
-Use `--link-only` to skip fetching. `--status [--json]` is read only; `--check` adds a health exit status. `--uninstall` removes links only when they resolve to this checkout, and removes command files only when their ownership marker names this checkout. Foreign links, command files, directories, provider configuration, and project data are preserved. A conflict is reported before that host's registrations are changed. Claude Code and Codex use their native skill discovery; this installer does not create unsupported command directories for them.
+Use `--link-only` to skip fetching. `--status [--json]` is read only; `--check` adds a health exit status. `--uninstall` removes links only when they resolve to this checkout, Codex copies only when their source marker and contents are unchanged, and command files only when their ownership marker names this checkout. Foreign links, command files, directories, modified copies, provider configuration, and project data are preserved. A conflict is reported before that host's registrations are changed. Claude Code and Codex use their native skill discovery; this installer does not create unsupported command directories for them.
 
 For hosts other than OpenCode, skills use each host's own invocation and discovery behavior. This installer does not create command directories for Claude Code, Codex, Antigravity, Cursor, or Pi.
 

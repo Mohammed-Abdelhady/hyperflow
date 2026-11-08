@@ -31,7 +31,7 @@ The workflow file is a static JSON-compatible declaration parsed without evaluat
 
 ## Install
 
-Use the native plugin installation flow for the host you use. The source installer links skills into detected Claude Code, Codex, Antigravity, Cursor, OpenCode, and Pi skill directories. It registers four native command files only for OpenCode and preserves unrelated config:
+Use the native plugin installation flow for the host you use. The source installer registers skills in detected Claude Code, Codex, Antigravity, Cursor, OpenCode, and Pi skill directories. Codex receives owned copies for native discovery; other hosts receive source links. It registers four native command files only for OpenCode and preserves unrelated config:
 
 ```bash
 ./install.sh
