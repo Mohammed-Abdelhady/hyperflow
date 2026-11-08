@@ -3,6 +3,9 @@ import { catalogEfforts, effortLevel, selectReviewAssignments } from './review-p
 export function validateAssignments(workflow, configuration, catalog) {
   const profiles = configuration.roles ?? configuration;
   const assignments = selectReviewAssignments(configuration, catalog);
+  if (!catalogEfforts(catalog, assignments.correctness.model).includes('high')) {
+    throw new Error('Conditional security repair requires primary high correctness-review effort');
+  }
   for (const [field, value] of [['securityReviewEffort', workflow.securityReviewEffort ?? 'high'], ['securityFixEffort', workflow.securityFixEffort ?? 'high']]) {
     effortLevel(value, `workflow.${field}`);
     if (!catalogEfforts(catalog, assignments.security.model).includes(value)) {

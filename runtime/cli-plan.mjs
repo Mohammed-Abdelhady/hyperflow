@@ -37,13 +37,6 @@ function renderIndex(workflow, status, phaseLinks = false) {
   return [`# ${workflow.goal}`, '', `Status: ${status}`, '', ...tasks, '', ...questions, ...links, ''].join('\n');
 }
 
-function assertEffortSupported(effort, binding, catalog, label) {
-  const descriptor = catalog.find((entry) => entry.adapter === binding.adapter && entry.id === binding.model);
-  if (!descriptor) throw new Error(`No ${binding.adapter}/${binding.model} model is available for the ${label}`);
-  const supported = descriptor.effortSupport === 'unknown' ? descriptor.acceptedEffortTokens : descriptor.variants;
-  if (!supported?.includes(effort)) throw new Error(`${label} effort ${effort} is unsupported for ${binding.adapter}/${binding.model}`);
-}
-
 function bindingsDigest(configuration) {
   const roles = configuration.roles ?? configuration;
   const bindings = Object.fromEntries(Object.keys(roles).sort().map(role => {
@@ -91,9 +84,6 @@ export async function planCommand(command, args, root) {
   const profiles = effectiveRoles({ repoRoot: root, catalog });
   validateAssignments(workflow, profiles, catalog);
   const general = profiles.roles[SECURITY_LANE_ROLE];
-  if (!general) throw new Error(`A configured ${SECURITY_LANE_ROLE} role model is required for the consolidated security review`);
-  assertEffortSupported(workflow.securityReviewEffort, general, catalog, 'security review');
-  assertEffortSupported(workflow.securityFixEffort, general, catalog, 'security fix');
   const path = artifactPath(root, 'workflows', workflow.id, 'workflow.mjs');
   writeAtomic(path, serializeWorkflow(workflow));
   const { digest } = await loadWorkflow(path);
