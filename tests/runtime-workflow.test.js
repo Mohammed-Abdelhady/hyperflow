@@ -6,6 +6,13 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { parseWorkflow, validateWorkflow, loadWorkflow, serializeWorkflow } from '../runtime/workflow.mjs';
 
+const schema2 = () => ({
+  schemaVersion: 2, id: 'demo2', goal: 'ship safely', repository: { root: '/repo', baseSha: 'a'.repeat(40) },
+  tasks: [{ id: 'T01', title: 'Build', details: 'Write the module and wire it up.', effort: 'medium', dependsOn: [],
+    readScope: ['src'], writeScope: ['src/a.js'], acceptance: ['works'], checks: ['unit-check'] }],
+  questions: [], decisions: [],
+});
+
 const valid = () => ({
   schemaVersion: 1, id: 'demo', goal: 'ship safely', repository: { root: '/repo', baseSha: 'a'.repeat(40) },
   tasks: [{ id: 'T01', title: 'Build', agentRole: 'general', effort: 'medium', dependsOn: [], readScope: ['src'], writeScope: ['src/a.js'], acceptance: ['works'], checks: ['unit-check'] }],
@@ -72,5 +79,76 @@ test('loader returns canonical SHA-256 independent of source object key order', 
     assert.equal(loaded.digest, createHash('sha256').update(canonical).digest('hex'));
     await writeFile(path, `export default ${' '.repeat(1048577)};`);
     await assert.rejects(loadWorkflow(path), /1 MiB/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('schema 2 applies routing defaults, review defaults and workflow security efforts', () => {
+  const normalized = validateWorkflow(schema2());
+  assert.equal(normalized.schemaVersion, 2);
+  assert.deepEqual(normalized.tasks[0], {
+    id: 'T01', title: 'Build', details: 'Write the module and wire it up.', difficulty: 'routine',
+    agentRole: 'lightweight', effort: 'medium', reviewRole: 'primary', reviewEffort: 'high',
+    dependsOn: [], readScope: ['src'], writeScope: ['src/a.js'], acceptance: ['works'], checks: ['unit-check'],
+  });
+  assert.equal(normalized.securityReviewEffort, 'high');
+  assert.equal(normalized.securityFixEffort, 'high');
+  for (const [difficulty, role] of [['routine', 'lightweight'], ['complex', 'general'], ['security', 'general']]) {
+    const routed = validateWorkflow({ ...schema2(), tasks: [{ ...schema2().tasks[0], difficulty, agentRole: role }] });
+    assert.equal(routed.tasks[0].agentRole, role);
+  }
+  const adjusted = validateWorkflow({ ...schema2(), securityReviewEffort: 'low', securityFixEffort: 'medium' });
+  assert.equal(adjusted.securityReviewEffort, 'low');
+  assert.equal(adjusted.securityFixEffort, 'medium');
+});
+
+test('schema 2 rejects blank details, missing or invalid effort, and conflicting routing', () => {
+  const base = schema2();
+  const invalid = [
+    { ...base, tasks: [{ ...base.tasks[0], details: '   ' }] },
+    { ...base, tasks: [{ ...base.tasks[0], details: undefined }] },
+    { ...base, tasks: [{ ...base.tasks[0], effort: undefined }] },
+    { ...base, tasks: [{ ...base.tasks[0], effort: 'deep' }] },
+    { ...base, tasks: [{ ...base.tasks[0], effort: 'MEDIUM' }] },
+    { ...base, tasks: [{ ...base.tasks[0], difficulty: 'trivial' }] },
+    { ...base, tasks: [{ ...base.tasks[0], difficulty: 'routine', agentRole: 'general' }] },
+    { ...base, tasks: [{ ...base.tasks[0], difficulty: 'complex', agentRole: 'lightweight' }] },
+    { ...base, tasks: [{ ...base.tasks[0], difficulty: 'security', agentRole: 'lightweight' }] },
+    { ...base, tasks: [{ ...base.tasks[0], reviewRole: 'general' }] },
+    { ...base, tasks: [{ ...base.tasks[0], reviewEffort: 'extreme' }] },
+    { ...base, tasks: [{ ...base.tasks[0], id: '../escape' }] },
+    { ...base, tasks: [{ ...base.tasks[0], securityReviewRole: 'general' }] },
+    { ...base, tasks: [{ ...base.tasks[0], securityReviewEffort: 'low' }] },
+    { ...base, securityReviewEffort: 'extreme' },
+    { ...base, securityFixEffort: '' },
+  ];
+  for (const candidate of invalid) assert.throws(() => validateWorkflow(candidate));
+});
+
+test('historic schema 1 parsing is preserved and schema 2 fields stay out of schema 1', () => {
+  const v1 = validateWorkflow(valid());
+  assert.equal(v1.schemaVersion, 1);
+  assert.equal(v1.tasks[0].agentRole, 'general');
+  assert.throws(() => validateWorkflow({ ...valid(), schemaVersion: 3 }));
+  const stale = [
+    { ...valid(), tasks: [{ ...valid().tasks[0], details: 'not a schema 1 field' }] },
+    { ...valid(), tasks: [{ ...valid().tasks[0], difficulty: 'complex' }] },
+    { ...valid(), securityReviewEffort: 'high' },
+    { ...valid(), securityFixEffort: 'high' },
+  ];
+  for (const candidate of stale) assert.throws(() => validateWorkflow(candidate));
+});
+
+test('schema 2 workflows round trip through the loader with a stable digest', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'hyperflow-schema2-'));
+  try {
+    const path = join(dir, 'workflow.mjs');
+    await writeFile(path, `export default ${JSON.stringify(schema2())};`);
+    const first = await loadWorkflow(path);
+    assert.equal(first.workflow.schemaVersion, 2);
+    assert.equal(first.workflow.tasks[0].agentRole, 'lightweight');
+    await writeFile(path, serializeWorkflow(first.workflow));
+    const second = await loadWorkflow(path);
+    assert.equal(second.digest, first.digest);
+    assert.deepEqual(second.workflow, first.workflow);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

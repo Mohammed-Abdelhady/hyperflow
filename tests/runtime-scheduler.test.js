@@ -9,8 +9,11 @@ import { repoFixture } from './runtime-fixtures.mjs';
 
 const TEST_CAPACITY = { tasks: 2, availableMemoryBytes: 8 * 1024 ** 3 };
 const roles = { revision: 'roles-1', primary: { model: 'p', adapter: 'x' }, general: { model: 'g', adapter: 'x' }, lightweight: { model: 'l', adapter: 'x' } };
-const task = (id, dependsOn, writeScope, checks = ['verify']) => ({ id, title: id, agentRole: 'general', dependsOn, readScope: [], writeScope, acceptance: ['the result is valid'], checks });
-const workflow = tasks => ({ schemaVersion: 1, id: 'scheduler-fixture', goal: 'exercise scheduler', repository: { root: '', baseSha: '' }, tasks, questions: [], decisions: [] });
+const task = (id, dependsOn, writeScope, checks = ['verify'], extra = {}) => ({ id, title: id, details: `Implement ${id} exactly as planned.`, difficulty: 'complex',
+  agentRole: 'general', effort: 'high', reviewRole: 'primary', reviewEffort: 'high', dependsOn, readScope: [], writeScope,
+  acceptance: ['the result is valid'], checks, ...extra });
+const workflow = tasks => ({ schemaVersion: 2, id: 'scheduler-fixture', goal: 'exercise scheduler', repository: { root: '', baseSha: '' },
+  securityReviewEffort: 'high', securityFixEffort: 'high', tasks, questions: [], decisions: [] });
 
 const check = { command: process.execPath, args: ['-e', 'process.stdout.write("check evidence")'] };
 const reviewPass = async () => ({ verdict: 'pass', findings: [] });
@@ -110,7 +113,8 @@ test('a needs_fix review routes findings to the task owner and caps repairs at t
     return { status: 'completed' };
   };
   let reviews = 0;
-  const review = async ({ task: item, baseSha: reviewBase, headSha, cwd }) => {
+  const review = async ({ task: item, phase, baseSha: reviewBase, headSha, cwd }) => {
+    if (phase !== 'correctness-review') return reviewPass();
     assert.equal(item.id, 'T01');
     assert.notEqual(reviewBase, headSha);
     assert.equal(git(['for-each-ref', '--format=%(objectname)', 'refs/hyperflow/runs']), baseSha);
@@ -253,21 +257,29 @@ test('unavailable browser capacity blocks only the task that requests it', async
   assert.equal(result.status, 'failed');
 }));
 
-test('a custom sole profile is valid and task effort reaches adapter and fresh reviewer', async () => repoFixture(async ({ root, statePath, baseSha }) => {
-  const spec = workflow([{ ...task('A', [], ['effort.txt']), agentRole: 'openai/gpt-6.1-sol', effort: 'high', reviewEffort: 'low' }]);
+test('a sole custom profile is refused without the required primary and general reviewers', async () => repoFixture(async ({ root, statePath, baseSha }) => {
+  const spec = workflow([task('A', [], ['effort.txt'])]);
   spec.repository = { root, baseSha };
-  const profiles = { revision: 'custom-r1', roles: { 'openai/gpt-6.1-sol': { model: 'gpt-6.1-sol', adapter: 'codex' } } };
-  let adapterEffort;
-  let reviewEffort;
-  const result = await executeWorkflow({ workflow: spec, digest: 'approved', repoRoot: root, statePath, roles: profiles,
-    adapter: async ({ cwd, effort }) => { adapterEffort = effort; await writeFile(path.join(cwd, 'effort.txt'), effort); return { status: 'completed' }; },
-    checks: { verify: check }, review: async ({ effort, model }) => { reviewEffort = effort; assert.equal(model.model, 'gpt-6.1-sol'); return { verdict: 'pass', findings: [] }; }, capacity: TEST_CAPACITY });
-  assert.equal(result.status, 'completed');
-  assert.equal(adapterEffort, 'high');
-  assert.equal(reviewEffort, 'low');
+  const profiles = { revision: 'custom-r1', roles: { general: { model: 'gpt-6.1-sol', adapter: 'codex' } } };
+  await assert.rejects(executeWorkflow({ workflow: spec, digest: 'approved', repoRoot: root, statePath, roles: profiles,
+    adapter: async () => ({ status: 'completed' }), checks: { verify: check }, review: reviewPass, capacity: TEST_CAPACITY }), /primary reviewer profile is configured for correctness reviews/);
 }));
 
-
+test('task effort reaches the adapter while the primary reviewer keeps its own review effort', async () => repoFixture(async ({ root, statePath, baseSha }) => {
+  const spec = workflow([{ ...task('A', [], ['effort.txt']), effort: 'high', reviewEffort: 'low' }]);
+  spec.repository = { root, baseSha };
+  let adapterEffort;
+  let reviewCall;
+  const result = await executeWorkflow({ workflow: spec, digest: 'approved', repoRoot: root, statePath, roles,
+    adapter: async ({ cwd, effort }) => { adapterEffort = effort; await writeFile(path.join(cwd, 'effort.txt'), effort); return { status: 'completed' }; },
+    checks: { verify: check }, review: async ({ phase, model, effort, task: item }) => { if (phase === 'correctness-review') reviewCall = { phase, model: model.model, effort, id: item.id }; return { verdict: 'pass', findings: [] }; }, capacity: TEST_CAPACITY });
+  assert.equal(result.status, 'completed');
+  assert.equal(adapterEffort, 'high');
+  assert.deepEqual(reviewCall, { phase: 'correctness-review', model: 'p', effort: 'low', id: 'A' });
+  assert.equal(result.tasks.A.result.review.phase, 'correctness-review');
+  assert.equal(result.tasks.A.result.review.role, 'primary');
+  assert.equal(result.tasks.A.result.review.effort, 'low');
+}));
 
 test('failed checks retain their exact exit code and output references', async () => repoFixture(async ({ root, statePath, baseSha }) => {
   const spec = workflow([task('A', [], ['a.txt'])]);

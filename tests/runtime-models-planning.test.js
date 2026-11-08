@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { selectReviewAssignment } from '../runtime/assignments.mjs';
+import { selectReviewAssignment, selectReviewAssignments } from '../runtime/assignments.mjs';
 import { resolveRoles, validateTaskBinding } from '../runtime/models.mjs';
 import { createPlan, answerQuestions, compilePlan, pendingQuestions } from '../runtime/planning.mjs';
 
@@ -70,7 +70,8 @@ test('six delegate harnesses and aliases preserve native model and effort metada
 
 const planInput = () => ({
   id: 'demo', goal: 'ship safely', repository: { root: '/repo', baseSha: 'a'.repeat(40) },
-  tasks: [{ id: 'T01', title: 'Build', agentRole: 'general', effort: 'medium', dependsOn: [], readScope: ['src'], writeScope: ['src/a.js'], acceptance: ['works'], checks: ['unit-check'] }],
+  tasks: [{ id: 'T01', title: 'Build', details: 'Implement the module behind the agreed API.', effort: 'medium',
+    dependsOn: [], readScope: ['src'], writeScope: ['src/a.js'], acceptance: ['works'], checks: ['unit-check'] }],
   questions: [{ id: 'q1', prompt: 'Which API?', blocking: true, recommendation: 'REST', options: ['REST', 'GraphQL'], why: 'It affects clients' }],
 });
 
@@ -120,14 +121,58 @@ test('question frontiers reveal prerequisites in rounds and reject same-batch de
   assert.throws(() => createPlan(cyclic));
 });
 
-test('standalone reviews use a configured profile and only its supported effort', () => {
-  const general = { adapter: 'opencode', model: 'zai/glm-5.3' };
-  assert.deepEqual(selectReviewAssignment({ roles: { general } }, [
-    { adapter: 'opencode', id: 'zai/glm-5.3', variants: ['low', 'high'] },
-  ]), { role: 'general', model: general, effort: 'high' });
-  const custom = { adapter: 'cursor', model: 'fixture-model' };
-  assert.deepEqual(selectReviewAssignment({ roles: { custom } }, [
-    { adapter: 'cursor', id: 'fixture-model', variants: ['harness-default'] },
-  ]), { role: 'custom', model: custom, effort: 'harness-default' });
-  assert.throws(() => selectReviewAssignment({ roles: {} }, []), /No configured reviewer/);
+test('createPlan emits schema 2 with routing, review and security-lane defaults', () => {
+  const plan = createPlan(planInput());
+  assert.equal(plan.schemaVersion, 2);
+  assert.equal(plan.tasks[0].difficulty, 'routine');
+  assert.equal(plan.tasks[0].agentRole, 'lightweight');
+  assert.equal(plan.tasks[0].reviewRole, 'primary');
+  assert.equal(plan.tasks[0].reviewEffort, 'high');
+  assert.equal(plan.securityReviewEffort, 'high');
+  assert.equal(plan.securityFixEffort, 'high');
+  const complex = createPlan({ ...planInput(), tasks: [{ ...planInput().tasks[0], difficulty: 'complex', effort: 'high' }] });
+  assert.equal(complex.tasks[0].agentRole, 'general');
+  const security = createPlan({ ...planInput(), tasks: [{ ...planInput().tasks[0], difficulty: 'security', agentRole: 'general', effort: 'medium' }] });
+  assert.equal(security.tasks[0].agentRole, 'general');
+  const workflow = compilePlan(answerQuestions(plan, { answers: { q1: 'REST' }, confirmed: true }));
+  assert.equal(workflow.schemaVersion, 2);
+  assert.equal(workflow.tasks[0].agentRole, 'lightweight');
+  assert.equal(workflow.securityReviewEffort, 'high');
+  assert.equal(workflow.securityFixEffort, 'high');
+  const tuned = compilePlan(answerQuestions(createPlan({ ...planInput(), securityReviewEffort: 'low', securityFixEffort: 'medium' }), { answers: { q1: 'REST' }, confirmed: true }));
+  assert.equal(tuned.securityReviewEffort, 'low');
+  assert.equal(tuned.securityFixEffort, 'medium');
+});
+
+test('schema 1 drafts are refused and invalid schema 2 contracts cannot plan', () => {
+  assert.throws(() => createPlan({ ...planInput(), schemaVersion: 1 }), /schema 2|re-plan/i);
+  const input = planInput();
+  const bad = [
+    { ...input, tasks: [{ ...input.tasks[0], details: '  ' }] },
+    { ...input, tasks: [{ ...input.tasks[0], effort: undefined }] },
+    { ...input, tasks: [{ ...input.tasks[0], effort: 'deep' }] },
+    { ...input, tasks: [{ ...input.tasks[0], difficulty: 'routine', agentRole: 'general' }] },
+    { ...input, tasks: [{ ...input.tasks[0], difficulty: 'security', agentRole: 'lightweight' }] },
+    { ...input, tasks: [{ ...input.tasks[0], reviewRole: 'general' }] },
+    { ...input, tasks: [{ ...input.tasks[0], details: 'x'.repeat(5000) }] },
+    { ...input, securityReviewEffort: 'extreme' },
+    { ...input, securityFixEffort: 'deep' },
+  ];
+  for (const candidate of bad) assert.throws(() => createPlan(candidate));
+});
+
+test('standalone reviews require primary correctness and general security reviewers', () => {
+  const primary = { adapter: 'opencode', model: 'zai/glm-5.3' };
+  const general = { adapter: 'opencode', model: 'zai/glm-4.7' };
+  const catalog = [
+    { adapter: 'opencode', id: 'zai/glm-5.3', variants: ['low', 'medium', 'high'] },
+    { adapter: 'opencode', id: 'zai/glm-4.7', variants: ['low', 'high'] },
+  ];
+  const assignments = selectReviewAssignments({ roles: { primary, general } }, catalog);
+  assert.deepEqual(assignments.correctness, { phase: 'correctness-review', role: 'primary', model: primary, effort: 'high' });
+  assert.deepEqual(assignments.security, { phase: 'security-review', role: 'general', model: general, effort: 'high' });
+  assert.deepEqual(selectReviewAssignment({ roles: { primary, general } }, catalog), assignments.correctness);
+  assert.throws(() => selectReviewAssignment({ roles: { general } }, catalog), /correctness-review/);
+  assert.throws(() => selectReviewAssignments({ roles: { primary } }, catalog), /security-review/);
+  assert.throws(() => selectReviewAssignments({ roles: {} }, []), /correctness-review/);
 });

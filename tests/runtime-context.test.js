@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { assembleContext } from '../runtime/context.mjs';
 
 const workflow = { id: 'demo', goal: 'ship', repository: { baseSha: 'base' } };
-const task = { id: 'T02', title: 'Verify', readScope: ['src'], writeScope: [], acceptance: ['works'] };
+const task = { id: 'T02', title: 'Verify', details: 'Re-check the answer and record the evidence path.', readScope: ['src'], writeScope: [], acceptance: ['works'] };
 
 test('context includes bounded repository sources and dependency provenance', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hyperflow-context-'));
@@ -17,6 +17,7 @@ test('context includes bounded repository sources and dependency provenance', as
     assert.match(result.text, /src\/a\.js/);
     assert.match(result.text, /export const answer = 42/);
     assert.match(result.text, /T01/);
+    assert.match(result.text, /Re-check the answer and record the evidence path\./);
     assert.equal(result.sources[0].path, 'src/a.js');
     assert.ok(Buffer.byteLength(result.text) <= 32768);
   } finally { await rm(root, { recursive: true, force: true }); }
@@ -41,5 +42,14 @@ test('context omits files beyond its source and total byte bounds', async () => 
     await mkdir(join(root, 'src'));
     await writeFile(join(root, 'src', 'large.js'), 'x'.repeat(40000));
     await assert.rejects(assembleContext({ repoRoot: root, task, workflow, dependencyResults: [] }));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('context rejects task details beyond the bounded detail limit', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hyperflow-context-'));
+  try {
+    await mkdir(join(root, 'src'));
+    await writeFile(join(root, 'src', 'a.js'), 'export const answer = 42;');
+    await assert.rejects(assembleContext({ repoRoot: root, task: { ...task, details: 'x'.repeat(5000) }, workflow, dependencyResults: [] }));
   } finally { await rm(root, { recursive: true, force: true }); }
 });

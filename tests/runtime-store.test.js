@@ -19,8 +19,11 @@ const workflow = {
 };
 const roles = { revision: 'r1', primary: { model: 'p', adapter: 'a' }, general: { model: 'g', adapter: 'a' }, lightweight: { model: 'l', adapter: 'a' } };
 const testCapacity = { tasks: 2, availableMemoryBytes: 8 * 1024 ** 3 };
-const executionTask = (id, file) => ({ id, title: id, agentRole: 'general', dependsOn: [], readScope: [], writeScope: [file], acceptance: ['valid output'], checks: ['verify'] });
-const executionWorkflow = (root, baseSha, tasks) => ({ schemaVersion: 1, id: 'store-execution', goal: 'verify finalization', repository: { root, baseSha }, tasks, questions: [], decisions: [] });
+const executionTask = (id, file) => ({ id, title: id, details: `Write the verified ${id} output.`, difficulty: 'complex',
+  agentRole: 'general', effort: 'high', reviewRole: 'primary', reviewEffort: 'high', dependsOn: [],
+  readScope: [], writeScope: [file], acceptance: ['valid output'], checks: ['verify'] });
+const executionWorkflow = (root, baseSha, tasks) => ({ schemaVersion: 2, id: 'store-execution', goal: 'verify finalization',
+  repository: { root, baseSha }, securityReviewEffort: 'high', securityFixEffort: 'high', tasks, questions: [], decisions: [] });
 const passingReview = async () => ({ verdict: 'pass', findings: [] });
 const passingCheck = { command: process.execPath, args: ['-e', 'process.exit(0)'] };
 
@@ -213,8 +216,8 @@ test('failed candidate checks send exact evidence to the owner for same-worktree
         await writeFile(path.join(cwd, 'result.txt'), 'fixed');
       }
       return { status: 'completed' };
-    }, checks: { verify: check }, review: async ({ cwd }) => {
-      reviewCalls += 1;
+    }, checks: { verify: check }, review: async ({ cwd, phase }) => {
+      if (phase === 'correctness-review') reviewCalls += 1;
       assert.equal(await readFile(path.join(cwd, 'result.txt'), 'utf8'), 'fixed');
       return passingReview();
     } });
@@ -227,8 +230,8 @@ test('failed candidate checks send exact evidence to the owner for same-worktree
 
 test('failed checks on the latest merged candidate route evidence to owner repair', async () => repoFixture(async ({ root, statePath, baseSha }) => {
   const workflow = executionWorkflow(root, baseSha, [
-    { ...executionTask('A', 'a'), checks: ['verifyA'] },
-    { ...executionTask('B', 'b'), checks: ['verifyB'] }
+    { ...executionTask('A', 'a'), checks: ['verify-a'] },
+    { ...executionTask('B', 'b'), checks: ['verify-b'] }
   ]);
   let startedA;
   let reviewedB;
@@ -246,8 +249,8 @@ test('failed checks on the latest merged candidate route evidence to owner repai
         else { assert.equal(context?.verificationFailure?.exitCode, 8); await writeFile(path.join(cwd, 'a/override.txt'), 'repair'); }
       }
       return { status: 'completed' };
-    }, checks: { verifyA: combinedCheck, verifyB: passingCheck }, review: async ({ task }) => {
-      reviewed.push(task.id);
+    }, checks: { 'verify-a': combinedCheck, 'verify-b': passingCheck }, review: async ({ task, phase }) => {
+      if (phase === 'correctness-review') reviewed.push(task.id);
       if (task.id === 'B') reviewedB();
       return passingReview();
     } });
@@ -271,8 +274,8 @@ test('check launch errors without an exit receipt are not sent for owner repair'
 
 test('exhausted check repair blocks dependents while unrelated tasks complete', async () => repoFixture(async ({ root, statePath, baseSha }) => {
   const workflow = executionWorkflow(root, baseSha, [
-    { ...executionTask('A', 'bad/result.txt'), checks: ['verifyA'] },
-    { ...executionTask('B', 'good/result.txt'), checks: ['verifyB'] },
+    { ...executionTask('A', 'bad/result.txt'), checks: ['verify-a'] },
+    { ...executionTask('B', 'good/result.txt'), checks: ['verify-b'] },
     { ...executionTask('C', 'later/result.txt'), dependsOn: ['A'] }
   ]);
   const check = file => ({ command: process.execPath, args: ['-e', "import { readFileSync } from 'node:fs'; process.exit(readFileSync(process.argv[1], 'utf8') === 'fixed' ? 0 : 9);", file] });
@@ -285,8 +288,8 @@ test('exhausted check repair blocks dependents while unrelated tasks complete', 
       await mkdir(path.dirname(path.join(cwd, file)), { recursive: true });
       await writeFile(path.join(cwd, file), task.id === 'A' ? 'broken' : 'fixed');
       return { status: 'completed' };
-    }, checks: { verifyA: check('bad/result.txt'), verifyB: check('good/result.txt'), verify: check('later/result.txt') }, review: async ({ task }) => {
-      reviewed.push(task.id);
+    }, checks: { 'verify-a': check('bad/result.txt'), 'verify-b': check('good/result.txt'), verify: check('later/result.txt') }, review: async ({ task, phase }) => {
+      if (phase === 'correctness-review') reviewed.push(task.id);
       return passingReview();
     } });
   assert.equal(result.status, 'failed');

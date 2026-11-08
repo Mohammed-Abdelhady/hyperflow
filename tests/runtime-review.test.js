@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { createReviewer, parseReview } from '../runtime/review.mjs';
+import { phaseFocus } from '../runtime/review-policy.mjs';
 
 const changedLine = `diff --git a/src/file.js b/src/file.js
 --- a/src/file.js
@@ -79,7 +80,7 @@ test('read-only reviewer detects tracked content changes hidden by unchanged por
     writeFileSync(join(root, 'dirty.txt'), 'changed during review\n');
     return { status: 'completed', summary: '{"verdict":"pass","findings":[]}', model: 'fixture' };
   } });
-  await assert.rejects(reviewer({ cwd: root, baseSha, headSha, model: { model: 'fixture', adapter: 'codex' },
+  await assert.rejects(reviewer({ cwd: root, baseSha, headSha, phase: 'correctness-review', model: { model: 'fixture', adapter: 'codex' },
     task: { id: 'review', title: 'Review', acceptance: ['No issues'] } }), /changed the candidate/);
   assert.equal(git('status', '--porcelain=v1'), beforeStatus);
 });
@@ -106,13 +107,47 @@ test('reviewer sends every changed file in a separate bounded adapter call', asy
     contexts.push(context);
     return { status: 'completed', summary: '{"verdict":"pass","findings":[]}', artifacts: [], model: 'fixture' };
   } });
-  const result = await reviewer({ cwd: root, baseSha, headSha, model: { model: 'fixture', adapter: 'codex' },
+  const result = await reviewer({ cwd: root, baseSha, headSha, phase: 'correctness-review', model: { model: 'fixture', adapter: 'codex' },
     task: { id: 'review', title: 'Review', acceptance: ['No issues'] } });
   assert.equal(result.verdict, 'pass');
   assert.equal(contexts.length, 2);
   assert.match(contexts[0], /first\.js/);
   assert.match(contexts[1], /second\.js/);
   assert.ok(contexts.every((context) => Buffer.byteLength(context) < 30_000));
+});
+
+test('reviewer injects phase focus with the planned effort and rejects unknown phases', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'hyperflow-review-phase-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  git('init', '-b', 'review-fixture');
+  git('config', 'user.name', 'Fixture');
+  git('config', 'user.email', 'fixture@example.test');
+  writeFileSync(join(root, 'source.js'), 'const value = 1;\n');
+  git('add', '.');
+  git('commit', '-m', 'test: create phase fixture');
+  const baseSha = git('rev-parse', 'HEAD');
+  writeFileSync(join(root, 'source.js'), 'const value = 2;\n');
+  git('add', 'source.js');
+  git('commit', '-m', 'test: change reviewed source');
+  const headSha = git('rev-parse', 'HEAD');
+  const seen = [];
+  const reviewer = createReviewer({ adapter: async ({ task, context }) => {
+    seen.push({ effort: task.effort, context, title: task.title });
+    return { status: 'completed', summary: '{"verdict":"pass","findings":[]}' };
+  } });
+  const call = (phase, effort) => reviewer({ cwd: root, baseSha, headSha, phase, effort,
+    model: { model: 'fixture', adapter: 'codex' }, task: { id: 'r', title: 'Review', acceptance: [], effort: 'low' } });
+  await call('security-review', 'medium');
+  await call('correctness-review');
+  assert.match(seen[0].context, /Security focus/);
+  assert.match(seen[0].context, /security-review/);
+  assert.equal(seen[0].effort, 'medium');
+  assert.match(seen[1].context, /Correctness focus/);
+  assert.equal(seen[1].effort, 'high');
+  assert.ok(seen.every(entry => entry.title.includes('review')));
+  await assert.rejects(() => call('performance-review'), /Unknown review phase/);
+  await assert.rejects(() => call(undefined), /Unknown review phase/);
 });
 
 test('reviewer blocks an oversized single hunk before calling the adapter', async (t) => {
@@ -131,7 +166,7 @@ test('reviewer blocks an oversized single hunk before calling the adapter', asyn
   git('commit', '-m', 'test: create oversized hunk');
   let calls = 0;
   const reviewer = createReviewer({ adapter: async () => { calls += 1; } });
-  const result = await reviewer({ cwd: root, baseSha, headSha: git('rev-parse', 'HEAD'), model: { model: 'fixture', adapter: 'codex' },
+  const result = await reviewer({ cwd: root, baseSha, headSha: git('rev-parse', 'HEAD'), phase: 'correctness-review', model: { model: 'fixture', adapter: 'codex' },
     task: { id: 'review', title: 'Review', acceptance: [] } });
   assert.equal(result.verdict, 'blocked');
   assert.equal(calls, 0);
