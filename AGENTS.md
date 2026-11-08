@@ -1,6 +1,6 @@
 # Hyperflow portable instructions
 
-<!-- hyperflow:doctrine:start version=6.10.0 -->
+<!-- hyperflow:doctrine:start version=6.10.1 -->
 ## Public skills
 
 Hyperflow has four public skills: `hyperflow-plan`, `hyperflow-smash`, `hyperflow-crash`, and `hyperflow-agents-skill`. Plan inspects and records decisions, then stops. Smash starts only a selected approved workflow. Crash reviews a pinned diff read only. Agents-skill manages validated primary, general, and lightweight role preferences.

@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "6.10.0",
+  "version": "6.10.1",
   "description": "Dependency-aware planning, delegated implementation and independent review for coding harnesses.",
   "type": "module",
   "license": "MIT",

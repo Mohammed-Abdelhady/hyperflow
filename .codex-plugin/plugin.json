@@ -1,6 +1,6 @@
 {
   "name": "hyperflow",
-  "version": "6.10.0",
+  "version": "6.10.1",
   "description": "Four Hyperflow workflows for planning, delegation, review and delegate configuration, with inert startup.",
   "author": {
     "name": "Mohammed Abdelhady",

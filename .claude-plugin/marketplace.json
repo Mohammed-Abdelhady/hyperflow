@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code-first Markdown orchestration; Codex preview and OpenCode compatibility shim",
-    "version": "6.10.0"
+    "version": "6.10.1"
   },
   "plugins": [
     {
@@ -16,7 +16,7 @@
         "url": "https://github.com/Mohammed-Abdelhady/hyperflow.git"
       },
       "description": "Four portable skills for planning static workflows, unattended delegated execution, independent code review, and delegate configuration. The active coding host remains coordinator.",
-      "version": "6.10.0",
+      "version": "6.10.1",
       "author": {
         "name": "Mohammed Abdelhady",
         "url": "https://github.com/Mohammed-Abdelhady"
