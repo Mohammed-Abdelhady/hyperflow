@@ -1,59 +1,25 @@
 # Getting started
 
-Hyperflow routes an outcome through the smallest safe workflow. You do not need to choose a lane or command for ordinary requests.
+Hyperflow offers four public skills: `/hyperflow-plan`, `/hyperflow-smash`, `/hyperflow-crash`, and `/hyperflow-agents-skill`.
 
-## 1. Install
+## Plan first
 
-Claude Code is the primary host:
+Use `/hyperflow-plan` to inspect the repository, identify consequential decisions, and record actual answers. The planner writes a readable plan and a static workflow declaration under `.hyperflow/workflows/<slug>/`, then stops. An unresolved blocking question prevents compilation.
 
-```bash
-claude plugin marketplace add Mohammed-Abdelhady/hyperflow
-claude plugin install hyperflow@hyperflow-marketplace
-```
+Plans use a decision-frontier method: ask settled consequential questions together, with evidence, a recommendation, practical options, and a blocking flag. If inspection finds no material ambiguity, present the concrete plan and request confirmation instead of inventing questions.
 
-See [installation](installation.md) for upgrade and compatibility notes.
+## Execute explicitly
 
-## 2. State the outcome
+Use `/hyperflow-smash [workflow]` to start a selected reviewed workflow. It schedules ready tasks by dependencies and write scopes, uses isolated worktrees, creates fresh independent reviews, routes validated findings to scoped repairs, and runs real checks. A worker cannot review its own work. Status, graph, stop, resume, sessions, rename, and messages remain smash subcommands.
 
-```text
-plan the billing migration
-implement the approved billing plan
-trace why checkout tests fail
-audit this diff
-deploy this release
-resume the billing handoff
-```
+## Review and model roles
 
-Natural language routes to one of seven surfaces: `hyperflow`, `plan`, `dispatch`, `trace`, `audit`, `deploy`, or `handoff`.
+Use `/hyperflow-crash [PR-or-range]` for a read-only review of a pinned diff. Use `/hyperflow-agents-skill` to inspect or update `primary`, `general`, and `lightweight` role preferences. Preferences must resolve against installed provider configuration and catalog data.
 
-## 3. Let scope select the lane
+## Runtime
 
-- **Direct:** one clear, reversible subsystem; no child agents.
-- **Focused:** one compact task file, independent workers only, one batch reviewer.
-- **Deep:** high-risk or cross-boundary work, bounded investigation and specialist integration review.
+Skills invoke the local runner with `node <plugin-root>/runtime/cli.mjs`. No global binary is required. Markdown plans and decisions are distinct from the runtime's local SQLite execution state. Installation does not run a workflow or modify provider credentials.
 
-An explicit build or fix request continues after inspection. An explicit plan or design request writes `.hyperflow/tasks/<slug>.md` and stops.
+## Limits
 
-## Files you may see
-
-Current persistence is Markdown only:
-
-```text
-.hyperflow/tasks/<slug>.md
-.hyperflow/specs/<slug>.md
-.hyperflow/audits/<timestamp>-<scope>.md
-.hyperflow/memory/<category>.md
-.hyperflow-handoff/<slug>/{task.md,handoff.md}
-```
-
-Hyperflow performs no automatic startup work.
-
-To carry an accepted review into a later session without copying its findings, use the explicit `--remember` option with `audit`; the bounded Markdown pointer remains separate from the audit evidence.
-
-To carry an approved planning choice without copying the investigation transcript, use `plan <request> --remember`; the bounded decision card remains separate from the task or spec that explains it.
-
-## Safety boundaries
-
-Hyperflow preserves unrelated changes, blocks common secret files and destructive commands, keeps worker and reviewer judgment separate, verifies before release, and asks separately before push.
-
-Next: [orchestration](orchestration.md), [privacy](../PRIVACY.md), or [Codex preview](codex.md).
+Host command discovery is separate from runtime compatibility. Provider, browser, simulator, and device availability can lower admission. Unsupported checks must be reported as unavailable; docs and static contracts do not certify a host.

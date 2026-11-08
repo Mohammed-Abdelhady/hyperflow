@@ -1,85 +1,33 @@
 # Orchestration contract
 
-Hyperflow minimizes coordination before it minimizes implementation. It loads one of seven surfaces only when the request needs it, selects the smallest safe lane, and keeps persistent state in Markdown.
+Hyperflow uses a local runner to validate workflow declarations, coordinate bounded task execution, and persist recovery state. Four public skills are the only public command surface: plan, smash, crash, and agents-skill.
 
-## Routing
+## Planning
 
-| Intent | Surface | Result |
-|---|---|---|
-| plan, design, brainstorm, explore, scope, decompose | `plan` | Inspect and write one compact plan; stop |
-| build, implement, add, refactor | `dispatch` | Inspect and implement without a start confirmation |
-| debug, fix, solve, failure | `trace` | Establish root cause, then apply the bounded fix |
-| audit, review, security check | `audit` | Write prioritized findings; changes require fix scope |
-| ship, release, deploy, push | `deploy` | Run gates; release and push remain separate |
-| continue, resume, transfer | `handoff` | Rehydrate the task pointer and Git refs |
-| mixed or unclear | `hyperflow` | Resolve the route without fan-out |
+Planning is read only. Inspect source, tests, Git state, reuse opportunities, and existing project knowledge. Ask consequential questions from the current decision frontier and record actual answers. A static workflow declaration is compiled only when required answers and explicit participation are present. Planning never starts execution.
 
-## Lanes
+## Workflows and authority
 
-### Direct
+A workflow is a versioned JSON-compatible declaration in `workflow.mjs`. The runner parses a limited syntax without importing or evaluating JavaScript. It binds authorization to a content digest and rejects cycles, missing dependencies, invalid ownership, unknown roles, arbitrary checks, and unavailable model bindings.
 
-Use for clear, reversible work inside one subsystem.
+Tasks declare dependencies, read/write scopes, acceptance criteria, registered check IDs, role, and resource needs. Schedule by dependency readiness. Overlapping writes serialize. Every writing task uses an isolated worktree; a single coordinator integrates validated changes serially.
 
-- Coordinator implements and checks the bounded diff.
-- Zero child agents.
-- No task file unless durable decisions are needed.
-- Zero confirmation turns after an explicit build/fix request.
+## Delegation and evidence
 
-### Focused
+Provider adapters receive a bounded source-linked context and return structured results. Independent review runs in a fresh session against the exact candidate and acceptance criteria. Validated findings go to the responsible worker for scoped repair, followed by affected checks and review. Limit automatic correction to two rounds per unchanged contract and failure signature.
 
-Use for moderate work with a small number of independent parts.
+Completion requires integrated changes, independent review, applicable real checks, and evidence references. Model summaries, empty diffs, and exit codes do not substitute for verification. Missing tools, authentication, providers, browsers, or devices are reported as unavailable.
 
-- One `.hyperflow/tasks/<slug>.md`, at most 1,200 words.
-- At most two child calls while planning and about 6,000 planning tokens.
-- At most four child calls across plan and build, including workers, review, and retries.
-- Parallel workers only where file ownership and dependencies are independent.
-- One separate batch reviewer.
-- Worker brief: at most 700 tokens. Reviewer brief: at most 500 tokens.
+## Persistence and recovery
 
-### Deep
+Human plans and decisions remain in Markdown under `.hyperflow/`. The local SQLite runtime store records runs, task claims, attempts, stop generations, messages, and evidence references. It is not a hosted database service. Resume reconciles persisted state, worktrees, branches, and provider status before retrying; late results after stop or lease replacement cannot integrate.
 
-Use only for security, migrations, cross-boundary architecture, or research.
+## Capacity and safety
 
-- Two or three investigators and one planner during planning.
-- At most five planning child calls and about 18,000 planning tokens.
-- At most eight child calls across plan and build, including workers, review, and retries.
-- Implementation workers follow dependency order.
-- One specialist integration reviewer judges the cumulative diff.
+Admission uses actual host, provider, browser, and simulator capacity. The documented ceiling is five browser spaces and three simulators; use two simultaneous simulators by default. Existing user resources and lower host limits take precedence. Installation remains inert: no workflow execution, provider credential mutation, or relay download.
 
-These are structural ceilings, not provider-exact accounting claims.
+## Unattended smash
 
-## Context discipline
+Invoking smash authorizes implementation of the selected workflow without further questions. It runs checks, fresh reviews, and bounded fixes automatically. Writing delegates use Codex's `danger-full-access`, Claude Code and Antigravity's explicit permission bypass, Cursor's disabled sandbox with the relay's force mode, OpenCode's automatic build mode, or Pi's noninteractive writing default. Review delegates remain read only.
 
-- Inspect the repository before asking a question.
-- Ask only when the answer changes implementation.
-- Load task-relevant skills and references on demand.
-- Give each worker only its scope, dependencies, acceptance criteria, and verification command.
-- Keep investigation detail inside the investigating session; return compact findings.
-- Never create an agent for formatting, routing, status, memory append, or command execution.
-- Workers never review their own work.
-
-## Markdown contract
-
-| File | Purpose |
-|---|---|
-| `.hyperflow/tasks/<slug>.md` | Goal, scope, dependencies, status, acceptance criteria |
-| `.hyperflow/specs/<slug>.md` | Design decisions needed beyond the task file |
-| `.hyperflow/audits/<timestamp>-<scope>.md` | Evidence-backed findings |
-| `.hyperflow/memory/<category>.md` | Durable project learning |
-| `.hyperflow/memory/decisions.md` | Optional bounded pointers to approved planning decisions; the task or spec remains authoritative |
-| `.hyperflow/memory/review-outcomes.md` | Optional bounded pointers to accepted audits; the audit remains authoritative |
-| `.hyperflow-handoff/<slug>/{task.md,handoff.md}` | Task copy, base/head refs, status, continuation notes |
-
-Current workflow state is the Markdown listed above.
-
-`plan <request> --remember` explicitly appends approved decision cards to `.hyperflow/memory/decisions.md`; it never copies investigation transcripts or activates session startup. Read only cards relevant to the current request. Review outcomes use the separate `audit --remember` contract.
-
-### Handoff round trips
-
-The current handoff package is deliberately inspectable: `task.md` is the copied task, while `handoff.md` records the case-sensitive keys `status`, `task_pointer`, `source_branch`, `build_branch`, `base_ref`, `head_ref`, `created`, `updated`, `result`, `checks`, and `commits`. The pointer must target `.hyperflow-handoff/<slug>/task.md`. `planned` may use `pending` for `head_ref`; after build, both recorded refs must resolve before review uses the exact range.
-
-## Completion and Git
-
-Each distinct task receives its own Conventional Commit. Verification is proportional to risk. A worker's output is not accepted as its own review. Release verification may prepare a local release, but pushing commits or tags is a separate user-authorized action.
-
-Existing user data is never deleted during installation or migration.
+The coordinator retains its host's actual permissions. An unavailable capability or decision outside the approved plan blocks the affected task. Other independent tasks continue, and the final report lists unresolved blockers without waiting for a reply.

@@ -1,20 +1,18 @@
 # Releasing Hyperflow
 
-Release and push are separate boundaries. A successful local release never grants permission to push commits or tags.
+Release and push are separate actions. Create releases only when requested. Keep a feature branch for reviewed changes and preserve historical changelog entries.
 
-## 1. Prepare the change
+## Prepare
 
-- Keep one Conventional Commit per distinct task.
-- Confirm the working tree contains only intended changes.
-- Keep `README.md`, `PRIVACY.md`, manifests, and current Markdown docs aligned with the seven core surfaces.
-- Leave historical `CHANGELOG.md` entries intact; the lightweight release script does not rewrite them.
-- Verify that Claude Code is described as primary and Codex/OpenCode have honest compatibility limits.
+- Keep Conventional Commits separated by concern.
+- Align the manifests, four public skills, installer, privacy policy, and current documentation.
+- Keep the active host as coordinator. Delegate profiles select their own harness and model.
+- Document migration without deleting existing `.hyperflow` data, credentials, shared skills, or foreign registrations.
+- Use a major version for the new public commands and workflow compatibility boundary. Do not stamp a release version during ordinary development.
 
-For the lightweight-core major release, include an explicit migration note: installation never deletes existing `.hyperflow` data, and users must rehydrate legacy JSON-only information into Markdown before relying on the new version.
+## Verify
 
-## 2. Verify
-
-Run the repository's maintained checks from the repository root:
+Use Node.js 24 or newer. Run the maintained checks against the final tree:
 
 ```bash
 npm run validate-plugin
@@ -22,46 +20,31 @@ npm run unittest
 npm run evals
 ```
 
-`npm run validate-plugin` checks manifests, skill/specialist registration, JSON parsing, current Markdown links, shell syntax, and the inert runtime boundary. `npm run unittest` runs the Node test suite. `npm run evals` runs static golden tasks for public-surface, host-claim, and persistence contracts.
+Validation covers version parity, exactly four public skills, runtime entrypoints, links, and package boundaries. Tests cover static workflow parsing, actual planning participation, configured delegates, isolated execution, review, repair, stop/resume, persistence, and installer migration. Static evaluations check the documented contracts. None of these certifies live provider or host behavior.
 
-- exactly seven skill surfaces: `hyperflow`, `plan`, `dispatch`, `trace`, `audit`, `deploy`, and `handoff`;
-- Direct, Focused, and Deep routing limits;
-- no automatic session subprocess, network, or write path;
-- Markdown-only current persistence;
-- blocked-file and destructive-command rules;
-- manifest version parity and resolvable current documentation links;
-- Markdown is the only current persistence contract outside historical changelog and marked migration context.
+Check runtime and shell syntax, patch hygiene, maintained-file limits, and actual package footprint. Report the exact checks and any unavailable evidence. Fix causes without weakening gates.
 
-Do not bypass a failing check. Fix the source and rerun the full maintained suite.
+## Create a local release
 
-## 3. Create the local release
-
-Run:
+After approval, use the explicit version or appropriate bump:
 
 ```bash
 ./scripts/release.sh major
 ```
 
-This compatibility boundary requires the explicit `major` argument. The script updates release metadata and the changelog, creates the release commit, and creates the local annotated tag. Confirm the resulting commit, tag, version parity, and clean worktree. Later releases may use inference only when the exact current-version tag is reachable.
+The script validates the tree, stamps version metadata, creates a local release commit, and creates an annotated tag. It never pushes. Confirm the commit, tag, version parity, and clean worktree before proceeding.
 
-A major version is required for the lightweight-core compatibility break.
+## Verify host claims
 
-## 4. Review compatibility claims
+Claude Code, Codex CLI, Codex app-server, Codex desktop, Antigravity, Cursor, OpenCode, and Pi require separate evidence for command discovery and execution. An installed skill or manifest does not certify any host. Missing capabilities remain explicit blockers.
 
-- Claude Code may use the primary-support wording only after its maintained validation passes.
-- Codex CLI, app-server, and desktop App are independent surfaces. Do not promote one from another surface's evidence.
-- OpenCode remains a compatibility shim unless its own maintained checks prove a stronger claim.
-- Missing host capabilities must be described as explicit degradation, never simulated background work.
+## Push
 
-## 5. Push only after authorization
-
-After the user separately authorizes the push:
+Only push within the user's authorization. Verify the destination branch and use a normal push:
 
 ```bash
 git push origin HEAD
-git push origin <tag>
+git push origin <approved-tag>
 ```
 
-Never force-push `main` or `master`, never use `--no-verify`, and never publish a package unless the user explicitly requested that publication step.
-
-After pushing, confirm the remote commit/tag and required CI checks before announcing the release.
+Confirm the remote revision and applicable checks before announcing a release. Package publication requires an explicit publication request.

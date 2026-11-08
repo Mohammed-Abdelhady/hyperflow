@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Hyperflow is a lightweight Markdown-only orchestration kernel with Direct, Focused, and Deep lanes.">
-  <title>Hyperflow — less orchestration, better judgment</title>
+  <meta name="description" content="Hyperflow plans and runs verified, bounded workflows through four public agent skills.">
+  <title>Hyperflow — plan, execute, review</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <style>
     :root { color-scheme: dark; --bg:#0b0e0d; --panel:#111614; --text:#f4f2e9; --muted:#a7b0aa; --line:#2b3430; --accent:#62d9b0; }
@@ -38,33 +38,33 @@
     </nav>
 
     <h1>Less orchestration. Better judgment.</h1>
-    <p class="lead">A Markdown-only kernel for coding agents. Hyperflow chooses the smallest safe lane, uses extra agents only when independence matters, and keeps release and push under your control.</p>
+    <p class="lead">A local workflow planner and runner. Hyperflow records decisions, delegates scoped tasks through available adapters, reviews independently, and verifies actual work.</p>
     <div class="actions">
       <a class="button primary" href="getting-started.md">Get started</a>
       <a class="button" href="orchestration.md">Read the contract</a>
     </div>
 
     <section>
-      <h2>Three lanes, fixed ceilings.</h2>
+      <h2>Plan first. Execute explicitly.</h2>
       <div class="grid">
-        <article><h3>Direct</h3><p>Clear, reversible, one subsystem. The coordinator executes with zero child agents.</p></article>
-        <article><h3>Focused</h3><p>One compact task file. Parallel workers only where work is independent, then one batch review.</p></article>
-        <article><h3>Deep</h3><p>Reserved for security, migrations, architecture, and research. Bounded investigation, specialist judgment.</p></article>
+        <article><h3>Dependencies</h3><p>Tasks start when prerequisites and write scopes are ready.</p></article>
+        <article><h3>Independent review</h3><p>Fresh sessions inspect candidates before serial integration.</p></article>
+        <article><h3>Real verification</h3><p>Completion points to actual checks and evidence.</p></article>
       </div>
     </section>
 
     <section>
-      <h2>Seven surfaces. No ceremony layer.</h2>
-      <p class="surfaces"><code>hyperflow</code> · <code>plan</code> · <code>dispatch</code> · <code>trace</code> · <code>audit</code> · <code>deploy</code> · <code>handoff</code></p>
-      <p class="lead">Plans, audits, memory, and handoffs stay readable in Git-friendly Markdown. Startup stays inert.</p>
+      <h2>Four public skills.</h2>
+      <p class="surfaces"><code>hyperflow-plan</code> · <code>hyperflow-smash</code> · <code>hyperflow-crash</code> · <code>hyperflow-agents-skill</code></p>
+      <p class="lead">Human plans remain readable in Markdown. A local runner validates static workflows and stores execution state. Installation does not run workflows or change provider credentials.</p>
     </section>
 
     <section>
       <h2>Start with an outcome.</h2>
-      <article><code>plan the billing migration</code><br><code>fix the failing checkout test</code><br><code>audit this diff</code><br><code>deploy this release</code></article>
+      <article><code>/hyperflow-plan migrate billing</code><br><code>/hyperflow-smash .hyperflow/workflows/billing/workflow.mjs</code><br><code>/hyperflow-crash main HEAD</code></article>
     </section>
 
-    <footer>Claude Code is primary. Codex and OpenCode are compatibility surfaces with explicit limitations. <a href="codex.md">Codex preview details</a>.</footer>
+    <footer>Host support is checked per surface and version. <a href="installation.md#host-compatibility-evidence">Read host evidence limits</a>.</footer>
   </main>
 </body>
 </html>

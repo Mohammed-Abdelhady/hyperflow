@@ -1,103 +1,22 @@
 # Roadmap
 
-Hyperflow's roadmap is a direction-setting document, not a commitment calendar. It keeps train selection grounded in user pain and the current lightweight core.
-
-## Direction
-
-Keep the default path obvious, measurable, and reliable without rebuilding a second runtime around the plugin. Prefer fixing broken or confusing behavior over adding surface area.
-
-The current priorities, in order, are:
-
-1. Preserve the Markdown persistence and inert-startup guarantees.
-2. Deepen memory, review, handoff, and monorepo workflows where the benefit is durable.
-3. Make installation and release behavior safe under failure, partial updates, and host capability differences.
-4. Treat compatibility claims as evidence-backed and surface-specific.
-
-## Shipped trains
-
-### v6.0 — lightweight Markdown core
-
-- Direct, Focused, and Deep lanes with bounded coordination budgets.
-- Seven focused surfaces: `hyperflow`, `plan`, `dispatch`, `trace`, `audit`, `deploy`, and `handoff`.
-- Plans, audits, memory, and handoffs kept in human-readable Markdown.
-- Inert startup: no automatic Hyperflow subprocesses, network requests, or project writes.
-- Legacy runtime, dashboard, viewer, hooks, and JSON persistence machinery removed from the current core; installation preserves existing project data.
-
-### v6.1 — portable validation and host boundaries
-
-- Dependency-free `validate-plugin`, `unittest`, and golden `evals` maintainer gates.
-- Explicit host-parity contract: Claude Code is primary; Codex is preview and uncertified; OpenCode and Antigravity are compatibility shims.
-- Source-managed installation links all seven skills transactionally where supported.
-
-### v6.2 — install and CI reliability
-
-- Antigravity skill linking and uninstall cleanup, Git worktree support, and safer relative install paths.
-- Source-managed updates refuse dirty or diverged checkouts, preflight fetched trees, and leave the existing checkout intact on failed updates.
-- Validation and release workflows use current Node 24-based action majors.
-
-### v6.4 — durable handoff round trips
-
-- Case-sensitive handoff metadata keeps the copied Markdown task and exact Git base/head refs inspectable across sessions.
-- A golden eval exercises the reviewed package shape and rejects missing pointers or unresolved refs.
-- Release version stamping keeps the Changelog comparison links aligned with the new version.
-
-### v6.5 — bounded cross-session memory
-
-- `audit --remember` carries only an accepted review outcome and exact audit pointer into a later session.
-- A bounded Markdown ledger keeps review memory separate from implementation output and authoritative audit findings.
-- Handoff review can forward the same explicit opt-in without changing the exact Git-range contract.
-- `plan --remember` carries approved planning decisions as bounded source-linked cards into a later session.
-- Decision memory stays separate from task/spec detail, rejects duplicate cards, and never copies investigation transcripts.
-
-### v6.6 — monorepo workspace-boundary verification
-
-- Cross-boundary plans record affected roots, shared contracts, package-local gates, root gates, and explicit out-of-scope paths.
-- Dispatch checks changed paths against that record before committing and runs the recorded gates.
-- A dependency-free boundary eval protects the contract.
-
-### v6.7 — installer capability observability
-
-- `install.sh --status` reports checkout validity, native host availability, and complete, partial, or conflicting skill-link state without fetching, creating directories, invoking plugins, or changing links.
-
-### v6.8 — installer health checks
-
-- `install.sh --status --check` provides a read-only exit status for a valid, clean `main` checkout with a usable cached update path.
-
-### v6.9 — automation-friendly installer diagnostics
-
-- `install.sh --status --json` exposes the read-only checkout, update, host, link, and health state as one machine-readable object.
-
-### v6.10 — actionable installer status metadata
-
-- `install.sh --status --json` exposes current/tracking package versions and whether a valid cached `origin/main` commit differs, so automation need not infer update state from prose.
+This roadmap sets direction; it is not a release calendar. Hyperflow stays a small local workflow tool with four public skills and existing host delegate adapters.
 
 ## Next trains
 
-### Install and release reliability
+1. Finish the reviewed local runner contract: plan artifacts, static workflow validation, durable task claims, scoped worktrees, independent review, and evidence-backed completion.
+2. Verify command discovery, model-role resolution, cancellation, and recovery on the actual supported host surfaces. Report limits per host and version.
+3. Keep planning concise: ask only settled consequential questions, assign delegate profile and effort per task, and require explicit smash invocation before execution.
+4. Load quality guidance only for relevant changes. Preserve accessible interactions, browser fallbacks, and truthful SEO, GEO, performance, security, and device evidence.
 
-- Continue testing source-managed updates against local-remote failure modes, version regressions, and partial trees.
-- Keep host installation honest when native commands, collaboration, or lifecycle capabilities are absent.
-- Keep read-only installer diagnostics usable by automation with an explicit health-check exit status.
-- Preserve the release contract: validate locally, keep release and push separate, and never fabricate compatibility evidence.
+## Out of scope for this design
+
+The approved shape has no dashboard, cloud service, distributed scheduler, always-on daemon, mandatory classification model, or separate permission system. It uses the active host for coordination and the user's existing adapters for delegated work.
 
 ## Selection rule for a train
 
-A candidate should address a demonstrated failure mode or repeated user confusion, fit one coherent bounded change, and have a regression check or golden evaluation. If it cannot meet those conditions, it stays a note rather than becoming a release train.
+Choose the smallest change that resolves a demonstrated user problem. Keep work inside the four commands and existing runtime interfaces. Add a dependency only when a current supported host cannot provide the needed behavior. Preserve `.hyperflow` data, credentials, shared skills, and unrelated host registrations.
 
-## Explicit non-goals
+## Evidence rule
 
-- Hosted agent cloud infrastructure.
-- Star-count or feature-for-feature parity chasing.
-- More specialist agents without measured value.
-- Restoring the removed dashboard, viewer, hooks, or legacy JSON runtime.
-- Claiming certified Codex support while the relevant certificate remains preview or unavailable.
-
-## Related
-
-- [Getting started](getting-started.md)
-- [Installation and migration](installation.md)
-- [Orchestration contract](orchestration.md)
-- [Monorepo isolation](monorepo.md)
-- [Codex preview boundary](codex.md)
-- [Releasing](../RELEASING.md)
-- [Changelog](../CHANGELOG.md)
+Record actual versions, commands, tests, and host observations. Static validation does not certify a provider, browser, mobile device, or host integration. Do not raise a timeout, retry count, file limit, or footprint ceiling to make a gate green.
