@@ -205,7 +205,7 @@ link_detected_providers() {
     link_provider "Claude Code" "$CLAUDE_ROOT"
   fi
   if host_detected codex; then
-    link_provider "Codex" "$CODEX_ROOT"
+    link_codex_provider
   fi
   if host_detected antigravity; then
     link_provider "Antigravity" "$ANTIGRAVITY_ROOT"
@@ -227,6 +227,7 @@ remove_owned_links() {
       if is_owned_skill_link "$target" "$skill"; then rm -- "$target" && removed=$((removed + 1)); fi
     done
   done
+  remove_codex_owned_copies
   for command in "${CORE_COMMANDS[@]}"; do
     target="$OPENCODE_ROOT/commands/$command.md"
     if command_owned_by_checkout "$target"; then rm -- "$target" && removed=$((removed + 1)); fi

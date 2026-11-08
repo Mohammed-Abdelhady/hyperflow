@@ -6,6 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/scripts/install/shared.sh"
 source "$SCRIPT_DIR/scripts/install/checkout.sh"
+source "$SCRIPT_DIR/scripts/install/codex.sh"
 source "$SCRIPT_DIR/scripts/install/registrations.sh"
 main() {
   while [ $# -gt 0 ]; do

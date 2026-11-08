@@ -153,6 +153,7 @@ print_status() {
     readiness="unavailable (checkout $checkout_state)"
   fi
 
+  if [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ]; then healthy=true; fi
   if host_detected opencode; then
     opencode_detected=true
     opencode_links="$(link_state "$OPENCODE_ROOT/skills")"
@@ -164,14 +165,12 @@ print_status() {
   fi
   if host_detected codex; then
     codex_detected=true
-    codex_links="$(link_state "$CODEX_SKILLS_ROOT")"
+    codex_links="$(codex_skill_state)"
   fi
   if host_detected antigravity; then antigravity_detected=true; antigravity_links="$(link_state "$ANTIGRAVITY_SKILLS_ROOT")"; fi
   if host_detected cursor; then cursor_detected=true; cursor_links="$(link_state "$CURSOR_SKILLS_ROOT")"; fi
   if host_detected pi; then pi_detected=true; pi_links="$(link_state "$PI_SKILLS_ROOT")"; fi
-
-  if [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ]; then
-    healthy=true
+  if [ "$healthy" = true ]; then
     if [ "$opencode_detected" = true ] && { [ "$opencode_links" != complete ] || [ "$opencode_commands" != complete ]; }; then healthy=false; fi
     if [ "$claude_detected" = true ] && [ "$claude_links" != complete ]; then healthy=false; fi
     if [ "$codex_detected" = true ] && [ "$codex_links" != complete ]; then healthy=false; fi
