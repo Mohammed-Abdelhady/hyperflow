@@ -78,6 +78,7 @@ The current priorities, in order, are:
 - Continue testing source-managed updates against local-remote failure modes, version regressions, and partial trees.
 - Keep host installation honest when native commands, collaboration, or lifecycle capabilities are absent.
 - Keep read-only installer diagnostics usable by automation with an explicit health-check exit status.
+- Make the health check fail closed when a detected compatibility host has incomplete or conflicting skill links.
 - Preserve the release contract: validate locally, keep release and push separate, and never fabricate compatibility evidence.
 
 ## Selection rule for a train

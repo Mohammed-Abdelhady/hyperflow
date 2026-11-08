@@ -105,6 +105,7 @@ print_status() {
   local opencode_detected=false antigravity_detected=false
   local opencode_links='not detected' antigravity_links='not detected'
   local opencode_state='not detected' antigravity_state='not detected'
+  local provider_links_healthy=true
   local healthy=false
 
   if [ -e "$INSTALL_DIR" ] && ! is_git_checkout "$INSTALL_DIR"; then
@@ -153,9 +154,6 @@ print_status() {
     readiness="unavailable (checkout $checkout_state)"
   fi
 
-  if [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ]; then
-    healthy=true
-  fi
   if command -v claude >/dev/null 2>&1; then claude_state='available'; fi
   if command -v codex >/dev/null 2>&1; then codex_state='available'; fi
   if [ -d "$OPENCODE_ROOT" ] || command -v opencode >/dev/null 2>&1; then
@@ -167,6 +165,15 @@ print_status() {
     antigravity_detected=true
     antigravity_links="$(link_state "$ANTIGRAVITY_SKILLS_ROOT")"
     antigravity_state="detected (root=$ANTIGRAVITY_SKILLS_ROOT; links=$antigravity_links)"
+  fi
+  if [ "$opencode_detected" = true ] && [ "$opencode_links" != 'complete' ]; then
+    provider_links_healthy=false
+  fi
+  if [ "$antigravity_detected" = true ] && [ "$antigravity_links" != 'complete' ]; then
+    provider_links_healthy=false
+  fi
+  if [ "$checkout_state" = 'valid' ] && [ "$readiness" = 'ready (branch=main)' ] && [ "$provider_links_healthy" = true ]; then
+    healthy=true
   fi
 
   if [ "$STATUS_JSON" = "1" ]; then
