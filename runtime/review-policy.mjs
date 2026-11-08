@@ -143,19 +143,22 @@ async function securityFixRound({ workflow, tasks, findings, verificationFailure
         return { status: 'verified', task, paths, integrationHead: merged.headSha, evidence: { ...evidence, checks: receipts, review: primaryReview } };
       }
     } finally { await reviewTree.cleanup(); }
-    if (primaryReview.verdict === 'blocked') throw new Error(`The primary correctness review blocked the security repair: ${primaryReview.reason ?? 'reviewer blocked'}`);
-    return { status: 'needs-fix', findings: validateFindings(primaryReview.findings, paths), evidence: { ...evidence, checks: receipts, review: primaryReview } };
+    if (primaryReview.verdict === 'blocked') return { status: 'blocked', evidence: { ...evidence, checks: receipts, review: primaryReview } };
+    return { status: 'needs-fix', findings: validateFindings(primaryReview.findings, await changedFiles(lane.path, baseSha, primaryReview.headSha)), evidence: { ...evidence, checks: receipts, review: primaryReview } };
   } finally { await lane.cleanup(); }
 }
 
-export async function runSecurityGate({ workflow, tasks, repoRoot, integrationPath, roles, adapter, checks, review, signal, evidenceDirectory, checkpoint }) {
+export async function runSecurityGate({ workflow, tasks, repoRoot, integrationPath, roles, adapter, checks, review, signal, evidenceDirectory, checkpoint, previousSecurity }) {
   const profiles = roles?.roles ?? roles;
   if (!profiles?.primary || !profiles?.general) throw new Error('The final security gate requires the primary and general profiles');
   const baseSha = workflow.repository.baseSha;
   const securityTask = securityReviewTask(workflow);
-  const reviews = [];
-  const fixes = [];
-  const attempts = [];
+  const history = previousSecurity && [previousSecurity.reviews, previousSecurity.fixes, previousSecurity.attempts].every(Array.isArray)
+    ? previousSecurity : null;
+  const reviews = history ? [...history.reviews] : [];
+  const fixes = history ? [...history.fixes] : [];
+  const attempts = history ? [...history.attempts] : [];
+  const roundsOffset = fixes.length + attempts.length;
   let head = await git(integrationPath, ['rev-parse', 'HEAD']);
   let taskChange = null;
   let pending = null;
@@ -170,10 +173,10 @@ export async function runSecurityGate({ workflow, tasks, repoRoot, integrationPa
         if (security.verdict === 'blocked') throw fail(`The consolidated security review blocked the workflow: ${security.reason ?? 'reviewer blocked'}`, 'blocked');
         pending = { findings: validateFindings(security.findings, await changedFiles(integrationPath, baseSha, head)) };
       }
-      const used = fixes.length + attempts.length;
+      const used = fixes.length + attempts.length - roundsOffset;
       if (used >= MAX_REPAIR_ROUNDS) throw fail('Security repair limit reached before a passing consolidated review', 'failed');
       const round = await securityFixRound({ workflow, tasks, findings: pending.findings, verificationFailure: pending.verificationFailure,
-        attempt: used + 1, repoRoot, integrationPath, profiles, adapter, checks, review, signal, baseSha, head, evidenceDirectory });
+        attempt: fixes.length + attempts.length + 1, repoRoot, integrationPath, profiles, adapter, checks, review, signal, baseSha, head, evidenceDirectory });
       if (round.status === 'verified') {
         head = round.integrationHead;
         fixes.push(round.evidence);
@@ -182,6 +185,7 @@ export async function runSecurityGate({ workflow, tasks, repoRoot, integrationPa
         if (checkpoint) await checkpoint(head);
       } else {
         attempts.push(round.evidence);
+        if (round.status === 'blocked') throw fail(`The primary correctness review blocked the security repair: ${round.evidence.review.reason ?? 'reviewer blocked'}`, 'blocked');
         pending = round.status === 'check-failed'
           ? { findings: pending.findings, verificationFailure: round.evidence.verificationFailure }
           : { findings: round.findings };

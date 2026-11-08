@@ -25,11 +25,14 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
   const roleSet = structuredClone(normalizeRoles(roles));
   let releaseLock;
   let run;
+  let previousSecurity = null;
   try {
     if (runId) {
       releaseLock = await acquireRepositoryLock(repoRoot, runId);
       store.reconcile(runId);
+      previousSecurity = store.getRun(runId)?.finalEvidence?.security ?? null;
       run = store.resumeRun(runId, { workflow, digest, repoRoot });
+      if (previousSecurity) store.setFinalEvidence(run.runId, { security: previousSecurity });
       store.setRoles(run.runId, roleSet);
     } else run = store.createRun({ workflow, digest, repoRoot, roles: roleSet });
   } catch (error) {
@@ -121,7 +124,7 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
     if (controller.signal.aborted) throw controller.signal.reason ?? new Error('Workflow stopped');
     const gate = await runSecurityGate({ workflow, tasks, repoRoot, integrationPath: integration.path,
       roles: roleSet, adapter, checks, review,
-      signal: controller.signal, evidenceDirectory: path.join(`${statePath}.evidence`, run.runId, 'gate'),
+      signal: controller.signal, evidenceDirectory: path.join(`${statePath}.evidence`, run.runId, 'gate'), previousSecurity,
       checkpoint: async integrationHead => {
         store.setIntegrationHead(run.runId, integrationHead);
         await git(repoRoot, ['update-ref', integrationRef, integrationHead]);
@@ -138,8 +141,9 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
     return resultFor(store, run.runId);
   } catch (error) {
     if (store.getRun(run.runId)?.status !== 'stopped') store.setRunStatus(run.runId, 'failed', error);
-    if (error?.evidence || error?.security) store.setFinalEvidence(run.runId, {
-      ...(error.evidence ? { checkFailure: error.evidence } : {}), ...(error.security ? { security: error.security } : {}),
+    const securityEvidence = error?.security ?? previousSecurity;
+    if (error?.evidence || securityEvidence) store.setFinalEvidence(run.runId, {
+      ...(error.evidence ? { checkFailure: error.evidence } : {}), ...(securityEvidence ? { security: securityEvidence } : {}),
       error: String(error.message ?? error) });
     return resultFor(store, run.runId);
   } finally {
