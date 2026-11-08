@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { selectReviewAssignment, validateAssignments } from './assignments.mjs';
+import { selectReviewAssignments, validateAssignments } from './assignments.mjs';
 import { RunStore } from './store.mjs';
 import { executeWorkflow } from './scheduler.mjs';
 import { loadWorkflow } from './workflow.mjs';
@@ -10,10 +10,11 @@ import { assembleContext } from './context.mjs';
 import { discoverCatalog } from './catalog.mjs';
 import { effectiveRoles, configuredProfiles } from './config.mjs';
 import { loadChecks, validateChecks } from './checks.mjs';
-import { validateApproval } from './cli-plan.mjs';
+import { validateApproval, validateApprovedRoles } from './cli-plan.mjs';
 import { statePath } from './cli-control.mjs';
 import { createAdapter } from './relay.mjs';
 import { createReviewer, resolveReviewRange } from './review.mjs';
+import { aggregateReviews, validateReviewOutcome } from './review-policy.mjs';
 import { snapshotCurrentDiff } from './review-snapshot.mjs';
 import { resolvePullRequest } from './pr.mjs';
 import { artifactPath, readJson, SLUG, writeJson } from './files.mjs';
@@ -35,12 +36,14 @@ export async function executionCommand(command, args, root) {
     } finally { store.close(); }
   } else loaded = await loadWorkflow(resolve(args[0]));
   const { workflow, digest } = loaded;
+  if (workflow.schemaVersion !== 2) throw new Error('Workflow schema 1 is historic and cannot execute; replan it with hyperflow plan and approve the schema 2 workflow before running smash');
   if (resolve(workflow.repository.root) !== root) throw new Error('Workflow belongs to another repository');
-  validateApproval(root, workflow, digest);
+  const approval = validateApproval(root, workflow, digest);
   const checks = loadChecks(root);
   validateChecks(workflow, checks);
   const catalog = await discoverCatalog({ cwd: root, configured: configuredProfiles(root, sessionRoles) });
   const roles = effectiveRoles({ repoRoot: root, catalog, session: sessionRoles });
+  validateApprovedRoles(approval, roles);
   validateAssignments(workflow, roles, catalog);
   const controller = new AbortController();
   const abort = () => controller.abort(new Error('Hyperflow execution interrupted'));
@@ -70,24 +73,35 @@ async function crash(args, root) {
   const range = !args.length ? snapshotCurrentDiff(root) : args[0].startsWith('https://')
     ? await resolvePullRequest(root, args[0]) : resolveReviewRange(root, args[0], args[1] ?? 'HEAD');
   const temporary = mkdtempSync(join(tmpdir(), 'hyperflow-review-'));
-  const worktree = join(temporary, 'checkout');
   const git = (argv) => execFileSync('git', argv, { cwd: root, encoding: 'utf8' });
-  git(['worktree', 'add', '--detach', worktree, range.headSha]);
+  git(['worktree', 'add', '--detach', join(temporary, 'checkout'), range.headSha]);
   try {
     const catalog = await discoverCatalog({ cwd: root, configured: configuredProfiles(root) });
-    const selected = effectiveRoles({ repoRoot: root, catalog });
-    const reviewer = selectReviewAssignment(selected, catalog);
-    const result = await createReviewer()({ cwd: worktree, ...range, model: reviewer.model,
-      task: { id: 'PR', effort: reviewer.effort, title: 'Review the pinned change', acceptance: ['No unresolved correctness, security or regression findings'],
-        writeScope: [], readScope: [], checks: [] } });
+    const assignments = selectReviewAssignments(effectiveRoles({ repoRoot: root, catalog }), catalog);
+    const reviewer = createReviewer();
+    const task = { id: 'PR', title: 'Review the pinned change', acceptance: ['No unresolved correctness, security or regression findings'],
+      writeScope: [], readScope: [], checks: [] };
+    const correctness = await reviewer({ task, phase: 'correctness-review', cwd: join(temporary, 'checkout'), ...range,
+      model: assignments.correctness.model, effort: assignments.correctness.effort });
+    const securityCheckout = join(temporary, 'security-checkout');
+    git(['worktree', 'add', '--detach', securityCheckout, range.headSha]);
+    let security;
+    try {
+      security = await reviewer({ task, phase: 'security-review', cwd: securityCheckout, ...range,
+        model: assignments.security.model, effort: assignments.security.effort });
+    } finally {
+      try { git(['worktree', 'remove', '--force', securityCheckout]); }
+      finally { rmSync(securityCheckout, { recursive: true, force: true }); }
+    }
     const current = !args.length ? snapshotCurrentDiff(root) : args[0].startsWith('https://')
       ? await resolvePullRequest(root, args[0]) : resolveReviewRange(root, args[0], args[1] ?? 'HEAD');
     if (current.baseSha !== range.baseSha || (range.current ? current.sourceTree !== range.sourceTree : current.headSha !== range.headSha)) throw new Error('Review head changed during review; findings are stale');
+    const outcome = aggregateReviews([validateReviewOutcome(correctness, 'correctness-review'), validateReviewOutcome(security, 'security-review')]);
     const path = artifactPath(root, 'audits', `${range.headSha}.json`);
-    writeJson(path, { ...range, ...result });
-    return { ...result, ...range, artifact: path, status: result.verdict === 'pass' ? 'completed' : 'blocked' };
+    writeJson(path, { ...range, ...outcome, correctness, security });
+    return { ...outcome, ...range, correctness, security, artifact: path, status: outcome.verdict === 'pass' ? 'completed' : 'blocked' };
   } finally {
-    try { git(['worktree', 'remove', '--force', worktree]); }
+    try { git(['worktree', 'remove', '--force', join(temporary, 'checkout')]); }
     finally { rmSync(temporary, { recursive: true, force: true }); }
   }
 }

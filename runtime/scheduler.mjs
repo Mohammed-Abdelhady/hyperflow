@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { freemem } from 'node:os';
 import path from 'node:path';
 import { RunStore } from './store.mjs';
+import { validateWorkflow } from './workflow.mjs';
 import { runChecks } from './command.mjs';
+import { effortLevel, MAX_REPAIR_ROUNDS, runSecurityGate, validateFindings } from './review-policy.mjs';
 import {
   applyIntegratedChanges, assertChangesScoped, assertCommitScoped, commitTaskChanges,
   acquireRepositoryLock, assertNoScopeSymlinks, assertValidScopes, changedPaths, createExecutionWorktree, git, integrateTaskChanges, scopesOverlap
@@ -12,10 +14,10 @@ const MAX_CAPACITY = 3;
 const MAX_BROWSER_SPACES = 5;
 const MAX_SIMULATORS = 3;
 const DEFAULT_SIMULATORS = 2;
-const MAX_REPAIR_ROUNDS = 2;
 const MEMORY_PER_TASK_BYTES = 2 * 1024 ** 3;
 
 export async function executeWorkflow({ workflow, digest, repoRoot, statePath, roles, adapter, checks, review, signal, capacity, context, runId }) {
+  workflow = validateWorkflow(workflow);
   validateExecution({ workflow, digest, repoRoot, statePath, roles, adapter, checks, review });
   const tasks = workflow.tasks;
   assertValidScopes(tasks);
@@ -116,7 +118,16 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
     }
     const finalChecks = [];
     for (const task of tasks) finalChecks.push({ taskId: task.id, receipts: await runChecks(task, checks, integration.path, controller.signal, path.join(`${statePath}.evidence`, run.runId, 'final', task.id.replace(/[^A-Za-z0-9._-]/g, '_'))) });
-    store.setFinalEvidence(run.runId, { checks: finalChecks, integrationHead: await git(integration.path, ['rev-parse', 'HEAD']) });
+    if (controller.signal.aborted) throw controller.signal.reason ?? new Error('Workflow stopped');
+    const gateRun = store.getRun(run.runId);
+    const gate = await runSecurityGate({ workflow, tasks, repoRoot, integrationPath: integration.path,
+      roles: { revision: gateRun.roleRevision, roles: gateRun.roles }, adapter, checks, review,
+      signal: controller.signal, evidenceDirectory: path.join(`${statePath}.evidence`, run.runId, 'gate') });
+    await git(repoRoot, ['update-ref', integrationRef, gate.integrationHead]);
+    store.setIntegrationHead(run.runId, gate.integrationHead);
+    if (gate.taskChange) taskChanges.push(gate.taskChange);
+    store.setFinalEvidence(run.runId, { checks: finalChecks, integrationHead: gate.integrationHead,
+      security: { verdict: gate.verdict, baseSha: gate.baseSha, integrationHead: gate.integrationHead, reviews: gate.reviews, fixes: gate.fixes } });
     if (controller.signal.aborted) throw controller.signal.reason ?? new Error('Workflow stopped');
     await applyIntegratedChanges(integration.path, repoRoot, baseSha, taskChanges, controller.signal);
     await git(repoRoot, ['update-ref', '-d', integrationRef]);
@@ -138,8 +149,9 @@ export async function executeWorkflow({ workflow, digest, repoRoot, statePath, r
 
 async function executeTask({ task, lease, integration, repoRoot, roles, adapter, checks, review, signal, context, dependencyResults, integrate, evidenceDirectory }) {
   const selectedModel = roles.roles[task.agentRole];
-  const reviewRole = task.reviewRole ?? Object.keys(roles.roles).find(role => role !== task.agentRole) ?? task.agentRole;
-  const reviewModel = roles.roles[reviewRole];
+  const reviewModel = roles.roles.primary;
+  if (!reviewModel) throw new Error(`No primary reviewer profile is configured for ${task.id}`);
+  const reviewEffort = task.reviewEffort ?? 'high';
   const branchBase = await git(integration, ['rev-parse', 'HEAD']);
   const taskWorktree = await createExecutionWorktree(repoRoot, branchBase);
   let findings = [];
@@ -179,8 +191,9 @@ async function executeTask({ task, lease, integration, repoRoot, roles, adapter,
             const merged = await integrateTaskChanges(taskWorktree.path, reviewWorktree.path, task, branchBase);
             const integratedChecks = await runIntegratedChecks(task, checks, reviewWorktree.path, signal, evidenceDirectory);
             if ((await changedPaths(reviewWorktree.path)).length) throw new Error(`Checks modified the integrated candidate for ${task.id}`);
-            const verdict = await review({ task, cwd: reviewWorktree.path, baseSha: reviewBaseSha, headSha: merged.headSha,
-              model: reviewModel, effort: task.reviewEffort ?? task.effort, signal });
+            const reviewLane = { id: randomUUID(), path: reviewWorktree.path };
+            const verdict = await review({ task, phase: 'correctness-review', cwd: reviewWorktree.path, baseSha: reviewBaseSha, headSha: merged.headSha,
+              model: reviewModel, effort: reviewEffort, lane: reviewLane, signal });
             if (signal.aborted) throw signal.reason ?? new Error('Workflow stopped');
             if (await git(reviewWorktree.path, ['rev-parse', 'HEAD']) !== merged.headSha) throw new Error('Reviewer changed the reviewed candidate');
             if ((await changedPaths(reviewWorktree.path)).length) throw new Error('Reviewer left candidate changes behind');
@@ -194,7 +207,7 @@ async function executeTask({ task, lease, integration, repoRoot, roles, adapter,
               }
             } else if (verdict?.verdict === 'needs_fix') validateFindings(verdict.findings, merged.paths);
             else if (verdict?.verdict !== 'blocked') throw new Error(`Invalid review verdict for ${task.id}`);
-            return { ...merged, reviewBaseSha, verdict, integratedChecks };
+            return { ...merged, reviewBaseSha, verdict, integratedChecks, reviewLane };
           } finally { await reviewWorktree.cleanup(); }
         });
       } catch (error) {
@@ -209,7 +222,8 @@ async function executeTask({ task, lease, integration, repoRoot, roles, adapter,
         integrationHead: candidate.headSha, model: output.model ?? selectedModel.model, adapter: output.adapter ?? selectedModel.adapter,
         requestedVariant: output.requestedVariant ?? selectedModel.variant ?? null, appliedVariant: output.appliedVariant ?? null, effort: task.effort,
         checkEvidence: { task: candidateChecks, integrated: candidate.integratedChecks },
-        review: { verdict: 'pass', baseSha: candidate.reviewBaseSha, headSha: candidate.headSha, model: reviewModel.model, adapter: reviewModel.adapter, sessionId: candidate.verdict.sessionId ?? null }
+        review: { verdict: 'pass', phase: 'correctness-review', role: 'primary', effort: reviewEffort, baseSha: candidate.reviewBaseSha,
+          headSha: candidate.headSha, model: reviewModel.model, adapter: reviewModel.adapter, lane: candidate.reviewLane, sessionId: candidate.verdict.sessionId ?? null }
         };
       }
       if (candidate.verdict?.verdict !== 'needs_fix') throw new Error(`Independent review blocked ${task.id}`);
@@ -221,6 +235,7 @@ async function executeTask({ task, lease, integration, repoRoot, roles, adapter,
 }
 
 function validateExecution(input) {
+  if (input.workflow.schemaVersion !== 2) throw new TypeError('Execution requires a schema 2 workflow; replan and approve historic workflows before execution');
   if (!input.workflow || !Array.isArray(input.workflow.tasks) || !input.workflow.tasks.length) throw new TypeError('Workflow must contain tasks');
   if (!input.digest || !input.repoRoot || !input.statePath || !input.roles || typeof input.adapter !== 'function' || typeof input.review !== 'function') {
     throw new TypeError('Execution requires workflow, digest, repository, state, roles, adapter, checks, and independent review');
@@ -231,7 +246,9 @@ function validateExecution(input) {
     if (!task.id || !Array.isArray(task.dependsOn) || !Array.isArray(task.writeScope) || !Array.isArray(task.checks) || !task.acceptance?.length) throw new TypeError(`Task ${task.id ?? '?'} is missing execution contract fields`);
     const bindings = normalizeRoles(input.roles).roles;
     if (!bindings[task.agentRole]) throw new Error(`No model profile is configured for ${task.id}: ${task.agentRole}`);
-    if (task.reviewRole && !bindings[task.reviewRole]) throw new Error(`No reviewer profile is configured for ${task.id}: ${task.reviewRole}`);
+    if (task.reviewRole !== 'primary') throw new Error(`Task ${task.id} must be reviewed by the primary reviewer profile`);
+    const difficulty = task.difficulty ?? 'routine';
+    if (task.agentRole !== (difficulty === 'routine' ? 'lightweight' : 'general')) throw new Error(`Task ${task.id} routes ${difficulty} work to ${task.agentRole}`);
     for (const dependency of task.dependsOn) if (!ids.has(dependency)) throw new Error(`Unknown dependency ${dependency} for ${task.id}`);
     for (const resource of ['browserSpaces', 'simulators']) {
       const count = task.resources?.[resource] ?? 0;
@@ -243,6 +260,11 @@ function validateExecution(input) {
     }
   }
   if (!input.workflow.repository?.baseSha) throw new TypeError('Workflow must pin repository.baseSha');
+  const bindings = normalizeRoles(input.roles).roles;
+  if (!bindings.primary) throw new Error('No primary reviewer profile is configured for correctness reviews');
+  if (!bindings.general) throw new Error('No general profile is configured for the consolidated security review and its repairs');
+  effortLevel(input.workflow.securityReviewEffort ?? 'high', 'workflow.securityReviewEffort');
+  effortLevel(input.workflow.securityFixEffort ?? 'high', 'workflow.securityFixEffort');
   normalizeRoles(input.roles);
 }
 
@@ -252,14 +274,6 @@ function normalizeRoles(input) {
   const entries = Object.entries(bindings);
   if (!revision || !entries.length || entries.some(([key, item]) => !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?:\/[A-Za-z0-9][A-Za-z0-9._:-]{0,127})?$/.test(key) || typeof item?.model !== 'string' || typeof item?.adapter !== 'string')) throw new TypeError('Roles require valid model profile bindings');
   return { revision, roles: bindings };
-}
-
-function validateFindings(findings, candidatePaths) {
-  const fields = ['path', 'condition', 'impact', 'evidence', 'fix', 'severity'];
-  if (!Array.isArray(findings) || findings.some(item => !item || fields.some(key => typeof item[key] !== 'string' || !item[key].trim()) || !Number.isInteger(item.line) || item.line < 1 || !candidatePaths.includes(item.path))) {
-    throw new Error('Reviewer findings require path, line, condition, impact, evidence, fix, and severity');
-  }
-  return findings;
 }
 
 function isCheckFailureEvidence(error) {
