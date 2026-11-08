@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `/hyperflow-plan`, `/hyperflow-smash`, `/hyperflow-crash`, and `/hyperflow-agents-skill` with static workflows, task-level effort, and configurable delegate profiles.
+- Add dependency-aware parallel task worktrees, local execution state, independent review, bounded owner repairs, and stop/resume controls.
+- Run smash unattended with full-access writing delegates and read-only reviewers. Record blockers while independent tasks continue.
+- Add source registration and delegate adapters for Claude Code, Codex, Antigravity, Cursor, OpenCode, and Pi, with host-specific verification limits.
+- Add Modern Web Guidance, accessibility, performance, SEO/GEO, security, unslop writing rules, and Vercel React Native guidance.
+
+### Migration
+- Replace the seven legacy command surfaces with four workflow skills. Keep the current coding host as coordinator.
+- Require Node.js 24 or newer for the local runtime. Existing plans, project data, credentials, and unrelated skills remain untouched.
+- Native discovery and live provider execution require separate evidence on each host. Installation alone does not certify compatibility.
+
 ## [6.10.0] — 2026-11-06
 
 ### Added

@@ -29,5 +29,5 @@ Run applicable checks once for the final tree. Keep source-linked evidence and s
 - Keep exactly the four approved public skill entrypoints; load specialist references only when relevant.
 - Keep human-maintained files at or below 350 lines.
 - Preserve user state and unrelated files during every migration and rollback.
-- Keep version `6.10.0` until the integration owner coordinates the version change.
+- Coordinate version changes across manifests, skill metadata, doctrine markers, and release notes.
 - Run the maintained checks before release. Release and push remain separate; push requires explicit authorization.
