@@ -2,7 +2,7 @@
 
 **A local workflow planner and execution runner for coding agents.** Hyperflow keeps plans readable, validates static workflows, delegates bounded tasks through an available provider adapter, and records durable execution state locally.
 
-[![version v6.10.1](https://img.shields.io/badge/version-v6.10.1-blueviolet?style=flat-square)](CHANGELOG.md)
+[![version v7.0.0](https://img.shields.io/badge/version-v7.0.0-blueviolet?style=flat-square)](CHANGELOG.md)
 [![validation](https://img.shields.io/github/actions/workflow/status/Mohammed-Abdelhady/hyperflow/plugin-validation.yml?style=flat-square&label=validation)](https://github.com/Mohammed-Abdelhady/hyperflow/actions)
 [![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 

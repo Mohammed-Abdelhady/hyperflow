@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.0.0] — 2026-11-08
+
 ### Added
 - Add `/hyperflow-plan`, `/hyperflow-smash`, `/hyperflow-crash`, and `/hyperflow-agents-skill` with static workflows, task-level effort, and configurable delegate profiles.
 - Add dependency-aware parallel task worktrees, local execution state, independent review, bounded owner repairs, and stop/resume controls.
@@ -1856,7 +1858,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code marketplace plugin
 - Agent labels and usage summary on task completion
 
-[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.10.1...HEAD
+[Unreleased]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v7.0.0...HEAD
 [5.30.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.1...v5.30.0
 [5.29.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.29.0...v5.29.1
 [5.29.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v5.28.0...v5.29.0
@@ -2030,3 +2032,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [6.9.2]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.1...v6.9.2
 [6.10.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.9.2...v6.10.0
 [6.10.1]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.10.0...v6.10.1
+[7.0.0]: https://github.com/Mohammed-Abdelhady/hyperflow/compare/v6.10.1...v7.0.0
