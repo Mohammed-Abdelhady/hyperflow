@@ -314,6 +314,8 @@ test("installer exposes every public skill to OpenCode and Antigravity and unins
     const parsedConflict = JSON.parse(conflictJson.stdout);
     assert.equal(parsedConflict.skill_links.opencode.detected, true);
     assert.equal(parsedConflict.skill_links.opencode.state, "conflict");
+    const conflictCheck = spawnSync("bash", [INSTALLER, "--status", "--check"], { encoding: "utf8", env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" } });
+    assert.notEqual(conflictCheck.status, 0);
     const conflict = spawnSync("bash", [INSTALLER, "--link-only"], {
       encoding: "utf8",
       env: { ...process.env, HOME: conflictHome, HYPERFLOW_HOME: ROOT, PATH: "/usr/bin:/bin" },
@@ -487,6 +489,18 @@ test("source-managed updates preflight fetched trees and preserve the checkout o
     const baseStatus = spawnSync("bash", [INSTALLER, "--status"], { encoding: "utf8", env });
     assert.equal(baseStatus.status, 0);
     assert.match(baseStatus.stdout, /Checkout state: valid[\s\S]*Update readiness: ready \(branch=main\)/);
+    const incompleteCheck = spawnSync("bash", [INSTALLER, "--status", "--check"], { encoding: "utf8", env });
+    assert.notEqual(incompleteCheck.status, 0);
+    assert.match(incompleteCheck.stdout, /OpenCode: detected[\s\S]*links=none/);
+    const incompleteJsonCheck = spawnSync("bash", [INSTALLER, "--status", "--json", "--check"], { encoding: "utf8", env });
+    assert.notEqual(incompleteJsonCheck.status, 0);
+    const incompleteStatusJson = JSON.parse(incompleteJsonCheck.stdout);
+    assert.equal(incompleteStatusJson.healthy, false);
+    assert.equal(incompleteStatusJson.skill_links.opencode.state, "none");
+    mkdirSync(join(home, ".config", "opencode", "skills"), { recursive: true });
+    for (const skill of CONTRACT.skills) {
+      symlinkSync(join(checkout, "skills", skill), join(home, ".config", "opencode", "skills", skill));
+    }
     const baseCheck = spawnSync("bash", [INSTALLER, "--status", "--check"], { encoding: "utf8", env });
     assert.equal(baseCheck.status, 0, baseCheck.stderr);
     const baseJsonCheck = spawnSync("bash", [INSTALLER, "--status", "--json", "--check"], { encoding: "utf8", env });

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Make `install.sh --status --check` fail when a detected OpenCode or Antigravity host lacks a complete seven-skill link set, instead of reporting a healthy checkout that is not ready for that host.
+
 ## [6.10.0] — 2026-11-06
 
 ### Added
