@@ -11,11 +11,15 @@
 | Skill | Responsibility |
 |---|---|
 | `/hyperflow-plan` | Inspect, ask consequential questions, record answers, and compile a workflow. It stops before execution. |
-| `/hyperflow-smash` | Execute an approved workflow through isolated tasks, independent review, scoped repair, and verification. Status, graph, stop, resume, sessions, rename, and messages are subcommands. |
+| `/hyperflow-smash` | Execute an approved workflow through isolated tasks, independent review, scoped repair, and verification, then one final consolidated security review before anything touches your checkout. Status, graph, stop, resume, sessions, rename, and messages are subcommands. |
 | `/hyperflow-crash` | Review a pinned pull request or Git range in fresh read-only sessions. |
 | `/hyperflow-agents-skill` | Inspect or update validated primary, general, and lightweight model roles. |
 
 Smash runs unattended with full-access writing delegates, automatic checks and repairs, and read-only reviewers. It records blockers and continues independent tasks without asking questions.
+
+## Lanes and review routing
+
+Every task carries actual details, a difficulty (`routine`, `complex`, or `security`), and an explicit effort (`low`, `medium`, or `high`). Routine work routes to the lightweight role; complex and security work routes to the general role. Correctness review is always performed by the primary role in a fresh, isolated read-only lane. One consolidated security review by the general role runs once, after all other phases finish, before changes reach the user checkout. Its findings are implemented in a new general fix lane, and fixes rerun affected checks, primary correctness review, and security revalidation.
 
 The skills invoke `node <plugin-root>/runtime/cli.mjs`. Installation does not execute a workflow or modify provider credentials. No daemon or cloud service is required.
 
@@ -27,7 +31,7 @@ Default profiles are preferences: native Codex `gpt-6.1-sol` for primary, `zai/g
 
 Readable plans and approved knowledge stay in Markdown under `.hyperflow/`. The local runtime store keeps execution leases, attempts, run IDs, stop generations, messages, and evidence references. Existing `.hyperflow` data, credentials, shared skills, and foreign host registrations are preserved during installation and migration.
 
-The workflow file is a static JSON-compatible declaration parsed without evaluating JavaScript. Tasks declare dependencies, read/write ownership, acceptance criteria, registered checks, and resource needs. A workflow digest binds execution authority to the reviewed plan.
+The workflow file is a static JSON-compatible declaration parsed without evaluating JavaScript. Tasks declare dependencies, read/write ownership, acceptance criteria, registered checks, and resource needs. Task creation writes planning, task, implementation, correctness-review, security-review, and conditional security-fix files under `.hyperflow/workflows/<slug>/`, with planned agents and effort. Compilation records validated model bindings and binds the workflow and phase-file digests into the approval receipt. Missing or edited approved phase files block execution.
 
 ## Install
 

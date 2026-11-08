@@ -6,15 +6,21 @@ Hyperflow uses a local runner to validate workflow declarations, coordinate boun
 
 Planning is read only. Inspect source, tests, Git state, reuse opportunities, and existing project knowledge. Ask consequential questions from the current decision frontier and record actual answers. A static workflow declaration is compiled only when required answers and explicit participation are present. Planning never starts execution.
 
+Schema 2 tasks require nonblank details, an explicit `low`/`medium`/`high` effort, and a difficulty of `routine`, `complex`, or `security`. Difficulty fixes the implementation role: routine uses lightweight, complex and security use general; conflicting declarations are rejected. Correctness review uses the primary role and defaults to high effort, and workflow-level `securityReviewEffort` and `securityFixEffort` default to high with the general role fixed for both.
+
 ## Workflows and authority
 
 A workflow is a versioned JSON-compatible declaration in `workflow.mjs`. The runner parses a limited syntax without importing or evaluating JavaScript. It binds authorization to a content digest and rejects cycles, missing dependencies, invalid ownership, unknown roles, arbitrary checks, and unavailable model bindings.
 
 Tasks declare dependencies, read/write scopes, acceptance criteria, registered check IDs, role, and resource needs. Schedule by dependency readiness. Overlapping writes serialize. Every writing task uses an isolated worktree; a single coordinator integrates validated changes serially.
 
+## Phase records and approval
+
+Task creation and answers write phase records under `.hyperflow/workflows/<slug>/`: a workflow-wide planning file, per-task task, implementation, and correctness-review files, a workflow-wide security-review file, and a conditional security-fix file for every workflow. Each phase file records its agent role, planned effort, scope, acceptance criteria, and checks. Model bindings are marked unresolved until compilation validates and records them. These files describe the plan; execution uses the compiled declaration and approval receipt. The approval receipt stores the workflow digest, the model-binding digest, and a deterministic digest of every phase file; missing, edited, or symlinked phase files block execution, and schema-1 plans stay readable but cannot execute until they are replanned on schema 2.
+
 ## Delegation and evidence
 
-Provider adapters receive a bounded source-linked context and return structured results. Independent review runs in a fresh session against the exact candidate and acceptance criteria. Validated findings go to the responsible worker for scoped repair, followed by affected checks and review. Limit automatic correction to two rounds per unchanged contract and failure signature.
+Provider adapters receive a bounded source-linked context, including the task's details, and return structured results. Planned effort is preserved across the delegate boundary — including Pi's native `--thinking low|medium|high` control in a fresh JSON-mode process — and unsupported effort is rejected rather than silently substituted. Independent review runs in a fresh session against the exact candidate and acceptance criteria. Fresh means a new delegate lane with its own context and an isolated checkout, not another call in the same lane. Every task is reviewed by the primary role in such a lane. One consolidated security review by the general role runs once, after all ordinary phases complete, on the full integrated candidate; either a failure or blocked verdict, a contradiction, a stop, or a candidate mutation prevents applying the workflow. Security findings are implemented in a new general fix lane, and fixes rerun the affected checks, the primary correctness review, and security revalidation. Validated correctness findings go to the responsible worker for scoped repair, followed by affected checks and review. Limit automatic correction to two rounds per unchanged contract and failure signature.
 
 Completion requires integrated changes, independent review, applicable real checks, and evidence references. Model summaries, empty diffs, and exit codes do not substitute for verification. Missing tools, authentication, providers, browsers, or devices are reported as unavailable.
 

@@ -16,11 +16,11 @@ node <plugin-root>/runtime/cli.mjs agents-config set <role> <harness> <provider/
 
 Available roles:
 
-- `primary`: difficult investigation, planning, architecture, and conflict decisions. Requested default: `openai/gpt-6.1-sol`.
-- `general`: ordinary implementation and suitable independent review. Requested default: `zai/glm-5.3`.
-- `lightweight`: direct replies and bounded work. Requested default: `zai/glm-5.3-flash`.
+- `primary`: planning, integration decisions, and correctness review in an independent lane. Default delegate: native Codex `gpt-6.1-sol`.
+- `general`: difficult implementation, security work, the final consolidated security review, and security fixes. Default: `zai/glm-5.3`. Implementation, security review, and security repair each use separate lanes.
+- `lightweight`: routine implementation, which is the default for new tasks. Default: `zai/glm-5.3-flash`. Most clearly scoped implementation should stay here; mark difficult work complex and security work security.
 
-Profiles are preferences, not mandatory host models or proof of availability. A profile selects a delegate harness and model only when that adapter is available; this does not certify the delegate or the active host. Validate overlays in global, project, then session order. A running task retains its captured role revision. Effort is assigned per task during planning, shown in the workflow, and validated against that delegate's actual support. Never silently change the surrounding chat model. A running task changes delegate only through checkpoint and explicit restart with a structured handoff.
+Models are configurable delegate preferences. The workflow policy fixes the roles for each task and review phase. Availability requires catalog validation and a successful dispatch. A profile selects a delegate harness and model only when that adapter is available; this does not certify the delegate or the active host. Validate overlays in global, project, then session order. A running task retains its captured role revision. Effort is assigned per task during planning as `low`, `medium`, or `high`, shown in the workflow and phase records, and validated against that delegate's actual support; unsupported levels are rejected rather than silently substituted. Never silently change the surrounding chat model. A running task changes delegate only through checkpoint and explicit restart with a structured handoff.
 
 Show supported effort or variant from the actual adapter. Preserve valid independent work and completed results when a role changes. Report unavailable configuration or authentication as a blocker; never silently fall back.
 

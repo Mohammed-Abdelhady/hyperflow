@@ -5,7 +5,7 @@ version: 7.0.0
 ---
 # Hyperflow Crash
 
-Review the exact requested PR or Git range. This command is read only by default; review does not approve, merge, push, or authorize edits. A requested fix must route validated findings through an approved smash workflow. Independent review may use a configured delegate session; the host running this chat remains the coordinator and exposes only its own capabilities.
+Review the exact requested PR or Git range. This command is read only by default; review does not approve, merge, push, or authorize edits. A requested fix must route validated findings through an approved smash workflow; security findings are implemented in its dedicated general fix lane and revalidated before anything is applied. Independent review may use a configured delegate session; the host running this chat remains the coordinator and exposes only its own capabilities.
 
 An optional review memory is eligible only after a final independent `PASS` and explicit user request. Store a bounded pointer to the exact target and authoritative audit in `.hyperflow/memory/review-outcomes.md`; never persist a failed or unverified review as accepted.
 

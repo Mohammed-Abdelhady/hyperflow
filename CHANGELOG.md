@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Route routine implementation to lightweight GLM Flash and complex or security implementation to general GLM.
+- Require primary correctness review for implementation tasks and one consolidated general security review after all ordinary phases finish.
+- Give every review a fresh delegate lane with independent context and an isolated checkout. Route security fixes to a new general lane, then check and review the repaired changes.
+- Require task details and low, medium, or high effort. Write detailed task and phase files with explicit agent assignments.
+- Bind generated task and phase files to approval so missing or changed instructions block execution.
+- Launch Pi delegates with native thinking controls, confirm the actual model and effort, and restrict reviewers to read tools.
+
+### Migration
+- New plans use workflow schema 2. Preserve historical schema-1 files and execution state; replan and explicitly approve before running them.
+- Both primary and general reviewer profiles must be available. A single profile or lightweight review cannot replace either required lane.
+- Pi delegates use native low, medium, and high thinking levels. Other delegates must advertise the requested effort; unsupported controls block dispatch.
+
 ## [7.0.0] — 2026-11-08
 
 ### Added

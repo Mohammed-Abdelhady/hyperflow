@@ -29,7 +29,7 @@ Install performs no workflow execution and does not access or edit provider cred
 
 The new public names are `hyperflow-plan`, `hyperflow-smash`, `hyperflow-crash`, and `hyperflow-agents-skill`. The installer may remove obsolete skill links only when they resolve to the retired Hyperflow skill directories in this checkout. It will not remove shared skills or registrations from another checkout.
 
-Existing `.hyperflow` plans, handoffs, memories, archives, and credentials remain untouched. Migration reads legacy material only to offer a non-destructive conversion to a new workflow. Unresolved approvals, questions, and model choices remain pending.
+Existing `.hyperflow` plans, handoffs, memories, archives, and credentials remain untouched. Migration reads legacy material only to offer a non-destructive conversion to a new workflow. Unresolved approvals, questions, and model choices remain pending. Historic schema-1 workflows stay readable but cannot execute; re-run planning on schema 2 to compile an executable, approved declaration.
 
 ## Host compatibility evidence
 
