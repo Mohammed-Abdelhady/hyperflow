@@ -139,6 +139,8 @@ test('a verified security repair remains recoverable when a later security verdi
   assert.equal(resumed.status, 'completed', resumed.error);
   assert.deepEqual(models, ['lightweight-model', 'general-model']);
   assert.equal(await readFile(join(root, 'a.txt'), 'utf8'), 'safe');
+  assert.deepEqual(resumed.finalEvidence.security.fixes, failed.finalEvidence.security.fixes);
+  assert.ok(resumed.finalEvidence.security.reviews.some(review => review.verdict === 'blocked'));
 }));
 
 for (const rejectedBy of ['correctness', 'check']) {
@@ -205,4 +207,57 @@ test('an active run retains approved delegates when persisted session roles chan
       return pass();
     } });
   assert.equal(result.status, 'completed', result.error);
+}));
+
+
+test('a blocked primary repair review retains the attempted fix and checks without applying it', async () => repoFixture(async ({ root, statePath, baseSha }) => {
+  let securityReviews = 0;
+  const result = await executeWorkflow({ workflow: workflow(root, baseSha, [item('a')]), digest: 'approved',
+    repoRoot: root, statePath, roles: ROLES, checks: CHECKS, capacity: CAPACITY,
+    adapter: async ({ cwd, model }) => {
+      await writeFile(join(cwd, 'a.txt'), model.model === 'general-model' ? 'safe' : 'unsafe');
+      return { status: 'completed' };
+    },
+    review: async ({ task, phase }) => {
+      if (phase === 'security-review') {
+        securityReviews += 1;
+        return { verdict: 'needs_fix', findings: [finding] };
+      }
+      return task.id === 'security-fix' ? { verdict: 'blocked', findings: [], reason: 'Primary review unavailable' } : pass();
+    } });
+  assert.equal(result.status, 'failed');
+  assert.equal(securityReviews, 1);
+  assert.equal(await exists(join(root, 'a.txt')), false);
+  const attempted = result.finalEvidence.security.attempts.at(-1);
+  assert.equal(attempted.review.verdict, 'blocked');
+  assert.equal(attempted.review.reason, 'Primary review unavailable');
+  assert.equal(attempted.checks[0].exitCode, 0);
+}));
+
+
+test('primary findings on an unrepaired workflow path return to general within the repair limit', async () => repoFixture(async ({ root, statePath, baseSha }) => {
+  const task = { ...item('a'), writeScope: ['a.txt', 'b.txt'] };
+  let repairs = 0;
+  const bFinding = { ...finding, path: 'b.txt', condition: 'The second output is still unsafe' };
+  const result = await executeWorkflow({ workflow: workflow(root, baseSha, [task]), digest: 'approved',
+    repoRoot: root, statePath, roles: ROLES, checks: CHECKS, capacity: CAPACITY,
+    adapter: async ({ cwd, model, context }) => {
+      if (model.model !== 'general-model') {
+        await writeFile(join(cwd, 'a.txt'), 'unsafe'); await writeFile(join(cwd, 'b.txt'), 'unsafe');
+      } else {
+        repairs += 1;
+        if (repairs === 2) assert.match(String(context), /second output is still unsafe/);
+        await writeFile(join(cwd, 'a.txt'), 'safe');
+        if (repairs === 2) await writeFile(join(cwd, 'b.txt'), 'safe');
+      }
+      return { status: 'completed' };
+    },
+    review: async ({ task, phase }) => {
+      if (phase === 'security-review') return repairs === 0 ? { verdict: 'needs_fix', findings: [finding, bFinding] } : pass();
+      if (task.id === 'security-fix' && repairs === 1) return { verdict: 'needs_fix', findings: [bFinding] };
+      return pass();
+    } });
+  assert.equal(result.status, 'completed', result.error);
+  assert.equal(repairs, 2);
+  assert.equal(await readFile(join(root, 'b.txt'), 'utf8'), 'safe');
 }));
