@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
-  "version": "6.10.1",
-  "description": "A lightweight Markdown orchestration kernel with direct, focused, and deep lanes for coding agents.",
+  "version": "7.0.0",
+  "description": "Dependency-aware planning, delegated implementation and independent review for coding harnesses.",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -9,7 +9,9 @@
     "unittest": "node --test tests/*.test.js",
     "validate": "node --test tests/core-contract.test.js",
     "validate-plugin": "node scripts/validate-plugin.mjs",
-    "evals": "node scripts/run-evals.mjs"
+    "evals": "node scripts/run-evals.mjs",
+    "test:runtime": "node --test tests/runtime-*.test.js",
+    "hyperflow": "node runtime/cli.mjs"
   },
   "author": {
     "name": "Mohammed Abdelhady",
@@ -40,5 +42,22 @@
     "gemini",
     "code-review",
     "skills"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "hyperflow": "./runtime/cli.mjs"
+  },
+  "files": [
+    "runtime/",
+    "skills/",
+    "commands/",
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "scripts/install/",
+    "install.sh",
+    "docs/",
+    "PRIVACY.md"
   ]
 }

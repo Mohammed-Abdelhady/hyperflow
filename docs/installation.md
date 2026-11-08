@@ -1,63 +1,42 @@
 # Installation and migration
 
-## Claude Code
+## Native plugin install
 
-Claude Code is the primary supported host.
+Install Hyperflow through the native plugin workflow for the host you use. This registers the packaged skills and commands supported by that host. Native discovery, provider model resolution, runtime execution, and stop/resume behavior are separate compatibility checks.
 
-```bash
-claude plugin marketplace add Mohammed-Abdelhady/hyperflow
-claude plugin install hyperflow@hyperflow-marketplace
-```
+## Source install
 
-Update or remove the plugin through Claude Code's normal plugin management commands. Hyperflow adds no background updater and performs no network request at session start.
+`./install.sh` validates the local Hyperflow source checkout and registers four skills in detected global directories for the six listed hosts. For Codex, it makes owned copies because Codex discovery does not include the source installer's symlinked skill directories. Codex copy registration requires Node.js 24 or newer before it can change registrations. It creates four native `/hyperflow-*` command files for OpenCode only. The source installer prepares skill discovery; it does not certify invocation, workflow execution, or delegate support.
 
-## Codex
+| Host | Global skill directory | Discovery source |
+|---|---|---|
+| Claude Code | `~/.claude/skills` | [Claude Code skills](https://code.claude.com/docs/en/skills) |
+| Codex | `${CODEX_HOME:-~/.codex}/skills` (owned copies) | [Codex skills](https://developers.openai.com/blog/eval-skills) |
+| Antigravity | `~/.gemini/config/skills` | [Antigravity skills](https://antigravity.google/docs/skills?app=antigravity-ide) |
+| Cursor | `~/.cursor/skills` | [Cursor skills](https://cursor.com/docs/skills) |
+| OpenCode | `${XDG_CONFIG_HOME:-~/.config}/opencode/skills` | [OpenCode skills](https://opencode.ai/docs/skills/) |
+| Pi | `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills` | [Pi skills](https://pi.dev/docs/latest/skills) |
 
-The repository includes a Codex manifest, but Codex support remains preview. Install through the plugin workflow exposed by your Codex version, then confirm that the seven skill directories are discoverable.
+`OPENCODE_CONFIG_DIR` can override the OpenCode root. A shared `~/.agents/skills` directory is supported by several hosts but is not linked automatically, which avoids duplicate same-named skills when a user has multiple hosts installed.
 
-Use `hyperflow plan`, `hyperflow dispatch`, and the other surface names as text-routed intent. Do not assume they are native slash commands. CLI, app-server, and desktop App behavior are verified independently; plugin discovery alone is not workflow certification.
+Use `--link-only` to skip fetching. `--status [--json]` is read only; `--check` adds a health exit status. `--uninstall` removes links only when they resolve to this checkout, Codex copies only when their source marker and contents are unchanged, and command files only when their ownership marker names this checkout. Foreign links, command files, directories, modified copies, provider configuration, and project data are preserved. A conflict is reported before that host's registrations are changed. Claude Code and Codex use their native skill discovery; this installer does not create unsupported command directories for them.
 
-See [Codex compatibility](codex.md).
+For hosts other than OpenCode, skills use each host's own invocation and discovery behavior. This installer does not create command directories for Claude Code, Codex, Antigravity, Cursor, or Pi.
 
-## OpenCode
+Install performs no workflow execution and does not access or edit provider credentials. It does not download the optional delegate relay. To bootstrap that pinned upstream adapter, invoke `node <plugin-root>/runtime/cli.mjs setup-delegates` explicitly after installation.
 
-OpenCode is a compatibility shim for the same Markdown contract. It does not imply Claude Code lifecycle events or equivalent child-agent/background behavior. Use only the capabilities exposed by the installed host version.
+## Migration
 
-For a source-managed installation, run `./install.sh`. It validates the Git checkout, parses `package.json`, checks its package version, and verifies all seven skill files before linking seven skills to `OPENCODE_CONFIG_DIR/skills` when set, otherwise `$XDG_CONFIG_HOME/opencode/skills` or `~/.config/opencode/skills`. Updates are accepted only from a clean checkout on the `main` branch; dirty, detached, non-`main`, diverged, fetch-failed, incomplete, malformed-JSON, invalid-version, version-regressing, or major updates stop before checkout changes. Provider link failures roll back that provider and skip native plugin installation, so a known link conflict does not leave a second host partially installed. `--link-only` skips fetch and native plugins; `--status` validates the locally cached `origin/main` tree as well as the checkout, then reports update readiness, available native commands, and complete/partial/conflicting skill links without changing anything. Add `--check` to `--status` for a read-only shell health check that exits nonzero unless the checkout is valid, a clean `main` checkout has a valid, non-regressing cached `origin/main`, and every detected provider has a complete seven-skill link set; it never fetches or changes links. Add `--json` to `--status` for one machine-readable status object with checkout, update-readiness, current/tracking version metadata, an `update_available` flag, host, link-provider objects (`detected`, `root`, and `state`), and `healthy` fields. The version fields are `null` when the relevant checkout or cached tracking tree cannot be validated; `update_available` is `true` when valid cached `origin/main` points at a different commit, including a blocked version-regressing update. `--json --check` keeps the same health exit contract without human-readable output. `--uninstall` removes only links owned by that checkout. Run uninstall and status with the same `OPENCODE_CONFIG_DIR` override.
+The new public names are `hyperflow-plan`, `hyperflow-smash`, `hyperflow-crash`, and `hyperflow-agents-skill`. The installer may remove obsolete skill links only when they resolve to the retired Hyperflow skill directories in this checkout. It will not remove shared skills or registrations from another checkout.
 
-## Antigravity
+Existing `.hyperflow` plans, handoffs, memories, archives, and credentials remain untouched. Migration reads legacy material only to offer a non-destructive conversion to a new workflow. Unresolved approvals, questions, and model choices remain pending.
 
-Antigravity is a shim. `./install.sh` detects `agy`, `gemini`, or `~/.gemini` and links all seven to `~/.gemini/skills`; `--uninstall` removes owned links from `~/.gemini/skills` and the legacy `~/.gemini/config/skills` root.
+## Host compatibility evidence
 
-## Major-version migration
+Host support is checked per surface and version. Claude Code, Codex, Antigravity, Cursor, OpenCode, and Pi expose different command discovery, execution, model, and lifecycle capabilities. A plugin manifest or installed skill does not certify any of them.
 
-<!-- hyperflow:legacy-migration:start -->
-The lightweight core removes the old dashboard, viewer files, and generated JSON persistence twin. Installation must not delete or rewrite an existing `.hyperflow` directory.
+Portable validation checks files, contracts, static command templates, links, and shell syntax. It does not run a real provider, execute a workflow, or prove live host compatibility. Do not transfer evidence between different surfaces or versions of a host. Use only tools exposed by the active host.
 
-Before upgrading:
+## Verification limits
 
-1. Back up `.hyperflow/` and any committed `.hyperflow-handoff/` packages.
-2. Inspect `.hyperflow/artefacts/**/*.json`, archived JSON under `.hyperflow/archive/**`, and JSON or nested artefact copies under `.hyperflow-handoff/**` for information that is not present in a Markdown task, spec, audit, or memory file.
-3. Rehydrate that information into the matching Markdown file.
-4. Verify the Markdown copy before removing any legacy file yourself.
-<!-- hyperflow:legacy-migration:end -->
-
-There is no automatic migration, archive, compaction, or cleanup pass.
-
-Legacy v5 handoff packages using `HANDOFF.md`, `STATUS`, or nested `artefact/` directories are archive-only until manually converted to the current `task.md` plus `handoff.md` layout. Hyperflow never rewrites those packages automatically.
-
-## Verify the install
-
-Confirm these directories exist in the installed plugin:
-
-```text
-skills/hyperflow
-skills/plan
-skills/dispatch
-skills/trace
-skills/audit
-skills/deploy
-skills/handoff
-```
-
-Then start with a read-only request such as `hyperflow audit this repository structure` and verify that any capability degradation is reported explicitly.
+Installation validates package contents, not live host support. Check exact command discovery and execution on the target host/version before making a compatibility claim.

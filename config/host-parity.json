@@ -1,30 +1,42 @@
 {
-  "version": 1,
-  "description": "Explicit host claims and local evidence boundaries for the portable core.",
+  "version": 2,
+  "description": "Claims are scoped to actual host features and recorded evidence; no host certification is inferred from another.",
   "hosts": [
     {
       "id": "claude-code",
-      "claim": "primary",
-      "status": "supported",
-      "evidence": "plugin-validation"
+      "claim": "skill integration",
+      "status": "requires_live_acceptance",
+      "evidence": "static-validation"
     },
     {
       "id": "codex-cli",
-      "claim": "preview",
-      "status": "preview_uncertified",
-      "evidence": "plugin-validation"
+      "claim": "skill integration",
+      "status": "requires_live_acceptance",
+      "evidence": "static-validation"
     },
     {
       "id": "opencode",
-      "claim": "compatibility shim",
-      "status": "supported_shim",
-      "evidence": "installer-contract"
+      "claim": "skill integration",
+      "status": "requires_live_acceptance",
+      "evidence": "static-validation"
     },
     {
       "id": "antigravity",
-      "claim": "compatibility shim",
-      "status": "supported_shim",
-      "evidence": "installer-contract"
+      "claim": "skill integration",
+      "status": "requires_live_acceptance",
+      "evidence": "static-validation"
+    },
+    {
+      "id": "cursor",
+      "claim": "skill integration",
+      "status": "requires_live_acceptance",
+      "evidence": "static-validation"
+    },
+    {
+      "id": "pi",
+      "claim": "skill integration",
+      "status": "requires_live_acceptance",
+      "evidence": "static-validation"
     }
   ]
 }

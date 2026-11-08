@@ -62,16 +62,12 @@ function checkVersionParity() {
   for (const plugin of marketplace.plugins ?? []) {
     check(plugin.version === version, `marketplace plugin ${plugin.name ?? "<unnamed>"}: version does not match package.json`);
   }
-  check(read("skills/hyperflow/VERSION").trim() === version, "skills/hyperflow/VERSION: version does not match package.json");
-
   for (const path of ["AGENTS.md", "CLAUDE.md"]) {
     check(read(path).includes(`hyperflow:doctrine:start version=${version}`), `${path}: doctrine version does not match package.json`);
   }
 }
 
 function checkSkillSurface() {
-  const packageJson = readJson("package.json");
-  const expectedAgentAuthor = packageJson.author?.name;
   const skills = readdirSync(pathFromRoot("skills"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(pathFromRoot(`skills/${entry.name}/SKILL.md`)))
     .map((entry) => entry.name)
@@ -86,23 +82,19 @@ function checkSkillSurface() {
     check(/^name:\s*\S+$/m.test(frontmatter?.[1] ?? ""), `${path}: missing name`);
     check(/^description:\s*.+$/m.test(frontmatter?.[1] ?? ""), `${path}: missing description`);
     check(/^version:\s*\S+$/m.test(frontmatter?.[1] ?? ""), `${path}: missing version`);
+    check(frontmatter?.[1].match(/^version:\s*(.+)$/m)?.[1].trim() === readJson("package.json").version, `${path}: version does not match package.json`);
     check(/^# .+$/m.test(source.slice(frontmatter?.[0].length ?? 0)), `${path}: missing body H1`);
-    check(source.split(/\r?\n/).length <= 500, `${path}: exceeds the 500-line entrypoint budget`);
+    check(source.split(/\r?\n/).length <= 350, `${path}: exceeds the 350-line entrypoint budget`);
+    check(source.includes("node <plugin-root>/runtime/cli.mjs"), `${path}: must delegate through the local runtime`);
   }
-
-  const specialists = filesUnder("agents")
-    .filter((path) => extname(path) === ".md")
-    .map((path) => path.slice("agents/".length, -3))
-    .sort();
-  check(JSON.stringify(specialists) === JSON.stringify([...CONTRACT.specialists].sort()), `agents: expected ${CONTRACT.specialists.join(", ")}; found ${specialists.join(", ")}`);
-
-  for (const specialist of CONTRACT.specialists) {
-    const path = `agents/${specialist}.md`;
+  for (const command of CONTRACT.skills) {
+    const path = `commands/${command}.md`;
     const source = read(path);
-    const frontmatter = source.match(/^---\n([\s\S]*?)\n---/);
-    const author = frontmatter?.[1].match(/^author:\s*(.+)$/m)?.[1].trim();
-    check(author === expectedAgentAuthor, `${path}: author must match package.json author.name`);
+    check(source.includes("@HYPERFLOW_PLUGIN_ROOT@/runtime/cli.mjs"), `${path}: missing local CLI entrypoint`);
+    check(source.includes(`@HYPERFLOW_PLUGIN_ROOT@/skills/${command}/SKILL.md`), `${path}: missing matching skill`);
+    check(!/^model:/m.test(source), `${path}: must not pin the surrounding host model`);
   }
+  check(existsSync(pathFromRoot("runtime/cli.mjs")), "runtime/cli.mjs: local runner is missing");
 }
 
 function checkJsonDocuments() {
@@ -110,7 +102,7 @@ function checkJsonDocuments() {
 }
 
 function checkMarkdownLinks() {
-  const documents = ["README.md", "PRIVACY.md", "RELEASING.md", ...filesUnder("docs").filter((path) => extname(path) === ".md")];
+  const documents = ["README.md", "PRIVACY.md", "RELEASING.md", ...filesUnder("docs").filter((path) => extname(path) === ".md"), ...filesUnder("skills").filter((path) => extname(path) === ".md"), ...filesUnder("commands").filter((path) => extname(path) === ".md")];
   for (const document of documents) {
     const source = read(document);
     for (const match of source.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {

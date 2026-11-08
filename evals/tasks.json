@@ -1,0 +1,181 @@
+[
+  {
+    "id": "core-surface",
+    "title": "The package exposes exactly four workflow skills and commands",
+    "checks": [
+      {
+        "type": "files_exist",
+        "paths": [
+          "README.md",
+          "package.json",
+          "runtime/cli.mjs",
+          "commands/hyperflow-plan.md",
+          "commands/hyperflow-smash.md",
+          "commands/hyperflow-crash.md",
+          "commands/hyperflow-agents-skill.md",
+          "skills/hyperflow-plan/SKILL.md",
+          "skills/hyperflow-smash/SKILL.md",
+          "skills/hyperflow-crash/SKILL.md",
+          "skills/hyperflow-agents-skill/SKILL.md"
+        ]
+      },
+      {
+        "type": "skill_set",
+        "expected": [
+          "hyperflow-plan",
+          "hyperflow-smash",
+          "hyperflow-crash",
+          "hyperflow-agents-skill"
+        ]
+      },
+      {
+        "type": "read_contains",
+        "path": "README.md",
+        "value": "Four public skills"
+      },
+      {
+        "type": "read_contains",
+        "path": "README.md",
+        "value": "node <plugin-root>/runtime/cli.mjs"
+      }
+    ]
+  },
+  {
+    "id": "decision-memory",
+    "title": "Opt-in planning decision memory is bounded, approved-only, and source-linked",
+    "checks": [
+      {
+        "type": "decision_memory",
+        "path": "evals/fixtures/decision-memory/decisions.md"
+      },
+      {
+        "type": "read_contains",
+        "path": "skills/hyperflow-plan/SKILL.md",
+        "value": "explicit request"
+      },
+      {
+        "type": "read_contains",
+        "path": "skills/hyperflow-plan/SKILL.md",
+        "value": ".hyperflow/memory/decisions.md"
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/memory.md",
+        "value": "Do not copy transcripts, alternatives, implementation output, secrets, or speculative concerns."
+      }
+    ]
+  },
+  {
+    "id": "host-claims",
+    "title": "Host claims stay tied to explicit evidence and test scope",
+    "checks": [
+      {
+        "type": "files_exist",
+        "paths": [
+          "config/host-parity.json",
+          "docs/installation.md"
+        ]
+      },
+      {
+        "type": "host_claims",
+        "path": "config/host-parity.json"
+      },
+      {
+        "type": "read_contains",
+        "path": "README.md",
+        "value": "does not treat a manifest, skill directory, or static validation as host certification"
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/installation.md",
+        "value": "Claude Code, Codex, Antigravity, Cursor, OpenCode, and Pi expose different command discovery"
+      }
+    ]
+  },
+  {
+    "id": "review-memory",
+    "title": "Opt-in review memory is bounded, accepted-only, and points to authoritative audit evidence",
+    "checks": [
+      {
+        "type": "review_memory",
+        "path": "evals/fixtures/review-memory/review-outcomes.md"
+      },
+      {
+        "type": "read_contains",
+        "path": "skills/hyperflow-crash/SKILL.md",
+        "value": "explicit user request"
+      },
+      {
+        "type": "read_contains",
+        "path": "skills/hyperflow-crash/SKILL.md",
+        "value": ".hyperflow/memory/review-outcomes.md"
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/memory.md",
+        "value": "The linked audit remains the authoritative evidence"
+      }
+    ]
+  },
+  {
+    "id": "roadmap-contract",
+    "title": "The roadmap keeps the approved local four-command scope bounded",
+    "checks": [
+      {
+        "type": "files_exist",
+        "paths": [
+          "docs/roadmap.md"
+        ]
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/roadmap.md",
+        "value": "## Next trains"
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/roadmap.md",
+        "value": "## Selection rule for a train"
+      },
+      {
+        "type": "read_not_contains",
+        "path": "docs/roadmap.md",
+        "value": "scripts/run-evals.py"
+      },
+      {
+        "type": "docs_links_resolve"
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/roadmap.md",
+        "value": "no dashboard, cloud service, distributed scheduler, always-on daemon"
+      }
+    ]
+  },
+  {
+    "id": "runtime-contract",
+    "title": "The local runner is installed without workflow or credential side effects",
+    "checks": [
+      {
+        "type": "json_key_absent",
+        "path": ".codex-plugin/plugin.json",
+        "key": "hooks"
+      },
+      {
+        "type": "read_contains",
+        "path": "README.md",
+        "value": "Installation does not execute a workflow or modify provider credentials."
+      },
+      {
+        "type": "read_contains",
+        "path": "README.md",
+        "value": "local runtime store"
+      },
+      {
+        "type": "read_contains",
+        "path": "docs/installation.md",
+        "value": "does not download the optional delegate relay"
+      }
+    ]
+  }
+]

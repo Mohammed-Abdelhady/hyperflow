@@ -1,7 +1,7 @@
 {
   "name": "hyperflow",
-  "version": "6.10.1",
-  "description": "Markdown-only Direct, Focused, and Deep workflows for safe planning, implementation, review, and Git handoff in Codex (preview).",
+  "version": "7.0.0",
+  "description": "Four Hyperflow workflows for planning, delegation, review and delegate configuration, with inert startup.",
   "author": {
     "name": "Mohammed Abdelhady",
     "url": "https://github.com/Mohammed-Abdelhady"
@@ -25,8 +25,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Hyperflow",
-    "shortDescription": "Token-efficient Markdown workflows for Codex (preview)",
-    "longDescription": "Hyperflow routes work through Direct, Focused, or Deep lanes and exposes seven lazy-loaded surfaces: hyperflow, plan, dispatch, trace, audit, deploy, and handoff. It keeps project memory and plans in Markdown, uses child agents only for independent work or independent judgment, preserves security and Git gates, and performs no automatic startup work. Codex CLI, app-server, and desktop App compatibility are verified separately; this manifest does not claim certification for one surface from another.",
+    "shortDescription": "Plan, delegate and review with your coding harness",
+    "longDescription": "Hyperflow keeps the current host as coordinator. Four lazy-loaded skills plan tasks, execute dependency-aware lanes through configured delegate harnesses, review pinned changes and configure delegate profiles. Per-task model and effort selections are explicit in the plan. Host capabilities and live evidence are reported separately.",
     "developerName": "Mohammed Abdelhady",
     "category": "Engineering",
     "capabilities": [
@@ -38,9 +38,9 @@
     "privacyPolicyURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/PRIVACY.md",
     "termsOfServiceURL": "https://github.com/Mohammed-Abdelhady/hyperflow/blob/main/LICENSE",
     "defaultPrompt": [
-      "Hyperflow plan this feature",
-      "Hyperflow trace this failure",
-      "Hyperflow audit this diff"
+      "Use hyperflow-plan for this feature",
+      "Use hyperflow-smash for the approved workflow",
+      "Use hyperflow-crash to review this diff"
     ],
     "brandColor": "#2EA39F",
     "screenshots": []

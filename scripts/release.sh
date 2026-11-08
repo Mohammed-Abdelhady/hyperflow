@@ -113,7 +113,7 @@ fi
 npm run validate-plugin
 npm run unittest
 npm run evals
-bash -n install.sh scripts/*.sh
+bash -n install.sh scripts/*.sh scripts/install/*.sh
 
 if [ "$DRY_RUN" = "1" ]; then
   printf 'Dry run complete. No files, commits, tags, or remotes changed.\n'
@@ -124,7 +124,7 @@ HYPERFLOW_RELEASE_PREPARE=1 "$SCRIPT_DIR/bump-version.sh" "$VERSION"
 npm run validate-plugin
 npm run unittest
 npm run evals
-bash -n install.sh scripts/*.sh
+bash -n install.sh scripts/*.sh scripts/install/*.sh
 git diff --check
 
 release_files=(
@@ -132,14 +132,10 @@ release_files=(
   .claude-plugin/plugin.json
   .claude-plugin/marketplace.json
   .codex-plugin/plugin.json
-  skills/hyperflow/VERSION
-  skills/hyperflow/SKILL.md
-  skills/plan/SKILL.md
-  skills/dispatch/SKILL.md
-  skills/trace/SKILL.md
-  skills/audit/SKILL.md
-  skills/deploy/SKILL.md
-  skills/handoff/SKILL.md
+  skills/hyperflow-plan/SKILL.md
+  skills/hyperflow-smash/SKILL.md
+  skills/hyperflow-crash/SKILL.md
+  skills/hyperflow-agents-skill/SKILL.md
   AGENTS.md
   CLAUDE.md
   README.md
